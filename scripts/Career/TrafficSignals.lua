@@ -19,7 +19,8 @@ function Signals:Init(root,details)
             local dx,dz=arm[1],arm[2]
             local yaw=arm[4]
             local corner=root:CreateChild("老街实体信号灯")
-            corner.position=Vector3(j.x+dx*11+dz*7.2,.085,j.z+dz*11-dx*7.2)
+            -- 灯面朝向来车，设在路口远侧；右侧来车位于其本地+Z一侧。
+            corner.position=Vector3(j.x+dx*11-dz*7.2,.085,j.z+dz*11+dx*7.2)
             corner.rotation=Quaternion(0,yaw,0)
             Parts.Bar(corner,self.dark,Vector3.ZERO,Vector3(0,4.2,0),.07)
             Parts.Add(corner,"防撞底座","Box",self.dark,Vector3(0,.25,0),Vector3(.28,.5,.28))

@@ -50,6 +50,7 @@ function Pedestrians:Init(root,city)
         local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
         self.people[#self.people+1]=person
         self:Place(person)
+        rig:PoseWalk(person.phase,0)
     end
 end
 function Pedestrians:Place(p)

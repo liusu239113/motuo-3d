@@ -148,7 +148,6 @@ function Traffic:Step(dt,blockers)
             end
         end
     end
-    self.pedestrians:Update(dt,blockers)
 end
 function Traffic:Update(dt)
     if not self.active or self.disposed or self.city.space~="city" or dt<=0 then return end
@@ -156,6 +155,8 @@ function Traffic:Update(dt)
     local count=math.max(1,math.ceil(duration*60))
     local blockers=self:Blockers()
     for _=1,count do self:Step(duration/count,blockers) end
+    -- 骨骼每个外层帧仅求解一次；车辆仍保留60Hz碰撞子步。
+    self.pedestrians:Update(duration,blockers)
 end
 function Traffic:Dispose()
     if self.disposed then return end

@@ -76,8 +76,12 @@ function Checks.Run(session)
     end
     assert(travelled>10,"连续运行不能全部堵死")
     local clock,s=t.time,all[1].s
+    -- 临时取消测试模式的早退，才能证明Session生产Update确实被暂停拦截。
+    local testMode=session.options.test
+    session.options.test=false
     session.view:ShowDialog("交通暂停检查","",{})
     session:Update(.2)
+    session.options.test=testMode
     assert(t.time==clock and all[1].s==s,"手机/暂停应冻结交通")
     session.view:ShowGame()
     session.city:SetSpace("hostel")
@@ -94,7 +98,16 @@ function Checks.Shot(session,seconds)
     session.actor.mounted=false; session.actor.speed=0
     session.actor.bikeX,session.actor.bikeZ=-15,-18
     session.actor:Teleport(7.8,-18,0)
-    for _=1,math.floor(seconds*60) do t:Update(1/60) end
+    -- 实拍将真实车辆置于中央路口的来车段，避免首车离镜头百余米。
+    for i,car in ipairs(t.cars) do
+        car.s=car.route.axis=="ns" and 126+(i%3)*14 or 112+(i%3)*16
+        car.speed=0
+        t:Place(car)
+    end
+    t.time=0
+    for _,p in ipairs(t.pedestrians.people) do p.s=p.length*.75; t.pedestrians:Place(p) end
+    for _=1,math.floor(seconds*10) do t:Update(.1) end
+    session.city.signals:Update(t.time)
     session.yaw,session.pitch=15,12
     session.camera:SetModeConfig("normal",{distance=13,offset=Vector3(0,2,0),fov=65})
     session.camera:Update(1,session.actor.node,session.yaw,session.pitch)
