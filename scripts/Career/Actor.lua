@@ -303,6 +303,7 @@ function Actor:ToggleMount()
         print("[CareerActor] 上下车拒绝：速度必须低于0.5m/s")
         return false, "请先停稳再上下车（速度需低于0.5m/s）"
     end
+    self.reverseHold=0
     if not self.mounted then
         local dx, dz = self.bikeX - self.x, self.bikeZ - self.z
         local distance = math.sqrt(dx * dx + dz * dz)

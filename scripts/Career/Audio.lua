@@ -3,7 +3,7 @@
 local Audio={}
 Audio.__index=Audio
 Audio.Paths={music="audio/night_ride.ogg",electric="audio/sfx/career_ebike_motor.mp3",
-    engine="audio/sfx/motorcycle_engine_loop.mp3",steps="audio/sfx/career_footsteps.mp3",
+    engine="audio/sfx/motorcycle_engine_loop.mp3",steps="audio/sfx/career_step_single.wav",
     city="audio/sfx/career_city_ambience.mp3",tap="audio/sfx/career_ui_tap.mp3",order="audio/sfx/career_order_chime.mp3",
     brake="audio/sfx/motorcycle_brake_loop.mp3"}
 Audio.Resources={}
@@ -18,10 +18,13 @@ function Audio:Init(scene)
     self.sources,self.sounds={},{}
     self.musicEnabled,self.effectsEnabled,self.unlocked=true,true,false
     self.lastOrder=""
+    self.stepDistance=0
+    self.stepCount=0
+    self.orderCount=0
     for key,path in pairs(Audio.Paths) do
         local sound=cache:GetResource("Sound",path)
         if sound and sound:GetLength()>0 then
-            sound.looped=key~="tap" and key~="order"
+            sound.looped=key~="tap" and key~="order" and key~="steps"
             self.sounds[key]=sound
             local source=self.node:CreateChild(key):CreateComponent("SoundSource")
             source.soundType=key=="music" and SOUND_MUSIC or SOUND_EFFECT
@@ -35,7 +38,11 @@ function Audio:Unlock() self.unlocked=true end
 function Audio:Once(key)
     if not self.unlocked or not self.effectsEnabled then return end
     local source,sound=self.sources[key],self.sounds[key]
-    if source and sound then source:Play(sound,0,key=="tap" and .3 or .55) end
+    if source and sound then
+        source:Play(sound,0,key=="tap" and .3 or key=="steps" and .62 or .55)
+        if key=="steps" then self.stepCount=self.stepCount+1 end
+        if key=="order" then self.orderCount=self.orderCount+1 end
+    end
 end
 function Audio:Loop(key,gain,pitch,dt)
     local source,sound=self.sources[key],self.sounds[key]
@@ -54,7 +61,17 @@ function Audio:Update(dt,actor,blocked,indoor,controls,order)
     self:Loop("city",indoor and .025 or blocked and .05 or .17,1,dt)
     self:Loop("electric",ride and electric and (.045+math.min(1,moving/10)*.28) or 0,.75+math.min(1,moving/10)*.6,dt)
     self:Loop("engine",ride and not electric and .24 or 0,.7+math.min(1,moving/17)*.8,dt)
-    self:Loop("steps",not actor.mounted and moving>.1 and .38 or 0,math.min(1.45,.8+moving*.16),dt)
+    -- 按实际行走距离触发单步，不循环整段录音；撞墙不走、松杆、手机与暂停都立即停脚步。
+    if not actor.mounted and moving>.1 and self.effectsEnabled then
+        self.stepDistance=self.stepDistance+moving*math.min(dt,.25)
+        if self.stepDistance>=.625 then
+            self.stepDistance=self.stepDistance%.625
+            self:Once("steps")
+        end
+    else
+        self.stepDistance=0
+        if self.sources.steps then self.sources.steps:StopImmediate() end
+    end
     self:Loop("brake",ride and controls.brake and moving>1 and .12 or 0,1,dt)
     local id=order and order.id or ""
     if id~="" and id~=self.lastOrder then self:Once("order") end

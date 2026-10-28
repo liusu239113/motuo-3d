@@ -55,7 +55,7 @@ function Rig:InitCareer(parent)
     local right=self:GetBonePosition("R_Upperarm")
     local side=right-left
     self.mesh.rotation=Quaternion(V(side.x,0,side.z):Normalized(),V.RIGHT)
-    -- 模型原始长轴在Z：先按真实左右肩校正整个人，再缓存车辆坐标下的绑定旋转。
+    -- 骨架绑定已带轴向转换：仅按真实左右肩作小角度标定，不能按mesh包围盒盲目转90度。
     for _,name in ipairs(self.boneNames) do self.bind[name].modelRotation=self:GetLocalBoneTransform(name):Rotation() end
     print(string.format("[人物朝向校正] 原左肩%s 右肩%s yaw %.1f；校正脚尖%s",left:ToString(),right:ToString(),self.mesh.rotation:YawAngle(),(self:GetBonePosition("L_ToeBase")-self:GetBonePosition("L_Foot")):ToString()))
     assert(self.bind.Hip and self.bind.L_Hand and self.bind.R_Foot,"王二狗骨架命名不兼容")

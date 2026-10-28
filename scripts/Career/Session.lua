@@ -425,7 +425,10 @@ function Session:Update(dt)
         elseif not self.view:IsBlocking() then self:Pause() end
         return
     end
-    if self.view:IsBlocking() then return end
+    if self.view:IsBlocking() then
+        self.actor.reverseHold=0
+        return
+    end
     if not self.options.test and math.abs(self.actor.speed)<.35 then
         local story=Progress.NextStory(Store.Get())
         if story then

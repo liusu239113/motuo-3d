@@ -29,10 +29,10 @@ function Visuals:Init(scene,target)
     local body=self.bikeVisual:CreateChild("正式战损电动车")
     local model=cache:GetResource("Model",scooterModel)
     local bounds=model.boundingBox
-    -- 实际顶点PCA长轴=(-.721,0,.693)，旋转46.1度对齐城市车辆纵轴。
+    -- 长轴只确定轴线，正面实拍以白色头灯/前挡板为+Z；红尾灯与号牌必须在-Z。
     local scale=1.90/1.3094
     body:SetScale(scale)
-    body.rotation=Quaternion(0,46.1,0)
+    body.rotation=Quaternion(0,226.1,0)
     body.position=V(0,-bounds.min.y*scale,0)
     local draw=body:CreateComponent("StaticModel")
     draw.model=model; draw.material=cache:GetResource("Material",scooterMaterial); draw.castShadows=true

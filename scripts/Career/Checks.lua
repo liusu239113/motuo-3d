@@ -325,7 +325,7 @@ function Checks.RunMobile(session)
     assert(view.walkStick.x==0 and view.walkStick.pointer==-1,"取消触摸不能留下卡摇杆")
     session:Pause(); assert(not c.enabled and not c.gas)
     view:ShowGame(); session:RestorePosition(); session:Refresh()
-    print("[生涯触屏验收通过] 复用赛车组件与操作方案/真实UI多指/步行转向前进后退/上下车/油门刹车/手机暂停清输入/拖屏视角/取消触摸")
+    print("[生涯触屏验收通过] 复用赛车骑行方案/二维步行摇杆/右手独立视角/斜向与后移/上下车/刹停持续倒车/松手停稳/手机暂停清输入/取消触摸")
 end
 function Checks.RunWorld(session)
     Checks.RunLogic()
@@ -366,6 +366,7 @@ function Checks.RunWorld(session)
     session:Refresh()
     Checks.RunMobile(session)
     require("Career.HousingChecks").Run(session)
+    require("Career.MediaChecks").Run(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then
