@@ -108,6 +108,7 @@ local RaceAI = require("RaceAI")
 ---@field mistakeLane number 失误期间固定的走宽目标
 ---@field driveSim RideSimulation? 只用于独立传动状态，不更新第二套世界
 ---@field nitroPreview table? 独立传动预演缓存，不写回真实车手或玩家
+---@field perception table 交通观察节奏、漏判与真实碰撞恢复状态
 ---@field driveAcceleration number 实际纵向加速度，单位米每平方秒
 
 ---@class RaceGate:ScenicRacePoint

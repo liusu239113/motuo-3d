@@ -76,7 +76,7 @@ function Effects:Init(parent, size, seatHeight, lightweight)
 end
 
 ---@param dt number 0严格冻结；主入口暂停时传0
----@param boost number 仅sim.raceBoost(0..1)，或AI实际boostTimer>0映射为1
+---@param boost number 玩家或AI的driveSim.raceBoost(0..1)，只反映实际喷射动力
 ---@param speed number 实际速度，只决定速度线和尾焰长短，不回写仿真
 function Effects:Update(dt, boost, speed)
     if self.disposed or dt <= 0 then return end

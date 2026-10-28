@@ -19,8 +19,8 @@ function AI.Configure(race, r, index)
     r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48
         + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.95)
     -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
-    r.speedFactor = clamp(0.66 + level * 0.26 + r.skill * 0.05 + difficulty * 0.025, 0.6, 0.96)
-    local efficiency = clamp(0.54 + level * 0.32 + r.skill * 0.10 + difficulty * 0.035, 0.65, 0.97)
+    r.speedFactor = clamp(0.48 + level * 0.20 + r.skill * 0.25 + difficulty * 0.02, 0.6, 0.93)
+    local efficiency = clamp(0.36 + level * 0.24 + r.skill * 0.38 + difficulty * 0.025, 0.58, 0.96)
     r.acceleration = race.sim.vehicle.acceleration * efficiency
     -- 高级图仍有真实断油、走宽和恢复窗口，不能用满级技术消除失误。
     r.mistakeTimer = 6 + race:Random() * 10
@@ -41,6 +41,11 @@ function AI.Configure(race, r, index)
     r.preferredLane = (index % 3 - 1) * 2.6
     r.laneHold, r.blockedTime, r.trafficHits, r.avoidances, r.passes = 0, 0, 0, 0, 0
     r.targetSpeed, r.distanceDriven = 0, 0
+    -- 交通只在自身观察时钟上更新；不是20ms全知预测。漏看只延后反应，不关闭碰撞。
+    r.perception = {timer = race:Random() * 0.35, age = 0, observations = {},
+        period = 0.30 + (1-r.skill)*0.75 + (1-level)*0.30,
+        missChance = 0.025 + (1-r.skill)*0.20, misses = 0, recovery = 0,
+        recoveries = 0, recoverySeconds = 0}
     r.trafficContacts, r.nextTrafficContacts = {}, {}
     r.lastObstacle = false
 end
@@ -110,7 +115,7 @@ function AI.Drive(race, r, target, dt)
     local drive = assert(r.driveSim)
     drive.vehicle, drive.speed = race.sim.vehicle, r.speed
     local mistake = r.mistakeDuration > 0
-    local recovery = r.recoveryTimer > 0
+    local recovery = r.recoveryTimer > 0 or (r.perception and r.perception.recovery > 0)
     local slowing = r.speed > target + 0.2
     local throttle = slowing and 0 or (mistake and 0 or (recovery and 0.42 or 1))
     -- 刹车、走宽与恢复时不能靠喷射自动补回0.9油门，剩余喷射时间照常消耗。
@@ -162,15 +167,55 @@ end
 -- Same/opposing traffic use signed relative speed and wrapped physical gap. Racers on
 -- different laps still collide physically. Adjacent bikes reserve their destination lane.
 -- A changing lane must also clear traffic currently beside/behind it, not just the endpoint.
-local function eachObstacle(race, r, visit)
-    for _, o in ipairs(race.aiObstacles) do
+local function eachObstacle(race, r, visit, sensed)
+    local perception = r.perception
+    local obstacles = sensed and perception and perception.observations or race.aiObstacles
+    for _, o in ipairs(obstacles) do
         if abs(o.y - r.y) < 6 then visit(o) end
+    end
+    -- 可选坡是静态可见路障；不模拟AI飞跃，不准免费穿过或领取玩家加速带。
+    for _, ramp in ipairs(race.map.Ramps or {}) do
+        if ramp.optional and ramp.s then
+            local reserved=max(ramp.length or 12,(ramp.landingEndS or (ramp.s+(ramp.length or 12)))-ramp.s)
+            -- 整段坡/落地车道保留；只取当前附近的局部截面，避免174m长障碍的
+            -- 中点离车太远而晚避让，或越过中点后误以为已可回线。
+            local start=gap(ramp.s,r.s,race.length)
+            local first,last=max(start,-8),min(start+reserved,max(75,r.speed*2.8))
+            if last>=first then
+                visit({source=ramp,s=r.s+(first+last)*0.5,lane=ramp.lateral or 0,
+                    speed=0,halfWidth=(ramp.width or 2.8)*0.5,halfLength=(last-first)*0.5,
+                    y=ramp.y or r.y,bike=false,ramp=true})
+            end
+        end
     end
     for _, other in ipairs(race.racers) do
         if other ~= r and not other.finished and not other.eliminated then
             visit({source = other, s = other.s, lane = other.lane,
                 destination = other.wantedLane, speed = other.speed, halfWidth = 0.30,
                 halfLength = 1, y = other.y, bike = true})
+        end
+    end
+end
+
+function AI.Observe(race,r,dt)
+    local p=assert(r.perception)
+    p.age,p.timer=p.age+dt,p.timer-dt
+    p.recovery=max(0,p.recovery-dt)
+    if p.recovery>0 then p.recoverySeconds=p.recoverySeconds+dt end
+    if p.timer>0 then return end
+    p.timer,p.age=p.period,0
+    for i=#p.observations,1,-1 do p.observations[i]=nil end
+    local horizon=28+r.speed*(0.55+r.skill*0.45)
+    for _,o in ipairs(race.aiObstacles) do
+        local d=gap(o.s,r.s,race.length)
+        if d>-8 and d<horizon and abs(o.y-r.y)<3 then
+            -- 视野内也可能短暂漏判；急近车辆仍留有反应但不会凭空瞬移躲开。
+            if race:Random()<p.missChance and d>6 then p.misses=p.misses+1
+            else
+                local bias=(race:Random()-.5)*(1-r.skill)*12
+                p.observations[#p.observations+1]={source=o.source,s=o.s+bias,lane=o.lane,
+                    speed=o.speed,halfWidth=o.halfWidth,halfLength=o.halfLength,y=o.y,bike=false}
+            end
         end
     end
 end
@@ -253,11 +298,12 @@ local function laneScore(race, r, candidate, horizon)
         if o.bike and o.destination and abs(candidate - o.destination) < 0.8 and abs(d) < 12 then
             score = score + 35 -- reservation, not mutual parking priority.
         end
-    end)
+    end, true)
     return score
 end
 
 function AI.Plan(race, r, dt)
+    AI.Observe(race,r,dt)
     r.laneHold = max(0, r.laneHold - dt)
     r.decisionTimer = r.decisionTimer - dt
     r.paceTimer = r.paceTimer - dt
@@ -268,16 +314,15 @@ function AI.Plan(race, r, dt)
         r.paceTarget = safeTarget
     end
     local target = min(r.paceTarget, safeTarget)
-    local hazard, nearest = false, math.huge
+    local hazard = false
     local horizon = max(75, r.speed * 2.8)
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
         local margin = o.halfWidth + 0.30 + (o.bike and 0.42 or 0.50)
         if d > -o.halfLength - 1 and d < horizon and abs(o.lane - r.lane) < margin then
-            if d < nearest then nearest = d end
             if r.speed > o.speed + 0.5 or d < 12 then hazard = true end
         end
-    end)
+    end, true)
     if r.decisionTimer <= 0 then
         r.decisionTimer = r.reactionTime
         local bound = max(2, race.roadHalfWidth - 0.65)
@@ -313,7 +358,7 @@ function AI.Plan(race, r, dt)
             if o.speed < 0 then follow = max(0, clear / 1.0 - abs(o.speed) * 0.4) end
             target = min(target, follow)
         end
-    end)
+    end, true)
     -- 无油门或名次相关的橡皮筋；失误实质降低目标速度并断油，恢复期间也不能立即满动力。
     r.rubberBand = 0
     if r.mistakeDuration > 0 then target = min(target, r.mistakeSpeed) end
@@ -322,7 +367,7 @@ function AI.Plan(race, r, dt)
     -- 不抽“每帧中奖”随机数：在人的决策节奏上择机，低档/入门车也能出弯加速。
     if not hazard and r.mistakeDuration <= 0 and r.recoveryTimer <= 0
         and r.nitroCooldown <= 0 and r.nitro >= 45 and r.boostTimer <= 0
-        and target >= r.speed - 0.2 then
+        and r.perception.recovery <= 0 and target >= r.speed - 0.2 then
         r.nitroCooldown = r.reactionTime -- 不安全时也限频，避免每20ms重跑完整预演。
         if AI.NitroSafe(race, r) and race:Boost(r) then
             r.nitroCooldown = 16 + (1 - level) * 10 + (1 - r.skill) * 2
@@ -355,6 +400,9 @@ function AI.TrafficContacts(race, r)
                 if not r.trafficContacts[car] then
                     r.speed = r.speed * 0.66
                     r.trafficHits, r.laneHold = r.trafficHits + 1, 0
+                    local p=assert(r.perception)
+                    p.recovery,p.recoveries=1.2+(1-r.skill)*1.2,p.recoveries+1
+                    p.timer,r.decisionTimer,r.paceTimer=0,0,0
                     race:Collision(r)
                     race:Emit("traffic-contact", r.id)
                 end

@@ -74,10 +74,35 @@ local function trackMap(track)
         return {x=x,y=y,z=z}, math.deg(math.atan(b.x-a.x,b.z-a.z)),
             -math.deg(math.atan((b.y-a.y)/math.max(.001,b.s-a.s)))
     end
+    local grid={}
+    for i=1,#samples-1 do
+        local a,b=samples[i],samples[i+1]
+        for gx=math.floor((math.min(a.x,b.x)-35)/40),math.floor((math.max(a.x,b.x)+35)/40) do
+          for gz=math.floor((math.min(a.z,b.z)-35)/40),math.floor((math.max(a.z,b.z)+35)/40) do
+            local key=gx..":"..gz;grid[key]=grid[key] or {};grid[key][#grid[key]+1]=i
+          end
+        end
+    end
+    local function nearest(x,z)
+        local list=grid[math.floor(x/40)..":"..math.floor(z/40)]
+        local best,s,lateral,y=math.huge,0,0,samples[1].y
+        local function test(i)
+            local a,b=samples[i],samples[i+1]
+            local dx,dz=b.x-a.x,b.z-a.z
+            local t=math.max(0,math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz)))
+            local ox,oz=x-a.x-dx*t,z-a.z-dz*t
+            local dist=ox*ox+oz*oz
+            if dist<best then
+                best,s,lateral,y=dist,a.s+(b.s-a.s)*t,(ox*dz-oz*dx)/math.sqrt(dx*dx+dz*dz),a.y+(b.y-a.y)*t
+            end
+        end
+        if list then for _,i in ipairs(list) do test(i) end else for i=1,#samples-1 do test(i) end end
+        return s%length,lateral,y
+    end
     return {RouteLength=length,Goals={},Roads={{width=track.width*.5,shoulder=track.shoulder}},
         RoadPoint=function(s) return pose(s,0) end, TrafficPose=pose,
-        -- Sim初始化只在起点查询；AI的正式位置始终通过TrafficPose精确取路带。
-        Height=function() return samples[1].y,true end, NearestRoad=function() return 0,0 end}
+        Height=function(x,z) local _,lane,y=nearest(x,z);return y,math.abs(lane)<=track.width*.5 end,
+        NearestRoad=nearest}
 end
 
 local function trackFixture(track, vehicleId, seed, index, difficulty)
@@ -188,6 +213,212 @@ function Checks.RealTracks(seconds, full, riderIndices)
     return rows
 end
 
+-- 同场交通基准：真实Tracks路带、World的14辆交通初值/移动/回收规则，
+-- physicalPlayer=true走真正Sim.Step，只提交0.8油门/刹车/方向及正常氮气；
+-- false为明确标识的道路空间隔离对照。两者均有定时收油失误，不作为真人胜率保证。
+-- 同场真实交通基准不运行警车淘汰，避免在100秒控制器测试中提前终止采样。
+function Checks.TrafficRace(seconds,vehicleIds,seeds,physicalPlayer,trackIds)
+    local rows={}
+    local duration=seconds or 100
+    for _,trackId in ipairs(trackIds or {"circuit","lake","coast","alpine","forest","canyon"}) do
+      local track=assert(Tracks.Get(trackId))
+      local map=trackMap(track)
+      for _,id in ipairs(vehicleIds or {"sport"}) do
+       for _,seed in ipairs(seeds or {31,4817,9011}) do
+        local sim=Sim.New(map); assert(sim:SetVehicle(id))
+        local race=Race.New(map,sim,{quiet=true,seed=seed,aiLevel=track.aiLevel,laps=9})
+        race:Start(); race.phase="racing"
+        local player=race.player
+        local rng=seed
+        local function random() rng=(rng*48271)%2147483647;return rng/2147483647 end
+        local function placeCar(car,teleport)
+            local p,yaw=map.TrafficPose(car.s,car.lane)
+            car.x,car.y,car.z,car.yaw=p.x,p.y,p.z,yaw+(car.speed<0 and 180 or 0)
+            if teleport then car.previousX,car.previousY,car.previousZ=p.x,p.y,p.z end
+        end
+        local sizes={{2.205,1.575,4.6},{2.456,1.793,4.7},{2.758,2.695,5.4}}
+        if track.traffic then for i=1,14 do
+            local size=sizes[(i-1)%3+1]
+            local lane=i%3==0 and -2.4 or 2.4
+            local car={s=90+i*94,lane=lane,speed=(lane<0 and -1 or 1)*(12+i*7%11),
+                width=size[1],height=size[2],halfLength=size[3]*.5,passed=false}
+            placeCar(car,true);race.traffic[#race.traffic+1]=car
+        end end
+        local world={traffic=race.traffic}
+        local decision,mistake,nextMistake,nitroClock=0,0,11+random()*7,0
+        local goalLane,goalSpeed=1.55,0
+        local hits,boosts,passes,loses,mean,playerMistakes=0,0,0,0,0,0
+        local side={}
+        local peakGap,recoverySteps=0,0
+        for frame=1,math.floor(duration/DT+.5) do
+            race.elapsed=frame*DT
+            for _,r in ipairs(race.racers) do
+                r.contactX,r.contactY,r.contactZ=r.x,r.y,r.z
+                race:Resources(r,DT)
+            end
+            for i,car in ipairs(race.traffic) do
+                car.previousX,car.previousY,car.previousZ=car.x,car.y,car.z
+                car.s=car.s+car.speed*DT
+                local relative=(car.s-player.s+race.length*.5)%race.length-race.length*.5
+                local teleport=relative< -145 or relative>1500
+                if teleport then car.s=player.s+260+(i%6)*125;car.passed=false end
+                placeCar(car,teleport)
+            end
+            AI.Snapshot(race)
+            decision,mistake,nextMistake,nitroClock=decision-DT,math.max(0,mistake-DT),nextMistake-DT,nitroClock-DT
+            if nextMistake<=0 then
+                mistake=1.4+random()*.6; nextMistake=14+random()*9;playerMistakes=playerMistakes+1
+            end
+            if decision<=0 then
+                decision=.45
+                -- 正常玩家留弯道余量，不用AI技术/难度倍率；预瞄仅当前速度1.2秒。
+                goalSpeed=sim.vehicle.maxSpeed*.88
+                for j=0,math.ceil(math.max(60,player.speed*1.2)/race.aiProfileStep) do
+                    local sample=race.aiProfile[(math.floor((player.s%race.length)/race.aiProfileStep)+j)%#race.aiProfile+1]
+                    local safe=math.sqrt(15/math.max(.0001,sample.curvature)+2*10*math.max(0,j*race.aiProfileStep-player.speed*.45))
+                    goalSpeed=math.min(goalSpeed,safe)
+                end
+                local best,bestScore=goalLane,math.huge
+                for _,lane in ipairs({2.4,0,-2.4,race.roadHalfWidth-1,-race.roadHalfWidth+1}) do
+                    local score=math.abs(lane-2.4)*.30+math.abs(lane-player.lane)*.5
+                    for _,o in ipairs(race.aiObstacles) do
+                        local d=(o.s-player.s+race.length*.5)%race.length-race.length*.5
+                        if d> -4 and d<65 and math.abs(lane-o.lane)<o.halfWidth+.8 then score=score+100 end
+                    end
+                    if score<bestScore then best,bestScore=lane,score end
+                end
+                goalLane=best
+                if mistake>0 then goalLane=math.max(-race.roadHalfWidth+.7,math.min(race.roadHalfWidth-.7,goalLane+.9)) end
+            end
+            local target=goalSpeed*(mistake>0 and .70 or 1)
+            for _,o in ipairs(race.aiObstacles) do
+                local d=(o.s-player.s+race.length*.5)%race.length-race.length*.5
+                if d>0 and d<35 and math.abs(player.lane-o.lane)<o.halfWidth+.5 then
+                    target=math.min(target,math.max(0,o.speed)+(math.max(0,d-o.halfLength-3))/.9)
+                end
+            end
+            if nitroClock<=0 and mistake==0 and player.speed>12 and goalSpeed>player.speed+4 then
+                local clear=true
+                for _,o in ipairs(race.aiObstacles) do
+                    local d=(o.s-player.s+race.length*.5)%race.length-race.length*.5
+                    if d>0 and d<160 and math.abs(player.lane-o.lane)<o.halfWidth+1 then clear=false end
+                end
+                if clear and race:Boost(player) then boosts=boosts+1;nitroClock=19 end
+            end
+            if physicalPlayer then
+                -- 真正玩家基线：只给油刹舵，绝不写s/lane/speed/位置。
+                local look=math.max(10,sim.speed*.65)
+                local aim=map.TrafficPose(player.s+look,goalLane)
+                local desired=math.deg(math.atan(aim.x-sim.x,aim.z-sim.z))
+                local error=(desired-sim.heading+180)%360-180
+                local needed=math.max(-100,math.min(100,error*2.5))
+                local lo,hi=0,1
+                for _=1,12 do
+                    local mid=(lo+hi)*.5
+                    if math.abs(sim:TurnRate(mid))<math.abs(needed) then lo=mid else hi=mid end
+                end
+                local steer=(lo+hi)*.5*(needed<0 and -1 or 1)
+                local before=sim.impactSerial
+                sim:Step(DT,{throttle=mistake>0 and .10 or .80,
+                    brake=sim.speed>target+1,steer=steer,boost=player.boostTimer>0 and 1 or 0},world)
+                if sim.impactSerial>before then hits=hits+1;mistake=math.max(mistake,1.5) end
+                race:TrackPlayer(DT)
+            else
+            local oldS,oldLane=player.s,player.lane
+            player.lastX,player.lastY,player.lastZ=player.x,player.y,player.z
+            local throttle=player.speed>target+.2 and 0 or (mistake>0 and .55 or .92)
+            sim.speed=player.speed
+            local active=player.boostTimer>0 and throttle>.8
+            local power=sim:Powertrain(DT,{throttle=throttle,boost=active and 1 or 0})
+            local sample=race.aiProfile[math.floor((player.s%race.length)/race.aiProfileStep)+1]
+            local acc=power-.20-player.speed^2*.00115-9.81*sample.slope/math.sqrt(1+sample.slope^2)
+            if player.speed>target+.2 then acc=math.min(acc,-math.min(sim.vehicle.braking,(player.speed-target)*2+1)) end
+            player.speed=math.max(0,math.min(math.max(player.speed,sim.vehicle.maxSpeed*(active and 1.25 or 1)),player.speed+acc*DT))
+            player.lane=oldLane+math.max(-2.9*DT,math.min(2.9*DT,goalLane-oldLane))
+            local lateral=(player.lane-oldLane)/DT
+            player.s=oldS+math.sqrt(math.max(0,player.speed^2-lateral^2))*DT/math.sqrt(1+sample.slope^2)
+                /math.max(.45,math.abs(1-sample.turn*(player.lane+oldLane)*.5))
+            race:Place(player)
+            sim.x,sim.y,sim.z,sim.yaw,sim.heading,sim.speed=player.x,player.y,player.z,player.yaw,player.yaw,player.speed
+            local oldImpact=sim.impactSerial
+            sim.crashCooldown=math.max(0,sim.crashCooldown-DT)
+            sim:Traffic(world,player.lastX,player.lastY,player.lastZ,0,1)
+            if sim.impactSerial>oldImpact then hits=hits+1;mistake=math.max(mistake,1.5) end
+            player.speed=sim.speed
+            race:AdvanceGates(player,oldS,player.s,DT)
+            if not player.finished then player.progress=math.min(player.s,player.nextGate-.001) end
+            end
+            for _,r in ipairs(race.racers) do if not r.isPlayer then AI.Update(race,r,DT) end end
+            race:Contacts(DT);race:Rank()
+            for _,r in ipairs(race.racers) do
+                if not r.isPlayer then
+                    local ahead=player.progress>r.progress
+                    if side[r.id]~=nil and side[r.id]~=ahead then
+                        if ahead then passes=passes+1 else loses=loses+1 end
+                    end
+                    side[r.id]=ahead
+                    if r.perception.recovery>0 then recoverySteps=recoverySteps+1 end
+                end
+                r.boostTimer=math.max(0,r.boostTimer-DT)
+                if r.boostTimer<1e-8 then r.boostTimer=0 end
+            end
+            mean=mean+player.speed
+            peakGap=math.max(peakGap,player.progress-race.ranking[5].progress)
+        end
+        local aiHits,aiRecoveries,misses=0,0,0
+        local speeds={}
+        for _,r in ipairs(race.racers) do if not r.isPlayer then
+            aiHits=aiHits+r.trafficHits;aiRecoveries=aiRecoveries+r.perception.recoveries;misses=misses+r.perception.misses
+            speeds[#speeds+1]={id=r.id,progress=r.progress,mistakes=r.mistakes,hits=r.trafficHits}
+        end end
+        local row={track=trackId,vehicle=id,seed=seed,rank=player.rank,passes=passes,repasses=loses,
+            playerHits=hits,aiHits=aiHits,recoveries=aiRecoveries,recoverySeconds=recoverySteps*DT,
+            misses=misses,boosts=boosts,averageKmh=mean/(duration/DT)*3.6,playerMistakes=playerMistakes,opponents=speeds}
+        rows[#rows+1]=row
+        print(string.format("[TrafficRace] %s %s seed%d rank%d passes%d lost%d playerHit%d aiHit%d recovery%d/%.1fs misses%d playerMistakes%d avg%.2f mode=%s",
+            trackId,id,seed,player.rank,passes,loses,hits,aiHits,aiRecoveries,recoverySteps*DT,misses,playerMistakes,row.averageKmh,physicalPlayer and "Sim.Step" or "route"))
+        assert(aiRecoveries==aiHits,"每次真实交通碰撞必须进入恢复")
+        assert(player.rank<9 and passes>0,trackId.."同车正常失误玩家应能超过部分AI")
+       end
+      end
+    end
+    return rows
+end
+
+function Checks.RampAvoidance()
+    local cases=0
+    for _,track in ipairs(Tracks.List()) do
+      for _,side in ipairs({-1,1}) do
+       for _,withLanding in ipairs({false,true}) do
+        local race,r=trackFixture(track,"sport",31,1)
+        local p=race.map.RoadPoint(110)
+        local ramp={optional=true,s=110,lateral=side*2.4,length=24,width=2.6,height=.85,
+            landingEndS=withLanding and 284 or nil,x=p.x,y=p.y,z=p.z,yaw=0}
+        local endS=ramp.landingEndS or ramp.s+ramp.length
+        race.map.Ramps={ramp}
+        r.lane,r.wantedLane,r.preferredLane=ramp.lateral,ramp.lateral,ramp.lateral
+        r.mistakeTimer=1000
+        race:Place(r)
+        local reached=false
+        for _=1,2000 do
+            local oldS=r.s
+            tick(race,r)
+            local overlaps=r.s+1>ramp.s and oldS-1<endS
+            if overlaps then
+                assert(math.abs(r.lane-ramp.lateral)>=ramp.width*.5+.30,
+                    track.id.."AI不许穿坡或提前占回落地保留车道")
+            end
+            if r.s>endS+10 then reached=true;break end
+        end
+        assert(reached,track.id.."必须真实驶过坡旁，而非停住伪造避障")
+        cases=cases+1
+       end
+      end
+    end
+    print("[RaceAIChecks] PASS 六图左右坡旁通过 "..cases.." cases，无穿坡/免费跳跃")
+    return cases
+end
+
 -- 注入表现依赖的只读spy：调用真正的Update，不创建Scene/渲染/音频设备。
 -- 引擎内可直接Feedback()；纯Lua调用方可用隔离环境加载原模块后传入。
 -- 不篡改package.loaded/引擎全局，不宣称已完成截图/实机听感验收。
@@ -197,6 +428,7 @@ function Checks.Feedback(visuals, audioModule)
     local race,r=fixture(31)
     r.speed=35
     assert(race:Boost(r))
+    r.driveSim.raceBoost=1
     local lastBoost,lastSpeed=-1,-1
     local runner={node={SetEnabledRecursive=function() end},visual={},active=true,
         lean=0,poseClock=0,colorId="red",rider={model={inView=false}},
@@ -205,7 +437,10 @@ function Checks.Feedback(visuals, audioModule)
     local visual=setmetatable({disposed=false,visible=true,clock=0,visibilityClock=0,leanSign=1,
         race={racers={r}},runners={[r.id]=runner},EnsurePolice=function() end,RefreshPose=function() end},{__index=Visuals})
     visual:Update(.02,{x=0,z=0})
-    assert(lastBoost==1 and lastSpeed==r.speed,"AI boostTimer必须传到真正的effects:Update")
+    assert(lastBoost==1 and lastSpeed==r.speed,"AI实际Powertrain喷射必须传到effects:Update")
+    r.driveSim.raceBoost=0
+    visual:Update(.02,{x=0,z=0})
+    assert(lastBoost==0 and r.boostTimer>0,"仍有授权时间但实际收油时不能假喷焰")
     r.boostTimer=0
     visual:Update(.02,{x=0,z=0})
     assert(lastBoost==0,"喷射计时结束必须撤销视觉授权")
@@ -217,7 +452,7 @@ function Checks.Feedback(visuals, audioModule)
     race:Emit("boost","player")
     audio:Update(.02,{},race,true)
     assert(played==1,"玩家喷射音效链路仍保留")
-    print("[RaceAIChecks] PASS AI boostTimer -> RaceVisuals.Update -> effects；音频仅玩家(已报告)")
+    print("[RaceAIChecks] PASS AI实际推力 -> RaceVisuals.Update -> effects；音频仅玩家(已报告)")
     return true
 end
 
@@ -448,6 +683,16 @@ function Checks.Run()
         end
     end
     passed("六图解锁层级、分支公平与全车型全车手三难度硬上界")
+    local observed,watcher=fixture(31)
+    watcher.speed,watcher.nitroCooldown,watcher.perception.timer=35,1000,0
+    observed.aiObstacles={{s=32,lane=0,speed=15,halfWidth=1,halfLength=2.3,y=0,bike=false}}
+    AI.Plan(observed,watcher,DT)
+    local timer,seen=watcher.perception.timer,#watcher.perception.observations
+    observed.aiObstacles[1].s=100
+    AI.Plan(observed,watcher,DT)
+    check(watcher.perception.timer<timer and #watcher.perception.observations==seen,
+        "观察间隔内不得重新全知采样交通")
+    result.rampCases=Checks.RampAvoidance()
     result.realTracks = Checks.RealTracks(100,false,{1})
     passed("六图三车型100秒真实地图确定性长时域")
     result.passed = true

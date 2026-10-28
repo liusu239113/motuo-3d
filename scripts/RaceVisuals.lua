@@ -420,7 +420,8 @@ function RaceVisuals:Update(dt, sim)
                 runner.node.rotation = Quaternion(0, data.heading or data.yaw or 0, 0)
                 local target = math.max(-55, math.min(55, data.lean or 0))
                 runner.lean = runner.lean + (target - runner.lean) * (1 - math.exp(-frameTime * 10))
-                runner.effects:Update(frameTime, (data.boostTimer or 0) > 0 and 1 or 0, data.speed or 0)
+                local boostPower = data.driveSim and data.driveSim.raceBoost or 0
+                runner.effects:Update(frameTime, boostPower, data.speed or 0)
                 -- AI被撞时车身猛晃并短暂偏航，恢复后由正常线路接管。
                 local hit = (data.hitShake or 0) * (data.hitTimer or 0)
                 local hitYaw = (data.hitYaw or 0) * (data.hitTimer or 0) * 0.12

@@ -1,5 +1,6 @@
 -- 操作编辑器：与驾驶共用同一批控件、尺寸、中心坐标和安全区。
 local UI = require("urhox-libs/UI")
+local RacingTheme = require("RacingTheme")
 local Settings = require("ControlSettings")
 ---@class ControlEditor
 ---@field screen string
@@ -18,10 +19,7 @@ local function label(text, size)
     return UI.Label {text=text, fontSize=size or 10, fontColor=WHITE, pointerEvents="none"}
 end
 local function button(text, action, width, primary)
-    return UI.Button {text=text, onClick=action, width=width or 82, height=36, fontSize=10,
-        padding=0, borderRadius=4, borderWidth=1, borderColor=BORDER,
-        backgroundColor=primary and AMBER or {27,32,38,225},
-        textColor=primary and {16,18,21,255} or WHITE}
+    return RacingTheme.Button(text, action, primary, width or 82, {height=36, fontSize=10, padding=0})
 end
 local function full(props)
     props.position, props.left, props.top, props.right, props.bottom = "absolute",0,0,0,0
@@ -57,8 +55,7 @@ function Editor:BuildSettings()
             Settings.Scale(self.settingsSlot, delta)
             self:ApplySettings(); self:RefreshSettings(); self:SaveSettings("尺寸已保存")
         end
-        self.settingsTools = UI.Panel {width="100%", padding=10, gap=6,
-            backgroundColor={9,17,24,225}, borderRadius=5, visible=false, children={
+        self.settingsTools = RacingTheme.Card {width="100%", padding=10, gap=6, visible=false, children={
                 self.settingsSchemeLabel, self.settingsSchemeRow,
                 UI.Row {padding=0, gap=5, children={
                     button("复制当前", function()

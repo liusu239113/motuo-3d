@@ -9,6 +9,7 @@
 ---@field baseClass string
 ---@field crashCooldown number
 local Sim = {}
+local TrackFeatures = require("TrackFeatures")
 Sim.__index = Sim
 local RAD, DEG, GRAVITY = math.pi / 180, 180 / math.pi, 9.81
 -- 中心纠偏仍限制在原来的量级，外圈释放街机弯道舵权；不能把6.5的满舵上限乘遍整段行程。
@@ -128,6 +129,7 @@ function Sim:Reset(challenge)
     self.impactSerial, self.recoverySerial = 0, 0
     self.hitShake, self.hitTimer = 0, 0
     self.raceBoost = 0
+    self.featureState = TrackFeatures.NewBoostState()
     self.health, self.score, self.overtakes, self.nearMisses, self.topSpeed = 100, 0, 0, 0, 0
     self.crashCooldown, self.shiftTimer, self.logTimer = 0, 0, 0
     self.finished, self.success, self.wrecked = false, false, false
@@ -575,6 +577,15 @@ function Sim:Move(dt, controls, world, drive, steering)
     local sx, sz = direction(self.heading)
     local ahead = self:Surface(self.x + sx, self.z + sz, world)
     local slope = clamp(ahead - ground, -3, 3)
+    local ridingRamp=self:RampAt(self.x,self.z,world)
+    if ridingRamp then
+        -- 前轮前视超过唇口时仍取坡面切线，不把背部断崖当成下坡。
+        local _,forward=rampCoords(ridingRamp,self.x,self.z)
+        local along=sx*math.sin((ridingRamp.yaw or 0)*RAD)+sz*math.cos((ridingRamp.yaw or 0)*RAD)
+        if forward>ridingRamp.length-1.1 and along>.7 then
+            slope=(ridingRamp.exitGrade or ridingRamp.height/ridingRamp.length)*along
+        end
+    end
     self.onRoad, self.groundY, self.groundSlope = road, ground, slope
     self.rampCooldown = math.max(0, self.rampCooldown - dt)
     local requested = controls.spin360 and 360 or (controls.spin180 and 180 or 0)
@@ -615,21 +626,33 @@ function Sim:Move(dt, controls, world, drive, steering)
         local fx, fz = direction(self.heading)
         local movement = self.speed * dt / math.sqrt(1 + slope * slope)
         self.x, self.z = self.x + fx * movement, self.z + fz * movement
+        local ramps = (world and world.ramps) or self:Map(world).Ramps or {}
+        local blocked,contact = TrackFeatures.BlockingFace(ramps,oldX,oldY,oldZ,self.x,oldY,self.z)
+        if blocked then
+            -- 连续碰撞停在接触面外侧，不把轮胎抬到侧壁顶部。
+            local before=math.max(0,contact-.002/math.max(.001,movement))
+            self.x,self.z=oldX+(self.x-oldX)*before,oldZ+(self.z-oldZ)*before
+            self:Impact("碰到飞坡侧壁 · 从箭头入口上坡",math.min(25,5+self.speed*.35))
+            self.speed=math.min(self.speed,2)
+        end
         local nextGround = self:Surface(self.x, self.z, world)
-        local ramp = self:RampAt(oldX, oldZ, world) or self.ramp
+        -- 兼容旧World测试的RampAt，同时扫描完整线段，避免一步跨完整坡漏起飞。
+        local currentRamp = self:RampAt(oldX, oldZ, world) or self.ramp
+        local candidates = ramps
+        if currentRamp and #ramps==0 then candidates={currentRamp} end
+        local ramp,lipTime=TrackFeatures.CrossLip(candidates,oldX,oldZ,self.x,self.z,self.heading,self.speed)
         local launched = false
-        if ramp and self.rampCooldown <= 0 then
-            local lx0, lz0 = rampCoords(ramp, oldX, oldZ)
-            local lx1, lz1 = rampCoords(ramp, self.x, self.z)
-            local length, width = ramp.length or 10, ramp.width or 4
-            if lz0 >= 0 and lz0 < length and lz1 >= length and self.speed >= 8
-                and math.abs(lx0) <= width * 0.5 and math.abs(lx1) <= width * 0.5
-                and math.abs(angleDelta(self.heading, ramp.yaw or 0)) < 45 then
-                local grade = (ramp.height or 2) / length
-                self.y = math.max(oldY, (ramp.y or ground) + (ramp.height or 2))
-                self:TakeOff(self.speed * grade / math.sqrt(1 + grade * grade))
-                launched = true
-            end
+        if ramp and not blocked and self.rampCooldown <= 0 then
+            local grade=ramp.exitGrade or (ramp.height or 2)/(ramp.length or 10)
+            local lipX=oldX+(self.x-oldX)*lipTime
+            local lipZ=oldZ+(self.z-oldZ)*lipTime
+            local lipY=TrackFeatures.RampHeight(ramp,lipX,lipZ) or (ramp.y or ground)+(ramp.height or 2)
+            self:TakeOff(self.speed*grade/math.sqrt(1+grade*grade))
+            -- 起跳点位于实际唇口，余下时间继续积分原重力弹道；不改水平位置。
+            local remaining=dt*(1-lipTime)
+            self.y=lipY+self.vY*remaining-GRAVITY*remaining*remaining*.5
+            self.vY,self.airTime=self.vY-GRAVITY*remaining,remaining
+            launched = true
         end
         if not launched then
             -- 从崖边/坡道侧边驶离：保留坡面竖直动量，由重力决定落地。
@@ -859,7 +882,13 @@ function Sim:Step(dt, controls, world)
         local steering = self:Steering(step, input.steer)
         local drive = self:Powertrain(step, input)
         self:GroundTricks(step, input, drive)
+        local wasAirborne=self.airborne
         local x0, y0, z0 = self:Move(step, input, world, drive, steering)
+        local feature,gain=TrackFeatures.StepBoost(self,self:Map(world),step,x0,y0,z0,wasAirborne)
+        if feature and gain>0 then
+            self.message,self.messageTimer="方向加速带 · 免费提速",1.8
+            print(string.format("[道路机关] %s 提速 %.1fm/s，带冷却8秒",feature.id,gain))
+        end
         self:Traffic(world, x0, y0, z0, (index - 1) / count, index / count)
         if not self.finished then
             -- 护栏先于世界边界：正常赛道上越界会撞栏回推，而不是直接瞬移回起点。

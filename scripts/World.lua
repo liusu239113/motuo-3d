@@ -3,6 +3,7 @@ local P = require("Parts")
 local Landscape = require("Landscape")
 local Assets = require("VehicleAssets")
 local Decor = require("TrackDecor")
+local TrackFeatures = require("TrackFeatures")
 local V = Vector3
 
 ---@class ScenicTraffic
@@ -97,6 +98,7 @@ function World:Init(scene, onProgress)
     self.landscape = Landscape
     self.Goals, self.Regions = Landscape.Goals, Landscape.Regions
     self.ramps = Landscape.Ramps
+    self.features = Landscape.Features
     self.traffic = {}
     self.clock, self.visibilityTimer = 0, 0
     self.mats = Landscape.CreateMaterials()
@@ -111,13 +113,17 @@ function World:Init(scene, onProgress)
     m.green = m.green or P.Material(0.055, 0.23, 0.14, 0.96)
     m.lamp = P.Material(0.95, 0.88, 0.61, 0.27, 0, 0.35)
     m.brake = P.Material(0.85, 0.035, 0.015, 0.3, 0, 0.3)
+    -- 机关专用哑光PBR配色，不改已验收的场景材质，不增加外部资产。
+    m.boostBand = P.Material(0.015, 0.52, 0.57, 0.85, 0)
+    m.boostArrow = P.Material(0.88, 1.0, 0.96, 0.82, 0)
     local function tick(stage, current, total)
         if onProgress then onProgress(stage, current, total) end
     end
     Landscape.Build(scene, self.root, m, m.white, m.yellow, tick)
     self:BuildBridge(); tick("桥梁与驿站", 1, 6)
-    self:BuildRamp(1); tick("桥梁与驿站", 2, 6)
-    self:BuildRamp(2); tick("桥梁与驿站", 3, 6)
+    for i = 1, #self.ramps do self:BuildRamp(i) end
+    tick("桥梁与驿站", 2, 6)
+    self:BuildBoostBands(); tick("桥梁与驿站", 3, 6)
     self:BuildStations(); tick("桥梁与驿站", 4, 6)
     self:BuildRoadFurniture(); tick("桥梁与驿站", 5, 6)
     self:BuildMeadow(); tick("桥梁与驿站", 6, 6)
@@ -189,9 +195,10 @@ end
 
 ---@param index integer
 function World:BuildRamp(index)
-    local r = self.ramps[index]
+    local r = self.ramps[index] --[[@as table]]
     if not r then return end
     local m = self.mats
+    if r.optional then self:BuildOptionalRamp(r --[[@as TrackFeature]]); return end
     local root = self.root:CreateChild(index == 1 and "路肩坡道运输车" or "草甸飞跃台")
     root.position = V(r.x, r.y, r.z)
     root.rotation = Quaternion(0, r.yaw, 0)
@@ -222,6 +229,94 @@ function World:BuildRamp(index)
     for side = -1, 1, 2 do
         P.Add(root, "运输车车灯", "Box", m.lamp, V(side * 0.81, 0.98, length + 2.78), V(0.36, 0.24, 0.03), nil, false)
         P.Add(root, "路肩锥标", ConeGeometry(0.2, 0.75, 12):ToModel(), m.yellow, V(side * 2.15, 0.375, 3), nil, nil, false)
+    end
+end
+
+-- 顶面直接使用机关数据中的逐米横截面，Height查询沿同一对角线插值。
+-- 两侧/背面封口是真实楔形，不用旋转方盒；标线不扩大有效车道。
+---@param r TrackFeature
+function World:BuildOptionalRamp(r)
+    local root = self.root:CreateChild("可选飞坡_" .. r.id)
+    local m = self.mats
+    local g = Landscape.Geometry(root, "贴路真实楔形坡面", m.rail)
+    local marks = Landscape.Geometry(root, "飞坡方向与边界", m.yellow)
+    local function point(lateral, forward, y)
+        local x,z = TrackFeatures.Point(r,lateral,forward)
+        return V(x,y,z)
+    end
+    local function surface(lateral,forward,lift)
+        local x,z = TrackFeatures.Point(r,lateral,forward)
+        return V(x,(TrackFeatures.RampHeight(r,x,z) or r.y)+(lift or 0),z)
+    end
+    local w = r.width*.5
+    for i = 1,#r.rows-1 do
+        local a,b = r.rows[i],r.rows[i+1]
+        local p,q = point(-w,a.forward,a.left),point(-w,b.forward,b.left)
+        local c,d = point(w,a.forward,a.right),point(w,b.forward,b.right)
+        Landscape.Triangle(g,p,q,c);Landscape.Triangle(g,c,q,d)
+        for _,side in ipairs({-1,1}) do
+            local x0,z0=TrackFeatures.Point(r,side*w,a.forward)
+            local x1,z1=TrackFeatures.Point(r,side*w,b.forward)
+            local base0=V(x0,Landscape.RoadHeight(x0,z0) or r.y,z0)
+            local base1=V(x1,Landscape.RoadHeight(x1,z1) or r.y,z1)
+            local top0,top1=side<0 and p or c,side<0 and q or d
+            if side<0 then
+                Landscape.Triangle(g,base0,base1,top0);Landscape.Triangle(g,top0,base1,top1)
+            else
+                Landscape.Triangle(g,base0,top0,base1);Landscape.Triangle(g,base1,top0,top1)
+            end
+            local lo=side<0 and -w or w-.09
+            local hi=side<0 and -w+.09 or w
+            Landscape.Triangle(marks,surface(lo,a.forward,.018),surface(lo,b.forward,.018),surface(hi,a.forward,.018))
+            Landscape.Triangle(marks,surface(hi,a.forward,.018),surface(lo,b.forward,.018),surface(hi,b.forward,.018))
+        end
+    end
+    local last=r.rows[#r.rows]
+    local a,b=point(-w,r.length,last.left),point(w,r.length,last.right)
+    local x0,z0=TrackFeatures.Point(r,-w,r.length)
+    local x1,z1=TrackFeatures.Point(r,w,r.length)
+    local c=V(x0,Landscape.RoadHeight(x0,z0) or r.y,z0)
+    local d=V(x1,Landscape.RoadHeight(x1,z1) or r.y,z1)
+    Landscape.Triangle(g,a,c,b);Landscape.Triangle(g,b,c,d)
+    -- 三组上坡箭头，轮胎仍走原始坡面，不设置额外视觉碰撞体。
+    for _,forward in ipairs({5,11,17}) do
+        Landscape.Triangle(marks,surface(-.7,forward,.024),surface(0,forward+2,.024),surface(-.2,forward,.024))
+        Landscape.Triangle(marks,surface(.2,forward,.024),surface(0,forward+2,.024),surface(.7,forward,.024))
+    end
+    g:GenerateTangents();g:Commit();marks:Commit()
+    g.drawDistance,marks.drawDistance=400,360
+end
+
+-- 薄贴地彩色车道与正向箭头，无盒体凸起、无外部纹理或动态动画。
+function World:BuildBoostBands()
+    local m=self.mats
+    for _,f in ipairs(self.features) do
+        if f.kind=="boost" then
+            local root=self.root:CreateChild("方向加速带_"..f.id)
+            local base=Landscape.Geometry(root,"加速带青色底纹",m.boostBand)
+            local arrows=Landscape.Geometry(root,"醒目正向箭头",m.boostArrow)
+            local border=Landscape.Geometry(root,"加速带入口边界",m.white)
+            local function p(x,z,lift)
+                local wx,wz=TrackFeatures.Point(f,x,z)
+                return V(wx,(Landscape.RoadHeight(wx,wz) or f.y)+lift,wz)
+            end
+            local function quad(g,lo,hi,a,b,lift)
+                Landscape.Triangle(g,p(lo,a,lift),p(lo,b,lift),p(hi,a,lift))
+                Landscape.Triangle(g,p(hi,a,lift),p(lo,b,lift),p(hi,b,lift))
+            end
+            local w=f.width*.5
+            for z=0,f.length-1 do quad(base,-w,w,z,z+1,.028) end
+            for z=0,f.length-1 do
+                quad(border,-w,-w+.1,z,z+1,.04);quad(border,w-.1,w,z,z+1,.04)
+            end
+            quad(border,-w,w,0,.18,.04)
+            for _,z in ipairs({1,3.5,6}) do
+                Landscape.Triangle(arrows,p(-1.45,z,.046),p(0,z+2,.046),p(-.6,z,.046))
+                Landscape.Triangle(arrows,p(.6,z,.046),p(0,z+2,.046),p(1.45,z,.046))
+            end
+            base:GenerateTangents();base:Commit();arrows:Commit();border:Commit()
+            base.drawDistance,arrows.drawDistance,border.drawDistance=380,380,380
+        end
     end
 end
 

@@ -39,7 +39,7 @@ local Tracks = {}
 
 ---@type TrackDefinition[]
 local definitions = {
-    {id = "lake", aiLevel = 0.60, laps = 3, reward = 34, price = 0, requires = "default", name = "山湖公路", theme = "lake", accent = {78, 185, 179}, width = 15.0, shoulder = 3.2,
+    {id = "lake", aiLevel = 0.60, laps = 3, reward = 34, price = 1200, requires = "circuit", name = "山湖公路", theme = "lake", accent = {78, 185, 179}, width = 15.0, shoulder = 3.2,
         description = "原版环湖云岭公路 · 河谷高架桥 · 草甸与驿站", treeBudget = 202, water = true, traffic = true,
         goalNames = {"翡翠湖观景湾", "白水河大桥", "冷杉林入口", "高山草甸垭口", "云岭山路入口", "牧场驿站"},
         points = {{0,14,-140},{0,16,56},{-115,19,252},{-338,25,427},{-580,40,535},{-695,58,778},

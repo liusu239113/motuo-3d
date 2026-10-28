@@ -25,7 +25,7 @@ local function defaults()
         coins = 0,
         owned = {[Profile.FREE_VEHICLE] = true},
         ownedRiders = {[Profile.FREE_RIDER] = true},
-        unlockedTracks = {[Profile.FREE_TRACK] = true, lake = true},
+        unlockedTracks = {[Profile.FREE_TRACK] = true},
     }
 end
 
@@ -90,8 +90,10 @@ function Profile.Save()
     local p = Profile.Get()
     local file = File(SAVE_PATH, FILE_WRITE)
     if not file or not file:IsOpen() then return false, "无法写入进度文件" end
-    file:WriteString(serialize(p))
+    local written = file:WriteString(serialize(p))
     file:Close()
+    file:Dispose()
+    if not written then return false, "保存进度失败，请重试" end
     return true
 end
 
@@ -126,7 +128,12 @@ function Profile.Buy(vehicleId, price)
     if p.coins < price then return false, "金币不足" end
     p.coins = p.coins - price
     p.owned[vehicleId] = true
-    Profile.Save()
+    local saved, message = Profile.Save()
+    if not saved then
+        p.coins = p.coins + price
+        p.owned[vehicleId] = nil
+        return false, message or "保存购买失败，请重试"
+    end
     return true, "已购买"
 end
 
@@ -139,7 +146,12 @@ function Profile.BuyRider(riderId, price)
     if p.coins < price then return false, "金币不足" end
     p.coins = p.coins - price
     p.ownedRiders[riderId] = true
-    Profile.Save()
+    local saved, message = Profile.Save()
+    if not saved then
+        p.coins = p.coins + price
+        p.ownedRiders[riderId] = nil
+        return false, message or "保存购买失败，请重试"
+    end
     return true, "已购买"
 end
 
@@ -153,7 +165,12 @@ function Profile.UnlockTrack(trackId, price)
     if p.coins < price then return false, "金币不足" end
     p.coins = p.coins - price
     p.unlockedTracks[trackId] = true
-    Profile.Save()
+    local saved, message = Profile.Save()
+    if not saved then
+        p.coins = p.coins + price
+        p.unlockedTracks[trackId] = nil
+        return false, message or "保存解锁失败，请重试"
+    end
     return true, "已解锁"
 end
 

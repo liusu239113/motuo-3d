@@ -68,6 +68,7 @@ local clock_, accumulator_, lastYaw_ = 0.0, 0.0, 0.0
 local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
 local testScenery_, testNitroShot_ = false, false
+local testFeature_, testFeatureDone_ = "", false
 local testShotDelay_ = 18
 local captureFrames_, checkFrames_, checkStage_, preparationsStarted_ = 0, 0, 0, 0
 local pendingActions_ = {spin180 = false, spin360 = false, nitro = false}
@@ -222,6 +223,19 @@ local function ResetRideState()
         sim_.y = world_:Surface(sim_.x, sim_.z)
         sim_:UpdateNavigation(sim_.x, sim_.z, world_, false)
     end
+    if testFeature_ ~= "" and not pendingChallenge_ then
+        for _, feature in ipairs(Landscape.Features or {}) do
+            if feature.kind == testFeature_ then
+                local a = math.rad(feature.yaw)
+                sim_.x, sim_.z = feature.x - math.sin(a) * 8, feature.z - math.cos(a) * 8
+                sim_.y = world_:Surface(sim_.x, sim_.z)
+                sim_.heading, sim_.yaw, sim_.speed = feature.yaw, feature.yaw, 38
+                sim_:UpdateNavigation(sim_.x, sim_.z, world_, false)
+                print(string.format("[机关实拍] %s / %s / s=%.1f lane=%.2f", feature.kind, feature.id, feature.s, feature.lateral))
+                break
+            end
+        end
+    end
     world_:ResetTraffic(0)
     world_:Update(0, sim_.distance, clock_, sim_.x, sim_.z)
     if testTrick_ ~= "" then sim_.speed = 8 end
@@ -285,6 +299,10 @@ local function ConfirmVehicle(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
     local track = assert(Tracks.Get(selectedTrack_))
+    if not Profile.TrackUnlocked(track.id) and not autoTest_ and not trackTest_ and testShot_ == "" then
+        hud_:ShowNotice("赛道尚未开放", "请在赛道选择中查看解锁条件，通关前置赛道或确认使用金币解锁后再出发。")
+        return
+    end
     selectedLaps_ = track.laps
     hud_:SelectLaps(selectedLaps_, false)
     if sound_ then sound_:Unlock() end
@@ -580,7 +598,7 @@ function Start()
         end,
         selectLaps = function(count) if screen_ ~= "loading" then selectedLaps_ = count end end,
         selectTrack = function(id)
-            if screen_ == "loading" or not Tracks.Get(id) then return end
+            if screen_ == "loading" or not Tracks.Get(id) or not Profile.TrackUnlocked(id) then return end
             selectedTrack_ = id
             selectedLaps_ = assert(Tracks.Get(id)).laps
             hud_:SelectLaps(selectedLaps_, false)
@@ -593,6 +611,11 @@ function Start()
             hud_:RefreshOwnership()
             hud_:SelectVehicle(id, false)
             hud_.selectionMode:SetText(ok and ("已购买 " .. item.name) or message)
+            if not ok then
+                local missing = math.max(0, (item.price or 0) - Profile.Coins())
+                hud_:ShowNotice("车辆尚未解锁", string.format("%s\n需要 %d 金币 · 当前 %d 金币\n%s", item.name or id,
+                    item.price or 0, Profile.Coins(), missing > 0 and ("还差 " .. missing .. " 金币，可先参加已开放的赛车场赚取奖励。") or message))
+            end
             print("[商店] " .. (item.name or id) .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
         end,
         buyRider = function(id)
@@ -602,16 +625,25 @@ function Start()
             hud_:RefreshOwnership()
             if ok then hud_:SelectRider(id, false) end
             hud_.selectionMode:SetText(ok and "已购买车手配色" or message)
+            if not ok then
+                local missing = math.max(0, price - Profile.Coins())
+                hud_:ShowNotice("车手配色尚未解锁", string.format("需要 %d 金币 · 当前 %d 金币\n%s", price, Profile.Coins(),
+                    missing > 0 and ("还差 " .. missing .. " 金币。") or message))
+            end
             print("[商店] 配色 " .. id .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
         end,
         unlockTrack = function(id)
             local track = Tracks.Get(id)
-            if not track then return end
-            local ok, message = Profile.UnlockTrack(id, track.price or 0)
-            hud_:RefreshOwnership()
-            if ok then hud_:SelectTrack(id, true) end
-            hud_.selectionMode:SetText(ok and ("已解锁 " .. (track.name or id)) or message)
-            print("[赛道] 解锁 " .. id .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
+            if not track or screen_ == "loading" then return end
+            hud_:ShowTrackLock(track, Profile.Coins(), function()
+                -- 显示条件不等于授权购买；只在弹窗明确确认后扣款，余额以确认时为准。
+                local ok, message = Profile.UnlockTrack(id, track.price or 0)
+                hud_:RefreshOwnership()
+                if ok then hud_:SelectTrack(id, true) end
+                hud_.selectionMode:SetText(ok and ("已解锁 " .. (track.name or id)) or message)
+                print("[赛道] 确认解锁 " .. id .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
+                return ok, message
+            end)
         end,
         confirmVehicle = ConfirmVehicle, backSelection = MainMenu,
         enter = function() if loadPhase_ == "await-enter" then FinishRidePreparation() end end,
@@ -644,6 +676,17 @@ function Start()
         if arg == "-quality-high" then highQuality_ = true end
         if arg == "-nomirrors" then disableMirrors_ = true end
         if arg == "-controlchecks" then assert(require("ControlChecks").Run(hud_, touch_).passed) end
+        if arg == "-profilechecks" then assert(require("ProfileChecks").Run().passed) end
+        if arg == "-featurechecks" then assert(require("FeatureChecks").Run().passed) end
+        if arg == "-uichecks" then
+            local pending = true
+            UI.RegisterGlobalComponent("RacingUICheckOnce", {Render = function()
+                if not pending then return end
+                pending = false
+                -- 复用UI已开始的NanoVG帧，真实字体测量和Modal布局不另开渲染帧。
+                assert(require("RacingUIChecks").Run(hud_).passed)
+            end})
+        end
         if arg == "-aichecks" then assert(require("RaceAIChecks").Run().passed) end
         if arg == "-trackchecks" then assert(require("TrackChecks").Run(Tracks.List())) end
         if arg == "-selftest" then selfTest_ = true; assert(Sim.Test()); assert(MobileControls.Test()) end
@@ -662,6 +705,8 @@ function Start()
         if arg == "-chase" then firstPerson_ = false end
         if arg == "-testprofile" then testProfile_ = true; firstPerson_ = false end
         if arg == "-testgarage" then testMode_ = "garage" end
+        if arg == "-testtracks" then testMode_ = "tracks" end
+        if arg == "-testtracklock" then testMode_ = "track-lock" end
         if arg == "-testsettings" then testMode_ = "settings" end
         if arg == "-testpause" then testMode_ = "pause" end
         if arg == "-testpausesettings" then testMode_ = "pause-settings" end
@@ -669,6 +714,8 @@ function Start()
         if arg == "-testraceresult" then testMode_ = "race-result" end
         if arg == "-testloading" then testMode_ = "loading"; autoStart = true end
         if arg == "-testscenery" then testScenery_ = true end
+        local feature = arg:match("^%-testfeature=(.+)$")
+        if feature == "boost" or feature == "ramp" then testFeature_ = feature end
         if arg == "-testnitroshot" then testNitroShot_ = true end
         local shotDelay=arg:match("^%-testshotdelay=(%d+)$")
         if shotDelay then testShotDelay_=math.max(18,math.min(1800,tonumber(shotDelay) or 18)) end
@@ -716,6 +763,13 @@ function Start()
     end
     if testMode_ == "settings" then hud_:OpenSettings()
     elseif testMode_ == "garage" then StartRide(false)
+    elseif testMode_ == "tracks" or testMode_ == "track-lock" then
+        hud_:OpenTracks()
+        if testMode_ == "track-lock" then
+            hud_:ShowTrackLock(assert(Tracks.Get("lake")), 0, function()
+                error("锁图截图不得购买或写入玩家存档")
+            end)
+        end
     elseif autoStart then StartRide(challenge); ConfirmVehicle(testVehicle_) end
     print("[MMS] 开始→选车→下载与准备→点击出发；手机左右手独立操作")
 end
@@ -837,6 +891,11 @@ function HandleUpdate(eventType, eventData)
         return
     end
     hud_:UpdateLayout()
+    if hud_:IsModalOpen() then
+        if input:GetKeyPress(KEY_ESCAPE) then hud_:CloseModal() end
+        -- 模态期间键盘与触摸一致冻结，不允许Enter确认底层页面或W继续驾驶。
+        return
+    end
     if screen_ == "settings" then
         if input:GetKeyPress(KEY_ESCAPE) or input:GetKeyPress(KEY_P) then hud_:CloseSettings() end
         return
@@ -906,6 +965,7 @@ function HandleUpdate(eventType, eventData)
         pendingActions_.spin360 = pendingActions_.spin360 or input:GetKeyPress(KEY_V)
         local nitro = touch_.nitro or input:GetKeyDown(KEY_SHIFT)
         if autoTest_ and not raceAutodrive_ then throttle = 0.7; steer = math.sin(sim_.elapsed * 0.6) * 0.09 end
+        if testFeature_ ~= "" then throttle, steer = 0.8, 0 end
         if raceAutodrive_ then
             local route = Landscape.NearestRoad(sim_.x, sim_.z)
             local target = Landscape.RoadPoint(route + math.max(10, sim_.speed * 0.55))
@@ -1053,7 +1113,7 @@ function CaptureTestFrame()
         local nitroVisible=false
         if race_ and race_.phase=="racing" then
             for _,racer in ipairs(race_.racers) do
-                if not racer.isPlayer and racer.boostTimer>.5 then
+                if not racer.isPlayer and racer.driveSim and racer.driveSim.raceBoost > 0.5 then
                     local dx,dz=racer.x-sim_.x,racer.z-sim_.z
                     if dx*dx+dz*dz<70*70 then nitroVisible=true;break end
                 end
@@ -1061,10 +1121,17 @@ function CaptureTestFrame()
         end
         if not nitroVisible then return end
     end
+    if testFeature_ ~= "" then
+        if testFeatureDone_ then return end
+        if testFeature_ == "ramp" and (not sim_.airborne or sim_.y - sim_.groundY < 0.45) then return end
+        if testFeature_ == "boost" and sim_.featureState.triggers < 1 then return end
+        testFeatureDone_ = true
+        print(string.format("[机关实拍触发] %s airborne=%s y=%.3f speed=%.2f", testFeature_, tostring(sim_.airborne), sim_.y, sim_.speed))
+    end
     if testTrick_ ~= "" and sim_.elapsed < 3 then return end
     if testScenery_ then hud_.root:SetVisible(false) end
     captureFrames_ = captureFrames_ + 1
-    local frameTarget = testMode_ == "loading" and 5 or (testNitroShot_ and 1 or testShotDelay_)
+    local frameTarget = testMode_ == "loading" and 5 or ((testNitroShot_ or testFeature_ ~= "") and 1 or testShotDelay_)
     if captureFrames_ ~= frameTarget then return end
     if testTrick_ ~= "" then
         if testTrick_ == "wheelie" then

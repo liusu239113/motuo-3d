@@ -26,11 +26,11 @@ void fragment() {
     float grain = road_noise(VERTEX.xz * 9.0);
     float repair = smoothstep(0.61, 0.79, road_noise(VERTEX.xz * 0.19 + vec2(7.4, 3.2)));
     float crack_field = road_noise(VERTEX.xz * 0.35);
-    float crack = 1.0 - smoothstep(0.009, 0.022, abs(crack_field - 0.51));
+    float crack = 1.0 - smoothstep(0.0015, 0.004, abs(crack_field - 0.51));
     float fade = 1.0 - smoothstep(25.0, 100.0, length(CAMERA_POSITION_WORLD - VERTEX));
     vec3 aggregate = mix(vec3(luma), texel, dirt_road * 0.55);
     ALBEDO = aggregate * road_tint * mix(0.79, 1.14, macro)
-        * mix(1.0, 0.77, repair) * mix(1.0, 0.60, crack * fade * (1.0 - dirt_road));
+        * mix(1.0, 0.90, repair) * mix(1.0, 0.85, crack * fade * (1.0 - dirt_road));
     ALBEDO *= 1.0 + (grain - 0.5) * fade * 0.16;
     vec3 n = texture(surface_normal, uv).rgb * 2.0 - 1.0;
     vec3 detail = vec3(n.x, 0.0, n.y);

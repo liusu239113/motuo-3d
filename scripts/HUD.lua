@@ -1,7 +1,7 @@
--- Pursuit UI: default-dark customized to restrained steel-black / amber.
--- Available style skills were checked: cosmic/cartoon/pixel are intentionally not applied.
--- UI owns NanoVG frames, fonts, DPI and input. Custom Widgets never start another frame.
+-- Pursuit race UI: restrained BrawlForge silhouettes, graphite metal, cyan/amber hierarchy.
+-- Page styles are centralized; the UI library owns NanoVG frames, fonts, DPI and input.
 local UI = require("urhox-libs/UI")
+local RacingTheme = require("RacingTheme")
 local Catalog = require("Catalog")
 local Profile = require("Profile")
 local ControlSettings = require("ControlSettings")
@@ -16,16 +16,20 @@ local function trackList()
     return type(tracks.List) == "table" and tracks.List or {}
 end
 
----@class HUD : ControlEditor
+---@class HUD : ControlEditor, RouteSelect, RacingDialogs
+---@field activeModal Modal?
 ---@field settingsReturn string
 ---@field OpenSettings fun(self:HUD)
 ---@field pausedCockpitVisible boolean?
 local HUD = {}
 HUD.__index = HUD
-local AMBER, WHITE = {224, 164, 75, 255}, {233, 234, 235, 255}
-local MUTED, STEEL = {154, 163, 172, 255}, {107, 128, 143, 255}
-local DARK, BORDER = {15, 18, 22, 240}, {172, 185, 195, 55}
-local RED, GREEN = {227, 82, 67, 255}, {145, 192, 164, 255}
+local C = RacingTheme.Colors
+local AMBER, WHITE = C.amber, C.white
+local MUTED, STEEL = C.muted, C.steel
+local DARK, BORDER = C.dark, C.border
+local RED, GREEN = C.red, C.green
+require("RouteSelect").Install(HUD)
+require("RacingDialogs").Install(HUD)
 local KEYART = "image/pursuit_loading_keyart_20261027183804.png"
 local GARAGE = "image/pursuit_garage_backdrop_20261027183801.png"
 -- 绿色为默认免费配色，其余需用比赛金币购买。
@@ -38,7 +42,8 @@ local RIDERS = {
     {id = "violet", color = {111, 75, 137, 255}, price = 2600},
 }
 HUD.Riders = RIDERS
-HUD.Resources, HUD.ResourceTypes = {KEYART, GARAGE}, {[KEYART] = "Texture2D", [GARAGE] = "Texture2D"}
+HUD.Resources, HUD.ResourceTypes = {KEYART, GARAGE, "Fonts/NotoSansSC-Black.ttf", "Fonts/MiSans-Regular.ttf"},
+    {[KEYART] = "Texture2D", [GARAGE] = "Texture2D", ["Fonts/NotoSansSC-Black.ttf"] = "Font", ["Fonts/MiSans-Regular.ttf"] = "Font"}
 for _, path in ipairs(MobileControls.Resources) do
     HUD.Resources[#HUD.Resources + 1], HUD.ResourceTypes[path] = path, MobileControls.ResourceTypes[path]
 end
@@ -46,21 +51,7 @@ for _, path in ipairs(GaragePreview.Resources) do
     HUD.Resources[#HUD.Resources + 1], HUD.ResourceTypes[path] = path, GaragePreview.ResourceTypes[path]
 end
 
-local function label(text, size, color, extra)
-    local props = extra or {}
-    props.text, props.fontSize, props.fontColor, props.pointerEvents = text, size, color or WHITE, "none"
-    return UI.Label(props)
-end
-local function button(text, callback, primary, width)
-    return UI.Button {text = text, onClick = callback, width = width, height = 44, fontSize = 12,
-        padding = 0, borderRadius = 4, borderWidth = 1,
-        borderColor = primary and {255, 201, 116, 180} or BORDER,
-        backgroundColor = primary and AMBER or {27, 32, 38, 225},
-        hoverBackgroundColor = primary and {240, 185, 101, 255} or {42, 48, 55, 245},
-        pressedBackgroundColor = primary and {174, 116, 43, 255} or {18, 22, 27, 255},
-        disabledBackgroundColor = {34, 38, 43, 245}, disabledTextColor = {135, 143, 151, 255},
-        textColor = primary and {16, 18, 21, 255} or WHITE}
-end
+local label, button = RacingTheme.Label, RacingTheme.Button
 local function bar(color, height)
     return UI.ProgressBar {value = 0, width = "100%", height = height or 3, showLabel = false,
         fillColor = color or AMBER, backgroundColor = {123, 133, 143, 60}, borderWidth = 0,
@@ -182,7 +173,7 @@ function HUD:Init(actions, controls)
     self.lapButtons = {}
     ---@type Label[]
     self.resultRows = {}
-    UI.Init({theme = "default-dark", scale = UI.Scale.DEFAULT})
+    UI.Init({theme = RacingTheme.Theme, scale = UI.Scale.DEFAULT})
     self:BuildRide(); self:BuildMenu(); self:BuildSettings(); self:BuildGarage(); self:BuildTracks(); self:BuildPauseAndResult(); self:BuildLoading()
     self.portrait = UI.Panel(fill({visible = false, backgroundColor = {9, 12, 15, 255},
         alignItems = "center", justifyContent = "center", padding = 24, gap = 12, children = {
@@ -292,21 +283,27 @@ function HUD:BuildRide()
 end
 
 function HUD:BuildMenu()
-    self.menu = UI.Panel(fill({padding = 28, gap = 8, children = {
-        UI.Row {padding = 0, justifyContent = "space-between", children = {
-            label("P U R S U I T", 13, AMBER, {letterSpacing = 2}), label("ROAD RACING / 公路追逐", 9, MUTED)}},
-        UI.ScrollView {width = "52%", maxWidth = 580, flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
-            UI.Column {width = "100%", padding = 0, paddingVertical = 22, gap = 10, children = {
-                label("公路追逐", 42, WHITE, {fontWeight = "bold", lineHeight = 1.1}),
-                label("甩开追车，争夺终点。", 14, MUTED),
-                UI.Panel {width = 44, height = 2, padding = 0, backgroundColor = AMBER},
-                label("9 位车手 · 氮气突围 · 近身对抗", 10, MUTED),
-                button("开始竞速   →", function() self:OpenGarage(true) end, true, 250),
-                button("自由练习", function() self:OpenGarage(false) end, false, 250),
-                button("操作设置", function() self:OpenSettings() end, false, 250),
-                label("选择机车、车手与圈数后出发", 10, MUTED),
+    self.menu = UI.Panel(fill({padding = 28, gap = 12, children = {
+        UI.Row {padding = 0, alignItems = "center", justifyContent = "space-between", children = {
+            RacingTheme.Kicker("P U R S U I T  /  MOTORSPORT"),
+            label("真实公路 · 九人竞速", 10, MUTED)}},
+        UI.ScrollView {width = "54%", maxWidth = 600, flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
+            UI.Column {width = "100%", padding = 0, paddingVertical = 24, gap = 14, children = {
+                label("公路追逐", 44, WHITE, {fontWeight = "bold", lineHeight = 1.1}),
+                label("每一道弯，都是你的主场。", 14, MUTED),
+                RacingTheme.Card {width = "100%", maxWidth = 340, padding = 16, gap = 9, children = {
+                    RacingTheme.Kicker("RACE WEEKEND / 赛事中心"),
+                    label("九位车手。一个终点。", 16, WHITE, {fontWeight = "bold"}),
+                    label("氮气突围 · 技术弯道 · 公路追逐", 10, MUTED),
+                    button("进入赛事   →", function() self:OpenGarage(true) end, true, "100%"),
+                    UI.Row {width = "100%", padding = 0, gap = 8, children = {
+                        button("自由练习", function() self:OpenGarage(false) end, false, nil,
+                            {flexGrow = 1, flexBasis = 0}),
+                        button("操作设置", function() self:OpenSettings() end, false, nil,
+                            {flexGrow = 1, flexBasis = 0})}},
+                }},
             }}}},
-        label("仅限虚拟竞速体验  /  横屏 · 双手操控", 9, MUTED),
+        label("VIRTUAL MOTORSPORT   /   横屏 · 双手操控 · 请勿现实模仿", 9, MUTED),
     }}))
 end
 
@@ -317,13 +314,14 @@ function HUD:BuildGarage()
     local cards = UI.Column {width = "100%", gap = 5, padding = 0}
     for index, item in ipairs(Catalog.List) do
         local v = item
-        local badge = label(v.available == false and "准备中 · 不可驾驶" or (v.price and v.price > 0 and ("未拥有 · " .. v.price .. " 金币") or "点按选择"), 8, MUTED)
+        local badge = label(v.available == false and "准备中 · 不可驾驶" or (v.price and v.price > 0 and ("未拥有 · " .. v.price .. " 金币") or "点按选择"), 9, MUTED,
+            {height = 18, maxLines = 1})
         self.vehicleBadges[v.id] = badge
-        local card = UI.Panel {width = "100%", height = 62, minHeight = 62, padding = 7, gap = 2,
-            borderRadius = 3, borderWidth = 1, borderColor = BORDER, backgroundColor = {17, 21, 26, 215},
+        local card = RacingTheme.Card {width = "100%", minHeight = 79, padding = 10, gap = 2,
+            clickable = true, hoverable = true, pointerEvents = "box-only",
             onClick = function() self:SelectVehicle(v.id, true) end, children = {
-                label(string.format("%02d  %s", index, v.name), 11, WHITE, {fontWeight = "bold", maxLines = 1}),
-                label(v.tag or v.class or "", 8, MUTED, {maxLines = 1}), badge}}
+                label(string.format("%02d  %s", index, v.name), 12, WHITE, {height = 23, fontWeight = "bold", maxLines = 1}),
+                label(v.tag or v.class or "", 9, MUTED, {height = 18, maxLines = 1}), badge}}
         self.vehicleCards[v.id] = card; cards:AddChild(card)
     end
     self.selectionMode = label("竞速 / 2 圈", 9, AMBER)
@@ -359,7 +357,12 @@ function HUD:BuildGarage()
     self.lapOptions = UI.Column {padding = 0, gap = 3, children = {label("圈数", 8, MUTED), laps}}
     self.confirmButton = button("确认座驾 · 出发 →", function()
         local item = Catalog.Get(self.selectedVehicle)
-        if item and item.available ~= false and self.actions.confirmVehicle then self.actions.confirmVehicle(self.selectedVehicle) end
+        if not item then return end
+        if item.available == false then
+            self:ShowNotice("车型尚未开放", "「" .. (item.name or item.id) .. "」的独立驾驶资源尚未交付，请选择其他座驾。")
+        elseif not Profile.Owns(item.id) then
+            if self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
+        elseif self.actions.confirmVehicle then self.actions.confirmVehicle(self.selectedVehicle) end
     end, true, 228)
     self.coinLabel = label("金币 0", 13, AMBER, {fontWeight = "bold"})
     self.buyButton = button("购买 · 0 金币", function()
@@ -369,107 +372,18 @@ function HUD:BuildGarage()
     self.buyButton:SetHeight(34)
     self.trackButton = button("赛道 · 环湖公路 ›", function() self:OpenTracks() end, false, 185)
     self.trackButton:SetHeight(36)
-    self.garageFooter = UI.Row {width = "100%", padding = 0, gap = 12, alignItems = "flex-end",
+    self.garageFooter = RacingTheme.Card {width = "100%", padding = 12, gap = 12, flexDirection = "row", alignItems = "flex-end",
         justifyContent = "space-between", children = {self.riderOptions, self.lapOptions,
             UI.Column {padding = 0, gap = 6, alignItems = "flex-end", children = {
                 UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.coinLabel, self.buyButton}},
                 self.confirmButton}}}}
-    self.garage = UI.Panel(fill({visible = false, padding = 18, gap = 8, children = {
+    self.garage = UI.Panel(fill({visible = false, padding = 18, gap = 12, children = {
         UI.Row {padding = 0, alignItems = "center", justifyContent = "space-between", children = {
-            UI.Column {padding = 0, gap = 2, children = {label("车库 / GARAGE", 17, WHITE, {fontWeight = "bold"}), self.selectionMode}},
+            UI.Column {padding = 0, gap = 2, children = {RacingTheme.Kicker("PADDOCK / 车库"),
+                label("赛前整备", 21, WHITE, {fontWeight = "bold"}), self.selectionMode}},
             UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.trackButton, button("返回", function()
                 self:SetScreen("menu"); if self.actions.backSelection then self.actions.backSelection() end
             end, false, 70)}}}}, self.garageBody, self.garageFooter}}))
-end
-
-function HUD:BuildTracks()
-    self.trackGrid = UI.Column {width = "100%", padding = 0, gap = 10}
-    self.trackSelection = UI.Panel(fill({visible = false, padding = 20, gap = 10,
-        backgroundColor = {6, 12, 19, 247}, children = {
-            UI.Row {padding = 0, justifyContent = "space-between", alignItems = "center", children = {
-                UI.Column {padding = 0, gap = 3, children = {label("选择赛道 / ROUTE SELECT", 20, WHITE, {fontWeight = "bold"}),
-                    label("六条真实路线 · 选择后返回车库确认出发", 10, MUTED)}},
-                button("返回车库", function() self:SetScreen("garage") end, false, 110)}},
-            UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
-                padding = 0, children = {self.trackGrid}},
-            label("白点为发车位置 · 轮廓与比赛实际道路一致", 9, MUTED)}}))
-    self:RefreshTrackCards()
-end
-function HUD:RefreshTrackCards()
-    local list = trackList()
-    if #list == 0 then
-        if self.trackGrid:GetNumChildren() == 0 then
-            self.trackGrid:AddChild(label("赛道目录准备中 · 暂沿用当前公路", 13, MUTED))
-        end
-        return
-    end
-    if self.trackCount == #list then return end
-    self.trackGrid:ClearChildren()
-    self.trackCards, self.trackGraphics = {}, {}
-    self.trackCount = #list
-    local rows = {}
-    for _ = 1, math.ceil(#list / 3) do
-        local row = UI.Row {width = "100%", padding = 0, gap = 10}
-        rows[#rows + 1] = row; self.trackGrid:AddChild(row)
-    end
-    local themes = {lake = "湖畔 · 连续弯道", alpine = "高山 · 发卡挑战", coast = "海岸 · 高速巡航", canyon = "峡谷 · 沙漠穿行", forest = "森林 · 拉力公路", circuit = "赛道 · 封闭竞速"}
-    for index, track in ipairs(list) do
-        local entry = track
-        local accent = entry.accent or AMBER
-        local graphic = RaceInstruments.Route {width = "100%", height = 94, padding = 0,
-            backgroundColor = {4, 12, 20, 220}, borderRadius = 4, pointerEvents = "none"}
-        graphic:SetRoute(entry.preview or {}, accent)
-        local unlocked = Profile.TrackUnlocked(entry.id)
-        local card = UI.Button {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0, height = 178, padding = 0, text = "",
-            borderRadius = 7, borderWidth = 1, borderColor = BORDER, backgroundColor = {14, 26, 37, 255},
-            hoverBackgroundColor = {27, 44, 55, 255}, pressedBackgroundColor = {65, 64, 43, 255},
-            onClick = function()
-                if Profile.TrackUnlocked(entry.id) then
-                    self:SelectTrack(entry.id, true); self:SetScreen("garage")
-                elseif self.actions.unlockTrack then self.actions.unlockTrack(entry.id) end
-            end,
-            children = {UI.Column {position = "absolute", left = 8, right = 8, top = 7, bottom = 7,
-                padding = 0, gap = 3, pointerEvents = "none", children = {
-                    UI.Row {padding = 0, justifyContent = "space-between", children = {
-                        label(string.format("%02d  %s", index, entry.name or entry.id), 12, WHITE, {fontWeight = "bold"}),
-                        label(string.format("%.2f km", (entry.length or 0) / 1000), 9, accent)}}, graphic,
-                    label(themes[entry.theme] or entry.theme or "公路", 9, accent, {maxLines = 1}),
-                    label(entry.description or "", 8, MUTED, {width = "100%", maxLines = 1}),
-                    label(string.format("%d圈 · 收益%d金币", entry.laps or 3, entry.reward or 100), 8, MUTED, {maxLines = 1}),
-                    label(unlocked and "可参赛" or string.format("未解锁 · %d金币", entry.price or 0), 8,
-                        unlocked and accent or {214, 148, 96, 255}, {maxLines = 1})}}}}
-        self.trackCards[entry.id], self.trackGraphics[entry.id] = card, graphic
-        rows[math.floor((index - 1) / 3) + 1]:AddChild(card)
-    end
-end
-function HUD:OpenTracks()
-    self:RefreshTrackCards()
-    self:SelectTrack(self.selectedTrack, false)
-    self:SetScreen("tracks")
-end
-function HUD:SelectTrack(id, notify)
-    local selected = nil ---@type table?
-    for _, item in ipairs(trackList()) do if item.id == id then selected = item; break end end
-    if not selected then
-        -- Do not manufacture playable ids when the map module has not landed yet.
-        if not notify then self.selectedTrack = id end
-        return false
-    end
-    if not Profile.TrackUnlocked(id) then
-        -- 未解锁不得切到该赛道；调用方负责提示或购买。
-        return false
-    end
-    self.selectedTrack = id
-    for trackId, card in pairs(self.trackCards) do
-        card:SetStyle({borderColor = trackId == id and AMBER or BORDER, borderWidth = trackId == id and 2 or 1,
-            backgroundColor = trackId == id and {52, 47, 34, 255} or {14, 26, 37, 255}})
-    end
-    self.trackButton:SetText("赛道 · " .. (selected.name or id) .. " ›")
-    -- Invalidate the racing minimap when the actual world/route changes.
-    self.trackMap.points, self.trackMap.routeReady, self.trackMap.routeLength = {}, false, 0
-    if notify and self.actions.selectTrack then self.actions.selectTrack(id) end
-    print("[赛道界面] 选择 " .. id .. (notify and " → 通知入口" or " / 同步"))
-    return true
 end
 
 local function help()
@@ -479,6 +393,8 @@ local function help()
             {width = "100%", whiteSpace = "normal", maxLines = 6}),
         label("键盘 W/S 油刹，A/D 转向，Shift 氮气，C 视角，Q 翘头 / Z 烧胎按住，X 180° / V 360°点按起跳旋转。比赛与练习都可用。本版不提供撞人攻击。", 11, MUTED,
             {width = "100%", whiteSpace = "normal", maxLines = 5}),
+        label("青色箭头带提供有限加速；橙黄飞坡可绕行，腾空后注意控制落地。", 11, MUTED,
+            {width = "100%", whiteSpace = "normal", maxLines = 3}),
         label("翘头自动配合油门；烧胎自动配合油刹。旋转可在平稳行驶至15km/h后辅助起跳，也可在腾空时点按。按键有接收反馈，不满足条件不会假装成功。虚拟竞速，请勿现实模仿。", 10, MUTED,
             {width = "100%", whiteSpace = "normal", maxLines = 4})}}
 end
@@ -494,10 +410,10 @@ function HUD:BuildPauseAndResult()
     self.qualityButton:SetDisabled(type(a.quality) ~= "function")
     self.pause = UI.Panel(fill({visible = false, backgroundColor = {5, 8, 11, 225}, padding = 12,
         alignItems = "center", justifyContent = "center", children = {
-            UI.Column {width = "92%", maxWidth = 680, height = "96%", padding = 16, gap = 10,
-                borderRadius = 5, borderWidth = 1, borderColor = BORDER, backgroundColor = DARK, children = {
+            RacingTheme.Card {width = "92%", maxWidth = 680, height = "96%", padding = 18, gap = 12, children = {
+                    RacingTheme.Kicker("RACE CONTROL / 赛事控制"),
                     UI.Row {padding = 0, justifyContent = "space-between", alignItems = "center", children = {
-                        label("已暂停", 23), button("继续竞速 →", a.pause, true, 140)}},
+                        label("暂歇，调整节奏。", 22, WHITE, {fontWeight = "bold"}), button("继续竞速 →", a.pause, true, 140)}},
                     UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
                         UI.Column {width = "100%", padding = 0, gap = 10, children = {
                             UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton,
@@ -516,9 +432,8 @@ function HUD:BuildPauseAndResult()
     end
     self.result = UI.Panel(fill({visible = false, backgroundColor = {5, 8, 11, 230}, padding = 12,
         alignItems = "center", justifyContent = "center", children = {
-            UI.Column {width = "92%", maxWidth = 660, height = "96%", padding = 16, gap = 10,
-                backgroundColor = DARK, borderWidth = 1, borderColor = BORDER, borderRadius = 5, children = {
-                    label("RACE CLASSIFICATION / 比赛结果", 9, AMBER),
+            RacingTheme.Card {width = "92%", maxWidth = 660, height = "96%", padding = 18, gap = 12, children = {
+                    RacingTheme.Kicker("FINISH LINE / 比赛结果"),
                     UI.ScrollView {width = "100%", padding = 0, flexGrow = 1, flexBasis = 0, flexShrink = 1, children = {
                         UI.Column {width = "100%", padding = 0, gap = 9, children = {self.resultTitle, self.resultStats, list}}}},
                     UI.Row {padding = 0, gap = 8, children = {button("再赛一次 →", a.restart, true, 160), button("返回主菜单", a.menu, false, 150)}}}}}}))
@@ -551,8 +466,9 @@ function HUD:SelectVehicle(id, notify)
     for _, v in ipairs(Catalog.List) do
         local selected = v.id == id
         local owned = Profile.Owns(v.id)
-        self.vehicleCards[v.id]:SetStyle({borderColor = selected and AMBER or BORDER,
-            backgroundColor = selected and {59, 46, 29, 235} or {17, 21, 26, 215}, borderWidth = 1})
+        self.vehicleCards[v.id]:SetStyle({borderColor = selected and C.cyan or BORDER,
+            backgroundGradient = RacingTheme.Gradient(selected and {39, 57, 61, 245} or {30, 37, 43, 235},
+                selected and {20, 33, 39, 245} or {17, 21, 26, 235})})
         self.vehicleBadges[v.id]:SetText(v.available == false and "准备中 · 不可驾驶"
             or (not owned and ("未拥有 · " .. tostring(v.price or 0) .. " 金币"))
             or (selected and "已选中" or "点按选择"))
@@ -568,8 +484,8 @@ function HUD:SelectVehicle(id, notify)
     self.coinLabel:SetText("金币 " .. tostring(Profile.Coins()))
     self.buyButton:SetVisible(not owned and price > 0)
     self.buyButton:SetText("购买 · " .. tostring(price) .. " 金币")
-    self.buyButton:SetDisabled(Profile.Coins() < price)
-    self.confirmButton:SetDisabled(item.available == false or not owned)
+    self.buyButton:SetDisabled(false)
+    self.confirmButton:SetDisabled(false)
     self.confirmButton:SetText(item.available == false and "独立车型准备中"
         or (not owned and ("未拥有 · " .. tostring(price) .. " 金币")) or "确认座驾 · 出发 →")
     if self.screen == "garage" then self.preview:Select(id, item.available) end
@@ -595,7 +511,7 @@ function HUD:SelectRider(id, notify)
 end
 -- 购买成功后刷新配色与金币
 function HUD:RefreshOwnership()
-    self.trackCount = 0
+    self.trackSignature = ""
     self:RefreshTrackCards()
     self.coinLabel:SetText("金币 " .. tostring(Profile.Coins()))
     for colorId, swatch in pairs(self.riderButtons) do
@@ -627,6 +543,7 @@ function HUD:SyncRadio(title, enabled)
     self.musicButton:SetText(enabled and "音乐 开" or "音乐 关")
 end
 function HUD:SetScreen(screen)
+    if self:IsModalOpen() then self:CloseModal() end
     local oldScreen = self.screen
     self.screen = screen
     if oldScreen == "garage" and screen ~= "garage" then self.preview:Dispose() end
@@ -700,9 +617,7 @@ function HUD:LayoutResponsive()
     self.dangerPanel:SetStyle({top = compact and 85 or 8, width = compact and 208 or 244, marginLeft = compact and -104 or -122})
     self.instrumentPanel:SetStyle({width = compact and 198 or 228, height = compact and 98 or 112, marginLeft = compact and -99 or -114})
     self.nitroPanel:SetStyle({bottom = compact and 118 or 132, width = compact and 178 or 196, marginLeft = compact and -89 or -98})
-    self.trackSelection:SetStyle({padding = compact and 12 or 20})
-    for _, card in pairs(self.trackCards) do card:SetHeight(compact and 151 or 178) end
-    for _, graphic in pairs(self.trackGraphics) do graphic:SetHeight(compact and 69 or 94) end
+    self:LayoutTracks(w, h)
     if self.pendingControlLayout then
         self.pendingControlLayout = false
         self:ApplySettings()
@@ -868,6 +783,7 @@ function HUD:ShowResult(sim)
         clock(sim.elapsed), (sim.distance or 0) / 1000, sim.topSpeed or 0, sim.overtakes or 0, sim.health or 100))
 end
 function HUD:Dispose()
+    self:CloseModal()
     self.controls:SetEnabled(false)
     self.preview:Dispose()
 end

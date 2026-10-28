@@ -1,6 +1,7 @@
 -- 每个操作独立持有指针：转向、油门、刹车和特技互不抢占。
 -- clutch/shift 字段只保留给旧入口过渡，不再创建对应可见控件。
 local UI = require("urhox-libs/UI")
+local RacingTheme = require("RacingTheme")
 ---@class MobileControls
 local Controls = {}
 Controls.__index = Controls
@@ -214,12 +215,9 @@ function Controls:Refresh()
             local visual = status .. (pressed and ":down" or (flash and ":tap" or ":up"))
             if self.visualKeys[key] ~= visual then
                 local active, blocked = status == "active", status == "blocked" or status == "empty"
-                local edge = active and {91, 220, 233, 255} or (blocked and {219, 100, 82, 200} or {149, 174, 189, 140})
-                widget:SetStyle({backgroundColor = pressed and {105, 75, 36, 240}
-                        or (active and {19, 76, 87, 230} or {9, 17, 24, 210}),
-                    borderColor = (pressed or flash) and AMBER or edge,
-                    borderWidth = (pressed or flash or active) and 2 or 1,
-                    translateY = pressed and 2 or 0})
+                local material = RacingTheme.ControlSurface(pressed or flash, active, blocked)
+                -- Visual depth stays inside the existing rectangle. No translation of the input surface.
+                widget:SetStyle(material)
                 self.visualKeys[key], self.visualPressed[key] = visual, pressed
                 if self.details[key] then self.details[key]:SetFontColor(blocked and {244, 140, 120, 255}
                     or (active and {116, 239, 247, 255} or {162, 184, 195, 255})) end

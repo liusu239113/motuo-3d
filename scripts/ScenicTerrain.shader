@@ -28,7 +28,7 @@ void fragment() {
     float distance_to_eye = length(CAMERA_POSITION_WORLD - VERTEX);
     float fine_fade = 1.0 - smoothstep(55.0, 190.0, distance_to_eye);
     float macro = terrain_noise(VERTEX.xz * 0.013);
-    float patch = terrain_noise(VERTEX.xz * 0.085 + vec2(17.2, 8.1));
+    float terrain_patch = terrain_noise(VERTEX.xz * 0.085 + vec2(17.2, 8.1));
     vec2 ground_uv = VERTEX.xz * 0.45;
     vec3 grass_sample = texture(grass_color, ground_uv).rgb;
     vec3 earth_sample = texture(soil_color, VERTEX.xz * 0.31).rgb;
@@ -40,17 +40,17 @@ void fragment() {
     float grass_luma = dot(grass_sample, vec3(0.2126, 0.7152, 0.0722));
     // 保留草叶对比，不让一张鲜绿贴图把整座山涂成同一颜色。
     vec3 grass = mix(vec3(grass_luma), grass_sample, 0.32) * grass_tint;
-    grass *= mix(0.72, 1.22, macro) * mix(0.88, 1.12, patch);
+    grass *= mix(0.72, 1.22, macro) * mix(0.88, 1.12, terrain_patch);
     vec3 earth = earth_sample * earth_tint * mix(0.80, 1.18, macro);
     vec3 stone = stone_sample * stone_tint;
     // 米级岩理与十米级侵蚀条带：不是按单个三角形硬分色。
     float stratum = sin(VERTEX.y * 0.74 + macro * 3.8 + broad_sample.r * 1.5);
-    stone *= mix(0.80, 1.16, smoothstep(-0.75, 0.65, stratum)) * mix(0.84, 1.10, patch);
+    stone *= mix(0.80, 1.16, smoothstep(-0.75, 0.65, stratum)) * mix(0.84, 1.10, terrain_patch);
     float slope = 1.0 - clamp(base.y, 0.0, 1.0);
-    float rock_weight = smoothstep(0.11 + patch * 0.07, 0.42, slope);
+    float rock_weight = smoothstep(0.11 + terrain_patch * 0.07, 0.42, slope);
     rock_weight = max(rock_weight, biome.z * smoothstep(135.0, 290.0, VERTEX.y) * 0.70);
-    rock_weight = max(rock_weight, biome.x * smoothstep(0.15, 0.49, slope + patch * 0.13));
-    float soil_weight = smoothstep(0.40, 0.73, patch + broad_sample.r * 0.27) * 0.56;
+    rock_weight = max(rock_weight, biome.x * smoothstep(0.15, 0.49, slope + terrain_patch * 0.13));
+    float soil_weight = smoothstep(0.40, 0.73, terrain_patch + broad_sample.r * 0.27) * 0.56;
     soil_weight = max(soil_weight, biome.y * (0.42 + macro * 0.35));
     soil_weight = max(soil_weight, biome.x * 0.86);
     float beach = biome.w * (1.0 - smoothstep(1.0, 11.0, VERTEX.y));
@@ -58,7 +58,7 @@ void fragment() {
     vec3 mixed = mix(mix(grass, earth, soil_weight), stone, rock_weight);
     float snow = biome.z * smoothstep(265.0, 345.0, VERTEX.y + macro * 19.0)
         * (1.0 - smoothstep(0.26, 0.58, slope));
-    ALBEDO = mix(mixed, vec3(0.68, 0.73, 0.75) * mix(0.88, 1.08, patch), snow);
+    ALBEDO = mix(mixed, vec3(0.68, 0.73, 0.75) * mix(0.88, 1.08, terrain_patch), snow);
 
     vec3 gn = texture(ground_normal, ground_uv).rgb * 2.0 - 1.0;
     vec3 nx = texture(rock_normal, VERTEX.zy * 0.24).rgb * 2.0 - 1.0;
@@ -68,7 +68,7 @@ void fragment() {
         + vec3(ny.x, 0.0, ny.y) * weights.y + vec3(nz.x, nz.y, 0.0) * weights.z;
     vec3 detail = mix(vec3(gn.x, 0.0, gn.y) * 0.42, rock_detail * 0.48, rock_weight);
     NORMAL = normalize(base + (detail - base * dot(detail, base)) * fine_fade * (1.0 - snow * 0.65));
-    ROUGHNESS = clamp(0.90 + patch * 0.08 - rock_weight * 0.05, 0.84, 0.99);
+    ROUGHNESS = clamp(0.90 + terrain_patch * 0.08 - rock_weight * 0.05, 0.84, 0.99);
     SPECULAR = 0.16;
     METALLIC = 0.0;
     AO = mix(0.79, 1.0, clamp(dot(broad_sample, vec3(0.333)) * 1.7, 0.0, 1.0));

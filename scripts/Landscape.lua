@@ -3,6 +3,7 @@ local Landscape = {}
 local Trees = require("ScenicTrees")
 local Mesh = require("ScenicMesh")
 local Tracks = require("Tracks")
+local TrackFeatures = require("TrackFeatures")
 local activeTrack = assert(Tracks.Get("lake"))
 local V = Vector3
 local abs, sin, cos, sqrt = math.abs, math.sin, math.cos, math.sqrt
@@ -36,6 +37,10 @@ Landscape.Bounds = {minX = MIN_X, maxX = MAX_X, minZ = MIN_Z, maxZ = MAX_Z}
 Landscape.WaterLevel = 11.8
 Landscape.SpawnLaneOffset = 2.4
 Landscape.Ramps = {}
+---@type TrackFeature[]
+Landscape.Features = {}
+---@type TrackFeature[]
+Landscape.OptionalRamps = {}
 Landscape.Regions = {
     {name = "翡翠湖岸", x = -185, z = 180, radius = 330, color = {89, 184, 178}},
     {name = "白水河谷", x = -375, z = 475, radius = 205, color = {104, 181, 202}},
@@ -560,9 +565,7 @@ end
 function Landscape.Height(x, z)
     local ramp = Landscape.RampAt(x, z)
     if ramp then
-        local a = math.rad(ramp.yaw)
-        local forward = (x - ramp.x) * sin(a) + (z - ramp.z) * cos(a)
-        return ramp.y + clamp(forward / ramp.length, 0, 1) * ramp.height, false
+        return TrackFeatures.RampHeight(ramp, x, z) or ramp.y, ramp.optional == true
     end
     local roadY, road = Landscape.RoadHeight(x, z)
     if roadY then return roadY, road end
@@ -619,6 +622,12 @@ function Landscape.SelectTrack(id)
         Landscape.Regions[i]={name=track.goalNames[i],x=p.x,z=p.z,radius=220,color=track.accent}
     end
     if id=="lake" then Landscape.Regions=lakeRegions end
+    -- 原道路/桥/水域查询准备完毕后才放置机关。
+    -- 机关不改主路points、自然地形、土方、材质或森林。
+    Landscape.Features, Landscape.OptionalRamps = TrackFeatures.Plan(Landscape)
+    for _, ramp in ipairs(Landscape.OptionalRamps) do
+        Landscape.Ramps[#Landscape.Ramps + 1] = ramp
+    end
     roadTasks=0
     for _,road in ipairs(roads) do roadTasks=roadTasks+math.ceil((#road.samples-1)/48) end
     -- Keep the table identity: legacy World.BuildStages may already reference these stage records.
