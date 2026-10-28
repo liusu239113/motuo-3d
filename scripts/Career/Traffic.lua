@@ -92,8 +92,9 @@ function Traffic:Blockers()
 end
 function Traffic:Place(car)
     car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
-    car.node.position=Vector3(car.x,self.city:Surface(car.x,car.z),car.z)
-    car.node.rotation=Quaternion(0,car.yaw,0)
+    local height,pitch=self.city:VehicleSurface(car.x,car.z,car.yaw,car.length*.32,-car.length*.32)
+    car.node.position=Vector3(car.x,height,car.z)
+    car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch,Vector3.RIGHT)
 end
 function Traffic:CanPlace(car,blockers)
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end

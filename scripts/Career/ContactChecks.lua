@@ -36,6 +36,47 @@ function Checks.SkinBounds(rig)
 end
 function Checks.Run(session)
     local actor=session.actor
+    ---@type CareerRig
+    local rig=actor.visuals.walker
+    rig.ground=nil
+    for _,weight in ipairs({0,.1,.25,.5,1}) do
+        for _,run in ipairs({0,.5,1}) do
+            local clamped=rig.reachClampedFrames or 0
+            for i=0,31 do
+                rig:PoseWalk(i*math.pi/16,weight,run)
+                assert(math.abs(math.min(rig:SoleHeight("L_Foot"),rig:SoleHeight("R_Foot")))<.006,"慢走跑步支撑脚必须贴地")
+            end
+            assert((rig.reachClampedFrames or 0)==clamped,"各速度步态不能超伸")
+        end
+    end
+    rig.ground=session.city
+    actor.mounted=false;actor.visuals:SetMounted(false)
+    -- 身体位于人行道边缘，左右脚跨在不同高度，分别验证鞋底而不是仅查角色根。
+    for _,x in ipairs({5.9,6.0,6.1,11.9,12.0,12.1}) do
+        actor:Teleport(x,-20,0)
+        rig:PoseWalk(0,0)
+        for _,chain in ipairs(rig.legs) do
+            local foot=actor.node.worldTransform*rig:GetBonePosition(chain.tip)
+            local ground=session.city:Surface(foot.x,foot.z)
+            assert(math.abs(rig:SoleHeight(chain.tip)+actor.node.position.y-ground)<.006,"跨路沿双脚须分别落地")
+        end
+    end
+    for _,yaw in ipairs({0,90,180,270}) do
+        local y,pitch=session.city:VehicleSurface(6,-20,yaw,.729281,-.617155)
+        local rotation=Quaternion(0,yaw,0)*Quaternion(pitch,Vector3.RIGHT)
+        for _,z in ipairs({-.617155,.729281}) do
+            local p=Vector3(6,y,-20)+rotation*Vector3(0,0,z)
+            assert(math.abs(p.y-session.city:Surface(p.x,p.z))<.001,"前后轮须分别落地")
+        end
+    end
+    local visuals=actor.visuals
+    for _,speed in ipairs({.18,.6,1.8,3.4,0}) do
+        for _=1,60 do visuals:Update(1/60,speed,0,0,session.city:Surface(0,-20),-20,0) end
+        if speed==3.4 then assert(visuals.runWeight>.99,"跑步应切换慢跑摆臂") end
+        if speed==0 then assert(visuals.gaitWeight==0 and visuals.runWeight==0,"停止后必须完全回到站姿") end
+    end
+    rig.ground=nil
+    print("[动态接触验收通过] 15组速度混合/跨路沿双脚/四方向前后轮/慢走起停与跑步切换")
     print("[阴影接触] "..tostring(session.sun.shadowBias.constantBias).."/"..tostring(session.sun.shadowBias.slopeScaledBias).."/"..tostring(session.sun.shadowBias.normalOffset))
     local clamped=actor.visuals.walker.reachClampedFrames or 0
     local hipLow,hipHigh=math.huge,-math.huge
@@ -82,21 +123,25 @@ function Checks.Run(session)
     actor.visuals:SetMounted(false)
     print("[接触验收通过] 64相位无超伸/八相位鞋底/站姿与骑姿后弯肘/握把/道路人行道公园查高/五角度压弯胎底")
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
-    local phase,weight,yaw=0,0,110
+    local phase,weight,yaw,run=0,0,110,0
+    local curb=false
     local mounted=false
     for _,arg in ipairs(GetArguments()) do
         local value=arg:match("^%-contactphase=([%.%d]+)$")
         if value then phase=tonumber(value) or 0;weight=1 end
         value=arg:match("^%-contactyaw=([%-%d%.]+)$")
         if value then yaw=tonumber(value) or 110 end
+        if arg=="-contactrun" then run=1;weight=1 end
+        if arg=="-contactcurb" then curb=true end
         if arg=="-contactride" then mounted=true end
     end
     actor.mounted=mounted;actor.visuals:SetMounted(mounted)
-    actor.bikeX,actor.bikeZ,actor.bikeYaw=0,-17,0
-    actor:Teleport(mounted and 0 or 2,mounted and -17 or -20,0)
+    actor.bikeX,actor.bikeZ,actor.bikeYaw=curb and 6 or 0,-17,curb and 90 or 0
+    actor:Teleport(curb and 6 or mounted and 0 or 2,mounted and -17 or -20,curb and 90 or 0)
+    rig.ground=session.city
     -- Teleport内部会重算Pose，受控相位必须最后应用，暂停后才可复现实拍。
     if mounted then actor.visuals.mountedRider:PoseRide(0)
-    else actor.visuals.walker:PoseWalk(phase,weight) end
+    else actor.visuals.walker:PoseWalk(phase,weight,run) end
     session.yaw,session.pitch=yaw,2
     session:UpdateEnvironment(12)
     session.camera:SetModeConfig("normal",{distance=3.8,offset=Vector3(0,1,0),fov=52})

@@ -20,10 +20,11 @@ Visuals.AnimationLabel="王二狗 · 骨骼IK骑姿与步行"
 Visuals.Resources={scooterModel,scooterMaterial,boxModel,boxMaterial,Rig.ModelPath,Rig.MaterialPath,Rig.DiffusePath,Rig.NormalPath,"Techniques/DiffNormal.xml"}
 Visuals.ResourceTypes={[scooterModel]="Model",[scooterMaterial]="Material",[boxModel]="Model",[boxMaterial]="Material",
     [Rig.ModelPath]="Model",[Rig.MaterialPath]="Material",[Rig.DiffusePath]="Texture2D",[Rig.NormalPath]="Texture2D",["Techniques/DiffNormal.xml"]="Technique"}
-function Visuals.New(scene,target)
-    local self=setmetatable({},Visuals); self:Init(scene,target); return self
+function Visuals.New(scene,target,city)
+    local self=setmetatable({},Visuals); self:Init(scene,target,city); return self
 end
-function Visuals:Init(scene,target)
+function Visuals:Init(scene,target,city)
+    self.city=city
     self.bikeNode=scene:CreateChild("战损9号与配送箱")
     self.bikeVisual=self.bikeNode:CreateChild("电动车压弯根")
     local body=self.bikeVisual:CreateChild("正式战损电动车")
@@ -56,8 +57,9 @@ function Visuals:Init(scene,target)
     end
     self.walkNode=target:CreateChild("王二狗步行根")
     self.walker=Rig.New(self.walkNode)
+    self.walker.ground=city
     self.mountedRider=Rig.New(self.bikeVisual)
-    self.phase,self.gaitWeight,self.lean=0,0,0
+    self.phase,self.gaitWeight,self.runWeight,self.lean=0,0,0,0
     self.mounted,self.disposed=false,false
     self.vehicleId=Vehicles.EBIKE
     self.cityVisible=true
@@ -103,8 +105,11 @@ function Visuals:UpdateParking(parking,city)
     end
     for id,park in pairs(parking) do
         local entry=self:EnsureVehicle(id)
-        entry.node.position=V(park.x,city:Surface(park.x,park.z),park.z)
-        entry.node.rotation=Quaternion(0,park.yaw,0)
+        local front,rear=.729281,-.617155
+        if id~=Vehicles.EBIKE then local length=Assets.Vehicles[id].targetLength; front,rear=length*.32,-length*.32 end
+        local height,pitch=city:VehicleSurface(park.x,park.z,park.yaw,front,rear)
+        entry.node.position=V(park.x,height,park.z)
+        entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch,V.RIGHT)
     end
 end
 function Visuals:SetMounted(mounted)
@@ -114,7 +119,17 @@ function Visuals:SetMounted(mounted)
 end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.disposed then return end
-    self.bikeNode.position=V(bikeX,bikeY,bikeZ); self.bikeNode.rotation=Quaternion(0,bikeYaw,0)
+    local height,pitch=bikeY,0
+    if self.city then
+        local front,rear=.729281,-.617155
+        if self.vehicleId~=Vehicles.EBIKE then
+            local length=Assets.Vehicles[self.vehicleId].targetLength
+            front,rear=length*.32,-length*.32
+        end
+        height,pitch=self.city:VehicleSurface(bikeX,bikeZ,bikeYaw,front,rear)
+    end
+    self.bikeNode.position=V(bikeX,height,bikeZ)
+    self.bikeNode.rotation=Quaternion(0,bikeYaw,0)*Quaternion(pitch,V.RIGHT)
     if self.mounted then
         local target=steer*math.min(1,math.abs(speed)/(35/3.6))*10
         self.lean=self.lean+(target-self.lean)*(1-math.exp(-dt*10))
@@ -131,10 +146,14 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
         self.mountedRider:PoseRide(0)
     else
         local target=math.min(1,math.abs(speed)/1.8)
-        self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*(1-math.exp(-dt*14))
-        local cycle=1.20*math.max(.30,self.gaitWeight)
-        self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/cycle)%(math.pi*2)
-        self.walker:PoseWalk(self.phase,self.gaitWeight)
+        local run=math.max(0,math.min(1,(math.abs(speed)-1.8)/1.6))
+        local blend=1-math.exp(-dt*14)
+        self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*blend
+        self.runWeight=self.runWeight+(run-self.runWeight)*blend
+        if target==0 and self.gaitWeight<.001 then self.gaitWeight=0;self.runWeight=0 end
+        local cycle=Rig.CycleLength(self.gaitWeight,self.runWeight)
+        if math.abs(speed)>.001 then self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/cycle)%(math.pi*2) end
+        self.walker:PoseWalk(self.phase,self.gaitWeight,self.runWeight)
     end
 end
 function Visuals:Dispose()

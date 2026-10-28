@@ -5,6 +5,7 @@ local ROOT="model/b2849c2afd734d59aaf285fcb69b2b1a/"
 local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
 ---@class CareerRig : Rider
 ---@field soleVertices table<string, table[]>
+---@field ground CareerCity?
 local Rig={}
 Rig.__index=Rig
 setmetatable(Rig,{__index=Rider})
@@ -122,15 +123,20 @@ function Rig:PoseRide(steer)
     self.mesh.position=self.config.hip-self:GetBonePosition("Hip")
     self:ApplyPose(steer)
 end
-function Rig:PoseWalk(phase,weight)
+function Rig.CycleLength(weight,run)
+    return 4*(.30+.08*math.max(0,math.min(1,run or 0)))*math.max(.01,weight)
+end
+function Rig:PoseWalk(phase,weight,run)
     self:Reset()
     local w=math.max(0,math.min(1,weight))
-    -- 完整跨步1.20m；支撑半周期匀速向后，摆动半周期前送并抬脚。
-    -- 髋点随跨步降低而不是缩短步幅；膝向前、肘向后，禁止反关节。
-    local stride=.30*w
+    local r=math.max(0,math.min(1,run or 0))
+    -- 慢走、常速和慢跑共用实际距离驱动；步幅和循环长度必须同源。
+    -- 支撑脚向后匀速，摆动脚前送；左右脚分别查询地面，跨路沿时不整人抬起。
+    local stride=(.30+.08*r)*w
     self.mesh.position=self.standOffset
     ---@type Vector3[]
     local targets={}
+    local soleTargets={}
     local drop=.025*w
     local hipZ=self:GetBonePosition("Hip").z
     for i,chain in ipairs(self.legs) do
@@ -141,27 +147,33 @@ function Rig:PoseWalk(phase,weight)
         else
             local u=(t-.5)*2
             local smooth=u*u*(3-2*u)
-            z=stride*(-1+2*smooth);lift=math.sin(u*math.pi)*.13*w
+            z=stride*(-1+2*smooth);lift=math.sin(u*math.pi)*(.09+.07*r)*w
         end
         local foot=self.feet[chain.tip]
         -- 脚踝绑定点偏在髋后，行走以髋为跨步中心，避免每次后蹬都被迫蹲身。
         local target=foot+V(0,lift,z+(hipZ-foot.z)*w)
-        targets[i]=target
+        local groundDelta=0
+        if self.ground then
+            local world=self.parent.worldTransform*target
+            groundDelta=self.ground:Surface(world.x,world.z)-self.parent.worldPosition.y
+        end
+        local grounded=target+V(0,groundDelta,0)
+        targets[i]=grounded
+        soleTargets[i]=lift+groundDelta
         local root=self:GetBonePosition(chain.upper)
-        local dx,dz=target.x-root.x,target.z-root.z
+        local dx,dz=grounded.x-root.x,grounded.z-root.z
         local reach=(chain.lengthA+chain.lengthB)*.985
         local vertical=math.sqrt(math.max(.01,reach*reach-dx*dx-dz*dz))
-        drop=math.max(drop,root.y-target.y-vertical)
+        drop=math.max(drop,root.y-grounded.y-vertical)
     end
     self.mesh.position=self.standOffset-V(0,drop,0)
-    self:SetBodyRotation("Waist",4*w,math.sin(phase)*2*w)
-    self:SetBodyRotation("Spine01",3*w,-math.sin(phase)*3*w)
+    self:SetBodyRotation("Waist",(4+7*r)*w,math.sin(phase)*2*w)
+    self:SetBodyRotation("Spine01",(3+3*r)*w,-math.sin(phase)*3*w)
     self:SetBodyRotation("Spine02",2*w,-math.sin(phase)*4*w)
     for i,chain in ipairs(self.legs) do
         self:SolveChain(chain,targets[i],V(chain.side*.08,0,1),false)
         self:SetBodyRotation(chain.tip,0)
-        local desired=targets[i].y-self.feet[chain.tip].y
-        local correction=desired-self:SoleHeight(chain.tip)
+        local correction=soleTargets[i]-self:SoleHeight(chain.tip)
         if math.abs(correction)>.0001 then
             self:SolveChain(chain,targets[i]+V(0,correction,0),V(chain.side*.08,0,1),false)
             self:SetBodyRotation(chain.tip,0)
@@ -169,8 +181,8 @@ function Rig:PoseWalk(phase,weight)
     end
     for _,chain in ipairs(self.arms) do
         local root=self:GetBonePosition(chain.upper)
-        local swing=math.cos(phase)*chain.side*.24*w
-        local reach=(chain.lengthA+chain.lengthB)*.95
+        local swing=math.cos(phase)*chain.side*(.24+.05*r)*w
+        local reach=(chain.lengthA+chain.lengthB)*(.95-.14*r*w)
         local target=root+V(chain.side*.035,-math.sqrt(math.max(.01,reach*reach-swing*swing)),swing+.025)
         self:SolveChain(chain,target,V(chain.side*.12,-.1,-1),false)
     end

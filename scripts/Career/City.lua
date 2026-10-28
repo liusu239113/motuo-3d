@@ -291,6 +291,22 @@ function City:Surface(x,z)
     return self.details:Surface(x,z)
 end
 
+-- 侧视接触设计（米）： rear<0 --- 车根0 --- front>0。
+-- 前后触地点分别采样；前轮上坎先抬车头，后轮仍落旧路面，停车跨坎同样适用。
+-- 地表最高仅10cm，两次投影迭代处理俯仰后的轮距收缩，不改变XZ碰撞域。
+function City:VehicleSurface(x,z,yaw,front,rear)
+    local a=math.rad(yaw)
+    local pitch,y=0,self:Surface(x,z)
+    for _=1,2 do
+        local projection=math.cos(math.rad(pitch))
+        local fh=self:Surface(x+math.sin(a)*front*projection,z+math.cos(a)*front*projection)
+        local rh=self:Surface(x+math.sin(a)*rear*projection,z+math.cos(a)*rear*projection)
+        pitch=-math.deg(math.asin(math.max(-1,math.min(1,(fh-rh)/(front-rear)))))
+        y=(rh*front-fh*rear)/(front-rear)
+    end
+    return y,pitch
+end
+
 function City:IsFree(x,z,radius)
     if not self:StaticFree(x,z,radius) then return false end
     if self.space~="city" or not self.traffic then return true end

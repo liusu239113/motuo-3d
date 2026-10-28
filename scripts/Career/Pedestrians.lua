@@ -46,9 +46,10 @@ function Pedestrians:Init(root,city)
     for i,p in ipairs(paths) do
         local node=root:CreateChild("老街行人"..i)
         local rig=Rig.New(node,specs[(i-1)%#specs+1])
+        rig.ground=city
         rig.model.drawDistance=85; rig.model.shadowDistance=30
         local length=math.sqrt((p[3]-p[1])^2+(p[4]-p[2])^2)
-        local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
+        local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,gaitWeight=0,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
         self.people[#self.people+1]=person
         self:Place(person)
         rig:PoseWalk(person.phase,0)
@@ -76,11 +77,14 @@ function Pedestrians:Update(dt,blockers)
         for _,other in ipairs(self.people) do if other~=p and (x-other.x)^2+(z-other.z)^2<.85^2 then free=false end end
         if free then p.s=candidate end
         local moved=math.abs(p.s-old)
-        p.phase=p.phase+moved*2*math.pi/(1.20*.8)
+        local target=moved>.0001 and .8 or 0
+        p.gaitWeight=p.gaitWeight+(target-p.gaitWeight)*(1-math.exp(-dt*14))
+        if target==0 and p.gaitWeight<.001 then p.gaitWeight=0 end
+        p.phase=(p.phase+moved*2*math.pi/Rig.CycleLength(p.gaitWeight,0))%(math.pi*2)
         self:Place(p)
         -- 位移与碰撞每帧更新；85m绘制距离之外不做IK，近处骨骼限20Hz。
         if poseReady and (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2 then
-            p.rig:PoseWalk(p.phase,moved>.0001 and .8 or 0)
+            p.rig:PoseWalk(p.phase,p.gaitWeight)
         end
     end
 end

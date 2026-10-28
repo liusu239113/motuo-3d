@@ -124,7 +124,7 @@ function Actor:Init(scene, city)
     self.collisionLogged, self.walkLogged, self.rideLogged = false, false, false
     self.node = scene:CreateChild("CareerActorFollowTarget")
     self.node:SetVar("CareerAssetStatus", Variant(Actor.ProxyLabel))
-    self.visuals = Visuals.New(scene, self.node)
+    self.visuals = Visuals.New(scene, self.node, self.city)
     self:SyncVisuals(0)
     print(string.format("[CareerActor] 初始步行 x=%.1f z=%.1f yaw=0；车独立停在(%.1f,%.1f)，限速35km/h",
         self.x, self.z, self.bikeX, self.bikeZ))
