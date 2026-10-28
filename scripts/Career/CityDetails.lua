@@ -20,6 +20,7 @@ local V = Vector3
 ---@field cylinders integer
 ---@field font Font
 ---@field surfaces table[]
+---@field surfaceCells table<string, table[]>
 local Details = {}
 Details.__index = Details
 
@@ -36,7 +37,7 @@ end
 ---@param mats table<string, Material>
 function Details:Init(root, mats)
     self.root, self.mats = root, mats
-    self.batches, self.shapes, self.surfaces = {}, {}, {}
+    self.batches, self.shapes, self.surfaces, self.surfaceCells = {}, {}, {}, {}
     self.meshCount, self.boxes, self.signs, self.trees, self.cylinders = 0, 0, 0, 0, 0
     self.font = assert(cache:GetResource("Font", "Fonts/MiSans-Regular.ttf"), "City: missing sign font")
     self.shapes.cylinder = CylinderGeometry(.5, .5, 1, 12):ToModel()
@@ -124,14 +125,26 @@ function Details:Ground(material,x,z,w,d,y)
     local yy = y or .05
     -- 视觉地面与查询共用同一份矩形，标线只是贴花，不额外垫高鞋底和轮胎。
     if material~="paint" and material~="yellow" then
-        self.surfaces[#self.surfaces+1]={x=x,z=z,w=w,d=d,y=yy}
+        local surface={x=x,z=z,w=w,d=d,y=yy}
+        self.surfaces[#self.surfaces+1]=surface
+        -- 16m格只筛候选，最终仍按真实矩形判断，不做高度量化或插值。
+        for gx=math.floor((x-w/2)/16),math.floor((x+w/2)/16) do
+            for gz=math.floor((z-d/2)/16),math.floor((z+d/2)/16) do
+                local key=gx..":"..gz
+                local list=self.surfaceCells[key] or {}
+                list[#list+1]=surface
+                self.surfaceCells[key]=list
+            end
+        end
     end
     self:Quad(material,V(x-w/2,yy,z-d/2),V(x-w/2,yy,z+d/2),V(x+w/2,yy,z-d/2),V(x+w/2,yy,z+d/2))
 end
 
 function Details:Surface(x,z)
     local height=0
-    for _,s in ipairs(self.surfaces) do
+    local candidates=self.surfaceCells[math.floor(x/16)..":"..math.floor(z/16)]
+    if not candidates then return height end
+    for _,s in ipairs(candidates) do
         if math.abs(x-s.x)<=s.w/2 and math.abs(z-s.z)<=s.d/2 then
             height=math.max(height,s.y)
         end

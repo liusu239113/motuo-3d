@@ -1,0 +1,7 @@
+[2026-10-29 07_04_17_767][0] INFO: DownloadManager initialized
+[2026-10-29 07_04_17_768][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 07_04_17_769][0] INFO: Engine construct finish.
+[2026-10-29 07_04_17_784][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-10-29 07_04_18_822][0] ERROR: Could not initialize audio output

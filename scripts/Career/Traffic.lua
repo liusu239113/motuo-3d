@@ -92,11 +92,16 @@ function Traffic:Blockers()
     end
     return list
 end
-function Traffic:Place(car)
-    car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
+function Traffic:ApplyContact(car)
+    if car.contactX==car.x and car.contactZ==car.z and car.contactYaw==car.yaw and car.contactSpace==self.city.space then return end
     local height,pitch,roll=Contact.Solve(self.city,car.id,car.x,car.z,car.yaw,0)
     car.node.position=Vector3(car.x,height,car.z)
     car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+    car.contactX,car.contactZ,car.contactYaw,car.contactSpace=car.x,car.z,car.yaw,self.city.space
+end
+function Traffic:Place(car)
+    car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
+    self:ApplyContact(car)
 end
 function Traffic:CanPlace(car,blockers)
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
@@ -147,9 +152,11 @@ function Traffic:Step(dt,blockers)
         for _=1,count do
             local old=car.s
             car.s=(car.s+travel/count)%Routes.LENGTH
-            self:Place(car)
+            car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
             if not self:CanPlace(car,blockers) then
-                car.s=old; self:Place(car); car.speed=0; break
+                car.s=old
+                car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
+                car.speed=0; break
             end
         end
     end
@@ -160,6 +167,8 @@ function Traffic:Update(dt)
     local count=math.max(1,math.ceil(duration*60))
     local blockers=self:Blockers()
     for _=1,count do self:Step(duration/count,blockers) end
+    -- 碰撞只依赖XZ/偏航；渲染接地只处理最终已提交位姿，静止不重复求解。
+    for _,car in ipairs(self.cars) do self:ApplyContact(car) end
     -- 骨骼每个外层帧仅求解一次；车辆仍保留60Hz碰撞子步。
     self.pedestrians:Update(duration,blockers)
 end

@@ -162,6 +162,20 @@ function Checks.Vehicles(session)
     local ids={Vehicles.EBIKE,table.unpack(Vehicles.Ids)}
     for _,id in ipairs({"sedan","suv","truck"}) do ids[#ids+1]=id end
     local count=0
+    local details=session.city.details
+    local function compareSurface(x,z)
+        local expected=0
+        for _,s in ipairs(details.surfaces) do
+            if math.abs(x-s.x)<=s.w/2 and math.abs(z-s.z)<=s.d/2 then expected=math.max(expected,s.y) end
+        end
+        assert(details:Surface(x,z)==expected,"地表候选索引必须与全表精确相同")
+    end
+    for x=-180,180,4 do for z=-180,180,4 do compareSurface(x,z) end end
+    for _,s in ipairs(details.surfaces) do
+        for _,dx in ipairs({-s.w/2-.00001,-s.w/2,s.w/2,s.w/2+.00001}) do
+            for _,dz in ipairs({-s.d/2-.00001,-s.d/2,s.d/2,s.d/2+.00001}) do compareSurface(s.x+dx,s.z+dz) end
+        end
+    end
     for _,id in ipairs(ids) do
         for _,yaw in ipairs({0,45,90,180,270}) do
             for _,x in ipairs({0,6,12}) do
