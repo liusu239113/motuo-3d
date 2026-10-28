@@ -218,7 +218,10 @@ function Session:BuildWorld()
     self:Refresh()
     if Store.Get().phase=="opening" then self:Intro() end
     if self.options.test then
-        require("Career.Checks").RunWorld(self)
+        local contact=false
+        for _,arg in ipairs(GetArguments()) do if arg=="-careercontact" then contact=true end end
+        if contact then require("Career.ContactChecks").Run(self)
+        else require("Career.Checks").RunWorld(self) end
     end
     print("[生涯] 场景与主流程已接通")
 end
