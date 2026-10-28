@@ -175,6 +175,8 @@ function City:DetailedBuilding(index,x,z,w,depth,height,yaw,name)
     draw.material=mat; draw.castShadows=true; draw.drawDistance=400; draw.shadowDistance=85
     local angle=math.rad(yaw)
     local sx,sz=bounds.size.x*scale,bounds.size.z*scale
+    -- 生成建筑的底板边缘不齐；连续混凝土地台承接整段墙脚，底部埋入裸地。
+    self.details:Box("concrete",x,.08,z,sx+.10,.24,sz+.10,yaw)
     self:Obstacle(x,z,math.abs(math.cos(angle))*sx+math.abs(math.sin(angle))*sz,
         math.abs(math.sin(angle))*sx+math.abs(math.cos(angle))*sz)
     self.buildings=self.buildings+1

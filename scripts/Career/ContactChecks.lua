@@ -62,6 +62,19 @@ function Checks.Run(session)
     for _,p in ipairs({{0,-20,.055},{-50,-50,0},{-50,9,.069},{120,-25,.10}}) do
         assert(math.abs(session.city:Surface(p[1],p[2])-p[3])<.0001,"地表查询必须匹配视觉地面")
     end
+    local front=actor.visuals.mountedRider:ReadPose()
+    assert(front.leftGripError<.005 and front.rightGripError<.005,"修肘不能脱离握把")
+    for _,roll in ipairs({-10,-5,0,5,10}) do
+        actor.visuals:SetMounted(true)
+        actor.visuals:Update(1,35/3.6,roll/10,0,session.city:Surface(0,-20),-20,0)
+        local low=math.huge
+        for _,p in ipairs({Vector3(-.031924,.002834,0),Vector3(-.009846,0,0),Vector3(.016007,0,0),Vector3(.040051,.002834,0)}) do
+            low=math.min(low,(actor.visuals.bikeVisual.rotation*p).y+actor.visuals.bikeVisual.position.y)
+        end
+        assert(math.abs(low)<.0001,"压弯胎底必须保持接地")
+    end
+    actor.visuals:SetMounted(false)
+    print("[接触验收通过] 64相位无超伸/八相位鞋底/站姿与骑姿后弯肘/握把/道路人行道公园查高/五角度压弯胎底")
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
     local phase,weight,yaw=0,0,110
     local mounted=false
