@@ -14,6 +14,7 @@ local Progress=require("Career.Progression")
 ---@field pitch number
 ---@field waypoint string
 ---@field sun Light?
+---@field moon Light?
 ---@field sky ProceduralSky?
 ---@field Refresh fun(self:CareerHousingActions)
 ---@field RefreshPhone fun(self:CareerHousingActions)
@@ -34,6 +35,7 @@ function Actions:ApplySpace(space)
     self.actor.visuals.bikeNode:SetEnabled(space=="city")
     self.actor.visuals:SetMounted(self.actor.mounted)
     if self.sun then self.sun.enabled=space=="city" end
+    if self.moon then self.moon.enabled=space=="city" end
     if self.sky then self.sky.enabled=space=="city" end
 end
 function Actions:ChooseHousing(id)

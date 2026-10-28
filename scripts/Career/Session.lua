@@ -55,6 +55,8 @@ function Session:Init(options)
     self.zone=nil
     ---@type Light?
     self.sun=nil
+    ---@type Light?
+    self.moon=nil
     ---@type ProceduralSky?
     self.sky=nil
     self.environmentHour=-1
@@ -159,6 +161,13 @@ function Session:BuildWorld()
     light.castShadows=true; light.shadowCascade=CascadeParameters(18,80,0,0,.8)
     light.shadowBias=BiasParameters(.0003,.6)
     self.zone,self.sun=zone,light
+    -- 太阳落到地平线以下后不再照地面；独立冷色月光保证手游夜跑的基础可读性。
+    local moonNode=self.scene:CreateChild("南城夜间月光")
+    moonNode.direction=Vector3(.35,-.8,.25)
+    local moon=moonNode:CreateComponent("Light")
+    moon.lightType=LIGHT_DIRECTIONAL; moon.color=Color(.55,.67,1)
+    moon.brightness=0; moon.castShadows=false
+    self.moon=moon
     self.sky=self.scene:CreateChild("南城昼夜天空"):CreateComponent("ProceduralSky")
     self.sky.sunLight=light
     self.sky.skyCurve=.2
@@ -205,7 +214,8 @@ function Session:UpdateEnvironment(hour)
     local dusk=math.exp(-((height-.02)/.16)^2)
     self.sun.node.direction=Vector3(-math.cos(a),-height,.35)
     self.sun.color=Color(1,.55,.3):Lerp(Color(1,.94,.84),day)
-    self.sun.brightness=.18+2.82*day
+    self.sun.brightness=3*day
+    if self.moon then self.moon.brightness=.65*(1-day) end
     local horizon=Color(.16,.21,.32):Lerp(Color(.66,.77,.9),day):Lerp(Color(.92,.57,.35),dusk*.7)
     self.sky.skyTopColor=Color(.08,.12,.24):Lerp(Color(.25,.47,.8),day)
     self.sky.skyHorizonColor=horizon; self.sky.groundHorizonColor=horizon
@@ -457,7 +467,7 @@ function Session:DisposeWorld()
     renderer:SetNumViewports(0)
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.scene then self.scene:Dispose(); self.scene=nil end
-    self.city,self.camera,self.zone,self.sun,self.sky=nil,nil,nil,nil,nil
+    self.city,self.camera,self.zone,self.sun,self.moon,self.sky=nil,nil,nil,nil,nil,nil
 end
 function Session:Dispose()
     if self.disposed then return end

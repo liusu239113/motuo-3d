@@ -104,7 +104,7 @@ function City:BuildRoads()
         for z=-145,145,42 do
             if math.abs(z)>18 and math.abs(z-100)>18 and not (x==0 and z< -40) then
                 d:Lamp(x-9.4,z,90)
-                self:NightLight(x-8.15,6.12,z,7,15)
+                self:NightLight(x-8.15,6.12,z,30,22)
             end
         end
     end
@@ -243,7 +243,7 @@ function City:BuildPlaces()
         if home.width then
             d:Sign(home.name..string.format(" · %.0f元/晚",home.price/100),home.x,2.4,home.z,0,.32)
             d:Ground("paint",home.x,home.z,2.2,2.2,.084)
-            self:NightLight(home.x,2.6,home.z,3,8)
+            self:NightLight(home.x,2.6,home.z,8,10)
         end
     end
     -- 充电桩和门厅标识与Config同源。
