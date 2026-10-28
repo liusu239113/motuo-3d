@@ -177,6 +177,34 @@ function Checks.Vehicles(session)
         end
     end
     for _,id in ipairs(ids) do
+        if id~="borrowed_ebike" and id~="truck" then
+            local asset=require("VehicleAssets").Vehicles[id]
+            local model=assert(cache:GetResource("Model",asset.model))
+            local source=model.boundingBox
+            local yawRotation=Quaternion(0,asset.rotation,0)
+            local bounds=BoundingBox()
+            for _,x in ipairs({source.min.x,source.max.x}) do
+                for _,y in ipairs({source.min.y,source.max.y}) do
+                    for _,z in ipairs({source.min.z,source.max.z}) do bounds:Merge(yawRotation*Vector3(x,y,z)) end
+                end
+            end
+            local scale=asset.targetLength/bounds.size.z
+            local vb=model:GetGeometry(0,0):GetVertexBuffer(0)
+            local data=vb:GetData()
+            local vertices={}
+            for i=0,vb.vertexCount-1 do
+                data:Seek(i*vb.vertexSize+vb:GetElementOffset(SEM_POSITION))
+                local p=(yawRotation*data:ReadVector3()+Vector3(-bounds.center.x,-bounds.min.y,-bounds.center.z))*scale
+                if math.abs(p.z)>.4 and p.y<.14 then vertices[#vertices+1]=p end
+            end
+            for _,lean in ipairs(#Contact.Wheels[id]==2 and {-10,0,10} or {0}) do
+                local y,pitch,roll=Contact.Solve(session.city,id,0,-20,0,lean)
+                local rotation=Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+                local lowest=math.huge
+                for _,p in ipairs(vertices) do lowest=math.min(lowest,y+(rotation*p).y-.055) end
+                assert(lowest>-.001 and lowest<.001,id.."独立读回完整胎面必须吻合标定")
+            end
+        end
         for _,yaw in ipairs({0,45,90,180,270}) do
             for _,x in ipairs({0,6,12}) do
                 for _,lean in ipairs(#Contact.Wheels[id]==2 and {-10,0,10} or {0}) do
@@ -265,5 +293,8 @@ function Checks.Shot(session)
     session.camera:Update(1,actor.node,session.yaw,session.pitch)
     session.view:ShowGame(); session:Refresh()
     session.view:ShowDialog("接触诊断","",{});session.view.overlay:SetVisible(false)
+    -- Refresh会按内存档重新显示停车节点，实拍隔离必须在它之后提交。
+    for id,entry in pairs(actor.visuals.vehicles) do entry.node:SetEnabled(id==vehicle) end
+    if vehicle=="sedan" or vehicle=="suv" or vehicle=="truck" then actor.visuals.walkNode:SetEnabled(false) end
 end
 return Checks
