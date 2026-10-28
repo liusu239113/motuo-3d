@@ -102,7 +102,7 @@ local function defaults()
             balanceCents = 5000, day = 1, time = Config.START_HOUR } },
         financialKeys = { opening = true }, accommodation = "bridge", lastAidDay = 0,
         lastDaySummary = {},
-        position = { x = 0, z = -20, yaw = 0, mounted = false, bikeX = 0, bikeZ = -18, bikeYaw = 0 },
+        position = { x = 0, z = -20, yaw = 0, mounted = false, bikeX = 1.5, bikeZ = -20, bikeYaw = 0 },
     }
 end
 

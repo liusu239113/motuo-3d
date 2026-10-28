@@ -19,7 +19,7 @@ local V = Vector3
 
 ---@class CareerActor
 ---@field scene Scene
----@field city CareerActorCity
+---@field city CareerCity
 ---@field node Node 永久相机目标；步行跟人物，骑车跟车辆
 ---@field visuals CareerActorVisuals
 ---@field x number
@@ -99,7 +99,7 @@ end
 --  grounded at Surface, no artificial jump/ceiling/gravity in this flat city.
 
 ---@param scene Scene
----@param city CareerActorCity
+---@param city CareerCity
 ---@return CareerActor
 function Actor.New(scene, city)
     local self = setmetatable({}, Actor)
@@ -108,7 +108,7 @@ function Actor.New(scene, city)
 end
 
 ---@param scene Scene
----@param city CareerActorCity
+---@param city CareerCity
 function Actor:Init(scene, city)
     assert(scene and city, "Actor.New requires scene and City")
     self.scene, self.city = scene, city
