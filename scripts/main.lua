@@ -1140,6 +1140,8 @@ function CaptureTestFrame()
     local featurePhase = testFeaturePhase_ == "sequence" and featureShotPhases_[testFeatureFrame_] or testFeaturePhase_
     if testFeature_ ~= "" then
         if testFeatureDone_ or screen_ ~= "ride" then return end
+        -- 发车页面切换当帧的帧缓冲仍可能是加载页，至少经过一次实际驾驶更新再截接近画面。
+        if featurePhase == "approach" and sim_.elapsed < 0.1 then return end
         local featureState = sim_.featureState
         if testFeature_ == "ramp" then
             if sim_.airborne then testFeatureAirborne_ = true end
