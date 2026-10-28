@@ -38,7 +38,13 @@ function Checks.Run(session)
     local actor=session.actor
     print("[阴影接触] "..tostring(session.sun.shadowBias.constantBias).."/"..tostring(session.sun.shadowBias.slopeScaledBias).."/"..tostring(session.sun.shadowBias.normalOffset))
     local clamped=actor.visuals.walker.reachClampedFrames or 0
-    for i=0,63 do actor.visuals.walker:PoseWalk(i*math.pi/32,1) end
+    local hipLow,hipHigh=math.huge,-math.huge
+    for i=0,63 do
+        actor.visuals.walker:PoseWalk(i*math.pi/32,1)
+        local y=actor.visuals.walker:GetBonePosition("Hip").y
+        hipLow,hipHigh=math.min(hipLow,y),math.max(hipHigh,y)
+    end
+    assert(hipHigh-hipLow<.065,"步行髋部不能上下蹲跳")
     assert((actor.visuals.walker.reachClampedFrames or 0)==clamped,"正常跨步不能超伸夹取")
     for _,phase in ipairs({0,math.pi/4,math.pi/2,math.pi*3/4,math.pi,math.pi*5/4,math.pi*3/2,math.pi*7/4}) do
         actor.visuals.walker:PoseWalk(phase,1)

@@ -93,6 +93,7 @@ function Rig:PoseWalk(phase,weight)
     ---@type Vector3[]
     local targets={}
     local drop=.025*w
+    local hipZ=self:GetBonePosition("Hip").z
     for i,chain in ipairs(self.legs) do
         local t=((phase/(2*math.pi))+(chain.side==1 and .5 or 0))%1
         local z,lift
@@ -103,7 +104,9 @@ function Rig:PoseWalk(phase,weight)
             local smooth=u*u*(3-2*u)
             z=stride*(-1+2*smooth);lift=math.sin(u*math.pi)*.13*w
         end
-        local target=self.feet[chain.tip]+V(0,lift,z)
+        local foot=self.feet[chain.tip]
+        -- 脚踝绑定点偏在髋后，行走以髋为跨步中心，避免每次后蹬都被迫蹲身。
+        local target=foot+V(0,lift,z+(hipZ-foot.z)*w)
         targets[i]=target
         local root=self:GetBonePosition(chain.upper)
         local dx,dz=target.x-root.x,target.z-root.z
