@@ -84,11 +84,12 @@ function Rig:PoseRide(steer)
 end
 function Rig:PoseWalk(phase,weight)
     self:Reset()
-    self.mesh.position=self.standOffset-V(0,.035*weight,0)
+    -- 步幅限定在真实腿长内，抬脚前先降低髋点，避免直腿末端目标超伸。
+    self.mesh.position=self.standOffset-V(0,.045*weight,0)
     for _,chain in ipairs(self.legs) do
         local swing=math.sin(phase)*chain.side
         local lift=math.max(0,math.cos(phase)*chain.side)*.07*weight
-        self:SolveChain(chain,self.feet[chain.tip]+V(0,lift,swing*.22*weight),V(chain.side*.1,0,1),false)
+        self:SolveChain(chain,self.feet[chain.tip]+V(0,lift,swing*.14*weight),V(chain.side*.1,0,1),false)
         self:SetBodyRotation(chain.tip,0)
     end
     for _,chain in ipairs(self.arms) do

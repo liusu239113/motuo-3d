@@ -344,6 +344,10 @@ function Checks.RunWorld(session)
         end
     end
     local actor=assert(session.actor)
+    local walker=actor.visuals.walker
+    local clamped=walker.reachClampedFrames or 0
+    for i=0,23 do walker:PoseWalk(i*math.pi/12,1) end
+    assert((walker.reachClampedFrames or 0)==clamped,"完整步态周期不得超伸手脚骨长")
     -- 世界测试不假定玩家存档是步行态；使用固定空旷测试点，结束后恢复原停车位置。
     actor.mounted=false; actor.visuals:SetMounted(false)
     actor.bikeX,actor.bikeZ,actor.bikeYaw=1.5,-20,0

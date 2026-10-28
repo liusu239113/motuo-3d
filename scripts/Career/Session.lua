@@ -419,7 +419,7 @@ function Session:Update(dt)
     if not self.running or not self.actor then return end
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
-    if self.audio then self.audio:Update(dt,self.actor,self.view:IsBlocking(),self.space~="city",self.view:GetInput(),Delivery.GetOffer()) end
+    if self.audio then self.audio:Update(dt,self.actor,self.view:IsBlocking(),self.space~="city",self.view:GetInput(),self.online and Delivery.GetOffer() or nil) end
     if input:GetKeyPress(KEY_ESCAPE) then
         if self.view.phonePage~="" then self.view:ClosePhone()
         elseif not self.view:IsBlocking() then self:Pause() end
