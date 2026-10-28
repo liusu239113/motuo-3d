@@ -1,0 +1,653 @@
+[2026-10-28 23_50_52_866][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_52_866][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_52_866][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_52_866][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_52_381][0] INFO: DownloadManager initialized
+[2026-10-28 23_50_52_383][0] INFO: a couple of Subsystems registered finish.
+[2026-10-28 23_50_52_383][0] INFO: Engine construct finish.
+[2026-10-28 23_50_52_388][0] INFO: Engine initialize begin.
+[2026-10-28 23_50_52_388][0] INFO: Rendering pipeline: forward
+[2026-10-28 23_50_52_390][0] INFO: Engine resourcePrefixPath: /resources/runtime/cli/, resource: Res
+[2026-10-28 23_50_52_391][0] INFO: Added resource path /resources/runtime/cli/Res/
+[2026-10-28 23_50_52_391][0] INFO: Now resource dir: 
+[2026-10-28 23_50_52_391][0] INFO: 0 - /resources/runtime/cli/Res/
+[2026-10-28 23_50_52_405][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/CoreData.pak' to cache
+[2026-10-28 23_50_52_405][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/CoreData.pak, 0
+[2026-10-28 23_50_52_407][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/CoreData.pak, 123 entries (122 unique blocks), decompressed 65583 -> 149661 bytes, dict 8561 bytes
+[2026-10-28 23_50_52_407][0] INFO: Added resource package CoreData
+[2026-10-28 23_50_52_407][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Data.pak' to cache
+[2026-10-28 23_50_52_407][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Data.pak, 0
+[2026-10-28 23_50_52_561][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Data.pak, 1372 entries (1285 unique blocks), decompressed 16666575 -> 32267717 bytes, dict 22029 bytes
+[2026-10-28 23_50_52_561][0] INFO: Added resource package Data
+[2026-10-28 23_50_52_561][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Res.pak' to cache
+[2026-10-28 23_50_52_561][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Res.pak, 0
+[2026-10-28 23_50_52_811][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Res.pak, 647 entries (625 unique blocks), decompressed 27317399 -> 73983794 bytes, dict 57726 bytes
+[2026-10-28 23_50_52_811][0] INFO: Added resource package Res
+[2026-10-28 23_50_52_811][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-28 23_50_52_818][0] INFO: computeShaderSupport 1,caps->supported:4,aps->supported & BGFX_CAPS_INDEX32:4096
+[2026-10-28 23_50_52_818][0] INFO: Detected 0 GPUs
+[2026-10-28 23_50_52_818][0] INFO: Selected GPU name: 
+[2026-10-28 23_50_52_818][0] INFO: Renderer Type: Noop
+[2026-10-28 23_50_52_818][0] INFO: CheckFeatureSupport => CpuInstance=1, _R32I=1, _R32U=1, _R32F=1, _RGBA16F=1, _RGBA32F=1, MaxTextureSizeLimit=16384
+[2026-10-28 23_50_52_818][0] INFO: Graphics mode: 2040x1080 (logic=2040x1080, dpr=1) windowed monitor 0
+[2026-10-28 23_50_52_818][0] INFO: Initialized input
+[2026-10-28 23_50_52_818][0] INFO: Initialized user interface
+[2026-10-28 23_50_52_824][0] INFO: Initialized renderer
+[2026-10-28 23_50_52_827][0] INFO: Initialized graphics & audio output.
+[2026-10-28 23_50_52_827][0] INFO: Initialized engine
+[2026-10-28 23_50_52_827][0] INFO: LogUploader: auto-upload disabled (no SLS URL), UploadLogPack still available on demand
+[2026-10-28 23_50_52_830][0] INFO: Device Max Storage Block Binding Range: 16
+[2026-10-28 23_50_52_831][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-28 23_50_52_832][0] INFO: UrhoXRuntime: using local ProjectBuilder manifest: /workspace/dist/latest.json
+[2026-10-28 23_50_52_832][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-28 23_50_52_833][0] INFO: Custom Lua require system installed (module cache active)
+[2026-10-28 23_50_52_841][0] INFO: Lua 5.4: Generational GC enabled.
+[2026-10-28 23_50_52_843][0] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-10-28 23_50_52_841.log
+[2026-10-28 23_50_52_843][0] INFO: LobbyBridge Lua API registered
+[2026-10-28 23_50_52_843][0] INFO: [Validate] Mode enabled: frames=300, timeout=100s
+[2026-10-28 23_50_52_843][0] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-10-28 23_50_52_843][0] INFO: BootstrapManager: Localization initialized, language=en
+[2026-10-28 23_50_52_844][0] INFO: LoadingUI::Show()
+[2026-10-28 23_50_52_846][0] INFO: BootstrapPipeline: starting with 5 steps, total weight 1.00
+[2026-10-28 23_50_52_846][0] INFO: BootstrapPipeline: executing step [1/5] 'LoadVersion'
+[2026-10-28 23_50_52_846][0] INFO: [Bootstrap/LoadVersion] Starting...
+[2026-10-28 23_50_52_846][0] INFO: [Bootstrap/LoadVersion] Loading local version: /workspace/dist/latest.json
+[2026-10-28 23_50_52_847][0] INFO: [Bootstrap/LoadVersion] Version: 1.0.9, Manifest (client): 54334fc0
+[2026-10-28 23_50_52_847][0] INFO: [Bootstrap/LoadVersion] Completed successfully (1 ms)
+[2026-10-28 23_50_52_847][0] INFO: BootstrapPipeline: step 'LoadVersion' completed successfully
+[2026-10-28 23_50_52_847][1] INFO: BootstrapPipeline: executing step [2/5] 'LoadProjectManifest'
+[2026-10-28 23_50_52_847][1] INFO: [Bootstrap/LoadProjectManifest] Starting...
+[2026-10-28 23_50_52_847][1] INFO: Manifest Lua API registered successfully
+[2026-10-28 23_50_52_848][1] INFO: [Bootstrap/LoadProjectManifest] Loading local manifest: /workspace/dist/1.0.9/manifest-54334fc0.json
+[2026-10-28 23_50_52_854][1] INFO: ManifestData: loaded 341 files, 3 sources, 0 paks, entry=main.lua
+[2026-10-28 23_50_52_854][1] INFO: [Bootstrap/LoadProjectManifest] Added builtin source engine-startup: https://.../src/engine-startup/ (tag=stable, priority=1000000)
+[2026-10-28 23_50_52_854][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source engine-res: https://<engine-res>/ (tag=maker_validate_linux.1016, priority=1000001)
+[2026-10-28 23_50_52_854][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source urhox-libs: https://<urhox-libs>/ (tag=1.0, priority=1000002)
+[2026-10-28 23_50_52_855][1] INFO: ManifestResolver: loaded game manifest with 341 files, 0 paks
+[2026-10-28 23_50_52_855][1] INFO: [Bootstrap/LoadProjectManifest] Loaded manifest with 341 files, entry: main.lua
+[2026-10-28 23_50_52_855][1] INFO: [Bootstrap/LoadProjectManifest] Completed successfully (8 ms)
+[2026-10-28 23_50_52_855][1] INFO: BootstrapPipeline: step 'LoadProjectManifest' completed successfully
+[2026-10-28 23_50_52_855][1] INFO: BootstrapPipeline: executing step [3/5] 'LoadSourceManifests'
+[2026-10-28 23_50_52_855][1] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-10-28 23_50_52_855][1] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-startup (https://.../src/engine-startup/, stable)
+[2026-10-28 23_50_52_855][1] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/1]: engine-startup
+[2026-10-28 23_50_52_860][1] INFO: [Bootstrap/LoadSourceManifests] Local directory exists but extraction incomplete for engine-startup, marking for re-download
+[2026-10-28 23_50_52_860][1] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://.../src/engine-startup/stable.json
+[2026-10-28 23_50_52_860][1] INFO: HttpManager initialized (Native with libhv HttpClient)
+[2026-10-28 23_50_52_862][1] INFO: Shader::BeginLoad: /Shaders/BLGL/UI.glsl
+[2026-10-28 23_50_52_862][1] INFO: Shader::EndLoad
+[2026-10-28 23_50_53_210][22] INFO: ManifestData: loaded 6 files, 0 sources, 0 paks, entry=engine-startup/main.lua
+[2026-10-28 23_50_53_210][22] INFO: ManifestResolver: loaded source manifest 'engine-startup' with 6 files, 0 paks
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-startup manifest with 6 files
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (355 ms)
+[2026-10-28 23_50_53_210][22] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-10-28 23_50_53_210][22] INFO: BootstrapPipeline: executing step [4/5] 'InitializeResource'
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/InitializeResource] Starting...
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/InitializeResource] ManifestResolver registered to DownloadManager
+[2026-10-28 23_50_53_210][22] INFO: Added resource path /home/Maker/update/
+[2026-10-28 23_50_53_210][22] INFO: Now resource dir: 
+[2026-10-28 23_50_53_210][22] INFO: 0 - /home/Maker/update/
+[2026-10-28 23_50_53_210][22] INFO: 1 - /resources/runtime/cli/Res/
+[2026-10-28 23_50_53_210][22] IN[2026-10-28 23_50_53_245][22] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_53_245][22] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-28 23_50_53_245][22] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+FO: Added resource path /workspace/dist/
+[2026-10-28 23_50_53_210][22] INFO: Now resource dir: 
+[2026-10-28 23_50_53_210][22] INFO: 0 - /workspace/dist/
+[2026-10-28 23_50_53_210][22] INFO: 1 - /home/Maker/update/
+[2026-10-28 23_50_53_210][22] INFO: 2 - /resources/runtime/cli/Res/
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/InitializeResource] Resource system initialized
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/InitializeResource] Completed successfully (0 ms)
+[2026-10-28 23_50_53_210][22] INFO: BootstrapPipeline: step 'InitializeResource' completed successfully
+[2026-10-28 23_50_53_210][22] INFO: BootstrapPipeline: executing step [5/5] 'Startup'
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/Startup] Starting...
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/Startup] Found engine-startup manifest with 6 files
+[2026-10-28 23_50_53_210][22] INFO: [Bootstrap/Startup] Downloading 4 startup resources
+[2026-10-28 23_50_53_214][22] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 23_50_53_214][22] INFO: [Bootstrap/Startup] Entry script: engine-startup/main.lua -> .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_50_53_214][22] INFO: Custom Lua require system installed (module cache active)
+[2026-10-28 23_50_53_224][22] INFO: Lua 5.4: Generational GC enabled.
+[2026-10-28 23_50_53_224][22] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-10-28 23_50_53_224.log
+[2026-10-28 23_50_53_224][22] INFO: Manifest Lua API registered successfully
+[2026-10-28 23_50_53_227][22] INFO: [BootstrapLuaAPI] Registered successfully
+[2026-10-28 23_50_53_227][22] INFO: [Bootstrap/Startup] Startup Lua VM created
+[2026-10-28 23_50_53_229][22] INFO: Loaded Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_50_53_229][22] INFO: Executed Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_50_53_229][22] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-10-28 23_50_53_234][22] INFO: Loaded Lua script engine-startup/loading_ui.lua
+[2026-10-28 23_50_53_240][22] INFO: LoadingUI::Hide()
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/Startup] Pipeline reconfigured by Lua script
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/Startup] Completed successfully (30 ms)
+[2026-10-28 23_50_53_240][22] INFO: BootstrapPipeline: step 'Startup' completed successfully
+[2026-10-28 23_50_53_240][22] INFO: BootstrapPipeline: skipping step 'UpdateProjectInfo'
+[2026-10-28 23_50_53_240][22] INFO: BootstrapPipeline: executing step [7/16] 'LoadSourceManifests'
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-res (https://<engine-res>/, maker_validate_linux.1016)
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/LoadSourceManifests] Found source: urhox-libs (https://<urhox-libs>/, 1.0)
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/LoadSourceManifests] Found source: official-res (https://<official-res>/, stable)
+[2026-10-28 23_50_53_240][22] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/3]: official-res
+[2026-10-28 23_50_53_243][22] INFO: [Bootstrap/LoadSourceManifests] Local directory exists but extraction incomplete for official-res, marking for re-download
+[2026-10-28 23_50_53_243][22] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<official-res>/stable.json
+[2026-10-28 23_50_53_243][22] INFO: Shader::BeginLoad: /Shaders/BLGL/NanoVGFill.glsl
+[2026-10-28 23_50_53_243][22] INFO: Shader::EndLoad
+[2026-10-28 23_50_53_470][28] INFO: ManifestData: loaded 38888 files, 1 sources, 3 paks, entry=
+[2026-10-28 23_50_53_627][28] INFO: ManifestResolver: loaded source manifest 'official-res' with 38888 files, 3 paks
+[2026-10-28 23_50_53_627][28] INFO: [Bootstrap/LoadSourceManifests] Loaded official-res manifest with 38888 files
+[2026-10-28 23_50_53_627][28] INFO: [Bootstrap/LoadSourceManifests] Loading source [2/3]: engine-res
+[2026-10-28 23_50_53_632][28] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<engine-res>/maker_validate_linux.1016.json
+[2026-10-28 23_50_53_730][34] INFO: ManifestData: loaded 1177 files, 0 sources, 0 paks, entry=
+[2026-10-28 23_50_53_734][34] INFO: ManifestResolver: loaded source manifest 'engine-res' with 1177 files, 0 paks
+[2026-10-28 23_50_53_734][34] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-res manifest with 1177 files
+[2026-10-28 23_50_53_734][34] INFO: [Bootstrap/LoadSourceManifests] Loading source [3/3]: urhox-libs
+[2026-10-28 23_50_53_737][34] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<urhox-libs>/1.0.json
+[2026-10-28 23_50_53_834][40] INFO: ManifestData: loaded 160 files, 0 sources, 0 paks, entry=
+[2026-10-28 23_50_53_834][40] INFO: ManifestResolver: loaded source manifest 'urhox-libs' with 160 files, 0 paks
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/LoadSourceManifests] Loaded urhox-libs manifest with 160 files
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (594 ms)
+[2026-10-28 23_50_53_834][40] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-10-28 23_50_53_834][40] INFO: BootstrapPipeline: skipping step 'ClearShaderCache'
+[2026-10-28 23_50_53_834][40] INFO: BootstrapPipeline: executing step [9/16] 'DownloadInitialPackage'
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/DownloadInitialPackage] Starting...
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/DownloadPackage] No packages to download
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/DownloadInitialPackage] Completed successfully (0 ms)
+[2026-10-28 23_50_53_834][40] INFO: BootstrapPipeline: step 'DownloadInitialPackage' completed successfully
+[2026-10-28 23_50_53_834][40] INFO: BootstrapPipeline: executing step [10/16] 'PreloadI18nStep'
+[2026-10-28 23_50_53_834][40] INFO: [Bootstrap/PreloadI18nStep] Starting...
+[2026-10-28 23_50_53_837][40]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-28 23_50_53_841][40]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-28 23_50_53_841][40]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-28 23_50_53_844][40] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 23_50_53_844][40] INFO: [Bootstrap/PreloadI18nStep] Completed successfully (10 ms)
+[2026-10-28 23_50_53_844][40] INFO: BootstrapPipeline: step 'PreloadI18nStep' completed successfully
+[2026-10-28 23_50_53_844][40] INFO: BootstrapPipeline: executing step [11/16] 'LoadPreloadResources'
+[2026-10-28 23_50_53_844][40] INFO: [Bootstrap/LoadPreloadResources] Starting...
+[2026-10-28 23_50_53_846][40] INFO: DownloadWhilePlayingManager: loaded 15 render blocking exts
+[2026-10-28 23_50_53_846][40] INFO: [Bootstrap/LoadPreloadResources] Loaded RenderBlockingTypes.json
+[2026-10-28 23_50_53_851][40] INFO: ManifestResolver: 预加载 1371 个文件 (manifest 总计 40359)
+[2026-10-28 23_50_53_851][40] INFO: [Bootstrap/LoadPreloadResources] Found 1371 preload files
+[2026-10-28 23_50_54_726][40] INFO: [Bootstrap/LoadPreloadResources] All resources already cached
+[2026-10-28 23_50_54_726][40] INFO: [Bootstrap/LoadPreloadResources] Completed successfully (882 ms)
+[2026-10-28 23_50_54_726][40] INFO: BootstrapPipeline: step 'LoadPreloadResources' completed successfully
+[2026-10-28 23_50_54_726][40] INFO: BootstrapPipeline: skipping step 'Cleanup'
+[2026-10-28 23_50_54_726][40] INFO: BootstrapPipeline: skipping step 'RecordProjectSize'
+[2026-10-28 23_50_54_726][40] INFO: BootstrapPipeline: skipping step 'CleanupOtherProjects'
+[2026-10-28 23_50_54_726][40] INFO: BootstrapPipeline: executing step [15/16] 'Ready'
+[2026-10-28 23_50_54_726][40] INFO: [Bootstrap/Ready] Starting...
+[2026-10-28 23_50_54_727][40] INFO: [Bootstrap/Ready] No project_id (-game=), project-scoped Lobby requests will be rejected
+[2026-10-28 23_50_54_731][40] INFO: [Bootstrap/Ready] Multiplayer mode: false, max_players: 4
+[2026-10-28 23_50_54_732][41] INFO: [Bootstrap/Ready] Completed successfully (6 ms)
+[2026-10-28 23_50_54_732][41] INFO: BootstrapPipeline: step 'Ready' completed successfully
+[2026-10-28 23_50_54_749][42] INFO: BootstrapPipeline: executing step [16/16] 'FadeOutLoading'
+[2026-10-28 23_50_54_749][42] INFO: [Bootstrap/FadeOutLoading] Starting...
+[2026-10-28 23_50_55_131][65] INFO: [Bootstrap/FadeOutLoading] Completed successfully (382 ms)
+[2026-10-28 23_50_55_131][65] INFO: BootstrapPipeline: step 'FadeOutLoading' completed successfully
+[2026-10-28 23_50_55_148][66] INFO: BootstrapPipeline: completed successfully
+[2026-10-28 23_50_55_148][66] INFO: BootstrapManager: pipeline completed successfully
+[2026-10-28 23_50_55_148][66] INFO: BootstrapManager: using provided scriptFileName: main.lua
+[2026-10-28 23_50_55_148][66] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-28 23_50_55_150][66] INFO: RuntimeRetargeterCache: Loaded 5 body types, 210 animation mappings
+[2026-10-28 23_50_55_152][66] INFO: Loaded Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-10-28 23_50_55_152][66][Script] IsNetworkMode:    false
+[2026-10-28 23_50_55_160][66] INFO: Loaded Lua script urhox-libs/Engine/init.lua
+[2026-10-28 23_50_55_160][66] INFO: Loaded Lua script urhox-libs/Engine/InputExtensions.lua
+[2026-10-28 23_50_55_161][66] INFO: Loaded Lua script urhox-libs/Engine/ResourceCacheExtensions.lua
+[2026-10-28 23_50_55_163][66] INFO: Loaded Lua script urhox-libs/Engine/i18n.lua
+[2026-10-28 23_50_55_164][66] INFO: [i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-28 23_50_55_164][66] INFO: [i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-28 23_50_55_164][66] INFO: [i18n] GetLanguage: resolved='zh_CN'
+[2026-10-28 23_50_55_164][66] INFO: [i18n] SetLanguage: actualLang='zh_CN' explicit=nil
+[2026-10-28 23_50_55_164][66] INFO: [i18n] SetVariantTag: priority=2000, tag=''
+[2026-10-28 23_50_55_164][66] INFO: SetVariantTag: priority=2000, tag=''
+[2026-10-28 23_50_55_169][66] INFO: [i18n] init: lang='zh_CN' translations=true hooks=true
+[2026-10-28 23_50_55_170][66] INFO: Loaded Lua script LuaScripts/Utilities/Previews/InputAdaptor.lua
+[2026-10-28 23_50_55_170][66][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-28 23_50_55_170][66][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-28 23_50_55_170][66][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-28 23_50_55_170][66][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-28 23_50_55_171][66] INFO: Loaded Lua script LuaScripts/Utilities/Previews/Scene.lua
+[2026-10-28 23_50_55_172][66] INFO: Loaded Lua script LuaScripts/Utilities/Previews/SceneGuard.lua
+[2026-10-28 23_50_55_173][66] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UIGuard.lua
+[2026-10-28 23_50_55_173][66] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UserInfo.lua
+[2026-10-28 23_50_55_173][66][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-28 23_50_55_173][66] INFO: Executed Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-10-28 23_50_55_174][66] INFO: Loaded Lua script Validate/cloud_stub.lua
+[2026-10-28 23_50_55_174][66] INFO: Executed Lua script Validate/cloud_stub.lua
+[2026-10-28 23_50_55_175][66] INFO: Loaded Lua script Validate/servercloud_stub.lua
+[2026-10-28 23_50_55_175][66] INFO: Executed Lua script Validate/servercloud_stub.lua
+[2026-10-28 23_50_55_186][66] INFO: Loaded Lua script main.lua
+[2026-10-28 23_50_55_187][66] INFO: Loaded Lua script urhox-libs/UI/init.lua
+[2026-10-28 23_50_55_189][66] INFO: Loaded Lua script urhox-libs/UI/Core/UI.lua
+[2026-10-28 23_50_55_190][66] INFO: Loaded Lua script urhox-libs/UI/Core/Theme.lua
+[2026-10-28 23_50_55_191][66] INFO: Loaded Lua script urhox-libs/UI/Core/ImageCache.lua
+[2026-10-28 23_50_55_191][66] INFO: Loaded Lua script urhox-libs/UI/Core/PointerEvent.lua
+[2026-10-28 23_50_55_192][66] INFO: Loaded Lua script urhox-libs/UI/Core/Input.lua
+[2026-10-28 23_50_55_193][66] INFO: Loaded Lua script urhox-libs/UI/Core/InputAdapter.lua
+[2026-10-28 23_50_55_194][66] INFO: Loaded Lua script urhox-libs/UI/Core/Gesture.lua
+[2026-10-28 23_50_55_195][66] INFO: Loaded Lua script urhox-libs/UI/Core/GestureEvent.lua
+[2026-10-28 23_50_55_199][66] INFO: Loaded Lua script urhox-libs/UI/Core/Widget.lua
+[2026-10-28 23_50_55_200][66] INFO: Loaded Lua script urhox-libs/UI/Core/Style.lua
+[2026-10-28 23_50_55_201][66] INFO: Loaded Lua script urhox-libs/UI/Core/Transition.lua
+[2026-10-28 23_50_55_202][66] INFO: Loaded Lua script urhox-libs/UI/Core/UILoader.lua
+[2026-10-28 23_50_55_203][66] INFO: Loaded Lua script urhox-libs/UI/Core/UISerializer.lua
+[2026-10-28 23_50_55_205][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/init.lua
+[2026-10-28 23_50_55_205][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Context.lua
+[2026-10-28 23_50_55_207][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/ColorPicker.lua
+[2026-10-28 23_50_55_209][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Schema.lua
+[2026-10-28 23_50_55_211][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Selection.lua
+[2026-10-28 23_50_55_212][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Overlay.lua
+[2026-10-28 23_50_55_213][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Report.lua
+[2026-10-28 23_50_55_215][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/QuickTweak.lua
+[2026-10-28 23_50_55_217][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/EditTool.lua
+[2026-10-28 23_50_55_220][66] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Panel.lua
+[2026-10-28 23_50_55_221][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Panel.lua
+[2026-10-28 23_50_55_223][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Label.lua
+[2026-10-28 23_50_55_224][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Button.lua
+[2026-10-28 23_50_55_226][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/TextField.lua
+[2026-10-28 23_50_55_227][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/EditMenu.lua
+[2026-10-28 23_50_55_228][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Checkbox.lua
+[2026-10-28 23_50_55_229][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toggle.lua
+[2026-10-28 23_50_55_230][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Slider.lua
+[2026-10-28 23_50_55_231][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/ProgressBar.lua
+[2026-10-28 23_50_55_233][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/ScrollView.lua
+[2026-10-28 23_50_55_234][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Dropdown.lua
+[2026-10-28 23_50_55_236][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Modal.lua
+[2026-10-28 23_50_55_239][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toast.lua
+[2026-10-28 23_50_55_241][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tabs.lua
+[2026-10-28 23_50_55_242][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tooltip.lua
+[2026-10-28 23_50_55_243][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Badge.lua
+[2026-10-28 23_50_55_245][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Avatar.lua
+[2026-10-28 23_50_55_246][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Card.lua
+[2026-10-28 23_50_55_247][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/List.lua
+[2026-10-28 23_50_55_248][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Divider.lua
+[2026-10-28 23_50_55_250][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Skeleton.lua
+[2026-10-28 23_50_55_251][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Chip.lua
+[2026-10-28 23_50_55_252][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Accordion.lua
+[2026-10-28 23_50_55_254][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Stepper.lua
+[2026-10-28 23_50_55_255][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Rating.lua
+[2026-10-28 23_50_55_256][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Breadcrumb.lua
+[2026-10-28 23_50_55_257][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Pagination.lua
+[2026-10-28 23_50_55_259][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Alert.lua
+[2026-10-28 23_50_55_260][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Timeline.lua
+[2026-10-28 23_50_55_262][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Menu.lua
+[2026-10-28 23_50_55_263][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tree.lua
+[2026-10-28 23_50_55_265][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/DatePicker.lua
+[2026-10-28 23_50_55_267][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/TimePicker.lua
+[2026-10-28 23_50_55_268][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Table.lua
+[2026-10-28 23_50_55_270][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Carousel.lua
+[2026-10-28 23_50_55_271][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Drawer.lua
+[2026-10-28 23_50_55_272][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Popover.lua
+[2026-10-28 23_50_55_274][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Calendar.lua
+[2026-10-28 23_50_55_275][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/FileUpload.lua
+[2026-10-28 23_50_55_277][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/RichText.lua
+[2026-10-28 23_50_55_278][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/SafeAreaView.lua
+[2026-10-28 23_50_55_279][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/SimpleGrid.lua
+[2026-10-28 23_50_55_280][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Spine.lua
+[2026-10-28 23_50_55_281][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Svg.lua
+[2026-10-28 23_50_55_282][66] INFO: Loaded Lua script urhox-libs/Sprite/SpriteSheet.lua
+[2026-10-28 23_50_55_283][66] INFO: Loaded Lua script urhox-libs/UI/Widgets/Sprite.lua
+[2026-10-28 23_50_55_284][66] INFO: Loaded Lua script urhox-libs/Sprite/SpriteAnimator.lua
+[2026-10-28 23_50_55_285][66] INFO: Loaded Lua script urhox-libs/UI/Components/VirtualList.lua
+[2026-10-28 23_50_55_286][66] INFO: Loaded Lua script urhox-libs/UI/Components/DragDropContext.lua
+[2026-10-28 23_50_55_287][66] INFO: Loaded Lua script urhox-libs/UI/Components/ItemSlot.lua
+[2026-10-28 23_50_55_288][66] INFO: Loaded Lua script urhox-libs/UI/Components/InventoryManager.lua
+[2026-10-28 23_50_55_289][66] INFO: Loaded Lua script urhox-libs/UI/Components/SkillTree.lua
+[2026-10-28 23_50_55_290][66] INFO: Loaded Lua script urhox-libs/UI/Components/ChatWindow.lua
+[2026-10-28 23_50_55_291][66] INFO: Loaded Lua script urhox-libs/UI/Components/ItemTooltip.lua
+[2026-10-28 23_50_55_292][66] INFO: Loaded Lua script urhox-libs/Camera/ThirdPersonCamera.lua
+[2026-10-28 23_50_55_302][66] INFO: Loaded Lua script World.lua
+[2026-10-28 23_50_55_308][66] INFO: Loaded Lua script Parts.lua
+[2026-10-28 23_50_55_319][66] INFO: Loaded Lua script Landscape.lua
+[2026-10-28 23_50_55_326][66] INFO: Loaded Lua script ScenicTrees.lua
+[2026-10-28 23_50_55_332][66] INFO: Loaded Lua script ScenicMesh.lua
+[2026-10-28 23_50_55_339][66] INFO: Loaded Lua script Tracks.lua
+[2026-10-28 23_50_55_382][66] INFO: Loaded Lua script TrackFeatures.lua
+[2026-10-28 23_50_55_654][66][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-28 23_50_55_661][66] INFO: Loaded Lua script VehicleAssets.lua
+[2026-10-28 23_50_55_668][66] INFO: Loaded Lua script VehicleFinish.lua
+[2026-10-28 23_50_55_674][66] INFO: Loaded Lua script VehicleWheelRefinement.lua
+[2026-10-28 23_50_55_681][66] INFO: Loaded Lua script TrackDecor.lua
+[2026-10-28 23_50_55_690][66] INFO: Loaded Lua script TrackDetails.lua
+[2026-10-28 23_50_55_701][66] INFO: Loaded Lua script Bike.lua
+[2026-10-28 23_50_55_706][66] INFO: Loaded Lua script RearMirrors.lua
+[2026-10-28 23_50_55_715][66] INFO: Loaded Lua script Rider.lua
+[2026-10-28 23_50_55_723][66] INFO: Loaded Lua script RideEffects.lua
+[2026-10-28 23_50_55_733][66] INFO: Loaded Lua script Simulation.lua
+[2026-10-28 23_50_55_744][66] INFO: Loaded Lua script HUD.lua
+[2026-10-28 23_50_55_749][66] INFO: Loaded Lua script RacingTheme.lua
+[2026-10-28 23_50_55_755][66] INFO: Loaded Lua script Catalog.lua
+[2026-10-28 23_50_55_760][66] INFO: Loaded Lua script Profile.lua
+[2026-10-28 23_50_55_767][66] INFO: Loaded Lua script ControlSettings.lua
+[2026-10-28 23_50_55_774][66] INFO: Loaded Lua script GaragePreview.lua
+[2026-10-28 23_50_55_782][66] INFO: Loaded Lua script MobileControls.lua
+[2026-10-28 23_50_55_787][66] INFO: Loaded Lua script RaceInstruments.lua
+[2026-10-28 23_50_55_794][66] INFO: Loaded Lua script RouteSelect.lua
+[2026-10-28 23_50_55_799][66] INFO: Loaded Lua script RacingDialogs.lua
+[2026-10-28 23_50_55_806][66] INFO: Loaded Lua script ControlEditor.lua
+[2026-10-28 23_50_55_813][66] INFO: Loaded Lua script RideAudio.lua
+[2026-10-28 23_50_55_818][66] INFO: Loaded Lua script RideLoader.lua
+[2026-10-28 23_50_55_828][66] INFO: Loaded Lua script Race.lua
+[2026-10-28 23_50_55_835][66] INFO: Loaded Lua script RaceAI.lua
+[2026-10-28 23_50_55_843][66] INFO: Loaded Lua script RaceVisuals.lua
+[2026-10-28 23_50_55_848][66] INFO: Loaded Lua script RaceAudio.lua
+[2026-10-28 23_50_55_854][66] INFO: Loaded Lua script Career/Session.lua
+[2026-10-28 23_50_55_861][66] INFO: Loaded Lua script Career/Store.lua
+[2026-10-28 23_50_55_865][66] INFO: Loaded Lua script Career/Config.lua
+[2026-10-28 23_50_55_868][66] INFO: Loaded Lua script Career/Delivery.lua
+[2026-10-28 23_50_55_874][66] INFO: Loaded Lua script Career/Progression.lua
+[2026-10-28 23_50_55_880][66] INFO: Loaded Lua script Career/Actor.lua
+[2026-10-28 23_50_55_883][66] INFO: Loaded Lua script Career/ActorVisuals.lua
+[2026-10-28 23_50_55_887][66] INFO: Loaded Lua script Career/Rig.lua
+[2026-10-28 23_50_55_892][66] INFO: Loaded Lua script Career/City.lua
+[2026-10-28 23_50_55_898][66] INFO: Loaded Lua script Career/CityDetails.lua
+[2026-10-28 23_50_55_905][66] INFO: Loaded Lua script Career/View.lua
+[2026-10-28 23_50_55_909][66] INFO: Loaded Lua script Career/MapWidget.lua
+[2026-10-28 23_50_55_910][66] INFO: Executed Lua script main.lua
+[2026-10-28 23_50_56_012][66][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 23_50_56_015][66][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-28 23_50_56_051][66][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-28 23_50_56_051][66][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 23_50_56_057][66][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_50_56_110][66][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-28 23_50_56_111][66][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-28 23_50_56_111][66] INFO: UrhoXRuntime: Game started successfully
+[2026-10-28 23_50_56_112][67][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 23_50_58_582][98] INFO: Added resource path /home/Maker/ResCache/
+[2026-10-28 23_50_58_583][98] INFO: Now resource dir: 
+[2026-10-28 23_50_58_583][98] INFO: 0 - /home/Maker/ResCache/
+[2026-10-28 23_50_58_583][98] INFO: 1 - /workspace/dist/
+[2026-10-28 23_50_58_583][98] INFO: 2 - /home/Maker/update/
+[2026-10-28 23_50_58_583][98] INFO: 3 - /resources/runtime/cli/Res/
+[2026-10-28 23_50_58_601][98] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_50_58_601][98] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_50_58_601][98] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_50_58_601][98] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_50_58_601][98] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_50_58_623][99] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_50_58_623][99] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-28 23_50_58_647][100] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_50_58_647][100] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_50_58_647][100] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_50_58_668][101] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_50_58_668][101] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_51_01_905][124][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-28 23_51_01_905][124][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-28 23_51_01_905][124][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-28 23_51_01_905][124][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-28 23_51_01_905][124][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-28 23_51_01_905][124][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-28 23_51_01_905][124][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-28 23_51_02_593][124][Script] [生涯城市] 33栋建筑 / 468批次 / 145258三角面 / 30招牌 / 40碰撞区域
+[2026-10-28 23_51_02_596][125][Script] [王二狗] 正式角色 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-28 23_51_02_598][125][Script] [王二狗] 正式角色 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-28 23_51_02_599][125][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-28 23_51_02_600][125][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-28 23_51_02_601][125][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-28 23_51_02_601][125][Script] [ThirdPersonCamera] Created with 2 modes, initial mode: normal
+[2026-10-28 23_51_02_607][125] INFO: Loaded Lua script Career/Checks.lua
+[2026-10-28 23_51_02_608][125][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_51_02_608][125][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-28 23_51_02_608][125][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-28 23_51_02_609][125][Script] [Career.Store] loaded revision=3 day=1 cashCents=5000 orders=1
+[2026-10-28 23_51_02_609][125][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-28 23_51_02_609][125][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-28 23_51_02_609][125][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-28 23_51_02_609][125][Script] [Career.Store] loaded revision=4 day=1 cashCents=5500 orders=0
+[2026-10-28 23_51_02_610][125][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-28 23_51_02_610][125][Script] [Career.Store] loaded revision=6 day=2 cashCents=4300 orders=0
+[2026-10-28 23_51_02_610][125][Script] [生涯逻辑验收通过] 50元开局/借车/171m教学5元/远程与骑乘拒绝/先取后送/结算幂等/读档/磁盘失败回滚/吃饭/次日/坏档保护
+[2026-10-28 23_51_02_610][125][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_51_02_610][125][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-28 23_51_02_610][125][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-28 23_51_02_610][125][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-28 23_51_02_610][125][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-28 23_51_02_610][125][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-28 23_51_02_611][125][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-28 23_51_02_612][125][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-28 23_51_02_612][125][Script] [Career.Delivery] accepting career-v1-5 feeCents=275
+[2026-10-28 23_51_02_612][125][Script] [Career.Delivery] picked up career-v1-5
+[2026-10-28 23_51_02_612][125][Script] [Career.Delivery] delivering career-v1-5 feeCents=275
+[2026-10-28 23_51_02_612][125][Script] [Career.Delivery] accepting career-v1-6 feeCents=288
+[2026-10-28 23_51_02_613][125][Script] [Career.Delivery] picked up career-v1-6
+[2026-10-28 23_51_02_613][125][Script] [Career.Delivery] delivering career-v1-6 feeCents=288
+[2026-10-28 23_51_02_613][125][Script] [Career.Delivery] accepting career-v1-7 feeCents=290
+[2026-10-28 23_51_02_613][125][Script] [Career.Delivery] picked up career-v1-7
+[2026-10-28 23_51_02_613][125][Script] [Career.Delivery] delivering career-v1-7 feeCents=290
+[2026-10-28 23_51_02_614][125][Script] [Career.Delivery] accepting career-v1-8 feeCents=276
+[2026-10-28 23_51_02_614][125][Script] [Career.Delivery] picked up career-v1-8
+[2026-10-28 23_51_02_614][125][Script] [Career.Delivery] delivering career-v1-8 feeCents=276
+[2026-10-28 23_51_02_614][125][Script] [Career.Delivery] accepting career-v1-9 feeCents=283
+[2026-10-28 23_51_02_614][125][Script] [Career.Delivery] picked up career-v1-9
+[2026-10-28 23_51_02_615][125][Script] [Career.Delivery] delivering career-v1-9 feeCents=283
+[2026-10-28 23_51_02_615][125][Script] [Career.Delivery] accepting career-v1-10 feeCents=275
+[2026-10-28 23_51_02_615][125][Script] [Career.Delivery] picked up career-v1-10
+[2026-10-28 23_51_02_615][125][Script] [Career.Delivery] delivering career-v1-10 feeCents=275
+[2026-10-28 23_51_02_616][125][Script] [Career.Delivery] accepting career-v1-11 feeCents=275
+[2026-10-28 23_51_02_617][125][Script] [Career.Delivery] accepting career-v1-12 feeCents=288
+[2026-10-28 23_51_02_617][125][Script] [Career.Delivery] picked up career-v1-12
+[2026-10-28 23_51_02_617][125][Script] [Career.Delivery] delivering career-v1-12 feeCents=288
+[2026-10-28 23_51_02_618][125][Script] [Career.Delivery] picked up career-v1-11
+[2026-10-28 23_51_02_618][125][Script] [Career.Delivery] delivering career-v1-11 feeCents=275
+[2026-10-28 23_51_02_622][125][Script] [Career.Store] loaded revision=51 day=17 cashCents=484184 orders=0
+[2026-10-28 23_51_02_623][125][Script] [Career.Delivery] accepting career-v1-13 feeCents=290
+[2026-10-28 23_51_02_623][125][Script] [Career.Delivery] picked up career-v1-13
+[2026-10-28 23_51_02_623][125][Script] [Career.Delivery] delivering career-v1-13 feeCents=290
+[2026-10-28 23_51_02_624][125][Script] [Career.Delivery] accepting career-v1-14 feeCents=276
+[2026-10-28 23_51_02_624][125][Script] [Career.Delivery] picked up career-v1-14
+[2026-10-28 23_51_02_624][125][Script] [Career.Delivery] delivering career-v1-14 feeCents=276
+[2026-10-28 23_51_02_625][125][Script] [Career.Delivery] accepting career-v1-15 feeCents=283
+[2026-10-28 23_51_02_625][125][Script] [Career.Delivery] picked up career-v1-15
+[2026-10-28 23_51_02_626][125][Script] [Career.Delivery] delivering career-v1-15 feeCents=283
+[2026-10-28 23_51_02_626][125][Script] [Career.Delivery] accepting career-v1-16 feeCents=275
+[2026-10-28 23_51_02_627][125][Script] [Career.Delivery] picked up career-v1-16
+[2026-10-28 23_51_02_627][125][Script] [Career.Delivery] delivering career-v1-16 feeCents=275
+[2026-10-28 23_51_02_627][125][Script] [Career.Delivery] accepting career-v1-17 feeCents=275
+[2026-10-28 23_51_02_628][125][Script] [Career.Delivery] picked up career-v1-17
+[2026-10-28 23_51_02_628][125][Script] [Career.Delivery] delivering career-v1-17 feeCents=275
+[2026-10-28 23_51_02_629][125][Script] [Career.Delivery] accepting career-v1-18 feeCents=288
+[2026-10-28 23_51_02_629][125][Script] [Career.Delivery] picked up career-v1-18
+[2026-10-28 23_51_02_630][125][Script] [Career.Delivery] delivering career-v1-18 feeCents=288
+[2026-10-28 23_51_02_630][125][Script] [Career.Delivery] accepting career-v1-19 feeCents=290
+[2026-10-28 23_51_02_630][125][Script] [Career.Delivery] picked up career-v1-19
+[2026-10-28 23_51_02_631][125][Script] [Career.Delivery] delivering career-v1-19 feeCents=290
+[2026-10-28 23_51_02_631][125][Script] [Career.Delivery] accepting career-v1-20 feeCents=276
+[2026-10-28 23_51_02_632][125][Script] [Career.Delivery] picked up career-v1-20
+[2026-10-28 23_51_02_632][125][Script] [Career.Delivery] delivering career-v1-20 feeCents=276
+[2026-10-28 23_51_02_633][125][Script] [Career.Delivery] accepting career-v1-21 feeCents=283
+[2026-10-28 23_51_02_633][125][Script] [Career.Delivery] picked up career-v1-21
+[2026-10-28 23_51_02_634][125][Script] [Career.Delivery] delivering career-v1-21 feeCents=283
+[2026-10-28 23_51_02_634][125][Script] [Career.Delivery] accepting career-v1-22 feeCents=275
+[2026-10-28 23_51_02_635][125][Script] [Career.Delivery] picked up career-v1-22
+[2026-10-28 23_51_02_635][125][Script] [Career.Delivery] delivering career-v1-22 feeCents=275
+[2026-10-28 23_51_02_636][125][Script] [Career.Delivery] accepting career-v1-23 feeCents=275
+[2026-10-28 23_51_02_636][125][Script] [Career.Delivery] picked up career-v1-23
+[2026-10-28 23_51_02_637][125][Script] [Career.Delivery] delivering career-v1-23 feeCents=275
+[2026-10-28 23_51_02_637][125][Script] [Career.Delivery] accepting career-v1-24 feeCents=288
+[2026-10-28 23_51_02_638][125][Script] [Career.Delivery] picked up career-v1-24
+[2026-10-28 23_51_02_638][125][Script] [Career.Delivery] delivering career-v1-24 feeCents=288
+[2026-10-28 23_51_02_639][125][Script] [Career.Delivery] accepting career-v1-25 feeCents=290
+[2026-10-28 23_51_02_639][125][Script] [Career.Delivery] picked up career-v1-25
+[2026-10-28 23_51_02_640][125][Script] [Career.Delivery] delivering career-v1-25 feeCents=290
+[2026-10-28 23_51_02_640][125][Script] [Career.Delivery] accepting career-v1-26 feeCents=276
+[2026-10-28 23_51_02_641][125][Script] [Career.Delivery] picked up career-v1-26
+[2026-10-28 23_51_02_641][125][Script] [Career.Delivery] delivering career-v1-26 feeCents=276
+[2026-10-28 23_51_02_642][125][Script] [Career.Delivery] accepting career-v1-27 feeCents=283
+[2026-10-28 23_51_02_642][125][Script] [Career.Delivery] picked up career-v1-27
+[2026-10-28 23_51_02_643][125][Script] [Career.Delivery] delivering career-v1-27 feeCents=283
+[2026-10-28 23_51_02_643][125][Script] [Career.Delivery] accepting career-v1-28 feeCents=275
+[2026-10-28 23_51_02_644][125][Script] [Career.Delivery] picked up career-v1-28
+[2026-10-28 23_51_02_645][125][Script] [Career.Delivery] delivering career-v1-28 feeCents=275
+[2026-10-28 23_51_02_645][125][Script] [Career.Delivery] accepting career-v1-29 feeCents=275
+[2026-10-28 23_51_02_646][125][Script] [Career.Delivery] picked up career-v1-29
+[2026-10-28 23_51_02_646][125][Script] [Career.Delivery] delivering career-v1-29 feeCents=275
+[2026-10-28 23_51_02_647][125][Script] [Career.Delivery] accepting career-v1-30 feeCents=288
+[2026-10-28 23_51_02_648][125][Script] [Career.Delivery] picked up career-v1-30
+[2026-10-28 23_51_02_648][125][Script] [Career.Delivery] delivering career-v1-30 feeCents=288
+[2026-10-28 23_51_02_649][125][Script] [Career.Delivery] accepting career-v1-31 feeCents=290
+[2026-10-28 23_51_02_649][125][Script] [Career.Delivery] picked up career-v1-31
+[2026-10-28 23_51_02_650][125][Script] [Career.Delivery] delivering career-v1-31 feeCents=290
+[2026-10-28 23_51_02_651][125][Script] [Career.Delivery] accepting career-v1-32 feeCents=276
+[2026-10-28 23_51_02_651][125][Script] [Career.Delivery] picked up career-v1-32
+[2026-10-28 23_51_02_652][125][Script] [Career.Delivery] delivering career-v1-32 feeCents=276
+[2026-10-28 23_51_02_653][125][Script] [Career.Delivery] accepting career-v1-33 feeCents=283
+[2026-10-28 23_51_02_653][125][Script] [Career.Delivery] picked up career-v1-33
+[2026-10-28 23_51_02_654][125][Script] [Career.Delivery] delivering career-v1-33 feeCents=283
+[2026-10-28 23_51_02_654][125][Script] [Career.Delivery] accepting career-v1-34 feeCents=275
+[2026-10-28 23_51_02_655][125][Script] [Career.Delivery] picked up career-v1-34
+[2026-10-28 23_51_02_656][125][Script] [Career.Delivery] delivering career-v1-34 feeCents=275
+[2026-10-28 23_51_02_656][125][Script] [Career.Delivery] accepting career-v1-35 feeCents=275
+[2026-10-28 23_51_02_657][125][Script] [Career.Delivery] picked up career-v1-35
+[2026-10-28 23_51_02_658][125][Script] [Career.Delivery] delivering career-v1-35 feeCents=275
+[2026-10-28 23_51_02_658][125][Script] [Career.Delivery] accepting career-v1-36 feeCents=288
+[2026-10-28 23_51_02_659][125][Script] [Career.Delivery] picked up career-v1-36
+[2026-10-28 23_51_02_660][125][Script] [Career.Delivery] delivering career-v1-36 feeCents=288
+[2026-10-28 23_51_02_660][125][Script] [Career.Delivery] accepting career-v1-37 feeCents=290
+[2026-10-28 23_51_02_661][125][Script] [Career.Delivery] picked up career-v1-37
+[2026-10-28 23_51_02_661][125][Script] [Career.Delivery] delivering career-v1-37 feeCents=290
+[2026-10-28 23_51_02_662][125][Script] [Career.Delivery] accepting career-v1-38 feeCents=276
+[2026-10-28 23_51_02_663][125][Script] [Career.Delivery] picked up career-v1-38
+[2026-10-28 23_51_02_663][125][Script] [Career.Delivery] delivering career-v1-38 feeCents=276
+[2026-10-28 23_51_02_690][125][Script] [Career.Delivery] accepting career-v1-39 feeCents=283
+[2026-10-28 23_51_02_691][125][Script] [Career.Delivery] picked up career-v1-39
+[2026-10-28 23_51_02_692][125][Script] [Career.Delivery] delivering career-v1-39 feeCents=283
+[2026-10-28 23_51_02_693][125][Script] [Career.Delivery] accepting career-v1-40 feeCents=275
+[2026-10-28 23_51_02_694][125][Script] [Career.Delivery] picked up career-v1-40
+[2026-10-28 23_51_02_694][125][Script] [Career.Delivery] delivering career-v1-40 feeCents=275
+[2026-10-28 23_51_02_696][125][Script] [Career.Delivery] accepting career-v1-41 feeCents=275
+[2026-10-28 23_51_02_697][125][Script] [Career.Delivery] accepting career-v1-42 feeCents=288
+[2026-10-28 23_51_02_698][125][Script] [Career.Delivery] accepting career-v1-43 feeCents=290
+[2026-10-28 23_51_02_699][125][Script] [Career.Delivery] accepting career-v1-44 feeCents=276
+[2026-10-28 23_51_02_700][125][Script] [Caree[2026-10-28 23_51_05_302][125] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_302][125] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_302][125] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_302][125] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_303][125] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_51_05_342][125] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+r.Delivery] picked up career-v1-44
+[2026-10-28 23_51_02_701][125][Script] [Career.Delivery] delivering career-v1-44 feeCents=276
+[2026-10-28 23_51_02_702][125][Script] [Career.Delivery] picked up career-v1-43
+[2026-10-28 23_51_02_703][125][Script] [Career.Delivery] delivering career-v1-43 feeCents=290
+[2026-10-28 23_51_02_704][125][Script] [Career.Delivery] picked up career-v1-42
+[2026-10-28 23_51_02_705][125][Script] [Career.Delivery] delivering career-v1-42 feeCents=288
+[2026-10-28 23_51_02_706][125][Script] [Career.Delivery] picked up career-v1-41
+[2026-10-28 23_51_02_706][125][Script] [Career.Delivery] delivering career-v1-41 feeCents=275
+[2026-10-28 23_51_02_709][125][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-28 23_51_02_718][125][Script] [Career.Store] loaded revision=155 day=20 cashCents=185000 orders=0
+[2026-10-28 23_51_02_719][125][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-28 23_51_02_732][125][Script] [Career.Store] loaded revision=168 day=27 cashCents=3670000 orders=0
+[2026-10-28 23_51_02_735][125][Script] [生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离
+[2026-10-28 23_51_02_735][125][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_51_02_735][125][Script] [Career.Store] cloud save unconfirmed
+[2026-10-28 23_51_02_735][125][Script] [云回调保护验收通过] 保存/读取超时解锁，迟到回包不确认旧版本、不覆盖新进度（回调桩测试）
+[2026-10-28 23_51_02_806][125][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-28 23_51_02_807][125][Script] [骑手IK] career_ebike L_Hand 目标0.5779m超出骨长范围，安全夹取
+[2026-10-28 23_51_02_807][125][Script] [骑手IK] career_ebike R_Hand 目标0.5591m超出骨长范围，安全夹取
+[2026-10-28 23_51_02_807][125][Script] [CareerActor] 上车成功(1.50,-20.00)；战损9号 · 独立外卖箱
+[2026-10-28 23_51_02_810][125][Script] [CareerActor] 城市骑行输入已驱动；独立动力2.8m/s²，35km/h封顶，不读取274km/h赛车参数
+[2026-10-28 23_51_03_332][125][Script] [CareerActor] 下车成功 人(-0.12,-12.31)，车留在(1.50,-12.31)
+[2026-10-28 23_51_03_332][125][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-28 23_51_03_342][125][Script] [骑手IK] career_ebike L_Foot 目标0.8100m超出骨长范围，安全夹取
+[2026-10-28 23_51_03_408][125][Script] [骑手IK] career_ebike R_Foot 目标0.8133m超出骨长范围，安全夹取
+[2026-10-28 23_51_03_468][125][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-28 23_51_03_472][125][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_51_03_474][125][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-28 23_51_03_474][125][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-28 23_51_03_474][125][Script] [生涯提示] 已接单，请到老街早餐店取餐
+[2026-10-28 23_51_03_638][125][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-28 23_51_03_875][125][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-28 23_51_03_876][125][Script] [生涯提示] 已取餐，请送往旧宅门厅
+[2026-10-28 23_51_05_219][125][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-28 23_51_05_220][125][Script] [生涯提示] 交付成功，配送费5.00元已入账
+[2026-10-28 23_51_05_220][125][Script] [Career.Store] loaded revision=7 day=1 cashCents=5500 orders=0
+[2026-10-28 23_51_05_220][125][Script] [首单实走验收通过] 实际步行动力到早餐店/生产交互取餐/沿街171米/门厅交付/到账与读档，无中途瞬移
+[2026-10-28 23_51_05_221][125][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-28 23_51_05_221][125][Script] [生涯城市验收通过] 全部交互点/路线可达/实际骑行动力/上下车/独立停车/手机暂停
+[2026-10-28 23_51_05_221][125][Script] [生涯] 场景与主流程已接通
+[2026-10-28 23_51_05_223][125] INFO: Shader::BeginLoad: <engine-res>/assets/BJZhCY_zDf_bWBDmac27XBYK-d9e95f5c.glsl
+[2026-10-28 23_51_05_223][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_228][125] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C.glsl
+[2026-10-28 23_51_05_228][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_242][125] INFO: Shader::BeginLoad: <engine-res>/assets/HdwacTs2OcCEFYmOZVMeZjB1-506e6d33.glsl
+[2026-10-28 23_51_05_242][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_255][125] INFO: Shader::BeginLoad: <engine-res>/assets/DYHiabeZkC9TeN8InBKDJdKz-980cf882.glsl
+[2026-10-28 23_51_05_255][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_285][125] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654.glsl
+[2026-10-28 23_51_05_285][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_300][125] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C.glsl
+[2026-10-28 23_51_05_300][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_301][125] INFO: Shader::BeginLoad: <engine-res>/assets/C0MrgZ4KRyMtqJBeQgWkhasm-c40ccbf2.glsl
+[2026-10-28 23_51_05_301][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_05_341][125] INFO: Shader::BeginLoad: <engine-res>/assets/HRNx6WwGUWaCcYTcVjtHCfXv-13514704.glsl
+[2026-10-28 23_51_05_341][125] INFO: Shader::EndLoad
+[2026-10-28 23_51_09_338][366]INFO__VALIDATE_UPDATE__:false
+[2026-10-28 23_51_09_348][366][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-28 23_51_09_430][366] INFO: DownloadManager: all tasks cancelled

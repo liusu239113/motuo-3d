@@ -66,6 +66,10 @@ function View:Init(actions)
         btn("上 / 下车 F",actions.mount,false,{id="career-mount"})}})
     safe:AddChild(label("空格制动 · Shift快走 · 鼠标右键拖动视角",10,C.muted,
         {position="absolute",bottom=12,left="30%",right="22%",textAlign="center",whiteSpace="normal"}))
+    safe:AddChild(btn("刹车",function() end,false,{position="absolute",bottom=70,right=174,width=64,height=52,padding=0,
+        onPointerDown=function() self.input.brake=true end,
+        onPointerUp=function() self.input.brake=false end,
+        onPointerCancel=function() self.input.brake=false end}))
     self.game:AddChild(safe)
     self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=14})
     self.phoneBody=UI.Panel{width=380,maxWidth="90%",height="94%",padding=16,gap=10,borderWidth=2,borderRadius=18,
@@ -260,7 +264,7 @@ function View:GetInput()
     local function down(key) return input:GetKeyDown(key) end
     local x=((down(KEY_D) or down(KEY_RIGHT) or self.input.right) and 1 or 0)-((down(KEY_A) or down(KEY_LEFT) or self.input.left) and 1 or 0)
     local y=((down(KEY_W) or down(KEY_UP) or self.input.forward) and 1 or 0)-((down(KEY_S) or down(KEY_DOWN) or self.input.back) and 1 or 0)
-    return {steer=x,throttle=y,walkX=x,walkY=y,run=down(KEY_SHIFT),brake=down(KEY_SPACE)}
+    return {steer=x,throttle=y,walkX=x,walkY=y,run=down(KEY_SHIFT),brake=down(KEY_SPACE) or self.input.brake}
 end
 function View:ResetInput() for key in pairs(self.input) do self.input[key]=false end end
 function View:Dispose() self:ResetInput(); self.root:Destroy() end

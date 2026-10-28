@@ -1111,9 +1111,10 @@ function HandleUpdate(eventType, eventData)
         local finished = sim_.finished or (pendingChallenge_ and race_ and race_.phase == "finished")
         if finished and not resultShown_ then
             resultShown_ = true
+            local careerResultMessage=""
             if careerRace_ and race_ and race_.player then
                 local _,message=SettleCareerResult()
-                hud_:ShowNotice("生涯赛事",message.."\n点击返回生涯继续；未完赛不会发放奖金。")
+                careerResultMessage=message
             elseif pendingChallenge_ and race_ and race_.player then
                 -- 名次越高金币越多；被抓按末位结算，仍给参与奖励。
                 local place = race_.player.rank or 9
@@ -1136,6 +1137,9 @@ function HandleUpdate(eventType, eventData)
             end
             SetScreen("result")
             hud_:ShowResult(sim_)
+            if careerResultMessage~="" then
+                hud_.resultStats:SetText(careerResultMessage.."\n奖金计入生涯现金，不发放旧竞速金币。")
+            end
         end
     end
     bike_:UpdateState(screen_ == "ride" and dt or 0, sim_, CockpitActive(), clock_)
