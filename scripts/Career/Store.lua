@@ -64,6 +64,10 @@ local Config = require "Career.Config"
 ---@field lastAidDay integer
 ---@field lastDaySummary table
 ---@field position CareerPosition
+---@field equipment? table<string, boolean>
+---@field simulatedOrders? integer
+---@field weeksWorked? integer
+---@field career? table
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
 ---@field write fun(path: string, text: string): boolean, string?
@@ -154,14 +158,26 @@ local function validate(p)
     if not booleanMap(p.flags) or not booleanMap(p.settledOrders) or not booleanMap(p.financialKeys)
         or not integer(p.nextOrderSequence, 1) or not integer(p.completedOrders, 0)
         or not integer(p.lastAidDay, 0) or p.lastAidDay > p.day or type(p.phase) ~= "string"
-        or (p.accommodation ~= "bridge" and p.accommodation ~= "park")
+        or not ({bridge=true,park=true,hostel=true,room=true,apartment=true})[p.accommodation]
         or type(p.lastDaySummary) ~= "table" then return false, "生涯进度字段无效" end
     if type(p.position) ~= "table" or not finite(p.position.x) or not finite(p.position.z)
         or not finite(p.position.yaw) or type(p.position.mounted) ~= "boolean"
         or not finite(p.position.bikeX) or not finite(p.position.bikeZ) or not finite(p.position.bikeYaw) then
         return false, "生涯位置字段无效"
     end
-    if not array(p.activeOrders) or #p.activeOrders > Config.CAPACITY or not array(p.ledger)
+    local equipment = p.equipment or {}
+    if not booleanMap(equipment) then return false, "装备字段无效" end
+    if p.simulatedOrders ~= nil and not integer(p.simulatedOrders,0) then return false,"排班完成数无效" end
+    if p.weeksWorked ~= nil and not integer(p.weeksWorked,0) then return false,"排班周数无效" end
+    if p.career ~= nil then
+        local c=p.career
+        if type(c)~="table" or not integer(c.starts,0) or not integer(c.wins,0) or not integer(c.points,0)
+            or not integer(c.season,1) or type(c.team)~="string" then return false,"职业进度无效" end
+        if c.pending~=false and (type(c.pending)~="table" or type(c.pending.id)~="string"
+            or not integer(c.pending.series,1) or c.pending.series>6) then return false,"职业报名无效" end
+    end
+    local capacity=equipment.large_box and 4 or equipment.insulated_box and 2 or 1
+    if not array(p.activeOrders) or #p.activeOrders > capacity or not array(p.ledger)
         or #p.ledger == 0 then return false, "订单容量或流水格式无效" end
     local runningBalance = 0
     local ledgerKeys = {}
@@ -453,9 +469,15 @@ end
 ---@return boolean, string
 function Store.Rest(pointId)
     local place = pointId or "bridge"
-    if place ~= "bridge" and place ~= "park" then return false, "首版只支持桥洞或公园免费休息" end
+    local places={bridge={price=0,energy=70},park={price=0,energy=75},hostel={price=3000,energy=90},room={price=6500,energy=100},apartment={price=15000,energy=100}}
+    local room=places[place]
+    if not room then return false,"住处不存在" end
     return Store.Transaction(function(p)
         if #p.activeOrders > 0 then return false, "请先完成当前配送再休息" end
+        if room.price>0 then
+            local ok,message=Store.ApplyCash(p,-room.price,"lodging","lodging:"..p.day)
+            if not ok then return false,message end
+        end
         local income, expense = 0, 0
         for _, entry in ipairs(p.ledger) do
             if entry.day == p.day and entry.kind ~= "opening" then
@@ -467,7 +489,7 @@ function Store.Rest(pointId)
         p.time = Config.START_HOUR
         p.accommodation = place
         p.hunger = math.max(35, p.hunger - 20)
-        p.energy = math.max(p.energy, place == "park" and 75 or 70)
+        p.energy = math.max(p.energy, room.energy)
         -- 次日免费最低可用充电，非满电赠送；没有现金/可出售物品收益。
         p.battery = math.max(p.battery, 35)
         p.vehicle.condition = math.max(p.vehicle.condition, 35)
@@ -530,8 +552,10 @@ function Store.Advance(dt, distanceMeters)
     local hours = math.min(dt * Config.GAME_HOURS_PER_SECOND, 24 - p.time)
     p.time = p.time + hours
     p.hunger = math.max(0, p.hunger - hours * Config.HUNGER_PER_HOUR)
-    p.energy = math.max(0, p.energy - hours * Config.ENERGY_PER_HOUR)
-    p.battery = math.max(0, p.battery - (distanceMeters or 0) * Config.BATTERY_PER_METER)
+    local rate = p.equipment and p.equipment.raincoat and .85 or 1
+    p.energy = math.max(0, p.energy - hours * Config.ENERGY_PER_HOUR * rate)
+    local batteryRate = p.equipment and p.equipment.battery and 100/65000 or Config.BATTERY_PER_METER
+    p.battery = math.max(0, p.battery - (distanceMeters or 0) * batteryRate)
     for _, order in ipairs(p.activeOrders) do
         order.remainingHours = order.remainingHours - hours
         order.late = order.remainingHours < 0

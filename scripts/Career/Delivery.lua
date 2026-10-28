@@ -2,6 +2,7 @@
 local Delivery = {}
 local Store = require "Career.Store"
 local Config = require "Career.Config"
+local Progress = require "Career.Progression"
 
 ---@class CareerInteractionContext
 ---@field riding? boolean
@@ -17,7 +18,7 @@ end
 ---@param p CareerProfile
 ---@return CareerOrder?
 local function offerFor(p)
-    if #p.activeOrders >= Config.CAPACITY or p.time >= 23 then return nil end
+    if #p.activeOrders >= Progress.Capacity(p) or p.time >= 23 then return nil end
     local template = Config.orderTemplates[1]
     if p.flags.tutorialCompleted then
         -- 单机确定性订单供给，并非真人抢单；不需要随机数/系统时钟。
@@ -46,13 +47,13 @@ function Delivery.GetActive() return Store.Get().activeOrders[1] end
 ---@return boolean, string
 function Delivery.Accept(offerId)
     return Store.Transaction(function(p)
-        if #p.activeOrders >= Config.CAPACITY then return false, "新手容量为1，请先完成当前订单" end
+        if #p.activeOrders >= Progress.Capacity(p) then return false, "新手容量为1，请先完成当前订单" end
         local offer = offerFor(p)
         if not offer then return false, "当前没有可接订单，请休息后再上线" end
         if offerId and offerId ~= offer.id then return false, "订单已变更，请刷新后接单" end
         if p.settledOrders[offer.id] then return false, "该订单已结算" end
         offer.status = "accepted"
-        p.activeOrders[1] = offer
+        p.activeOrders[#p.activeOrders + 1] = offer
         p.nextOrderSequence = p.nextOrderSequence + 1
         p.phase = "pickup"
         print("[Career.Delivery] accepting " .. offer.id .. " feeCents=" .. offer.feeCents)
@@ -90,8 +91,11 @@ end
 ---@return boolean, string
 function Delivery.Pickup(orderId, x, z, context)
     return Store.Transaction(function(p)
-        local order = p.activeOrders[1]
-        if not order or order.id ~= orderId then return false, "找不到此活动订单" end
+        local order, orderIndex
+        for index,item in ipairs(p.activeOrders) do
+            if item.id==orderId then order,orderIndex=item,index; break end
+        end
+        if not order then return false, "找不到此活动订单" end
         if order.status ~= "accepted" then return false, "已取餐，不能重复领取" end
         local allowed, message = canInteract(order.pickupId, x, z, context)
         if not allowed then return false, message end
@@ -110,8 +114,11 @@ end
 function Delivery.Deliver(orderId, x, z, context)
     return Store.Transaction(function(p)
         if p.settledOrders[orderId] then return false, "此订单已结算，不能重复到账" end
-        local order = p.activeOrders[1]
-        if not order or order.id ~= orderId then return false, "找不到此活动订单" end
+        local order, orderIndex
+        for index,item in ipairs(p.activeOrders) do
+            if item.id==orderId then order,orderIndex=item,index; break end
+        end
+        if not order then return false, "找不到此活动订单" end
         if order.status ~= "picked_up" then return false, "请先到店取餐" end
         local allowed, message = canInteract(order.dropoffId, x, z, context)
         if not allowed then return false, message end
@@ -122,7 +129,7 @@ function Delivery.Deliver(orderId, x, z, context)
         p.completedOrders = p.completedOrders + 1
         if order.tutorial then p.flags.tutorialCompleted = true end
         p.flags.firstDelivery = true
-        p.activeOrders = {}
+        table.remove(p.activeOrders, orderIndex)
         p.phase = "working"
         print("[Career.Delivery] delivering " .. order.id .. " feeCents=" .. order.feeCents)
         return true, string.format("交付成功，配送费%.2f元已入账", order.feeCents / 100)
