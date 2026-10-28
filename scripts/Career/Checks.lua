@@ -355,6 +355,7 @@ function Checks.RunWorld(session)
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then
             if not actor.mounted then assert(actor:ToggleMount()) end
+            session:Refresh()
             actor:SyncVisuals(1)
             session.yaw,session.pitch=90,10
             session.camera:Update(1,actor.node,session.yaw,session.pitch)

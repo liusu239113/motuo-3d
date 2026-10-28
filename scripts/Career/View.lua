@@ -115,6 +115,7 @@ function View:ShowHome(hasSave,message)
 end
 function View:ShowGame()
     self.home:SetVisible(false); self.game:SetVisible(true); self.overlay:SetVisible(false)
+    self.controlWidth,self.controlHeight=0,0
     self.blocked=false; self.controls:SetEnabled(self.phonePage=="")
 end
 function View:ShowLoading(title,detail,fraction)

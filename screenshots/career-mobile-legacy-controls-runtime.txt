@@ -1,0 +1,57 @@
+[2026-10-29 00_28_05_772][0] ERROR: Could not initialize audio output
+[2026-10-29 00_28_05_801][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_05_801][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_05_801][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_05_801][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_06_214][25] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_06_214][25] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_06_214][25] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 00_28_05_287][0] INFO: DownloadManager initialized
+[2026-10-29 00_28_05_288][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 00_28_05_289][0] INFO: Engine construct finish.
+[2026-10-29 00_28_05_755][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 00_28_05_773][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 00_28_05_773][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 00_28_06_194][25] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 00_28_07_290][46]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 00_28_07_293][46]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 00_28_07_293][46]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 00_28_07_294][46] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 00_28_07_835][72] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 00_28_07_843][72][Script] IsNetworkMode:    false
+[2026-10-29 00_28_07_891][72][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 00_28_07_891][72][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 00_28_07_891][72][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 00_28_07_891][72][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 00_28_07_897][72][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 00_28_09_400][72][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 00_28_09_744][72][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 00_28_09_751][72][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 00_28_09_759][72][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 00_28_09_808][72][Script] [操作设置] 全屏真实按键编辑，返回页=pause
+[2026-10-29 00_28_09_828][72][Script] [ControlChecks] PASS 真实UI拖放→松手保存→完成→重读→驾驶同位置同尺寸命中
+[2026-10-29 00_28_09_830][72][Script] [操作设置] 全屏真实按键编辑，返回页=pause
+[2026-10-29 00_28_09_835][72][Script] [ControlChecks] PASS 真实捕获拖出屏幕：左上/右下边界夹取与落点保存
+[2026-10-29 00_28_09_837][72][Script] [ControlChecks] PASS 真实PointerCancel恢复布局、保留原方案、不写档
+[2026-10-29 00_28_09_862][72][Script] [ControlChecks] PASS 第二指针不抢占、不移动、不提前提交，原指针可继续拖动
+[2026-10-29 00_28_09_865][72][Script] [ControlChecks] PASS 真实复制方案按钮、逐层深拷贝、修改副本不污染来源
+[2026-10-29 00_28_09_875][72][Script] [ControlChecks] PASS 滑杆回填无反写、真实拖动松手保存、方案切换、全新模块完整存读往返
+[2026-10-29 00_28_09_880][72][Script] [ControlChecks] PASS 重读配置重新应用到真实MobileControls方向与死区
+[2026-10-29 00_28_09_881][72][Script] [操作设置] 全屏真实按键编辑，返回页=pause
+[2026-10-29 00_28_09_906][72][Script] [Layout Warning] Overflow in 'Panel': children=375x28, container=360x61. Consider: flexShrink=1 on children, or increase container size.
+[2026-10-29 00_28_09_924][72][Script] [ControlChecks] PASS 六方案真实换行、全部子控件完整容纳、死区滑杆下缘新触摸命中与保存
+[2026-10-29 00_28_09_929][72][Script] [ControlChecks] PASS pcall/finally恢复原方案引用、屏幕、控件、所有回调与焦点；原玩家存档零访问
+[2026-10-29 00_28_09_929][72][Script] [ControlChecks] 全部通过：9 类，472 条断言，18 次内存保存，2 次新模块重读
+[2026-10-29 00_28_09_929][72][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 00_28_09_980][72][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 00_28_09_982][73][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 00_28_09_983][73][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 00_28_09_983][73][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 00_28_11_722][152]INFO__VALIDATE_UPDATE__:false
