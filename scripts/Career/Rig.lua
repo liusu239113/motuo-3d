@@ -13,31 +13,32 @@ Rig.DiffusePath=ROOT.."Textures/"..STEM.."_00_D.jpg"
 Rig.NormalPath=ROOT.."Textures/"..STEM.."_00_N.png"
 ---@param parent Node
 ---@return CareerRig
-function Rig.New(parent)
+function Rig.New(parent,asset)
     local self=setmetatable({},Rig)
-    self:InitCareer(parent)
+    self:InitCareer(parent,asset)
     return self
 end
-function Rig:InitCareer(parent)
+function Rig:InitCareer(parent,asset)
+    asset=asset or {model=Rig.ModelPath,material=Rig.MaterialPath,diffuse=Rig.DiffusePath,normal=Rig.NormalPath,height=1.76,name="王二狗"}
     self.parent=parent
     self.vehicleId,self.classId,self.colorId="career_ebike","career","original"
     self.config={hip=V(0,.85,-.18),foot=V(.17,.27,.16),waist=18,spine=26,chest=32,head=0,
         kneeHint=V(.12,0,1),elbowHint=V(.8,-.6,-.3)}
     -- 车身纠正前后后，从实际顶点读到握把高度1.11～1.14m、前向约.35m。
     self.grip=V(.32,1.12,.36)
-    self.node=parent:CreateChild("王二狗骨骼")
-    self.mesh=self.node:CreateChild("王二狗模型")
+    self.node=parent:CreateChild(asset.name.."骨骼")
+    self.mesh=self.node:CreateChild(asset.name.."模型")
     self.model=self.mesh:CreateComponent("AnimatedModel")
-    local resource=cache:GetResource("Model",Rig.ModelPath)
+    local resource=cache:GetResource("Model",asset.model)
     assert(resource,"王二狗骨骼模型未载入")
     self.model:SetModel(resource)
     self.model:RemoveAllAnimationStates()
     self.model.updateInvisible=true; self.model.animationLodBias=0; self.model.castShadows=true
-    self.material=cache:GetResource("Material",Rig.MaterialPath):Clone()
-    self.material:SetTexture(TU_DIFFUSE,cache:GetResource("Texture2D",Rig.DiffusePath))
-    self.material:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",Rig.NormalPath))
+    self.material=cache:GetResource("Material",asset.material):Clone()
+    self.material:SetTexture(TU_DIFFUSE,cache:GetResource("Texture2D",asset.diffuse))
+    self.material:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",asset.normal))
     self.model:SetMaterial(self.material)
-    self.heightScale=1.76/resource.boundingBox.size.y
+    self.heightScale=asset.height/resource.boundingBox.size.y
     self.mesh:SetScale(self.heightScale)
     self.bind,self.arms,self.legs,self.boneNames={},{},{},{}
     self.warnedReach,self.initializing={},false
@@ -68,7 +69,7 @@ function Rig:InitCareer(parent)
     self.standOffset=V(0,-resource.boundingBox.min.y*self.heightScale,0)
     self.mesh.position=self.standOffset
     self.feet={L_Foot=self:GetBonePosition("L_Foot"),R_Foot=self:GetBonePosition("R_Foot")}
-    print(string.format("[王二狗] 正式角色 %d骨，原始尺寸%s，等比身高1.76m",skeleton:GetNumBones(),resource.boundingBox.size:ToString()))
+    print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
 end
 function Rig:Reset()
     for _,name in ipairs(self.boneNames) do

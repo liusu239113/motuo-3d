@@ -14,6 +14,7 @@ local Housing = require("Career.HousingData")
 local Vehicles = require("Career.VehicleData")
 local VehicleActions = require("Career.VehicleActions")
 local CareerAudio = require("Career.Audio")
+local Traffic = require("Career.Traffic")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -65,6 +66,8 @@ function Session:Init(options)
     self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
+    ---@type CityTraffic?
+    self.traffic=nil
     ---@type CareerSoundscape?
     self.audio=nil
     ---@type RideLoader?
@@ -149,7 +152,7 @@ function Session:StartCareer(fresh,confirmed)
     self.view.home:SetVisible(false)
     self.view:ShowLoading("准备南城老街","正在校验城市、人物、车辆和材质。",0)
     local resources,types={},{}
-    for _,module in ipairs({City,Actor}) do
+    for _,module in ipairs({City,Actor,Traffic}) do
         for _,path in ipairs(module.Resources) do resources[#resources+1]=path; types[path]=module.ResourceTypes[path] end
     end
     for _,path in ipairs(require("Career.Phone").Resources) do resources[#resources+1]=path; types[path]="Texture2D" end
@@ -201,6 +204,8 @@ function Session:BuildWorld()
     self.environmentHour=-1
     self:UpdateEnvironment(Store.Get().time)
     self:RestorePosition()
+    self.traffic=assert(Traffic.New(self.city,self.actor))
+    self.city.traffic=self.traffic
     self.camera=ThirdPersonCamera.Create(self.scene,{
         modes={normal={distance=5.8,offset=Vector3(0,1.35,0),fov=55},ride={distance=6.4,offset=Vector3(0,1.3,0),fov=60},indoor={distance=3.1,offset=Vector3(0,1.2,0),fov=65}},
         transitionSpeed=8,farClip=450})
@@ -466,6 +471,7 @@ function Session:Update(dt)
         controls.throttle=0; controls.brake=true; controls.reverseBrake=false
     end
     self.actor:Update(dt,controls,self.yaw)
+    if self.traffic then self.traffic:Update(dt) end
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
     self:SavePosition()
     local ok,message=Delivery.Update(dt,distance)
@@ -489,6 +495,8 @@ function Session:DisposeWorld()
     if self.loader then self.loader:Cancel(); self.loader=nil end
     self.building=nil
     renderer:SetNumViewports(0)
+    if self.traffic then self.traffic:Dispose(); self.traffic=nil end
+    if self.city then self.city.traffic=nil end
     if self.audio then self.audio:Stop(); self.audio=nil end
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.scene then self.scene:Dispose(); self.scene=nil end

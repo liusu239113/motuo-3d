@@ -328,6 +328,8 @@ function Checks.RunMobile(session)
     print("[生涯触屏验收通过] 复用赛车骑行方案/二维步行摇杆/右手独立视角/斜向与后移/上下车/刹停持续倒车/松手停稳/手机暂停清输入/取消触摸")
 end
 function Checks.RunWorld(session)
+    -- 原有配送/住房用静态城市回归；交通在独立确定性场景中检验，不污染首单轨迹。
+    session.traffic.active=false
     Checks.RunLogic()
     Checks.RunProgression()
     Checks.RunCloudTimeout()
@@ -371,6 +373,8 @@ function Checks.RunWorld(session)
     Checks.RunMobile(session)
     require("Career.HousingChecks").Run(session)
     require("Career.MediaChecks").Run(session)
+    require("Career.TrafficChecks").Run(session)
+    session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then
@@ -406,6 +410,8 @@ function Checks.RunWorld(session)
         if arg=="-careernight" then require("Career.HousingChecks").NightShot(session) end
         local home=arg:match("^%-careerhousing=(.+)$")
         if home then require("Career.HousingChecks").Shot(session,home) end
+        local trafficSeconds=arg:match("^%-careertraffic=([%.%d]+)$")
+        if trafficSeconds then require("Career.TrafficChecks").Shot(session,tonumber(trafficSeconds) or 0) end
         local page=arg:match("^%-careerpage=(.+)$")
         if page then
             if page=="delivery" then session.online=true end

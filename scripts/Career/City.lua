@@ -5,6 +5,7 @@ local Parts = require("Parts")
 local Config = require("Career.Config")
 local Housing = require("Career.HousingData")
 local Interior = require("Career.Interior")
+local Signals = require("Career.TrafficSignals")
 ---@class CareerCity
 ---@field SetSpace fun(self:CareerCity,id:string)
 ---@field UpdateLights fun(self:CareerCity,hour:number)
@@ -41,6 +42,8 @@ function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
     self.space="city"
+    ---@type CityTraffic?
+    self.traffic=nil
     ---@type boolean?
     self.lightsOn=nil
     ---@type Light[]
@@ -64,6 +67,7 @@ function City:Init(scene)
     self:BuildRoads()
     self:BuildBlocks()
     self:BuildPlaces()
+    self.signals=Signals.New(self.root,self.details)
     self.stats = self.details:Finish()
     self.interior=Interior.New(scene,self.mats)
     self.stats.buildings, self.stats.obstacles = self.buildings, #self.obstacles
@@ -282,6 +286,11 @@ end
 function City:Surface(x,z) return .085 end
 
 function City:IsFree(x,z,radius)
+    if not self:StaticFree(x,z,radius) then return false end
+    if self.space~="city" or not self.traffic then return true end
+    return self.traffic:IsFree(x,z,radius)
+end
+function City:StaticFree(x,z,radius)
     if self.space~="city" then return self.interior:IsFree(x,z,radius) end
     if math.abs(x)>180-radius or math.abs(z)>180-radius then return false end
     for _,o in ipairs(self.obstacles) do
