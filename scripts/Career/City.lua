@@ -220,6 +220,12 @@ function City:BuildPlaces()
     d:Box("wood",2,.15,-73,2.1,.18,1.0)
     d:Box("trim",2,.35,-73.3,.7,.24,.4)
     d:Sign("桥下落脚点",0,2,-74,0,.38)
+    d:Ground("concrete",-25,44,48,3,.078)
+    for _,point in ipairs(Config.pointList) do
+        if point.id=="noodle" or point.id=="convenience" or point.id=="office" then
+            d:Sign(point.label,point.x,2.5,point.z,0,.34)
+        end
+    end
     -- 充电桩和门厅标识与Config同源。
     d:Box("metal",24,.9,-9,.65,1.8,.65)
     d:Box("lamp",24,1.2,-9.35,.43,.36,.035)

@@ -70,6 +70,7 @@ local Config = require "Career.Config"
 ---@field activeSeconds? number
 ---@field lastScheduleSeconds? number
 ---@field lastScheduleManualOrders? integer
+---@field raceVehicle? string
 ---@field career? table
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
@@ -187,12 +188,26 @@ local function validate(p)
     end
     if p.lastScheduleManualOrders~=nil and (not integer(p.lastScheduleManualOrders,0)
         or p.lastScheduleManualOrders>p.completedOrders) then return false,"班次订单数无效" end
+    if p.raceVehicle~=nil and (type(p.raceVehicle)~="string" or not p.ownedMotorcycles[p.raceVehicle]) then
+        return false,"参赛车辆未购入"
+    end
     if p.career ~= nil then
         local c=p.career
         if type(c)~="table" or not integer(c.starts,0) or not integer(c.wins,0) or not integer(c.points,0)
             or not integer(c.season,1) or type(c.team)~="string" then return false,"职业进度无效" end
-        if c.pending~=false and (type(c.pending)~="table" or type(c.pending.id)~="string"
-            or not integer(c.pending.series,1) or c.pending.series>6) then return false,"职业报名无效" end
+        if c.pending~=false then
+            local pending=c.pending
+            local tracks={"circuit","lake","hairpin","coast","canyon","forest"}
+            if type(pending)~="table" or type(pending.id)~="string" or not integer(pending.series,1) or pending.series>6
+                or pending.track~=tracks[pending.series] or type(pending.vehicle)~="string" or not p.ownedMotorcycles[pending.vehicle]
+                or not integer(pending.laps,1) or pending.laps>9 then return false,"职业报名无效" end
+            if pending.training then
+                if pending.id~="training:license" or pending.series~=1 or pending.laps~=1
+                    or not p.financialKeys["training:license"] then return false,"训练报名无效" end
+            elseif pending.id~="career-race:"..c.starts or not p.financialKeys[pending.id..":entry"] then
+                return false,"职业报名缺少对应入场记录"
+            end
+        end
     end
     local capacity=equipment.large_box and 4 or equipment.insulated_box and 2 or 1
     if not array(p.activeOrders) or #p.activeOrders > capacity or not array(p.ledger)

@@ -34,6 +34,9 @@ Config.pointList = {
     { id = "bridge", label = "桥下落脚点", kind = "rest", x = 0, z = -70 },
     { id = "charge", label = "街边充电点", kind = "charge", x = 22, z = -8 },
     { id = "dealer", label = "车行前台", kind = "dealer", x = 108, z = 80 },
+    { id = "noodle", label = "街角面馆取餐口", kind = "merchant", x = -70, z = 9 },
+    { id = "convenience", label = "社区便利取货口", kind = "merchant", x = 53, z = 9 },
+    { id = "office", label = "星桥写字楼门厅", kind = "delivery", x = -45, z = 44 },
 }
 ---@type table<string, CareerPoint>
 Config.points = {}
@@ -67,6 +70,13 @@ Config.orderTemplates = {
     { id = "park_lunch", title = "公园门口便餐", pickupId = "breakfast", dropoffId = "park",
         route = { {x=-25,z=-8}, {x=-25,z=0}, {x=100,z=0}, {x=100,z=-25}, {x=108,z=-25} }, timeLimitHours = 1, tutorial = false },
 }
+-- 新商家走已有街道，旧模板保持不变，已有活动订单仍可原价读档。
+Config.orderTemplates[#Config.orderTemplates+1]={id="noodle_office",title="写字楼加班面",pickupId="noodle",dropoffId="office",
+    route={{x=-70,z=9},{x=-70,z=0},{x=0,z=0},{x=0,z=44},{x=-45,z=44}},timeLimitHours=1,tutorial=false}
+Config.orderTemplates[#Config.orderTemplates+1]={id="shop_old",title="旧宅生活补给",pickupId="convenience",dropoffId="home_old",
+    route={{x=53,z=9},{x=53,z=0},{x=-100,z=0},{x=-100,z=80},{x=-108,z=80}},timeLimitHours=1,tutorial=false}
+Config.orderTemplates[#Config.orderTemplates+1]={id="noodle_dealer",title="车行师傅午餐",pickupId="noodle",dropoffId="dealer",
+    route={{x=-70,z=9},{x=-70,z=0},{x=100,z=0},{x=100,z=80},{x=108,z=80}},timeLimitHours=1,tutorial=false}
 
 ---@param route CareerRoutePoint[]
 ---@return number

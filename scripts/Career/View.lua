@@ -215,7 +215,9 @@ function View:BuildPhone(state,offer,active)
         text("现金达到5万元后首购二手训练版：46000元；另备2000元护具训练、2000元周转。",11,C.muted)
         for _,item in ipairs(Progress.Motorcycles) do
             local id=item.id
-            button((state.ownedMotorcycles[id] and "已拥有 · " or "购买 · ")..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false)
+            if state.ownedMotorcycles[id] then
+                button((state.raceVehicle==id and "当前参赛 · " or "选为参赛车 · ")..item.name,function() a.selectMotorcycle(id) end,false)
+            else button("购买 · "..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false) end
         end
         button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
         text("职业赛事",16,C.cyan)

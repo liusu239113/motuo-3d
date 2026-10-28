@@ -139,6 +139,7 @@ function Progress.Train()
         extras(p)
         if not p.flags.firstMotorcycle then return false,"先购买人生第一辆摩托" end
         if p.flags.professional then return false,"已完成入门训练" end
+        if #p.activeOrders>0 then return false,"先送完外卖再参加训练" end
         if p.career.pending then return false,"已有训练或赛事报名，请继续当前项目" end
         local cost=p.equipment.helmet and 155000 or 200000
         if p.cashCents<cost+200000 then return false,"训练护具后还需保留2000元生活周转金" end
@@ -159,6 +160,29 @@ function Progress.CompleteTraining(finished)
         return true,"封闭场地训练通过！已掌握顺序检查点与完赛规则，三天课程结束，职业资格开放。"
     end)
 end
+function Progress.SelectMotorcycle(id)
+    return Store.Transaction(function(p)
+        if not p.ownedMotorcycles[id] then return false,"先购买这辆摩托" end
+        if p.career and p.career.pending then return false,"先完成已报名项目再换车" end
+        p.raceVehicle=id
+        return true,"已选择生涯参赛车辆；配送仍使用电动车"
+    end)
+end
+function Progress.NextStory(p)
+    local stories={
+        {id="firstDeliveryStory",ready=p.completedOrders>=1,title="第一笔自己挣的钱",text="王二狗盯着到账提醒看了很久。钱不多，但这顿饭，终于能靠自己挣。\n表哥：别小看第一单。记住店门和楼号，明天就能少走弯路。"},
+        {id="riderStory",ready=p.completedOrders>=10,title="老街站，记住了你的名字",text="站长把你的名字写进常跑骑手名单。双单保温箱开放购买，之后每一份都要分别取餐、送达。\n王二狗：先把车箱装稳，再慢慢把生活过稳。"},
+        {id="fiveManStory",ready=p.cashCents>=5000000 and not p.flags.firstMotorcycle,title="五万元的钥匙",text="你反复核对钱包：五万，真的攒到了。\n表哥：南城车行那辆二手训练版还在，46000元。别把钱全花光，护具训练2000，留2000周转。\n这一次，你不是借车的人了。去车行前台看看吧。"},
+        {id="ownBikeStory",ready=p.flags.firstMotorcycle,title="人生第一辆摩托",text="交接钥匙时，你想起那辆陪你跑街串巷的战损9号。它没有离开，配送还要靠它。\n师傅：先带好护具，去封闭场地完成训练，再谈比赛。"},
+        {id="licenseStory",ready=p.flags.professional,title="从取餐口到发车格",text="第一次完整通过顺序检查点，你知道赛道不只是更快。刹车、线路、耐心，每一样都要重新学。\n新人杯已经开放。职业奖金存入生涯钱包，不兑换独立竞速金币。"},
+        {id="teamStory",ready=p.career and p.career.points>=9,title="南城极速的邀请",text="车队递来一张名片：我们看过你的比赛，稳定比一时快更难。\n王二狗：我不怕慢，只怕再也不往前走。\n职业积分已达到车队签约门槛，下一站海岸巡回赛。"},
+        {id="winnerStory",ready=p.flags.lifeWinner,title="终章 · 每一段路都算数",text="年度冠军的领奖台上，王二狗没有忘记桥下的那张旧垫子。\n从50元、战损电动车和第一只外卖箱，到属于自己的住处和冠军发车格。\n故事告一段落，生活继续：你仍可以配送、改善住处、收藏摩托和挑战赛事。"},
+    }
+    for _,story in ipairs(stories) do if story.ready and not p.flags[story.id] then return story end end
+end
+function Progress.MarkStory(id)
+    return Store.Transaction(function(p) p.flags[id]=true; return true end)
+end
 function Progress.EnterSeries(index)
     local series=Progress.Series[index]
     if not series then return false,"赛事不存在" end
@@ -172,7 +196,7 @@ function Progress.EnterSeries(index)
         local ok,message=Store.ApplyCash(p,-series.fee,"race_entry",id..":entry")
         if not ok then return false,message end
         p.career.starts=p.career.starts+1
-        p.career.pending={id=id,series=index,vehicle="sport",track=series.track,laps=series.laps}
+        p.career.pending={id=id,series=index,vehicle=p.raceVehicle or "sport",track=series.track,laps=series.laps}
         return true,"报名成功，进入"..series.name
     end)
 end

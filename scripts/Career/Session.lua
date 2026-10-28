@@ -75,6 +75,7 @@ function Session:Init(options)
         sleepHousing=function() local p=Store.Get(); self:Service("home_old",function() return Store.Rest(p.accommodation) end) end,
         workWeek=function() self:WorkWeek() end,
         buyMotorcycle=function(id) self:Service("dealer",function() return Progress.BuyMotorcycle(id) end) end,
+        selectMotorcycle=function(id) self:Service("dealer",function() return Progress.SelectMotorcycle(id) end) end,
         train=function()
             self:Service("dealer",function()
                 local p=Store.Get()
@@ -356,6 +357,15 @@ function Session:Update(dt)
         return
     end
     if self.view:IsBlocking() then return end
+    if not self.options.test and math.abs(self.actor.speed)<.35 then
+        local story=Progress.NextStory(Store.Get())
+        if story then
+            self.view:ShowDialog(story.title,story.text,{{text="记住这一刻 · 继续",primary=true,onClick=function()
+                local _,message=Progress.MarkStory(story.id); self.view:Notice(message)
+            end}})
+            return
+        end
+    end
     if input:GetKeyPress(KEY_TAB) then self:OpenPhone("apps"); return end
     if input:GetKeyPress(KEY_P) then self:Pause(); return end
     if input:GetKeyPress(KEY_F) then self.view.actions.mount(); return end
