@@ -37,6 +37,7 @@ end
 function Checks.Run(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-contactshot" then Checks.Shot(session);return end
+        if arg=="-vehiclechecks" then Checks.Vehicles(session);Checks.Shot(session);return end
     end
     local actor=session.actor
     ---@type CareerRig
@@ -176,7 +177,7 @@ function Checks.Vehicles(session)
                         minGap,maxGap=math.min(minGap,low),math.max(maxGap,low)
                     end
                     assert(minGap>-.0001 and minGap<.001,id.."胎面不能悬空或穿地")
-                    if #Contact.Wheels[id]==2 then assert(maxGap<.001,id.."前后两轮都须接地") end
+                    if #Contact.Wheels[id]==2 then assert(maxGap<.001,string.format("%s前后两轮都须接地 x%.1f yaw%.1f lean%.1f pitch%.5f gap%.6f",id,x,yaw,lean,pitch,maxGap)) end
                     count=count+1
                 end
             end
