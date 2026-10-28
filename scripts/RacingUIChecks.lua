@@ -175,6 +175,38 @@ function Checks.Controls(hud)
     print(string.format("[RacingUIChecks] PASS 驾驶长状态不涨高/标题状态分离/次级功能按钮：%d组", checked))
     return checked
 end
+function Checks.Features(hud)
+    local oldScreen = hud.screen
+    hud:SetScreen("ride")
+    local fixture = {featureState = {feedbackPower = 1, lastGain = 4.5}, elapsed = 1,
+        airborne = false, airTime = 0, roadS = 0, heading = 0,
+        landscape = {RouteLength = 2000, Features = {{kind = "ramp", s = 100, lateral = 3, yaw = 0}}}}
+    local ok, failure = pcall(function()
+        hud:UpdateFeatureFeedback(fixture); UI.Layout()
+        demand(hud.featureRush.power == 1 and hud.featurePanel:IsVisible(), "真实加速带脉冲须显示速度线和提示")
+        demand(hud.featureTitle:GetText() == "加速带 · 冲刺", "加速带不可冒充氮气")
+        demand(hud.featureHint:GetText():find("16", 1, true) ~= nil, "提示必须显示真实速度增益")
+        hud.featureRush:Render(UI.GetNVGContext())
+        for _, widget in ipairs({hud.featureTitle, hud.featureHint}) do
+            widget:Render(UI.GetNVGContext()); UI.Layout()
+            demand(inside(widget:GetAbsoluteLayout(), hud.featurePanel:GetAbsoluteLayout(), 2), "机关提示文字不能越界")
+        end
+        fixture.featureState.feedbackPower = 0
+        hud:UpdateFeatureFeedback(fixture)
+        demand(hud.featureRush.power == 0 and hud.featureTitle:GetText():find("飞坡", 1, true), "结束冲刺后显示真实前方飞坡距离")
+        fixture.airborne, fixture.airTime = true, 0.3
+        hud:UpdateFeatureFeedback(fixture)
+        demand(hud.featureTitle:GetText() == "腾空飞跃", "真实空中状态须有飞跃反馈")
+        hud:SetScreen("pause"); hud:UpdateFeatureFeedback(fixture)
+        demand(not hud.featurePanel:IsVisible() and hud.featureRush.power == 0, "暂停页面隐藏冲刺反馈")
+    end)
+    hud:SetScreen(oldScreen)
+    hud:UpdateFeatureFeedback({featureState = {}, elapsed = 0, airborne = false})
+    UI.Layout()
+    demand(ok, tostring(failure))
+    print("[RacingUIChecks] PASS 加速带冲刺/真实增益/飞坡预告/腾空/暂停反馈")
+    return true
+end
 function Checks.Run(hud)
     demand(not hud:IsModalOpen(), "回归前须关闭已有业务弹窗")
     local labels = 0
@@ -183,6 +215,7 @@ function Checks.Run(hud)
     end
     Checks.Dialogs(hud)
     local controls = Checks.Controls(hud)
+    Checks.Features(hud)
     print("[RacingUIChecks] 全部通过；ControlChecks请单独继续执行")
     return {passed = true, labels = labels, resolutions = 3, controls = controls}
 end

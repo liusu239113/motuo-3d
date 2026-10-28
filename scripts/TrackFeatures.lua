@@ -6,11 +6,11 @@ local function clamp(v,a,b) return math.max(a,math.min(b,v)) end
 -- 碰撞设计（米；轮胎接触点，不是渲染包围盒）：
 -- 俯视：    可用沥青车道                           前进 +z
 --       |  中心绕行净空 | [可选飞坡] |                 ^
---       |              |    / 唇口 --->150米检查走廊   |
+--       |              |    / 唇口 --->230米检查走廊   |
 --       | >>> 加速带 >>>（部分车道，单向入口）          |
 -- 侧视：路面 ____/ 真实采样楔形 | . 重力弹道 . ____ 路面
--- 加速带扫掠p0--p1跨入口，宽边内缩.08米；擦边不激活，高速一步跨整带不漏判。
--- 逆向、侧入、静止、腾空、刹车或损坏不增益。
+-- 加速带扫掠p0--p1正向进入内缩.08米矩形；顺向侧并入有效，高速跨整带不漏判。
+-- 逆向、横穿、静止、腾空、刹车或损坏不增益。
 -- 重复触发：入口穿越 + 每带8秒/全局2.5秒冷却；增量<=4.5m/s，
 -- 上限为原车极速108%，从不读写氮气。超额动量沿原有限阻力衰减。
 -- 飞坡显示与Height共用每格同一对三角形，入口到唇口取得切线速度，
@@ -118,7 +118,10 @@ function Features.BlockingFace(ramps,x0,y0,z0,x1,y1,z1)
 end
 
 -- 冷却属于每个骑手，绝不存到共享地图或Profile。
-function Features.NewBoostState() return {clock=0,ready={},globalReady=0,triggers=0,lastId="",lastGain=0} end
+function Features.NewBoostState()
+    return {clock=0,ready={},globalReady=0,triggers=0,lastId="",lastGain=0,
+        feedbackTimer=0,feedbackPower=0}
+end
 
 -- 移动后传入移动前XYZ和是否腾空；冲量只改变下一步的真实速度，不改位置。
 ---@param entity table
@@ -127,6 +130,9 @@ function Features.StepBoost(entity,map,dt,x0,y0,z0,wasAirborne)
     local state=entity.featureState
     if not state then state=Features.NewBoostState();entity.featureState=state end
     state.clock=state.clock+dt
+    -- 表现只能消费真实冲量的授权包络；暂停不调用固定步，失败入口不刷新时钟。
+    state.feedbackTimer=math.max(0,(state.feedbackTimer or 0)-dt)
+    state.feedbackPower=clamp(state.feedbackTimer/1.35,0,1)
     if wasAirborne or entity.airborne or entity.braking or entity.burnout or entity.wrecked
         or (entity.health or 100)<=0 or (entity.waterDepth or 0)>.01
         or (entity.crashCooldown or 0)>0 or (entity.speed or 0)<4 or state.clock<state.globalReady then return nil,0 end
@@ -134,13 +140,20 @@ function Features.StepBoost(entity,map,dt,x0,y0,z0,wasAirborne)
         if f.kind=="boost" and state.clock>=(state.ready[f.id] or 0) then
             local a,b=Features.Coords(f,x0,z0)
             local c,d=Features.Coords(f,entity.x,entity.z)
-            if b<0 and d>=0 and d>b and cos(rad((entity.heading or 0)-f.yaw))>.85 then
-                local t=-b/(d-b)
-                local lateral=a+(c-a)*t
-                local x,z=Features.Point(f,lateral,0)
+            local width=f.width*.5-.08
+            local forward,lateralDelta=d-b,c-a
+            local travel=math.sqrt(forward*forward+lateralDelta*lateralDelta)
+            local outside=b<0 or b>f.length or abs(a)>width
+            local hit,t,last=slab(a,c,-width,width,0,1)
+            if hit then hit,t,last=slab(b,d,0,f.length,t,last) end
+            -- 真正正向驶入内缩矩形；允许顺向从侧边并入，不允许只转车头横扫刷带。
+            if outside and hit and forward>1e-6 and forward/math.max(1e-6,travel)>.85
+                and cos(rad((entity.heading or 0)-f.yaw))>.85 then
+                local lateral=a+lateralDelta*t
+                local x,z=Features.Point(f,lateral,b+forward*t)
                 local ground,onRoad=map.Height(x,z)
                 local y=y0+(entity.y-y0)*t
-                if abs(lateral)<=f.width*.5-.08 and onRoad and abs(y-ground)<=.16 then
+                if abs(lateral)<=width+1e-6 and onRoad and abs(y-ground)<=.16 then
                     local maximum=(entity.vehicle and entity.vehicle.maxSpeed or entity.maxSpeed or 60)*1.08
                     local gain=math.max(0,math.min(f.gain or 4.5,maximum-entity.speed))
                     -- 已到上限仍消费本次入口，不能滞留带内延迟刷取。
@@ -149,12 +162,20 @@ function Features.StepBoost(entity,map,dt,x0,y0,z0,wasAirborne)
                     state.globalReady=state.clock+2.5
                     state.triggers=state.triggers+1
                     state.lastId,state.lastGain=f.id,gain
+                    if gain>0 then state.feedbackTimer,state.feedbackPower=1.35,1 end
                     return f,gain
                 end
             end
         end
     end
     return nil,0
+end
+
+-- 前段是可见实高坡体，末段收缓至半坡率；不是抛射器额外冲量。
+-- 105m/s仍按真实末端切线起飞，减少高坡的无控制长距离腾空。
+function Features.Rise(r,forward)
+    local u=clamp(forward/r.length,0,1)
+    return r.height*(1.5*u-.5*u*u)
 end
 
 local function roadBase(map,x,z)
@@ -167,28 +188,30 @@ end
 ---@param lateral number
 ---@param kind string
 ---@return TrackFeature
-function Features.Make(map,s,lateral,kind,id)
-    local p,yaw=map.RoadPoint(s)
-    local a=rad(yaw)
+function Features.Make(map,s,lateral,kind,id,yawOffset)
+    local p,roadYaw=map.RoadPoint(s)
+    local yaw=roadYaw+(yawOffset or 0)
+    local a=rad(roadYaw)
     local training=map.activeId=="circuit"
     ---@type TrackFeature
     local f={id=id,kind=kind,optional=true,s=s,lateral=lateral,
         x=p.x+cos(a)*lateral,z=p.z-sin(a)*lateral,y=0,yaw=yaw,
-        width=kind=="ramp" and 2.6 or 4.0,length=kind=="ramp" and 24 or 9,
-        height=kind=="ramp" and (training and .55 or .85) or 0,
-        landingEndS=s+(kind=="ramp" and 174 or 64),rows={},exitGrade=0,cooldown=8,gain=4.5}
+        width=kind=="ramp" and 2.6 or 4.0,length=kind=="ramp" and 20 or 9,
+        height=kind=="ramp" and (training and 1.7 or 2.15) or 0,
+        landingEndS=s+(kind=="ramp" and 230 or 64),rows={},exitGrade=0,cooldown=8,gain=4.5}
     f.y=roadBase(map,f.x,f.z) or p.y
     if kind=="ramp" then
         -- 每米横截面贴合既有路面，不改道路或地形。
-        for i=0,24 do
-            local forward=f.length*i/24
+        for i=0,20 do
+            local forward=f.length*i/20
             local lx,lz=Features.Point(f,-f.width*.5,forward)
             local rx,rz=Features.Point(f,f.width*.5,forward)
-            f.rows[#f.rows+1]={forward=forward,left=(roadBase(map,lx,lz) or f.y)+f.height*i/24,
-                right=(roadBase(map,rx,rz) or f.y)+f.height*i/24}
+            local rise=Features.Rise(f,forward)
+            f.rows[#f.rows+1]={forward=forward,left=(roadBase(map,lx,lz) or f.y)+rise,
+                right=(roadBase(map,rx,rz) or f.y)+rise}
         end
         local last,previous=f.rows[#f.rows],f.rows[#f.rows-1]
-        f.exitGrade=((last.left+last.right)-(previous.left+previous.right))*.5
+        f.exitGrade=((last.left+last.right)-(previous.left+previous.right))*.5/(last.forward-previous.forward)
     end
     return f
 end
@@ -227,7 +250,7 @@ function Features.Safe(map,f)
         local x,z=Features.Point(f,0,f.length)
         local lip=Features.RampHeight(f,x,z) or f.y+f.height
         local grade=f.exitGrade
-        if grade<.005 or grade>.14 then return false,"exit grade" end
+        if grade<.005 or grade>.18 then return false,"exit grade" end
         for _,speed in ipairs({12,30,55,80,105}) do
             local horizontal=speed/math.sqrt(1+grade*grade)
             local vy=horizontal*grade
@@ -240,7 +263,7 @@ function Features.Safe(map,f)
                 local ns,lat=map.NearestRoad(px,pz)
                 if not ground or not onRoad or abs(lat)>half-.65 then return false,"landing lane" end
                 if map.WaterDepth and map.WaterDepth(px,pz)>.01 then return false,"landing water" end
-                if ns>f.landingEndS or forward>f.length+148 then return false,"landing distance" end
+                if ns>f.landingEndS or forward>f.length+328 then return false,"landing distance" end
                 if lip+vy*t-4.905*t*t<=ground then landed=true;break end
             end
             if not landed then return false,"no landing" end
@@ -251,26 +274,27 @@ end
 
 -- 离线全搜索后的固定站位；每图4带2坡，每次建图只采样300个左右顶点。
 -- 原搜索实测湖图20.5秒/高山63.3秒，故绝不把候选扫描放入游戏加载帧。
--- 每项为{kind,s,lateral}，s是现有主路水平里程，不改变控制点。
+-- 每项为{kind,s,lateral,yawOffset?}；只调整可选坡朝向，不改变主路控制点。
+-- 湖图首坡-6°把105m/s弹道留在原沥青内，所有站位均经真实Safe/Sim/RaceAI回归。
 local placements={
     lake={{"boost",517.55654974238,2.2},{"boost",1033.3801897542,2.2},
-        {"ramp",1735.7060666863,3.6},{"boost",2364.4753938761,2.2},
-        {"boost",3437.2447210658,2.2},{"ramp",3637.1271477403,3.6}},
-    alpine={{"boost",644.97482591366,2.2},{"ramp",1420.7391538202,3.12},
-        {"boost",3035.1922873742,2.2},{"ramp",3794.5195504966,3.12},
+        {"ramp",300,-2.8,-6},{"boost",2364.4753938761,2.2},
+        {"boost",3437.2447210658,2.2},{"ramp",3580,-3.0}},
+    alpine={{"boost",644.97482591366,2.2},{"ramp",580,-2.6},
+        {"boost",3035.1922873742,2.2},{"ramp",2160,-2.6},
         {"boost",4949.9475099643,2.2},{"boost",7041.4761657774,2.2}},
-    coast={{"boost",536.64952549038,2.2},{"ramp",1047.2138049014,-3.84},
+    coast={{"boost",536.64952549038,2.2},{"ramp",320,-3.2},
         {"boost",2205.368075488,2.2},{"boost",2667.5223460745,2.2},
-        {"ramp",4314.3261421515,3.84},{"boost",5309.5061245024,2.2}},
-    canyon={{"boost",654.67931613347,2.2},{"ramp",1186.6129064327,4.08},
+        {"ramp",2160,3.2},{"boost",5309.5061245024,2.2}},
+    canyon={{"boost",654.67931613347,2.2},{"ramp",580,-3.4},
         {"boost",2719.8387192982,2.2},{"boost",3487.724874097,2.2},
-        {"ramp",5172.9317127623,4.08},{"boost",7027.4971836945,2.2}},
-    forest={{"boost",548.18435217481,2.2},{"ramp",1232.5712706452,3.24},
+        {"ramp",3420,-3.4},{"boost",7027.4971836945,2.2}},
+    forest={{"boost",548.18435217481,2.2},{"ramp",1200,-2.7},
         {"boost",2655.0964532467,2.2},{"boost",4417.4372836734,2.2},
-        {"ramp",5064.0546423623,3.24},{"boost",6058.6720010512,2.2}},
-    circuit={{"boost",704.83980215613,2.2},{"ramp",2754.4344874226,4.32},
+        {"ramp",3180,2.7},{"boost",6058.6720010512,2.2}},
+    circuit={{"boost",704.83980215613,2.2},{"ramp",360,3.6},
         {"boost",3632.1286780794,2.2},{"boost",5378.0364658613,2.2},
-        {"ramp",6965.8374550807,4.32},{"boost",8530.6918435813,2.2}},
+        {"ramp",4800,3.6},{"boost",8530.6918435813,2.2}},
 }
 Features.Placements=placements
 
@@ -282,7 +306,7 @@ function Features.Plan(map)
     for _,entry in ipairs(assert(placements[map.activeId],"Unknown feature map")) do
         local kind=entry[1]
         counts[kind]=counts[kind]+1
-        local f=Features.Make(map,entry[2],entry[3],kind,map.activeId.."_"..kind.."_"..counts[kind])
+        local f=Features.Make(map,entry[2],entry[3],kind,map.activeId.."_"..kind.."_"..counts[kind],entry[4])
         result[#result+1]=f
         if kind=="ramp" then ramps[#ramps+1]=f end
     end

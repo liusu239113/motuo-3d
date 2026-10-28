@@ -36,9 +36,21 @@ function Checks.Run()
         local triggered,gain=F.StepBoost(e,map,.02,0,0,198,false)
         check(triggered==boost and gain==4.5 and e.speed==39.5,"高速一步跨完整带仍触发，增益有限")
         check(e.nitro==42,"不读取或消耗玩家氮气")
+        check(e.featureState.feedbackTimer==1.35 and e.featureState.feedbackPower==1,"真实增益授权1.35秒反馈")
+        local fresh=F.NewBoostState()
+        check(fresh.feedbackTimer==0 and fresh.feedbackPower==0,"新状态无假特效")
+        local timer=e.featureState.feedbackTimer
         local speed=e.speed
         F.StepBoost(e,map,.02,0,0,198,false)
         check(e.speed==speed and e.featureState.triggers==1,"重复扫掠不能叠加")
+        check(e.featureState.feedbackTimer<timer and e.featureState.feedbackPower<1,"冷却内不会续表现计时")
+        local merge=rider(1.7,207)
+        local merged=F.StepBoost(merge,map,.02,2.3,0,203,false)
+        check(merged==boost and merge.speed==39.5,"顺向从侧边并入加速带有效")
+        local sideways=rider(1.7,204.1)
+        check(F.StepBoost(sideways,map,.02,2.3,0,204,false)==nil,"仅头向前但横向扫过不增益")
+        for _=1,70 do F.StepBoost(merge,map,.02,merge.x,merge.y,merge.z,false) end
+        check(merge.featureState.feedbackTimer==0 and merge.featureState.feedbackPower==0,"停留带内反馈会耗尽")
         e.featureState.clock=9
         F.StepBoost(e,map,.02,0,0,198,false)
         check(e.featureState.triggers==2,"冷却后重新跨入口可再次触发")
@@ -54,6 +66,12 @@ function Checks.Run()
         r.speed=90
         local _,amount=F.StepBoost(r,map,.02,0,0,198,false)
         check(amount==0 and r.speed==90,"超上限不增加也不硬减速")
+        check(r.featureState.triggers==1 and r.featureState.lastGain==0
+            and r.featureState.feedbackTimer==0 and r.featureState.feedbackPower==0,"满速入口被消费且不授权假特效")
+        local capped=rider(0,202)
+        capped.speed=76*1.08-1
+        local _,limited=F.StepBoost(capped,map,.02,0,0,198,false)
+        check(math.abs(limited-1)<1e-8 and math.abs(capped.speed-76*1.08)<1e-8,"真实冲量严格保留108%上限")
         local still=rider(0,202)
         F.StepBoost(still,map,.02,0,0,202,false)
         check(still.speed==35,"停在带内不重复发力")
@@ -90,16 +108,17 @@ function Checks.Run()
         local bypass=Sim.New(map)
         bypass.x,bypass.z,bypass.speed=2,199,55
         for _=1,60 do bypass:Step(.02,{throttle=1});check(not bypass.airborne,"保留车道可绕坡不飞起")end
-        local hit=F.CrossLip({ramp},0,199,0,226,0,105)
+        local entry,lip=ramp.s,ramp.s+ramp.length
+        local hit=F.CrossLip({ramp},0,entry-1,0,lip+2,0,105)
         check(hit==ramp,"高速一步越过整个坡仍检测唇口")
-        check(F.CrossLip({ramp},1.31,199,1.31,226,0,105)==nil,"坡外擦边不额外起飞")
-        check(F.CrossLip({ramp},0,226,0,199,180,55)==nil,"逆向不能获起飞冲量")
+        check(F.CrossLip({ramp},1.31,entry-1,1.31,lip+2,0,105)==nil,"坡外擦边不额外起飞")
+        check(F.CrossLip({ramp},0,lip+2,0,entry-1,180,55)==nil,"逆向不能获起飞冲量")
         local back=Sim.New(map)
-        back.z,back.speed,back.heading=225,30,180
+        back.z,back.speed,back.heading=lip+1,30,180
         back:Step(.1,{throttle=1})
-        check(back.z>224 and back.y==0 and back.speed<=2 and not back.airborne,"坡背扫掠阻挡而非传送到顶")
+        check(back.z>lip and back.y==0 and back.speed<=2 and not back.airborne,"坡背扫掠阻挡而非传送到顶")
         local side=Sim.New(map)
-        side.x,side.z,side.speed,side.heading=2,220,30,270
+        side.x,side.z,side.speed,side.heading=2,lip-4,30,270
         side:Step(.1,{throttle=1})
         check(side.x>=1.3 and side.y==0 and side.speed<=2,"侧壁不穿透或吸附坡顶")
         -- 逐行、对角线和正负宽边，验证Height与真实显示三角形插值完全一致。
@@ -108,7 +127,7 @@ function Checks.Run()
                 local a,b=ramp.rows[i],ramp.rows[i+1]
                 local f=a.forward+.37
                 local x,z=F.Point(ramp,(u-.5)*ramp.width,f)
-                local expected=ramp.height*f/ramp.length
+                local expected=a.left+(b.left-a.left)*(f-a.forward)/(b.forward-a.forward)
                 check(math.abs(F.RampHeight(ramp,x,z)-expected)<1e-8,"坡面/显示同三角形高程")
             end
         end
@@ -128,10 +147,18 @@ end
 ---@param map table
 function Checks.RealMaps(map)
     local previous=map.activeId
-    local report={passed=false,checks=0,maps={},errors={}}
+    local report={passed=false,checks=0,maps={},flights={},bypasses={},errors={}}
     local ok,error=pcall(function()
         for _,id in ipairs({"lake","alpine","coast","canyon","forest","circuit"})do
             assert(map.SelectTrack(id))
+            -- 使用真实RaceAI避让、真实TrafficPose/道路曲面，不用伪造的平直地图。
+            local Race=require("Race")
+            local AI=require("RaceAI")
+            local race=Race.New(map,Sim.New(map),{quiet=true,aiLevel=map.Track.aiLevel,seed=31})
+            race:Start(1)
+            race.phase="racing"
+            local ai=race.racers[1]
+            race.racers={ai}
             local ramps,boosts=0,0
             for _,f in ipairs(map.Features)do
                 local safe,reason=F.Safe(map,f)
@@ -152,7 +179,9 @@ function Checks.RealMaps(map)
                 if f.kind=="ramp" then ramps=ramps+1 else boosts=boosts+1 end
                 if f.kind=="ramp" then
                     assert(f.width<map.Roads[1].width-2,"缺少绕行车道")
-                    for _,speed in ipairs({30,55,90})do
+                    assert(f.length>=18 and f.length<=22 and f.height>=(id=="circuit" and 1.5 or 2),"飞坡仍过于矮平")
+                    assert(id~="circuit" or f~=map.OptionalRamps[1] or (f.s>=300 and f.s<=1000),"免费图首坡应在早期安全路段")
+                    for _,speed in ipairs({12,30,55,80,90,105})do
                         local s=Sim.New(map)
                         s.x,s.z=F.Point(f,0,-1)
                         s.y=map.Height(s.x,s.z)
@@ -170,8 +199,45 @@ function Checks.RealMaps(map)
                             if airborne and not s.airborne then break end
                         end
                         assert(airborne and not s.airborne and s.landingStable,"未完整起飞落地")
+                        assert(map.NearestRoad(s.x,s.z)<=f.landingEndS,"真实落地超出AI预留走廊")
                         report.checks=report.checks+1
+                        report.flights[#report.flights+1]={id=f.id,speed=speed,height=maxHeight,time=maxAir,
+                            landingS=map.NearestRoad(s.x,s.z),stable=s.landingStable}
                         print(string.format("[实图机关] %s %s %.0fm/s 离地%.2fm %.2fs",id,f.id,speed,maxHeight,maxAir))
+                    end
+                    for _,initial in ipairs({30,65,95}) do
+                        ai.s,ai.speed=f.s-135,initial
+                        ai.lane,ai.wantedLane,ai.preferredLane=f.lateral,f.lateral,f.lateral
+                        ai.mistakeTimer,ai.mistakeDuration,ai.recoveryTimer=1000,0,0
+                        ai.nitro,ai.boostTimer=0,0
+                        ai.decisionTimer,ai.paceTimer,ai.laneHold=0,0,0
+                        ai.perception.timer,ai.perception.recovery=0,0
+                        ai.started,ai.finished,ai.eliminated=true,false,false
+                        ai.nextGate=math.ceil(ai.s/race.gateSpacing)*race.gateSpacing
+                        race:Place(ai)
+                        local reached,minGap=false,math.huge
+                        for _=1,2400 do
+                            local oldX,oldY,oldZ=ai.x,ai.y,ai.z
+                            AI.Update(race,ai,.02)
+                            ai.boostTimer=math.max(0,ai.boostTimer-.02)
+                            -- 实际旋转坡矩形和连续车轮轨迹；横偏>=.30m车宽+.10m净空。
+                            local _,forward=F.Coords(f,ai.x,ai.z)
+                            if forward>=-1 and forward<=f.length+1 then
+                                local lateral=F.Coords(f,ai.x,ai.z)
+                                local clearance=math.abs(lateral)-f.width*.5
+                                minGap=math.min(minGap,clearance)
+                                assert(clearance>=.40,"AI实际轨迹没有绕过坡体 "..f.id)
+                            end
+                            assert(F.BlockingFace({f},oldX,oldY,oldZ,ai.x,ai.y,ai.z)==nil,"AI穿过真实侧板")
+                            assert(F.Sweep(f,oldX,oldZ,ai.x,ai.z)==false,"AI扫掠穿坡")
+                            if ai.s>=f.s+f.length and ai.s<=f.landingEndS then
+                                assert(math.abs(ai.lane-f.lateral)>=f.width*.5+.40,"AI提前占回飞跃落地区")
+                            end
+                            if ai.s>f.landingEndS+8 then reached=true;break end
+                        end
+                        assert(reached,"AI停在坡前而非真正绕行 "..f.id)
+                        report.checks=report.checks+1
+                        report.bypasses[#report.bypasses+1]={id=f.id,speed=initial,clearance=minGap}
                     end
                 end
             end

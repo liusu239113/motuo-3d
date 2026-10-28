@@ -116,6 +116,9 @@ function World:Init(scene, onProgress)
     -- 机关专用哑光PBR配色，不改已验收的场景材质，不增加外部资产。
     m.boostBand = P.Material(0.015, 0.52, 0.57, 0.85, 0)
     m.boostArrow = P.Material(0.88, 1.0, 0.96, 0.82, 0)
+    m.rampDeck = P.Material(0.28, 0.31, 0.34, 0.88, 0.12)
+    m.rampYellow = P.Material(1.0, 0.76, 0.035, 0.90, 0, 0.08)
+    m.rampBlack = P.Material(0.018, 0.022, 0.026, 0.96, 0)
     local function tick(stage, current, total)
         if onProgress then onProgress(stage, current, total) end
     end
@@ -238,8 +241,9 @@ end
 function World:BuildOptionalRamp(r)
     local root = self.root:CreateChild("可选飞坡_" .. r.id)
     local m = self.mats
-    local g = Landscape.Geometry(root, "贴路真实楔形坡面", m.rail)
-    local marks = Landscape.Geometry(root, "飞坡方向与边界", m.yellow)
+    local g = Landscape.Geometry(root, "可见高楔形坡面", m.rampDeck)
+    local marks = Landscape.Geometry(root, "黄黑飞坡警示黄", m.rampYellow)
+    local dark = Landscape.Geometry(root, "黄黑飞坡警示黑", m.rampBlack)
     local function point(lateral, forward, y)
         local x,z = TrackFeatures.Point(r,lateral,forward)
         return V(x,y,z)
@@ -248,27 +252,29 @@ function World:BuildOptionalRamp(r)
         local x,z = TrackFeatures.Point(r,lateral,forward)
         return V(x,(TrackFeatures.RampHeight(r,x,z) or r.y)+(lift or 0),z)
     end
+    local function quad(geom,a,b,c,d)
+        Landscape.Triangle(geom,a,b,c);Landscape.Triangle(geom,c,b,d)
+    end
     local w = r.width*.5
     for i = 1,#r.rows-1 do
         local a,b = r.rows[i],r.rows[i+1]
         local p,q = point(-w,a.forward,a.left),point(-w,b.forward,b.left)
         local c,d = point(w,a.forward,a.right),point(w,b.forward,b.right)
-        Landscape.Triangle(g,p,q,c);Landscape.Triangle(g,c,q,d)
+        quad(g,p,q,c,d)
         for _,side in ipairs({-1,1}) do
             local x0,z0=TrackFeatures.Point(r,side*w,a.forward)
             local x1,z1=TrackFeatures.Point(r,side*w,b.forward)
             local base0=V(x0,Landscape.RoadHeight(x0,z0) or r.y,z0)
             local base1=V(x1,Landscape.RoadHeight(x1,z1) or r.y,z1)
             local top0,top1=side<0 and p or c,side<0 and q or d
-            if side<0 then
-                Landscape.Triangle(g,base0,base1,top0);Landscape.Triangle(g,top0,base1,top1)
-            else
-                Landscape.Triangle(g,base0,top0,base1);Landscape.Triangle(g,base1,top0,top1)
-            end
-            local lo=side<0 and -w or w-.09
-            local hi=side<0 and -w+.09 or w
-            Landscape.Triangle(marks,surface(lo,a.forward,.018),surface(lo,b.forward,.018),surface(hi,a.forward,.018))
-            Landscape.Triangle(marks,surface(hi,a.forward,.018),surface(lo,b.forward,.018),surface(hi,b.forward,.018))
+            -- 黄黑侧腹板与真实侧壁同范围，不扩大坡体，不加伸入绕行线的护栏。
+            local panel=i%2==0 and marks or dark
+            if side<0 then quad(panel,base0,base1,top0,top1)
+            else quad(panel,base1,base0,top1,top0) end
+            local lo=side<0 and -w or w-.16
+            local hi=side<0 and -w+.16 or w
+            quad(marks,surface(lo,a.forward,.018),surface(lo,b.forward,.018),
+                surface(hi,a.forward,.018),surface(hi,b.forward,.018))
         end
     end
     local last=r.rows[#r.rows]
@@ -277,14 +283,69 @@ function World:BuildOptionalRamp(r)
     local x1,z1=TrackFeatures.Point(r,w,r.length)
     local c=V(x0,Landscape.RoadHeight(x0,z0) or r.y,z0)
     local d=V(x1,Landscape.RoadHeight(x1,z1) or r.y,z1)
-    Landscape.Triangle(g,a,c,b);Landscape.Triangle(g,b,c,d)
-    -- 三组上坡箭头，轮胎仍走原始坡面，不设置额外视觉碰撞体。
-    for _,forward in ipairs({5,11,17}) do
-        Landscape.Triangle(marks,surface(-.7,forward,.024),surface(0,forward+2,.024),surface(-.2,forward,.024))
-        Landscape.Triangle(marks,surface(.2,forward,.024),surface(0,forward+2,.024),surface(.7,forward,.024))
+    quad(dark,a,c,b,d)
+    -- 宽唇口棋盘带、高侧板轮廓，视觉上明确是有高度的跳台，不是青色加速贴片。
+    for i=0,7 do
+        local lo=-w+r.width*i/8
+        local hi=-w+r.width*(i+1)/8
+        quad(i%2==0 and marks or dark,surface(lo,r.length-.65,.026),surface(lo,r.length,.026),
+            surface(hi,r.length-.65,.026),surface(hi,r.length,.026))
     end
-    g:GenerateTangents();g:Commit();marks:Commit()
-    g.drawDistance,marks.drawDistance=400,360
+    for _,forward in ipairs({4,9,14}) do
+        Landscape.Triangle(marks,surface(-.8,forward,.024),surface(0,forward+2.4,.024),surface(-.25,forward,.024))
+        Landscape.Triangle(marks,surface(.25,forward,.024),surface(0,forward+2.4,.024),surface(.8,forward,.024))
+    end
+    -- 路面预告跟随原路，不沿坡朝向把标线画到弯外；只占可选坡入口线。
+    local function roadPoint(station,lateral,lift)
+        local p,yaw=Landscape.RoadPoint(station)
+        local angle=math.rad(yaw)
+        local x,z=p.x+math.cos(angle)*lateral,p.z-math.sin(angle)*lateral
+        return V(x,(Landscape.RoadHeight(x,z) or p.y)+lift,z)
+    end
+    for _,offset in ipairs({-64,-44,-28,-16}) do
+        local s=r.s+offset
+        quad(dark,roadPoint(s,r.lateral-w,.027),roadPoint(s+1.8,r.lateral-w,.027),
+            roadPoint(s,r.lateral+w,.027),roadPoint(s+1.8,r.lateral+w,.027))
+        for i=0,5 do
+            local lo=r.lateral-w+i*r.width/6
+            local hi=lo+r.width/12
+            quad(marks,roadPoint(s,lo,.035),roadPoint(s+1.8,lo,.035),
+                roadPoint(s,hi,.035),roadPoint(s+1.8,hi,.035))
+        end
+        Landscape.Triangle(marks,roadPoint(s+3,r.lateral-.65,.035),
+            roadPoint(s+5,r.lateral,.035),roadPoint(s+3,r.lateral+.65,.035))
+    end
+    -- 两块路肩立式跳台图标牌（100m/45m前）；没有跨路门架、支柱或横梁。
+    local side=r.lateral<0 and -1 or 1
+    for _,offset in ipairs({-100,-45}) do
+        local p,yaw=Landscape.RoadPoint(r.s+offset)
+        local angle=math.rad(yaw)
+        local lateral=side*(Landscape.Roads[1].width+1.35)
+        local x,z=p.x+math.cos(angle)*lateral,p.z-math.sin(angle)*lateral
+        local y=Landscape.RoadHeight(x,z) or Landscape.TerrainHeight(x,z)
+        local right=V(math.cos(angle),0,-math.sin(angle))
+        local forward=V(math.sin(angle),0,math.cos(angle))
+        local center=V(x,y+2.6,z)
+        local function sign(u,v,front) return center+right*u+V(0,v,0)-forward*front end
+        P.Add(root,"飞坡预告路肩立柱","Box",m.rampBlack,V(x,y+1.2,z),V(.13,2.4,.13),Quaternion(0,yaw,0),false)
+        -- 双面黄底黑框；面向来车的黑色升坡+抛物线图标，不依赖小字可读性。
+        local tl,tr,bl,br=sign(-1.05,.82,0),sign(1.05,.82,0),sign(-1.05,-.82,0),sign(1.05,-.82,0)
+        quad(dark,bl,tl,br,tr);quad(dark,br,tr,bl,tl)
+        local l,t,rr,bm=-.94,.71,.94,-.71
+        quad(marks,sign(l,bm,.012),sign(l,t,.012),sign(rr,bm,.012),sign(rr,t,.012))
+        Landscape.Triangle(dark,sign(-.78,-.39,.024),sign(.05,.22,.024),sign(.05,-.39,.024))
+        for i=0,5 do
+            local u0,u1=.10+i*.115,.10+(i+1)*.115
+            local v0,v1=.28+.48*(i/6)-.66*(i/6)^2,.28+.48*((i+1)/6)-.66*((i+1)/6)^2
+            quad(dark,sign(u0,v0-.045,.025),sign(u0,v0+.045,.025),sign(u1,v1-.045,.025),sign(u1,v1+.045,.025))
+        end
+        -- 牌底箭头指向路中绕行通道，保留不飞跃的明确选择。
+        local direction=-side
+        Landscape.Triangle(dark,sign(-direction*.55,-.55,.025),sign(direction*.62,-.55,.025),sign(direction*.23,-.34,.025))
+    end
+    g:GenerateTangents();g:Commit();marks:GenerateTangents();marks:Commit();dark:GenerateTangents();dark:Commit()
+    g.drawDistance,marks.drawDistance,dark.drawDistance=520,520,520
+    g.castShadows,g.shadowDistance=true,150
 end
 
 -- 薄贴地彩色车道与正向箭头，无盒体凸起、无外部纹理或动态动画。

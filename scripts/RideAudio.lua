@@ -13,6 +13,8 @@
 ---@field vehicle? table 当前车型怠速与红线转速
 ---@field vehicleId? string
 ---@field burnout? boolean 是否烧胎
+---@field paused? boolean
+---@field featureState? table 只读成功加速带反馈：triggers/lastGain/feedbackTimer/feedbackPower
 
 ---@class RideAudio
 ---@field Resources string[] 静态资源清单，索引从 1 开始
@@ -34,6 +36,13 @@
 ---@field previousScreen string
 ---@field engineClass string
 ---@field engineSounds table<string, Sound>
+---@field padSource SoundSource? 独立短whoosh，不占用/改变原六通道
+---@field padTimer number
+---@field padGain number
+---@field padSim RideAudioState?
+---@field padState table?
+---@field padSequence number
+---@field padElapsed number
 local RideAudio = {}
 RideAudio.__index = RideAudio
 
@@ -63,6 +72,7 @@ RideAudio.EngineResources = {
 
 local MUSIC, ENGINE, WIND, BRAKE, IMPACT, PASS = 1, 2, 3, 4, 5, 6
 local SILENCE = 0.001
+local PAD_WHOOSH_LENGTH = 0.48
 
 ---@param value number
 ---@return number
@@ -78,6 +88,83 @@ end
 ---@return number
 local function Smooth(current, target, rate, dt)
     return current + (target - current) * (1 - math.exp(-rate * dt))
+end
+
+-- 显式无声契约测试：假Sound/Source计数，绝不创建播放设备或读取/播放真实音频。
+---@return table
+function RideAudio.CheckPadFeedback()
+    local counter = {plays = 0, stops = 0}
+    local source = {gain = 0, frequency = 0,
+        Play = function() counter.plays = counter.plays + 1 end,
+        StopImmediate = function() counter.stops = counter.stops + 1 end}
+    local sound = {GetFrequency = function() return 44100 end}
+    local audio = setmetatable({}, RideAudio)
+    audio.sources, audio.pitches = {}, {}
+    audio.sounds = {[WIND] = sound --[[@as Sound]]}
+    audio.padSource = source --[[@as SoundSource]]
+    audio.unlocked, audio.effectsEnabled, audio.musicEnabled, audio.stopped = true, true, false, false
+    audio.trackIndex = 1
+    audio.padTimer, audio.padGain, audio.padSequence, audio.padElapsed = 0, 0, 0, 0
+    audio.previousHealth, audio.previousOvertakes, audio.previousElapsed, audio.previousScreen = 100, 0, 0, "menu"
+    local state = {triggers = 0, lastGain = 0, feedbackTimer = 0, feedbackPower = 0}
+    local sim = {speed = 35, rpm = 5000, throttle = 0.5, braking = false, health = 100,
+        overtakes = 0, elapsed = 1, finished = false, featureState = state}
+    audio:Update(0.016, sim, "ride")
+    state.triggers, state.lastGain, state.feedbackTimer = 1, 4.5, 1.35
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 1, "真实gain触发一次whoosh")
+    for _ = 1, 45 do audio:Update(0.016, sim, "ride") end
+    assert(counter.plays == 1 and audio.padTimer == 0, "连续帧不得重放，短包络必须结束")
+    state.triggers, state.lastGain = 2, 0
+    audio:Update(0.016, sim, "ride")
+    state.triggers, state.lastGain, state.feedbackTimer = 3, 4.5, 0
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 1, "零gain或过期timer不得发声")
+    state.triggers, state.feedbackTimer = 4, 1.35
+    audio:Update(0.016, sim, "pause")
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 1, "暂停消费序号，恢复不得补播")
+    state.triggers = 5
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 2 and audio.padTimer > 0, "下一真实触发应可重播")
+    audio:ToggleEffects()
+    assert(audio.padTimer == 0 and source.gain == 0, "关闭音效必须立即停whoosh")
+    state.triggers = 6
+    audio:Update(0.016, sim, "ride")
+    audio:ToggleEffects()
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 2, "静音期间触发不得补播")
+    state.triggers = 7
+    audio:Update(0, sim, "ride")
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 2 and audio.padTimer == 0, "dt0不得触发，恢复不得补播")
+    state.triggers = 8
+    audio:Reset(sim)
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 2, "Reset不得重放已有序号")
+    state.triggers = 9
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 3, "Reset后新序号仍可播放")
+    sim.paused = true
+    audio:Update(0.016, sim, "ride")
+    assert(audio.padTimer == 0 and source.gain == 0, "sim.paused必须立即停whoosh")
+    sim.paused, audio.unlocked, state.triggers = false, false, 10
+    audio:Update(0.016, sim, "ride")
+    audio.unlocked = true
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 3, "锁定期间序号不得解锁后补播")
+    sim.elapsed, state.triggers = 0, 0
+    audio:Update(0.016, sim, "ride")
+    state.triggers = 1
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 4, "仿真原地重置后新序号必须可播")
+    audio:Stop()
+    audio:Stop()
+    state.triggers = 2
+    audio:Update(0.016, sim, "ride")
+    assert(counter.plays == 4 and audio.padSource == nil and audio.padTimer == 0, "Stop必须幂等且永不复播")
+    print("[加速带音效验收] 一次触发/零gain/过期/暂停/静音/dt0/Reset/Stop通过，无真实播放")
+    return {passed = true, plays = counter.plays}
 end
 
 ---@param scene Scene
@@ -107,6 +194,10 @@ function RideAudio:Init(scene)
     self.previousElapsed = 0
     self.previousScreen = "menu"
     self.engineClass, self.engineSounds = "", {}
+    self.padSource = self.node:CreateChild("PadWhoosh", LOCAL):CreateComponent("SoundSource", LOCAL)
+    self.padSource.soundType, self.padSource.gain, self.padSource.declickEnabled = SOUND_EFFECT, 0, true
+    self.padTimer, self.padGain, self.padSequence, self.padElapsed = 0, 0, 0, 0
+    self.padSim, self.padState = nil, nil
     print("[音频] 管理器已创建，等待逐项加载与用户解锁")
 end
 
@@ -201,6 +292,60 @@ function RideAudio:PlayOnce(index, gain, pitch)
     end
 end
 
+-- 加速带只借用已加载的风噪Sound，独立source做一次短扫频，不触碰Wind/氮气通道或Sound.looped。
+-- SoundSource.frequency是绝对Hz；已有循环素材在0.48秒包络末尾强制停止，不逐帧Play。
+function RideAudio:SilencePad()
+    self.padTimer, self.padGain = 0, 0
+    if self.padSource then
+        self.padSource.gain = 0
+        self.padSource:StopImmediate()
+    end
+end
+
+---@param dt number
+---@param sim RideAudioState?
+---@param audible boolean
+function RideAudio:UpdatePadFeedback(dt, sim, audible)
+    local state = sim and sim.featureState
+    local sequence = state and state.triggers or 0
+    local elapsed = sim and sim.elapsed or 0
+    local sameRun = self.padSim == sim and self.padState == state
+        and elapsed >= self.padElapsed and sequence >= self.padSequence
+    local triggered = sameRun and sequence > self.padSequence
+        and state ~= nil and (state.lastGain or 0) > 0 and (state.feedbackTimer or 0) > 0
+    -- 无论静音、锁定、暂停，先消费真实触发序号；恢复后不补播历史事件。
+    self.padSim, self.padState = sim, state
+    self.padSequence, self.padElapsed = sequence, elapsed
+    if not sameRun or not audible or dt <= 0 then self:SilencePad(); return end
+    local source, sound = self.padSource, self.sounds[WIND]
+    if not source or not sound then self:SilencePad(); return end
+    if triggered then
+        self.padTimer = PAD_WHOOSH_LENGTH
+        self.padGain = 0.30 + Unit((state.lastGain or 0) / 10) * 0.13
+        source:Play(sound, sound:GetFrequency() * 1.65, self.padGain * 0.18)
+    elseif self.padTimer > 0 then
+        self.padTimer = math.max(0, self.padTimer - math.max(0, dt))
+        if self.padTimer <= 0 then self:SilencePad(); return end
+        local phase = 1 - self.padTimer / PAD_WHOOSH_LENGTH
+        source.gain = self.padGain * math.min(1, phase * 9 + 0.18) * (1 - phase) ^ 1.5
+        source.frequency = sound:GetFrequency() * (1.65 - phase * 0.80)
+    end
+end
+
+-- 只清事件基线和短冲刺音，不重建原六通道。无sim时下一次Update仅建基线。
+---@param sim? RideAudioState
+function RideAudio:Reset(sim)
+    if self.stopped then return end
+    self:SilencePad()
+    self.padSim, self.padState = sim, sim and sim.featureState or nil
+    self.padSequence = self.padState and self.padState.triggers or 0
+    self.padElapsed = sim and sim.elapsed or 0
+    self.previousSim = sim
+    self.previousHealth = sim and sim.health or 100
+    self.previousOvertakes = sim and sim.overtakes or 0
+    self.previousElapsed = sim and sim.elapsed or 0
+end
+
 -- 必须直接在用户点击开始（或等价输入）回调中调用；加载与构造绝不自动播放。
 -- 幂等调用；先解锁后加载同样有效，后续 Update 会启动已就绪的音轨。
 function RideAudio:Unlock()
@@ -243,6 +388,7 @@ function RideAudio:ToggleEffects()
     self.effectsEnabled = not self.effectsEnabled
     if not self.effectsEnabled then
         for index = ENGINE, PASS do self:SilenceTrack(index) end
+        self:SilencePad()
     end
     print("[音频] 音效" .. (self.effectsEnabled and "开启" or "关闭"))
     return self.effectsEnabled
@@ -281,7 +427,7 @@ function RideAudio:Update(dt, sim, screen)
     local vehicleId = sim and sim.vehicleId
     if vehicleId then self:SetVehicle(vehicleId) end
     local frameTime = math.max(0, dt)
-    local riding = sim ~= nil and screen == "ride" and not sim.finished
+    local riding = sim ~= nil and screen == "ride" and not sim.finished and sim.paused ~= true
     local speed = sim and math.max(0, sim.speed) or 0
     local speedRatio = Unit(speed / 61.1)
     local vehicle = sim and sim.vehicle
@@ -289,6 +435,7 @@ function RideAudio:Update(dt, sim, screen)
     local rpmRatio = sim and Unit((sim.rpm - idle) / math.max(1, redline - idle)) or 0
     local throttle = sim and Unit(sim.throttle) or 0
     local effectsActive = self.unlocked and self.effectsEnabled and riding
+    self:UpdatePadFeedback(frameTime, sim, effectsActive)
 
     local engineGain = effectsActive and (0.10 + rpmRatio * 0.15 + throttle * 0.12) or 0
     local windGain = effectsActive and speedRatio ^ 1.5 * 0.30 or 0
@@ -339,12 +486,15 @@ function RideAudio:Stop()
     if self.stopped then return end
     self.stopped = true
     self.unlocked = false
+    self:SilencePad()
     for index = 1, RideAudio.Count do self:SilenceTrack(index) end
     self.sources = {}
     self.sounds = {}
     self.pitches = {}
     self.engineSounds, self.engineClass = {}, ""
     if self.node then self.node:Dispose() end
+    self.padSource, self.padSim, self.padState = nil, nil, nil
+    self.padSequence, self.padElapsed = 0, 0
     self.node = nil
     self.scene = nil
     self.previousSim = nil

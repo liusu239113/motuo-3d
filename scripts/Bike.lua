@@ -375,7 +375,10 @@ function Bike:UpdateState(dt, sim, firstPerson, clock)
     self.visualClock = self.visualClock + frameTime
     local speed, steer = sim.speed or 0, sim.steer or 0
     -- raceBoost为Simulation动力实际授权强度，不是按键、氮气储量或臆造倒计时。
-    self.effects:Update(frameTime, sim.raceBoost or 0, speed)
+    -- 加速带是独立的成功gain脉冲，既不借用raceBoost授权，也不改变氮气储量/动力。
+    local featureState = sim.featureState
+    local padPower = featureState and featureState.feedbackPower or 0
+    self.effects:Update(frameTime, sim.raceBoost or 0, speed, padPower)
     self.node.position = V(sim.x or 0, sim.y or 0, sim.z or 0)
     self.node.rotation = Quaternion(0, sim.heading or 0, 0)
     -- 车身倾角随车速逐步建立，外圈输入允许明确压弯，低速不倒车。

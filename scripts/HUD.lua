@@ -98,6 +98,32 @@ local function iconButton(symbol, action)
             symbol = symbol, pointerEvents = "none"}}}
 end
 
+-- 加速带的屏幕速度线只画在视野边缘，不覆盖路面中心或接管输入。
+local RoadRush = UI.Widget:Extend("RoadRushFeedback")
+function RoadRush:Init(props)
+    UI.Widget.Init(self, props)
+    self.power, self.phase = 0, 0
+end
+function RoadRush:Render(vg)
+    if self.power <= 0 then return end
+    local l = self:GetAbsoluteLayout()
+    nvgSave(vg)
+    nvgIntersectScissor(vg, l.x, l.y, l.w, l.h)
+    for i = 1, 18 do
+        local a = i * 2.39996
+        local phase = (self.phase * 2.6 + i * 0.173) % 1
+        local rx, ry = math.cos(a), math.sin(a)
+        local inner, outer = 0.72 + phase * 0.30, 0.82 + phase * 0.38
+        nvgBeginPath(vg)
+        nvgMoveTo(vg, l.x + l.w * (0.5 + rx * inner * 0.58), l.y + l.h * (0.5 + ry * inner * 0.62))
+        nvgLineTo(vg, l.x + l.w * (0.5 + rx * outer * 0.58), l.y + l.h * (0.5 + ry * outer * 0.62))
+        nvgStrokeWidth(vg, (i % 3 == 0 and 3 or 1.5) * self.power)
+        nvgStrokeColor(vg, nvgRGBA(107, 255, 218, math.floor(190 * self.power * math.sin(phase * math.pi))))
+        nvgStroke(vg)
+    end
+    nvgRestore(vg)
+end
+
 -- Sample only the actual Landscape route once; no fake/oval map and no per-frame map rebuild.
 local TrackMap = UI.Widget:Extend("PursuitTrackMap")
 function TrackMap:Init(props)
@@ -270,9 +296,18 @@ function HUD:BuildRide()
     self.countdown = label("", 64, AMBER, {width = "100%", height = 85, textAlign = "center", fontWeight = "bold", lineHeight = 1})
     self.countdownPanel = UI.Panel {position = "absolute", top = "32%", left = "35%", width = "30%",
         padding = 0, pointerEvents = "none", children = {self.countdown}}
+    self.featureRush = RoadRush(fill({pointerEvents = "none"}))
+    self.featureTitle = label("", 15, {126, 255, 218, 255}, {width = "100%", height = 26,
+        maxLines = 1, whiteSpace = "nowrap", textAlign = "center", fontWeight = "bold"})
+    self.featureHint = label("", 9, WHITE, {width = "100%", height = 18,
+        maxLines = 1, whiteSpace = "nowrap", textAlign = "center"})
+    self.featurePanel = UI.Panel {position = "absolute", top = "22%", left = "50%", marginLeft = -125,
+        width = 250, padding = 6, gap = 1, visible = false, pointerEvents = "none",
+        backgroundColor = {7, 26, 27, 210}, borderWidth = 1, borderColor = {83, 231, 196, 165},
+        borderRadius = 3, children = {self.featureTitle, self.featureHint}}
     self.game = UI.Panel(fill({visible = false, pointerEvents = "box-none", children = {
-        self.rankPanel, self.trackMap, self.navPanel, self.instrumentPanel, self.rightTop, self.recoverPanel,
-        self.dangerPanel, self.nitroPanel, self.countdownPanel,
+        self.featureRush, self.rankPanel, self.trackMap, self.navPanel, self.instrumentPanel, self.rightTop, self.recoverPanel,
+        self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel,
         UI.Panel {position = "absolute", top = "56%", left = "25%", width = "50%", padding = 0, pointerEvents = "none", children = {self.message}},
         self.controlLayer}}))
     self.cockpit = RaceInstruments.Dial {position = "absolute", left = 0, top = 0, width = 154, height = 76,
@@ -561,6 +596,10 @@ function HUD:SetScreen(screen)
     self.keyartBackdrop:SetVisible(screen ~= "garage"); self.garageBackdrop:SetVisible(screen == "garage")
     self.cockpit:SetVisible(false); self.enterRide:SetVisible(false)
     local riding = screen == "ride"
+    if not riding then
+        self.featureRush.power = 0
+        self.featurePanel:SetVisible(false)
+    end
     self.controlLayer:SetVisible(riding or editing)
     if riding or editing then self.pendingControlLayout = true end
     self.rightTop:SetVisible(riding or editing); self.recoverPanel:SetVisible(riding or editing)
@@ -697,10 +736,50 @@ function HUD:RefreshActionFeedback()
     -- 翘头按钮本身由 Update 依据实际车速/抬轮角统一刷新状态。
 end
 
+function HUD:UpdateFeatureFeedback(sim)
+    local state = sim.featureState or {}
+    local driving = self.screen == "ride"
+    local power = driving and math.max(0, math.min(1, state.feedbackPower or 0)) or 0
+    self.featureRush.power, self.featureRush.phase = (state.lastGain or 0) > 0 and power or 0, sim.elapsed or 0
+    if not driving then self.featurePanel:SetVisible(false); return end
+    if power > 0 and (state.lastGain or 0) > 0 then
+        self.featureTitle:SetText("加速带 · 冲刺")
+        self.featureTitle:SetFontColor({126, 255, 218, 255})
+        self.featureHint:SetText(string.format("+%.0f km/h  ·  不消耗氮气", state.lastGain * 3.6))
+        self.featurePanel:SetVisible(true)
+        return
+    end
+    if sim.airborne and (sim.airTime or 0) > 0.12 then
+        self.featureTitle:SetText("腾空飞跃")
+        self.featureTitle:SetFontColor(AMBER)
+        self.featureHint:SetText("保持车身稳定 · 准备落地")
+        self.featurePanel:SetVisible(true)
+        return
+    end
+    local map = sim.landscape
+    local nearest, distance = nil, math.huge
+    if map and (map.RouteLength or 0) > 0 then
+        for _, feature in ipairs(map.Features or {}) do
+            local ahead = (feature.s - (sim.roadS or 0)) % map.RouteLength
+            local facing = math.cos(math.rad((sim.heading or 0) - feature.yaw)) > 0.6
+            if feature.kind == "ramp" and facing and ahead > 0 and ahead < 165 and ahead < distance then
+                nearest, distance = feature, ahead
+            end
+        end
+    end
+    if nearest then
+        self.featureTitle:SetText(string.format("飞坡  %.0f m  %s", distance, nearest.lateral < 0 and "↖" or "↗"))
+        self.featureTitle:SetFontColor(AMBER)
+        self.featureHint:SetText("对准黄箭头可飞跃 · 旁侧可绕行")
+    end
+    self.featurePanel:SetVisible(nearest ~= nil)
+end
+
 -- Existing main update signature remains valid. Preview animation runs through its Widget Update,
 -- including before the driving scene exists; leaving garage disposes all render targets immediately.
 function HUD:Update(dt, sim, firstPerson)
     self.firstPerson = firstPerson == true
+    self:UpdateFeatureFeedback(sim)
     self.controls:UpdateFeedback(dt)
     self.redline = (sim.vehicle and sim.vehicle.redline) or 12500
     self.instrumentPanel:SetTelemetry((sim.speed or 0) * 3.6, sim.gear or 0, sim.rpm or 1200, (sim.vehicle and sim.vehicle.redline) or 12500)

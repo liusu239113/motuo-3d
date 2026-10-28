@@ -69,6 +69,9 @@ local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
 local testScenery_, testNitroShot_ = false, false
 local testFeature_, testFeatureDone_ = "", false
+local testFeaturePhase_, testFeatureAirborne_ = "active", false
+local testFeatureFrame_ = 1
+local featureShotPhases_ = {"approach", "active", "late", "settled"}
 local testShotDelay_ = 18
 local captureFrames_, checkFrames_, checkStage_, preparationsStarted_ = 0, 0, 0, 0
 local pendingActions_ = {spin180 = false, spin360 = false, nitro = false}
@@ -227,7 +230,9 @@ local function ResetRideState()
         for _, feature in ipairs(Landscape.Features or {}) do
             if feature.kind == testFeature_ then
                 local a = math.rad(feature.yaw)
-                sim_.x, sim_.z = feature.x - math.sin(a) * 8, feature.z - math.cos(a) * 8
+                local previewRamp = testFeature_ == "ramp" and (testFeaturePhase_ == "approach" or testFeaturePhase_ == "sequence")
+                local approach = previewRamp and 75 or 8
+                sim_.x, sim_.z = feature.x - math.sin(a) * approach, feature.z - math.cos(a) * approach
                 sim_.y = world_:Surface(sim_.x, sim_.z)
                 sim_.heading, sim_.yaw, sim_.speed = feature.yaw, feature.yaw, 38
                 sim_:UpdateNavigation(sim_.x, sim_.z, world_, false)
@@ -678,6 +683,11 @@ function Start()
         if arg == "-controlchecks" then assert(require("ControlChecks").Run(hud_, touch_).passed) end
         if arg == "-profilechecks" then assert(require("ProfileChecks").Run().passed) end
         if arg == "-featurechecks" then assert(require("FeatureChecks").Run().passed) end
+        if arg == "-featuremapchecks" then assert(require("FeatureChecks").RealMaps(Landscape).passed) end
+        if arg == "-padfeedbackchecks" then
+            assert(require("RideEffects").CheckPadFeedback().passed)
+            assert(RideAudio.CheckPadFeedback().passed)
+        end
         if arg == "-uichecks" then
             local pending = true
             UI.RegisterGlobalComponent("RacingUICheckOnce", {Render = function()
@@ -716,6 +726,10 @@ function Start()
         if arg == "-testscenery" then testScenery_ = true end
         local feature = arg:match("^%-testfeature=(.+)$")
         if feature == "boost" or feature == "ramp" then testFeature_ = feature end
+        local featurePhase = arg:match("^%-testfeaturephase=(.+)$")
+        if featurePhase == "approach" or featurePhase == "active" or featurePhase == "late" or featurePhase == "settled" or featurePhase == "sequence" then
+            testFeaturePhase_ = featurePhase
+        end
         if arg == "-testnitroshot" then testNitroShot_ = true end
         local shotDelay=arg:match("^%-testshotdelay=(%d+)$")
         if shotDelay then testShotDelay_=math.max(18,math.min(1800,tonumber(shotDelay) or 18)) end
@@ -1085,10 +1099,12 @@ function HandlePostUpdate(eventType, eventData)
         lastYaw_ = lastYaw_ + delta * math.min(1, dt * 5)
         chase_:SetMode(sim_.speed > 38 and "fast" or "normal")
         chase_:Update(dt, bike_.node, lastYaw_, 9)
-        -- 只由真实动力授权扩张视野；松开、储量不足或倒计时不会假装喷射。
+        -- 两种来源独立授权表现：氮气真实推力、加速带真实增益脉冲；不回写仿真。
         if screen_ == "ride" then
-            local targetBoost = math.max(0, math.min(1, sim_.raceBoost or 0)) * 9
-            boostFov_ = boostFov_ + (targetBoost - boostFov_) * (1 - math.exp(-dt * 8))
+            local padPower = sim_.featureState and sim_.featureState.feedbackPower or 0
+            local targetBoost = math.max(math.max(0, math.min(1, sim_.raceBoost or 0)) * 9,
+                math.max(0, math.min(1, padPower)) * 7)
+            boostFov_ = boostFov_ + (targetBoost - boostFov_) * (1 - math.exp(-dt * 12))
         end
         local chaseCamera = chase_:GetCamera()
         chaseCamera.fov = chaseCamera.fov + boostFov_
@@ -1121,12 +1137,31 @@ function CaptureTestFrame()
         end
         if not nitroVisible then return end
     end
+    local featurePhase = testFeaturePhase_ == "sequence" and featureShotPhases_[testFeatureFrame_] or testFeaturePhase_
     if testFeature_ ~= "" then
-        if testFeatureDone_ then return end
-        if testFeature_ == "ramp" and (not sim_.airborne or sim_.y - sim_.groundY < 0.45) then return end
-        if testFeature_ == "boost" and sim_.featureState.triggers < 1 then return end
+        if testFeatureDone_ or screen_ ~= "ride" then return end
+        local featureState = sim_.featureState
+        if testFeature_ == "ramp" then
+            if sim_.airborne then testFeatureAirborne_ = true end
+            if featurePhase == "settled" then
+                if not testFeatureAirborne_ or sim_.airborne then return end
+            elseif featurePhase ~= "approach" then
+                local minimumAir = featurePhase == "late" and 0.50 or 0.18
+                if not sim_.airborne or sim_.airTime < minimumAir or sim_.y - sim_.groundY < 0.65 then return end
+            end
+        elseif featurePhase ~= "approach" then
+            if featureState.triggers < 1 then return end
+            if featurePhase == "settled" then
+                if (featureState.feedbackTimer or 0) > 0 or sim_.elapsed < 1.8 then return end
+            else
+                local threshold = featurePhase == "late" and 0.55 or 1.20
+                if (featureState.feedbackTimer or 0) > threshold then return end
+            end
+        end
         testFeatureDone_ = true
-        print(string.format("[机关实拍触发] %s airborne=%s y=%.3f speed=%.2f", testFeature_, tostring(sim_.airborne), sim_.y, sim_.speed))
+        print(string.format("[机关实拍触发] %s/%s airborne=%s airTime=%.2f y=%.3f speed=%.2f pad=%.2f nitro=%.2f fov=%.2f",
+            testFeature_, featurePhase, tostring(sim_.airborne), sim_.airTime or 0, sim_.y, sim_.speed,
+            featureState.feedbackPower or 0, sim_.raceBoost or 0, boostFov_))
     end
     if testTrick_ ~= "" and sim_.elapsed < 3 then return end
     if testScenery_ then hud_.root:SetVisible(false) end
@@ -1142,8 +1177,14 @@ function CaptureTestFrame()
         print(string.format("[实拍特技] %s speed=%.2f wheelie=%.2f smoke=%.2f", testTrick_, sim_.speed, sim_.wheelieAngle, sim_.tireSmoke))
     end
     local image = Image()
-    if graphics:TakeScreenShot(image) then print("[验收] 截图 " .. tostring(image:SavePNG(testShot_)) .. " / " .. testShot_) end
+    local output = testFeaturePhase_ == "sequence" and testShot_:gsub("%.png$", "-" .. featurePhase .. ".png") or testShot_
+    if graphics:TakeScreenShot(image) then print("[验收] 截图 " .. tostring(image:SavePNG(output)) .. " / " .. output) end
     image:Dispose()
+    if testFeature_ ~= "" and testFeaturePhase_ == "sequence" and testFeatureFrame_ < #featureShotPhases_ then
+        testFeatureFrame_ = testFeatureFrame_ + 1
+        testFeatureDone_, captureFrames_ = false, 0
+        return
+    end
     engine:Exit()
 end
 
