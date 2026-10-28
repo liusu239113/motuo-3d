@@ -128,7 +128,8 @@ function City:Building(x,z,w,depth,floors,style,name,yaw)
     local angle = math.rad(yaw or 0)
     local function p(px,pz) return x+px*math.cos(angle)+pz*math.sin(angle),z-px*math.sin(angle)+pz*math.cos(angle) end
     d:Box(style,x,h/2+.08,z,w,h,depth,yaw)
-    d:Box("concrete",x,.35,z,w+.25,.55,depth+.25,yaw)
+    -- 地基向下穿入地面，不能把整栋楼悬在统一的8.5cm摆放平面。
+    d:Box("concrete",x,.25,z,w+.25,.60,depth+.25,yaw)
     d:Box("trim",x,h+.12,z,w+.45,.26,depth+.45,yaw)
     d:Box("recess",x,h+.32,z,w-.6,.16,depth-.6,yaw)
     local cols = math.max(2,math.floor(w/4))
@@ -161,7 +162,7 @@ function City:DetailedBuilding(index,x,z,w,depth,height,yaw,name)
     -- 模型只在预留地块内等比缩放，按旋转后的精确包围盒生成碰撞。
     local scale=math.min(w/bounds.size.x,depth/bounds.size.z,height/bounds.size.y)
     local root=self.root:CreateChild(name)
-    root.position=Vector3(x,.085,z); root.rotation=Quaternion(0,yaw,0)
+    root.position=Vector3(x,self:Surface(x,z),z); root.rotation=Quaternion(0,yaw,0)
     local body=root:CreateChild("写实建筑")
     body:SetScale(scale)
     body.position=Vector3(-bounds.center.x*scale,-bounds.min.y*scale,-bounds.center.z*scale)
@@ -283,7 +284,10 @@ function City:SetSpace(id)
     self.root:SetEnabledRecursive(id=="city")
     self.interior:SetSpace(id)
 end
-function City:Surface(x,z) return .085 end
+function City:Surface(x,z)
+    if self.space~="city" then return .085 end
+    return self.details:Surface(x,z)
+end
 
 function City:IsFree(x,z,radius)
     if not self:StaticFree(x,z,radius) then return false end

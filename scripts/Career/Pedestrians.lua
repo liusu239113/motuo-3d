@@ -57,7 +57,7 @@ end
 function Pedestrians:Place(p)
     local f=p.s/p.length
     p.x,p.z=p.path[1]+(p.path[3]-p.path[1])*f,p.path[2]+(p.path[4]-p.path[2])*f
-    p.node.position=Vector3(p.x,.085,p.z)
+    p.node.position=Vector3(p.x,self.city:Surface(p.x,p.z),p.z)
     p.node.rotation=Quaternion(0,math.deg(math.atan((p.path[3]-p.path[1])*p.direction,(p.path[4]-p.path[2])*p.direction)),0)
 end
 function Pedestrians:Update(dt,blockers)
@@ -76,7 +76,7 @@ function Pedestrians:Update(dt,blockers)
         for _,other in ipairs(self.people) do if other~=p and (x-other.x)^2+(z-other.z)^2<.85^2 then free=false end end
         if free then p.s=candidate end
         local moved=math.abs(p.s-old)
-        p.phase=p.phase+moved*8
+        p.phase=p.phase+moved*2*math.pi/(1.40*.8)
         self:Place(p)
         -- 位移与碰撞每帧更新；85m绘制距离之外不做IK，近处骨骼限20Hz。
         if poseReady and (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2 then

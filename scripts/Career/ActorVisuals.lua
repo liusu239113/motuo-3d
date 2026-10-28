@@ -47,9 +47,10 @@ function Visuals:Init(scene,target)
     cargoDraw.model=cargo; cargoDraw.material=cache:GetResource("Material",boxMaterial); cargoDraw.castShadows=true
     local metal=Parts.Material(.08,.09,.1,.55,.55)
     local mirror=Parts.Material(.45,.57,.62,.1,.85)
-    -- 原模型自带右镜，补左镜及支杆，避免重复叠放已有镜片。
-    Parts.Bar(self.bikeVisual,metal,V(-.30,1.13,.36),V(-.37,1.41,.36),.008)
-    Parts.Add(self.bikeVisual,"9号左后视镜","Sphere",mirror,V(-.37,1.43,.36),V(.13,.1,.035),Quaternion(0,-12,0),false)
+    -- 原模型的完整高镜在-X（左侧），只补缺失的+X右镜；位置按原镜顶点镜像。
+    Parts.Bar(self.bikeVisual,metal,V(.29,1.21,.27),V(.31,1.40,.20),.008)
+    Parts.Add(self.bikeVisual,"9号右后视镜镜壳","Sphere",metal,V(.31,1.425,.19),V(.145,.10,.045),Quaternion(0,12,0),true)
+    Parts.Add(self.bikeVisual,"9号右后视镜镜片","Sphere",mirror,V(.306,1.425,.169),V(.125,.082,.012),Quaternion(0,12,0),false)
     for _,side in ipairs({-1,1}) do
         Parts.Bar(self.bikeVisual,metal,V(side*.2,.68,-.56),V(side*.2,.88,-.91),.015)
     end
@@ -121,7 +122,8 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     else
         local target=math.min(1,math.abs(speed)/1.8)
         self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*(1-math.exp(-dt*14))
-        self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/1.25)%(math.pi*2)
+        local cycle=1.40*math.max(.30,self.gaitWeight)
+        self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/cycle)%(math.pi*2)
         self.walker:PoseWalk(self.phase,self.gaitWeight)
     end
 end

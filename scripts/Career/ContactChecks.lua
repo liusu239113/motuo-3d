@@ -36,21 +36,36 @@ function Checks.SkinBounds(rig)
 end
 function Checks.Run(session)
     local actor=session.actor
+    for _,phase in ipairs({0,math.pi/4,math.pi/2,math.pi*3/4,math.pi,math.pi*5/4,math.pi*3/2,math.pi*7/4}) do
+        actor.visuals.walker:PoseWalk(phase,1)
+        local _,feet=Checks.SkinBounds(actor.visuals.walker)
+        assert(math.abs(math.min(feet.L_Foot.min.y,feet.R_Foot.min.y))<.006,"支撑鞋底必须贴地")
+    end
     actor.visuals.walker:PoseWalk(0,0)
     Checks.SkinBounds(actor.visuals.walker)
-    actor.visuals.walker:PoseWalk(math.pi/2,1)
-    Checks.SkinBounds(actor.visuals.walker)
+    for _,c in ipairs(actor.visuals.walker.arms) do
+        local rig=actor.visuals.walker
+        assert(rig:GetBonePosition(c.lower).z<rig:GetBonePosition(c.upper).z-.03,"站姿肘部必须后弯")
+    end
     actor.visuals.mountedRider:PoseRide(0)
     Checks.SkinBounds(actor.visuals.mountedRider)
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
+    local phase,weight,yaw=0,0,110
+    local mounted=false
     for _,arg in ipairs(GetArguments()) do
-        local phase=arg:match("^%-contactphase=([%.%d]+)$")
-        if phase then actor.visuals.walker:PoseWalk(tonumber(phase) or 0,1) end
+        local value=arg:match("^%-contactphase=([%.%d]+)$")
+        if value then phase=tonumber(value) or 0;weight=1 end
+        value=arg:match("^%-contactyaw=([%-%d%.]+)$")
+        if value then yaw=tonumber(value) or 110 end
+        if arg=="-contactride" then mounted=true end
     end
-    actor.mounted=false;actor.visuals:SetMounted(false)
+    actor.mounted=mounted;actor.visuals:SetMounted(mounted)
     actor.bikeX,actor.bikeZ,actor.bikeYaw=0,-17,0
-    actor:Teleport(2,-20,0)
-    session.yaw,session.pitch=110,2
+    actor:Teleport(mounted and 0 or 2,mounted and -17 or -20,0)
+    -- Teleport内部会重算Pose，受控相位必须最后应用，暂停后才可复现实拍。
+    if mounted then actor.visuals.mountedRider:PoseRide(0)
+    else actor.visuals.walker:PoseWalk(phase,weight) end
+    session.yaw,session.pitch=yaw,2
     session.camera:SetModeConfig("normal",{distance=3.8,offset=Vector3(0,1,0),fov=52})
     session.camera:Update(1,actor.node,session.yaw,session.pitch)
     session.view:ShowGame(); session:Refresh()

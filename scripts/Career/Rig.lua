@@ -85,17 +85,33 @@ function Rig:PoseRide(steer)
 end
 function Rig:PoseWalk(phase,weight)
     self:Reset()
-    -- 步幅限定在真实腿长内，抬脚前先降低髋点，避免直腿末端目标超伸。
-    self.mesh.position=self.standOffset-V(0,.045*weight,0)
+    local w=math.max(0,math.min(1,weight))
+    -- 完整跨步1.40m；支撑半周期匀速向后，摆动半周期前送并抬脚。
+    -- 髋点随跨步降低而不是缩短步幅；膝向前、肘向后，禁止反关节。
+    local stride=.35*w
+    self.mesh.position=self.standOffset-V(0,(.085+.015*math.cos(phase*2))*w,0)
+    self:SetBodyRotation("Waist",4*w,math.sin(phase)*2*w)
+    self:SetBodyRotation("Spine01",3*w,-math.sin(phase)*3*w)
+    self:SetBodyRotation("Spine02",2*w,-math.sin(phase)*4*w)
     for _,chain in ipairs(self.legs) do
-        local swing=math.sin(phase)*chain.side
-        local lift=math.max(0,math.cos(phase)*chain.side)*.07*weight
-        self:SolveChain(chain,self.feet[chain.tip]+V(0,lift,swing*.14*weight),V(chain.side*.1,0,1),false)
+        local t=((phase/(2*math.pi))+(chain.side==1 and .5 or 0))%1
+        local z,lift
+        if t<.5 then
+            z=stride*(1-4*t); lift=0
+        else
+            local u=(t-.5)*2
+            local smooth=u*u*(3-2*u)
+            z=stride*(-1+2*smooth);lift=math.sin(u*math.pi)*.13*w
+        end
+        self:SolveChain(chain,self.feet[chain.tip]+V(0,lift,z),V(chain.side*.08,0,1),false)
         self:SetBodyRotation(chain.tip,0)
     end
     for _,chain in ipairs(self.arms) do
         local root=self:GetBonePosition(chain.upper)
-        self:SolveChain(chain,root+V(chain.side*.06,-(chain.lengthA+chain.lengthB)*.94,-math.sin(phase)*chain.side*.16*weight),V(chain.side*.2,-.2,1),false)
+        local swing=math.cos(phase)*chain.side*.24*w
+        local reach=(chain.lengthA+chain.lengthB)*.95
+        local target=root+V(chain.side*.035,-math.sqrt(math.max(.01,reach*reach-swing*swing)),swing+.025)
+        self:SolveChain(chain,target,V(chain.side*.12,-.1,-1),false)
     end
 end
 function Rig:SetVisible(visible) self.visible=visible; self.node:SetEnabledRecursive(visible) end

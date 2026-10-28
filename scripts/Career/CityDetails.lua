@@ -19,6 +19,7 @@ local V = Vector3
 ---@field trees integer
 ---@field cylinders integer
 ---@field font Font
+---@field surfaces table[]
 local Details = {}
 Details.__index = Details
 
@@ -35,7 +36,7 @@ end
 ---@param mats table<string, Material>
 function Details:Init(root, mats)
     self.root, self.mats = root, mats
-    self.batches, self.shapes = {}, {}
+    self.batches, self.shapes, self.surfaces = {}, {}, {}
     self.meshCount, self.boxes, self.signs, self.trees, self.cylinders = 0, 0, 0, 0, 0
     self.font = assert(cache:GetResource("Font", "Fonts/MiSans-Regular.ttf"), "City: missing sign font")
     self.shapes.cylinder = CylinderGeometry(.5, .5, 1, 12):ToModel()
@@ -121,7 +122,21 @@ end
 ---@param y? number
 function Details:Ground(material,x,z,w,d,y)
     local yy = y or .05
+    -- 视觉地面与查询共用同一份矩形，标线只是贴花，不额外垫高鞋底和轮胎。
+    if material~="paint" and material~="yellow" then
+        self.surfaces[#self.surfaces+1]={x=x,z=z,w=w,d=d,y=yy}
+    end
     self:Quad(material,V(x-w/2,yy,z-d/2),V(x-w/2,yy,z+d/2),V(x+w/2,yy,z-d/2),V(x+w/2,yy,z+d/2))
+end
+
+function Details:Surface(x,z)
+    local height=0
+    for _,s in ipairs(self.surfaces) do
+        if math.abs(x-s.x)<=s.w/2 and math.abs(z-s.z)<=s.d/2 then
+            height=math.max(height,s.y)
+        end
+    end
+    return height
 end
 
 ---@param mat string

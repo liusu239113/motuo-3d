@@ -92,7 +92,7 @@ function Traffic:Blockers()
 end
 function Traffic:Place(car)
     car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
-    car.node.position=Vector3(car.x,.085,car.z)
+    car.node.position=Vector3(car.x,self.city:Surface(car.x,car.z),car.z)
     car.node.rotation=Quaternion(0,car.yaw,0)
 end
 function Traffic:CanPlace(car,blockers)
