@@ -363,6 +363,7 @@ function Checks.RunWorld(session)
             session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})
             session.view.overlay:SetVisible(false)
         end
+        if arg=="-careernight" then require("Career.HousingChecks").NightShot(session) end
         local home=arg:match("^%-careerhousing=(.+)$")
         if home then require("Career.HousingChecks").Shot(session,home) end
         local page=arg:match("^%-careerpage=(.+)$")

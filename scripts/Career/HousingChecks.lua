@@ -110,4 +110,15 @@ function Checks.Shot(session,id)
     session:Refresh()
     session.view:ShowDialog("住房实拍","冻结状态",{}); session.view.overlay:SetVisible(false)
 end
+function Checks.NightShot(session)
+    assert(Store.Transaction(function(p) p.phase="working"; p.time=22; return true end))
+    session:ApplySpace("city")
+    local a=session.actor
+    a.mounted=false; a.visuals:SetMounted(false); a:Teleport(-109,-61,0)
+    session:UpdateEnvironment(22)
+    session.yaw,session.pitch=0,12
+    session.camera:SetMode("normal"); session.camera:Update(2,a.node,0,12)
+    session:Refresh()
+    session.view:ShowDialog("夜间实拍","冻结状态",{}); session.view.overlay:SetVisible(false)
+end
 return Checks

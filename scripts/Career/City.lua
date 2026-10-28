@@ -41,6 +41,8 @@ function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
     self.space="city"
+    ---@type boolean?
+    self.lightsOn=nil
     ---@type Light[]
     self.nightLights={}
     -- 从森林/沙漠赛事回来仍使用老街沥青与城市色板，不继承上一张赛道的地表替换。
@@ -102,7 +104,7 @@ function City:BuildRoads()
         for z=-145,145,42 do
             if math.abs(z)>18 and math.abs(z-100)>18 and not (x==0 and z< -40) then
                 d:Lamp(x-9.4,z,90)
-                self:NightLight(x-7.8,4.2,z,5,12)
+                self:NightLight(x-8.15,6.12,z,7,15)
             end
         end
     end
@@ -266,10 +268,14 @@ function City:NightLight(x,y,z,brightness,range)
 end
 function City:UpdateLights(hour)
     local on=hour>=18 or hour<6
+    if self.lightsOn==on then return end
+    self.lightsOn=on
     for _,light in ipairs(self.nightLights) do light.enabled=on end
+    self.mats.lamp:SetShaderParameter("MatEmissiveColor",Variant(Color(on and 2 or .08,on and 1.55 or .06,on and .8 or .04)))
 end
 function City:SetSpace(id)
     self.space=id
+    self.lightsOn=nil
     self.root:SetEnabledRecursive(id=="city")
     self.interior:SetSpace(id)
 end
