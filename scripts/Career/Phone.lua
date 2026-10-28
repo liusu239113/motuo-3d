@@ -14,7 +14,7 @@ function Phone.Create(view,actions)
     local screen=UI.Panel{position="absolute",left="8.5%",right="8.5%",top="7.2%",bottom="6.5%",
         padding=9,gap=7,backgroundImage=Phone.Wallpaper,backgroundFit="cover",overflow="hidden",borderRadius=12}
     view.phoneClock=Theme.Label("08:00",10,Theme.Colors.white)
-    screen:AddChild(UI.Row{width="100%",height=18,padding=0,justifyContent="space-between",children={
+    screen:AddChild(UI.Row{width="100%",height=20,padding=0,justifyContent="space-between",children={
         view.phoneClock,Theme.Label("4G  ▂▄▆  86%",9,Theme.Colors.white)}})
     view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,{fontWeight="bold",flexShrink=1})
     screen:AddChild(UI.Row{width="100%",padding=0,gap=5,alignItems="center",children={view.phoneTitle,
@@ -33,14 +33,19 @@ function Phone.Desktop(content,state,actions)
     content:AddChild(Theme.Label(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60),34,
         Theme.Colors.white,{textAlign="center",fontWeight="bold",marginTop=8}))
     content:AddChild(Theme.Label("第"..state.day.."天 · 南城",11,Theme.Colors.white,{textAlign="center",marginBottom=9}))
-    local grid=UI.SimpleGrid{width="100%",columns=3,gap=7,padding=0}
-    for _,app in ipairs(Phone.Apps) do
-        local id=app[1]
-        grid:AddChild(UI.Panel{id="career-app-"..id,height=83,padding=0,gap=5,alignItems="center",
-            pointerEvents="box-only",onClick=function() actions.phone(id) end,
-            children={UI.Panel{width=54,height=54,borderRadius=12,backgroundImage="image/career_phone/"..id..".png",
-                backgroundFit="contain",pointerEvents="none"},
-                Theme.Label(app[2],10,Theme.Colors.white,{textAlign="center",pointerEvents="none"})}})
+    local grid=UI.Panel{width="100%",gap=7,padding=0}
+    for row=1,2 do
+        local line=UI.Row{width="100%",padding=0,gap=7}
+        for col=1,3 do
+            local app=Phone.Apps[(row-1)*3+col]
+            local id=app[1]
+            line:AddChild(UI.Panel{id="career-app-"..id,flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=83,padding=0,gap=5,alignItems="center",
+                pointerEvents="box-only",onClick=function() actions.phone(id) end,
+                children={UI.Panel{width=54,height=54,borderRadius=12,backgroundImage="image/career_phone/"..id..".png",
+                    backgroundFit="contain",pointerEvents="none"},
+                    Theme.Label(app[2],10,Theme.Colors.white,{textAlign="center",pointerEvents="none"})}})
+        end
+        grid:AddChild(line)
     end
     content:AddChild(grid)
     content:AddChild(UI.Panel{width="100%",padding=10,gap=5,borderRadius=12,backgroundColor={6,19,28,175},children={

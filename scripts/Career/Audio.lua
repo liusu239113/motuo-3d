@@ -59,8 +59,9 @@ function Audio:Update(dt,actor,blocked,indoor,controls,order)
     local electric=actor.vehicleId=="borrowed_ebike"
     self:Loop("music",blocked and .08 or .18,1,dt)
     self:Loop("city",indoor and .025 or blocked and .05 or .17,1,dt)
-    self:Loop("electric",ride and electric and (.045+math.min(1,moving/10)*.28) or 0,.75+math.min(1,moving/10)*.6,dt)
-    self:Loop("engine",ride and not electric and .24 or 0,.7+math.min(1,moving/17)*.8,dt)
+    local drive=math.max(0,controls.throttle or 0)
+    self:Loop("electric",ride and electric and moving>.1 and (.06+math.min(1,moving/10)*.23+drive*.05) or 0,.75+math.min(1,moving/10)*.6,dt)
+    self:Loop("engine",ride and not electric and (.11+drive*.1+math.min(1,moving/17)*.1) or 0,.7+math.min(1,moving/17)*.8+drive*.1,dt)
     -- 按实际行走距离触发单步，不循环整段录音；撞墙不走、松杆、手机与暂停都立即停脚步。
     if not actor.mounted and moving>.1 and self.effectsEnabled then
         self.stepDistance=self.stepDistance+moving*math.min(dt,.25)
