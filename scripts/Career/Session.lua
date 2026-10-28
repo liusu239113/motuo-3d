@@ -254,6 +254,7 @@ function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
     state.musicEnabled=self.audio and self.audio.musicEnabled
     state.effectsEnabled=self.audio and self.audio.effectsEnabled
+    state.trafficHint=self.traffic and self.actor and self.space=="city" and self.traffic:Hint(self.actor.x,self.actor.z,self.actor.yaw) or nil
     return state
 end
 function Session:Target()

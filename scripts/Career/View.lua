@@ -314,6 +314,7 @@ function View:Update(state,actor,target,active,offer,dt)
     local need=math.min(state.hunger,state.energy)
     self.hint:SetText(need<30 and "饥饿或疲劳已降低速度：去早餐店用餐，或去住处休息。"
         or state.time>=23 and "深夜已停止派新单，请完成配送后休息。"
+        or state.trafficHint
         or target and target.hint or "先活下去，再跑出自己的路。")
     self.speed:SetText(actor.mounted and string.format("%s  %.0f km/h",actor:VehicleName(),math.abs(actor.speed)*3.6)
         or "步行 · 车辆停在原处")

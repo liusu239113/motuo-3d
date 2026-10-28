@@ -160,6 +160,18 @@ function Traffic:Update(dt)
     -- 骨骼每个外层帧仅求解一次；车辆仍保留60Hz碰撞子步。
     self.pedestrians:Update(duration,blockers)
 end
+function Traffic:Hint(x,z,yaw)
+    local axis=math.abs(math.cos(math.rad(yaw)))>=.7 and "ns" or "ew"
+    local best=math.huge
+    for _,j in ipairs(Routes.Junctions) do
+        local across=axis=="ns" and math.abs(x-j.x) or math.abs(z-j.z)
+        local forward=axis=="ns" and (j.z-z)*math.cos(math.rad(yaw)) or (j.x-x)*math.sin(math.rad(yaw))
+        if across<6 and forward>7 and forward<45 then best=math.min(best,forward) end
+    end
+    if best==math.huge then return nil end
+    local signal=Routes.Signal(self.time,axis)
+    return signal=="green" and "前方绿灯 · 留意路口车辆和行人" or signal=="yellow" and "前方黄灯 · 减速，在停止线前等候" or "前方红灯 · 在白色停止线前等候"
+end
 function Traffic:Dispose()
     if self.disposed then return end
     self.disposed=true; self.active=false
