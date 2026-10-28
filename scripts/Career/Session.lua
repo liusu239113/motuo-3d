@@ -174,8 +174,9 @@ function Session:BuildWorld()
     zone.depthFogStart,zone.depthFogEnd=150,450
     zone.fogColor=Color(.6,.68,.72)
     local light=lg:GetComponent("Light",true)
-    light.castShadows=true; light.shadowCascade=CascadeParameters(18,80,0,0,.8)
-    light.shadowBias=BiasParameters(.0003,.6)
+    -- 两级阴影优先保证鞋底、轮胎的近景接触，降低深度偏移造成的脱离。
+    light.castShadows=true; light.shadowCascade=CascadeParameters(8,65,0,0,.85)
+    light.shadowBias=BiasParameters(.0001,.25,0)
     self.zone,self.sun=zone,light
     -- 太阳落到地平线以下后不再照地面；独立冷色月光保证手游夜跑的基础可读性。
     local moonNode=self.scene:CreateChild("南城夜间月光")

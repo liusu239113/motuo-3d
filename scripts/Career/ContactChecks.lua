@@ -70,7 +70,9 @@ function Checks.Run(session)
     if mounted then actor.visuals.mountedRider:PoseRide(0)
     else actor.visuals.walker:PoseWalk(phase,weight) end
     session.yaw,session.pitch=yaw,2
+    session:UpdateEnvironment(12)
     session.camera:SetModeConfig("normal",{distance=3.8,offset=Vector3(0,1,0),fov=52})
+    session.camera:SetModeConfig("ride",{distance=3.8,offset=Vector3(0,1,0),fov=52})
     session.camera:Update(1,actor.node,session.yaw,session.pitch)
     session.view:ShowGame(); session:Refresh()
     session.view:ShowDialog("接触诊断","",{});session.view.overlay:SetVisible(false)
