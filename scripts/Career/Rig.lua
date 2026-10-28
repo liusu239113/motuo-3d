@@ -78,18 +78,15 @@ function Rig:InitCareer(parent,asset)
             local weight=0
             for k=1,4 do
                 local name=self.boneNames[v.indices[k]+1]
-                if name==sideName.."Foot" or name==sideName.."ToeBase" then weight=weight+v.weights[k] end
+                if (name==sideName.."Foot" or name==sideName.."ToeBase") and v.weights[k]>.2 then weight=1 end
             end
-            if weight>.8 then
+            if weight>0 then
                 local list=self.soleVertices[sideName.."Foot"]
                 list[#list+1]=v
             end
         end
     end
-    for _,list in pairs(self.soleVertices) do
-        table.sort(list,function(a,b) return a.position.y<b.position.y end)
-        while #list>32 do table.remove(list) end
-    end
+    -- 只缓存鞋部顶点，不在每帧读回整个人物VB；矩阵按骨名在本次求值内复用。
     print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
 end
 function Rig:SoleHeight(name)
