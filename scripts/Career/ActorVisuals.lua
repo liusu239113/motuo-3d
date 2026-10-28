@@ -3,11 +3,11 @@ local Rig=require("Career.Rig")
 local Parts=require("Parts")
 local V=Vector3
 local SCOOTER="model/873a3764f21f49e4b717387160d13d19/"
-local BOX="model/5d34f701d898448887ca49d6b81feced/"
+local BOX="model/8c4f0f26f9ee4d3eac2eec49a497852f/"
 local scooterModel=SCOOTER.."Meshes/873a3764f21f49e4b717387160d13d19.mdl"
 local scooterMaterial=SCOOTER.."Materials/873a3764f21f49e4b717387160d13d19_00_tripo_material_a843f27f-7dc0-48b9-b818-99d319a20274.xml"
-local boxModel=BOX.."Meshes/5d34f701d898448887ca49d6b81feced.mdl"
-local boxMaterial=BOX.."Materials/5d34f701d898448887ca49d6b81feced_00_tripo_material_04342830-2d74-4b5d-a1ac-50687e393e5c.xml"
+local boxModel=BOX.."Meshes/8c4f0f26f9ee4d3eac2eec49a497852f.mdl"
+local boxMaterial=BOX.."Materials/8c4f0f26f9ee4d3eac2eec49a497852f_00_tripo_material_da86ec09-2a15-4a63-a371-538bf705b4fa.xml"
 ---@class CareerActorVisuals
 local Visuals={}
 Visuals.__index=Visuals
@@ -25,10 +25,11 @@ function Visuals:Init(scene,target)
     local body=self.bikeVisual:CreateChild("正式战损电动车")
     local model=cache:GetResource("Model",scooterModel)
     local bounds=model.boundingBox
-    -- 车长1.9米，先按最大水平轴统一缩放；生成包的车头轴在实拍中校验。
-    local scale=1.90/math.max(bounds.size.x,bounds.size.z)
+    -- 实际顶点PCA长轴=(-.721,0,.693)，车头由实拍确认，旋转46.1度对齐+Z。
+    local scale=1.90/1.3094
     body:SetScale(scale)
-    body.position=V(-bounds.center.x*scale,-bounds.min.y*scale,-bounds.center.z*scale)
+    body.rotation=Quaternion(0,46.1,0)
+    body.position=V(0,-bounds.min.y*scale,0)
     local draw=body:CreateComponent("StaticModel")
     draw.model=model; draw.material=cache:GetResource("Material",scooterMaterial); draw.castShadows=true
     self.cargoMount=self.bikeVisual:CreateChild("外卖箱固定挂点")

@@ -9,6 +9,7 @@ local City = require("Career.City")
 local View = require("Career.View")
 local Loader = require("RideLoader")
 local Theme = require("RacingTheme")
+local Progress = require("Career.Progression")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -44,6 +45,15 @@ function Session:Init(options)
         closePhone=function() self.view:ClosePhone() end,
         online=function(value) self.online=value; self:RefreshPhone() end,
         accept=function() self:Accept() end,
+        selectOrder=function(id)
+            local _,message=Store.Transaction(function(p)
+                for index,order in ipairs(p.activeOrders) do
+                    if order.id==id then table.remove(p.activeOrders,index); table.insert(p.activeOrders,1,order); return true end
+                end
+                return false,"订单不存在"
+            end)
+            self.view:Notice(message); self:RefreshPhone()
+        end,
         mount=function() if self.actor then local _,message=self.actor:ToggleMount(); self.view:Notice(message); self:SavePosition() end end,
         interact=function() self:Interact() end,
         setWaypoint=function(id) self.waypoint=id; self:Refresh() end,
@@ -52,6 +62,14 @@ function Session:Init(options)
         charge=function() self:Service("charge",function() return Store.Charge() end) end,
         aid=function() self:Service("breakfast",function() return Store.RequestAid() end) end,
         save=function() self:SaveCloud() end,
+        progression=function() self:OpenPhone("progression") end,
+        buyEquipment=function(id) self:Service("dealer",function() return Progress.BuyEquipment(id) end) end,
+        housing=function(id) self:Service("dealer",function() return Progress.SetHousing(id) end) end,
+        sleepHousing=function() local p=Store.Get(); self:Service("home_old",function() return Store.Rest(p.accommodation) end) end,
+        workWeek=function() self:WorkWeek() end,
+        buyMotorcycle=function(id) self:Service("dealer",function() return Progress.BuyMotorcycle(id) end) end,
+        train=function() self:Service("dealer",function() return Progress.Train() end) end,
+        race=function(index) self:EnterRace(index) end,
         loadCloud=function() self:LoadCloud() end,
         saveStatus=function() local status=Store.GetSaveStatus(); return "账号云档状态："..status.cloud.."。网页版刷新前请等待confirmed。" end,
     })
@@ -205,8 +223,30 @@ function Session:Interact()
     if nearest=="breakfast" then self:OpenPhone("life")
     elseif nearest=="bridge" or nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
-    elseif nearest=="dealer" then self.view:ShowDialog("南城机车","先把生活安顿好。现金攒到5万元，再来看看人生中的第一辆摩托。",{{text="记住这个目标",primary=true}})
+    elseif nearest=="dealer" then self:OpenPhone("progression")
     else self.view:Notice("这里没有待交付外卖") end
+end
+function Session:WorkWeek()
+    if not self.actor or self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请下车停稳后安排工作"); return end
+    self.view:ShowDialog("确认推进7个游戏日？","6天配送、1天休息。自动扣除餐食整备及已选择住处费用。\n这是可选排班，不是真实时间挂机，也不替代手头的订单。",{
+        {text="继续亲自跑单"},
+        {text="确认7天排班",primary=true,onClick=function()
+            self:SavePosition(); local _,message=Progress.WorkWeek(); self.view:Notice(message); self:RefreshPhone()
+        end}})
+end
+function Session:EnterRace(index)
+    local allowed,message=self:Allowed("dealer")
+    if not allowed then self.waypoint="dealer"; self.view:Notice(message); return end
+    local p=Store.Get()
+    if not (p.career and p.career.pending) then
+        local ok,detail=Progress.EnterSeries(index)
+        if not ok then self.view:Notice(detail); return end
+    end
+    local pending=Store.Get().career.pending
+    if self.options.race then
+        self:SavePosition(); Store.Save(); self.view:ClosePhone(); self:DisposeWorld()
+        self.options.race(pending)
+    end
 end
 function Session:SavePosition()
     if not self.actor then return end
