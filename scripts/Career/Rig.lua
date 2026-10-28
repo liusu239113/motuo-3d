@@ -4,6 +4,7 @@ local V=Vector3
 local ROOT="model/b2849c2afd734d59aaf285fcb69b2b1a/"
 local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
 ---@class CareerRig : Rider
+---@field soleVertices table<string, table[]>
 local Rig={}
 Rig.__index=Rig
 setmetatable(Rig,{__index=Rider})
@@ -69,7 +70,48 @@ function Rig:InitCareer(parent,asset)
     self.standOffset=V(0,-resource.boundingBox.min.y*self.heightScale,0)
     self.mesh.position=self.standOffset
     self.feet={L_Foot=self:GetBonePosition("L_Foot"),R_Foot=self:GetBonePosition("R_Foot")}
+    self.soleVertices={L_Foot={},R_Foot={}}
+    ---@type table[]
+    local skin=assert(self:ReadSkinVertices()[1])
+    for _,v in ipairs(skin) do
+        for _,sideName in ipairs({"L_","R_"}) do
+            local weight=0
+            for k=1,4 do
+                local name=self.boneNames[v.indices[k]+1]
+                if name==sideName.."Foot" or name==sideName.."ToeBase" then weight=weight+v.weights[k] end
+            end
+            if weight>.8 then
+                local list=self.soleVertices[sideName.."Foot"]
+                list[#list+1]=v
+            end
+        end
+    end
+    for _,list in pairs(self.soleVertices) do
+        table.sort(list,function(a,b) return a.position.y<b.position.y end)
+        while #list>32 do table.remove(list) end
+    end
     print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
+end
+function Rig:SoleHeight(name)
+    ---@type table<string, Matrix3x4>
+    local matrices={}
+    local lowest=math.huge
+    for _,v in ipairs(self.soleVertices[name]) do
+        local y=0
+        for k=1,4 do
+            if v.weights[k]>0 then
+                local boneName=tostring(self.boneNames[v.indices[k]+1])
+                local m=matrices[boneName]
+                if not m then
+                    m=self:GetLocalBoneTransform(boneName)*self.model:GetSkeleton():GetBone(boneName).offsetMatrix --[[@as Matrix3x4]]
+                    matrices[boneName]=m
+                end
+                y=y+(m*v.position).y*v.weights[k]
+            end
+        end
+        lowest=math.min(lowest,y)
+    end
+    return lowest
 end
 function Rig:Reset()
     for _,name in ipairs(self.boneNames) do
@@ -121,6 +163,12 @@ function Rig:PoseWalk(phase,weight)
     for i,chain in ipairs(self.legs) do
         self:SolveChain(chain,targets[i],V(chain.side*.08,0,1),false)
         self:SetBodyRotation(chain.tip,0)
+        local desired=targets[i].y-self.feet[chain.tip].y
+        local correction=desired-self:SoleHeight(chain.tip)
+        if math.abs(correction)>.0001 then
+            self:SolveChain(chain,targets[i]+V(0,correction,0),V(chain.side*.08,0,1),false)
+            self:SetBodyRotation(chain.tip,0)
+        end
     end
     for _,chain in ipairs(self.arms) do
         local root=self:GetBonePosition(chain.upper)
