@@ -17,6 +17,10 @@ local Profile = require("Profile")
 local Race = require("Race")
 local RaceVisuals = require("RaceVisuals")
 local RaceAudio = require("RaceAudio")
+local CareerSession = require("Career.Session")
+---@type CareerSession?
+local career_ = nil
+local careerMode_ = false
 
 ---@type RideRace?
 local race_ = nil
@@ -591,7 +595,7 @@ local function RetryLoading()
 end
 
 function Start()
-    graphics.windowTitle = "MMS · 极线追逐"
+    graphics.windowTitle = "公路狂飙：从外卖骑手到职业车手"
     input.mouseMode = MM_ABSOLUTE
     hud_ = HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         selectVehicle = function(id)
@@ -785,7 +789,32 @@ function Start()
             end)
         end
     elseif autoStart then StartRide(challenge); ConfirmVehicle(testVehicle_) end
-    print("[MMS] 开始→选车→下载与准备→点击出发；手机左右手独立操作")
+    -- 旧验收参数仍走原入口；普通启动优先生涯，不给新生涯发放旧档免费摩托。
+    local legacyTest, careerStart, careerCheck = false, false, false
+    for _, arg in ipairs(GetArguments()) do
+        if arg == "-legacy" or arg == "-ride" or arg == "-race" or arg == "-challenge"
+            or arg:match("^%-test") or arg:match("checks$") or arg == "-selftest"
+            or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
+        if arg == "-career" then careerStart = true end
+        if arg == "-careerchecks" then careerCheck, careerStart = true, true; legacyTest = false end
+    end
+    career_ = CareerSession.New({test=careerCheck, legacy=function()
+        careerMode_=false
+        hud_.root:SetVisible(true); UI.SetRoot(hud_.root); MainMenu()
+    end})
+    -- 旧竞速页面提供返回入口，UI根只切换，不重复初始化字体或事件。
+    hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=function()
+        if loader_ then loader_:Cancel(); loader_=nil end
+        DisposeRideWorld(); touch_:SetEnabled(false); hud_.root:SetVisible(false)
+        careerMode_=true; career_:Home()
+    end})
+    if legacyTest then
+        UI.SetRoot(hud_.root)
+    else
+        careerMode_=true; hud_.root:SetVisible(false); UI.SetRoot(career_.view.root)
+        if careerStart then career_:StartCareer(false) end
+    end
+    print("[公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯")
 end
 
 -- 仅显式-racetest启用，走真实页面入口验证暂停、缓存重赛和模式切换。
@@ -878,6 +907,7 @@ end
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
+    if careerMode_ and career_ then career_:Update(dt); return end
     clock_ = clock_ + dt
     local portrait = graphics:GetHeight() > graphics:GetWidth()
     if portrait ~= portrait_ then
@@ -1067,6 +1097,7 @@ end
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
+    if careerMode_ and career_ then career_:PostUpdate(math.min(eventData:GetFloat("TimeStep"),.1)); return end
     if screen_ == "settings" then return end
     if not ready_ or not bike_ or not chase_ or not helmetCamera_ then return end
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
@@ -1191,6 +1222,7 @@ function CaptureTestFrame()
 end
 
 function Stop()
+    if career_ then career_:Dispose(); career_=nil end
     if loader_ then loader_:Cancel() end
     touch_:SetEnabled(false)
     if sound_ then sound_:Stop() end
