@@ -67,6 +67,8 @@ local raceAssetsReady_ = false
 local clock_, accumulator_, lastYaw_ = 0.0, 0.0, 0.0
 local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
+local testScenery_, testNitroShot_ = false, false
+local testShotDelay_ = 18
 local captureFrames_, checkFrames_, checkStage_, preparationsStarted_ = 0, 0, 0, 0
 local pendingActions_ = {spin180 = false, spin360 = false, nitro = false}
 -- 固定步复用输入快照，低帧率一帧多次子步也不重复分配临时表。
@@ -666,6 +668,10 @@ function Start()
         if arg == "-testresult" then testMode_ = "result" end
         if arg == "-testraceresult" then testMode_ = "race-result" end
         if arg == "-testloading" then testMode_ = "loading"; autoStart = true end
+        if arg == "-testscenery" then testScenery_ = true end
+        if arg == "-testnitroshot" then testNitroShot_ = true end
+        local shotDelay=arg:match("^%-testshotdelay=(%d+)$")
+        if shotDelay then testShotDelay_=math.max(18,math.min(1800,tonumber(shotDelay) or 18)) end
         local shot = arg:match("^%-testshot=(.+)$")
         if shot then testShot_ = shot end
         local vehicle = arg:match("^%-vehicle=(.+)$")
@@ -1043,9 +1049,22 @@ function CaptureTestFrame()
         if screen_ ~= "loading" or loadPhase_ ~= "building" then return end
     elseif screen_ == "loading" then return end
     if testMode_ == "race-result" and screen_ ~= "result" then return end
+    if testNitroShot_ then
+        local nitroVisible=false
+        if race_ and race_.phase=="racing" then
+            for _,racer in ipairs(race_.racers) do
+                if not racer.isPlayer and racer.boostTimer>.5 then
+                    local dx,dz=racer.x-sim_.x,racer.z-sim_.z
+                    if dx*dx+dz*dz<70*70 then nitroVisible=true;break end
+                end
+            end
+        end
+        if not nitroVisible then return end
+    end
     if testTrick_ ~= "" and sim_.elapsed < 3 then return end
+    if testScenery_ then hud_.root:SetVisible(false) end
     captureFrames_ = captureFrames_ + 1
-    local frameTarget = testMode_ == "loading" and 5 or 18
+    local frameTarget = testMode_ == "loading" and 5 or (testNitroShot_ and 1 or testShotDelay_)
     if captureFrames_ ~= frameTarget then return end
     if testTrick_ ~= "" then
         if testTrick_ == "wheelie" then

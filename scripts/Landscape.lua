@@ -313,34 +313,61 @@ end
 
 local function naturalHeight(x, z)
     local theme = activeTrack.theme
+    -- C2连续值噪声，不给每个顶点独立随机高度；最短波长仍大于8米地形格。
+    -- 细节先进入既有gradedHeight的160米缓坡，精确路下界/桥河床逻辑不动。
+    local function field(px, pz, size, seed)
+        local u, v = px / size, pz / size
+        local ix, iz = math.floor(u), math.floor(v)
+        local a, b = u - ix, v - iz
+        local fx, fz = a*a*a*(a*(a*6-15)+10), b*b*b*(b*(b*6-15)+10)
+        local lo = noise(ix + seed, iz) * (1-fx) + noise(ix + 1 + seed, iz) * fx
+        local hi = noise(ix + seed, iz + 1) * (1-fx) + noise(ix + 1 + seed, iz + 1) * fx
+        return (lo * (1-fz) + hi * fz) * 2 - 1
+    end
     if theme == "circuit" then
+        -- 场内跑道、维修区仍近乎平整。
         return 17.3 + bump(x,z,-240,190,800,850,0.5) + 0.22*sin(x/110)*cos(z/160)
-    elseif theme == "coast" then
+            + field(x,z,185,37)*0.16
+    end
+    local wx = x + 62 * field(x,z,290,11)
+    local wz = z + 57 * field(x,z,310,29)
+    local broad = field(wx,wz,215,53)
+    local folded = field(wx + 21*broad,wz,91,71)
+    -- sqrt软化abs脊顶避免尖刺；侵蚀沟随大尺度地貌弯曲而非均匀细正弦。
+    local ridge = 0.64 - sqrt(folded*folded + 0.055)
+    local channels = field(wx*0.72 + wz*0.31,wz*1.18,57,97)
+    local erosion = -smooth(0.15,0.9,channels) * (0.45 + 0.55*smooth(-0.6,0.5,broad))
+    local grain = field(wx,wz,27,131)
+    local relief = broad*0.52 + ridge*0.76 + erosion*0.31
+    if theme == "coast" then
         local shore = -385 + 22*sin(z/170)
         local land = smooth(shore-90,shore+55,x)
+        local inland = smooth(shore+35,shore+170,x)
         return -2 + land*(19 + bump(x,z,380,480,250,560,38) + bump(x,z,100,1150,300,280,20))
-            + land*2.5*sin(z/100)*sin(x/150)
+            + land*(inland*(7*relief + 0.7*grain) + 0.35*broad)
     elseif theme == "canyon" then
-        local canyonAxis = -170 + 160*sin(z/240)
-        local terraces = 22*smooth(115,165,abs(x-canyonAxis)) + 38*smooth(240,290,abs(x-canyonAxis))
+        local canyonAxis = -170 + 160*sin(z/240) + 18*field(x,z,205,151)
+        local wallDistance = abs(x-canyonAxis)
+        local terraces = 22*smooth(105,175,wallDistance) + 38*smooth(230,305,wallDistance)
+        local walls = smooth(65,235,wallDistance)
         return 22 + terraces + bump(x,z,-730,730,160,330,115) + bump(x,z,770,900,180,280,130)
-            + 3*sin(x/90)*cos(z/130)
+            + walls*(21*relief + 1.6*grain) + (1-walls)*1.2*broad
     elseif theme == "alpine" then
-        return 33 + 0.11*clamp(z,0,1350) + bump(x,z,-680,650,210,580,165)
+        local h = 33 + 0.11*clamp(z,0,1350) + bump(x,z,-680,650,210,580,165)
             + bump(x,z,260,1140,350,250,230) + bump(x,z,800,700,280,600,215)
-            + 8*sin(x/120)*cos(z/190)
+        -- 支脊/侵蚀槽高处明显；32米远山网格仍能保留215/91米轮廓。
+        local exposed = smooth(75,285,h)
+        return h + (9+24*exposed)*relief + (0.65+1.25*exposed)*grain
     elseif theme == "forest" then
         return 25 + bump(x,z,-260,760,400,400,57) + bump(x,z,630,430,310,500,93)
-            + 4*sin(x/100)*cos(z/140) + 1.2*sin((x+z)/38)
+            + 9*relief + 0.95*grain
     end
-    local h = 17 + 4.1 * sin(x / 123) * cos(z / 185) + 2.2 * sin(z / 58 + x / 88)
-    h = h + bump(x, z, -610, 850, 340, 390, 91) + bump(x, z, 30, 920, 370, 360, 91)
+    local h = 17 + bump(x, z, -610, 850, 340, 390, 91) + bump(x, z, 30, 920, 370, 360, 91)
         + bump(x, z, 770, 1020, 360, 420, 146) + bump(x, z, 520, 270, 240, 330, 35)
         + bump(x, z, -1020, 530, 400, 550, 230) + bump(x, z, 1150, 1230, 430, 430, 315)
         + bump(x, z, -750, -580, 590, 270, 190) + bump(x, z, 150, 1700, 720, 340, 325)
         + bump(x, z, 1420, -300, 520, 510, 205)
-    local detail = 1.8 * sin(x / 31 + sin(z / 51)) * cos(z / 39) + 0.75 * sin((x + z) / 13)
-    h = h + detail * smooth(40, 130, h)
+    h = h + (6 + 16*smooth(35,220,h))*relief + (0.5+smooth(40,160,h))*grain
     local lake = sqrt(((x + 190) / 161) ^ 2 + ((z - 190) / 181) ^ 2)
     h = h * smooth(0.82, 1.23, lake) + 10.95 * (1 - smooth(0.82, 1.23, lake))
     if z > 270 and z < 790 then
@@ -737,8 +764,8 @@ function Landscape.CreateMaterials()
     assert(water:SetSurfaceShader("ScenicWater.shader"), "水面SurfaceShader载入失败")
     assert(water:SetSurfaceTexture("wave_normal", assert(waterSource:GetTexture(TU_NORMAL))))
     assert(water:SetSurfaceTexture("sky_environment", assert(cache:GetResource("TextureCube", "uuid://E4ehad-5axjv7Ml9zasxNx06"))))
+    water:SetShaderParameter("coast_water",Variant(activeTrack.id=="coast" and 1.0 or 0.0))
     m.water = water
-    m.road:SetShaderParameter("Roughness", Variant(0.91))
     return m
 end
 
@@ -891,55 +918,112 @@ end
 ---@param root Node
 ---@param tick fun(stage:string,current:integer,total:integer)
 local function buildForest(scene, root, tick)
-    -- 所有树共享同一份既有阔叶网格／材质，完全停用旧松树预制。
-    -- 路边成簇栽植并留出12米通行走廊，湖岸和草甸保留开阔视野。
     Trees.Begin()
+    local id = activeTrack.id
+    -- 每个全程1/40区间独立配额，不把202棵高模耗在起点附近。
+    -- 低模总上限：forest 40*(16*46+22*22)=48,800，其他生态更低。
+    local ecology = {
+        lake = {middle = 12, far = 24, width = 155},
+        forest = {middle = 16, far = 22, width = 145},
+        alpine = {middle = 10, far = 20, width = 170},
+        coast = {middle = 8, far = 14, width = 125},
+        circuit = {middle = 2, far = 4, width = 140},
+        canyon = {middle = 0, far = 0, width = 0},
+    }
+    local config = assert(ecology[id])
     local planted, nearCount = 0, 0
+    ---@type table<string, table[]>
     local occupied = {}
-    local function plant(x, z, height, yaw, shadow)
-        if planted >= activeTrack.treeBudget then return end
-        local y, onRoad = Landscape.Height(x, z)
+    -- 避让示意（俯视）：冠半径r [树] -- >=r+4m -- [路肩|车道|路肩]。
+    -- 所有主/支路均参与；冠缘8方向检查水面，根部取显示网格同组三角形高度。
+    -- 相邻7米格检查实际圆距，不只检查同格，避免格缝重叠/临水半冠。
+    local function plant(x, z, height, yaw, tier, seed)
         local _, _, _, distance = nearest(x, z, false)
-        local meadow = activeTrack.id=="lake" and x > -160 and x < 140 and z > 740 and z < 1020
-        local lake = activeTrack.id=="lake" and ((x + 190) / 170) ^ 2 + ((z - 190) / 190) ^ 2 < 1
-        local sea = activeTrack.id=="coast" and x < -300
-        local paddock = activeTrack.id=="circuit" and distance < 60
-        local summit = activeTrack.id=="alpine" and y > 130
-        local key = math.floor(x / 7) .. ":" .. math.floor(z / 7)
-        local clearance=activeTrack.id=="lake" and 12 or math.max(12,mainRoad.shoulder+4)
-        if onRoad or distance < clearance or y < 13.5 or meadow or lake or sea or paddock or summit or occupied[key] then return end
-        occupied[key] = true
-        local near = distance <= 35
-        Trees.Add(root, x, y - 0.06, z, height, yaw, shadow, near)
-        planted = planted + 1
-        if near then nearCount = nearCount + 1 end
-    end
-    for batch = 1, 40 do
-        -- 湖图保留既有重点林带；其他地图将原预算分摊到全程40批，不在前半程耗尽。
-        local focus = activeTrack.id=="forest" or (activeTrack.id=="lake" and batch <= 20)
-        local s = activeTrack.id~="lake" and ((batch-1)/40*mainRoad.length)
-            or (batch <= 10 and (170 + (batch - 1) / 9 * 390)
-            or (focus and (930 + (batch - 11) / 9 * 520) or ((batch - 21) / 20 * mainRoad.length)))
-        local p, yaw = Landscape.RoadPoint(s)
-        local angle = math.rad(yaw)
-        local quota=math.floor(activeTrack.treeBudget*batch/40)-math.floor(activeTrack.treeBudget*(batch-1)/40)
-        local limit=activeTrack.id=="lake" and activeTrack.treeBudget or planted+quota
-        local attempts=activeTrack.id=="lake" and (focus and 8 or 4) or (quota==0 and 0 or quota*4)
-        for k = 1, attempts do
-            if planted>=limit then break end
-            local i = batch * (activeTrack.id=="lake" and 11 or 97) + k
-            local side = k % 2 == 0 and 1 or -1
-            local row = math.floor((k - 1) / 2)
-            local offset = side * (focus and (15 + row % 2 * 9 + noise(i, 3) * 4) or (25 + noise(i, 3) * 48))
-            local along = focus and ((math.floor(row / 2) * 2 - 1) * 9 + (noise(i, 9) - 0.5) * 4)
-                or (noise(i, 9) - 0.5) * 36
-            local x = p.x + cos(angle) * offset + sin(angle) * along
-            local z = p.z - sin(angle) * offset + cos(angle) * along
-            plant(x, z, 7.8 + noise(i, 7) * 3.2, noise(i, 11) * 360, focus and k <= 4)
+        local y = Landscape.TerrainHeight(x, z)
+        local evergreen = id == "alpine" or (id == "forest" and noise(seed,53) < 0.68)
+            or (id == "lake" and (y > 100 or noise(seed,53) < 0.35))
+        if tier == 0 and id == "alpine" and y > 145 then return false end
+        -- 高模包围盒对角半径/高度=0.546，低模含最大冠幅与偏冠；先保守避让再缩高。
+        local radius = tier == 0 and height*0.55 or height*(evergreen and 0.35 or 0.50)
+        local clearance = math.max(12,mainRoad.shoulder + radius + 4)
+        local meadow = id=="lake" and x > -160 and x < 140 and z > 740 and z < 1020
+        local lake = id=="lake" and ((x+190)/(162+radius+3))^2 + ((z-190)/(182+radius+3))^2 < 1
+        local river = id=="lake" and z > 303-radius and z < 757+radius
+            and abs(x-Landscape.RiverX(z)) < 16+radius
+        local sea = id=="coast" and x-radius < -304
+        local paddock = id=="circuit" and distance < 72+radius
+        if x < MIN_X+radius or x > MAX_X-radius or z < MIN_Z+radius or z > MAX_Z-radius
+            or distance < clearance or Landscape.RoadHeight(x,z) or meadow or lake or river or sea or paddock
+            or (activeTrack.water and y < Landscape.WaterLevel+0.85) then return false end
+        for k = 0, 7 do
+            local a = k/8*math.pi*2
+            local px, pz = x+cos(a)*radius,z+sin(a)*radius
+            if Landscape.WaterDepth(px,pz)>0 or Landscape.RoadHeight(px,pz) then return false end
         end
-        tick("写实森林", batch, 40)
+        local dx = (Landscape.TerrainHeight(x+3,z)-Landscape.TerrainHeight(x-3,z))/6
+        local dz = (Landscape.TerrainHeight(x,z+3)-Landscape.TerrainHeight(x,z-3))/6
+        local slope = sqrt(dx*dx+dz*dz)
+        local slopeLimit = evergreen and 0.92 or 0.65
+        if slope > slopeLimit then return false end
+        -- 高山林线240..375米渐稀，针叶高度同时降低；不再130米以上全禁。
+        if id=="alpine" then
+            local alpineMask = (1-smooth(240,375,y))*(1-0.5*smooth(0.5,0.92,slope))
+            if noise(seed,61)>alpineMask then return false end
+            height = height*(1-0.42*smooth(185,355,y))
+        end
+        local gx,gz = math.floor(x/7),math.floor(z/7)
+        local spacing = tier == 0 and 5.2 or 4.6
+        for ox = -1,1 do
+            for oz = -1,1 do
+                for _, p in ipairs(occupied[(gx+ox)..":"..(gz+oz)] or {}) do
+                    if (p.x-x)^2+(p.z-z)^2 < math.max(spacing,p.spacing)^2 then return false end
+                end
+            end
+        end
+        if tier == 0 then
+            if planted >= activeTrack.treeBudget then return false end
+            Trees.Add(root,x,y-0.08,z,height,yaw,planted%3==0,true)
+            planted,nearCount=planted+1,nearCount+1
+        elseif not Trees.AddCanopy(x,y-0.13,z,height,yaw,evergreen,tier==2,seed) then
+            return false
+        end
+        local key = gx..":"..gz
+        if not occupied[key] then occupied[key]={} end
+        occupied[key][#occupied[key]+1] = {x=x,z=z,spacing=spacing}
+        return true
     end
-    print(string.format("[风景] %s: %d shared broadleaf trees (%d near road), budget %d; embedded LOD + static culling", activeTrack.id, planted, nearCount, activeTrack.treeBudget))
+    for batch = 1,40 do
+        local highQuota = math.floor(activeTrack.treeBudget*batch/40)-math.floor(activeTrack.treeBudget*(batch-1)/40)
+        local quotas = {highQuota,config.middle,config.far}
+        for tier = 0,2 do
+            local quota,added = quotas[tier+1],0
+            for attempt = 1,quota*10 do
+                if added>=quota then break end
+                local seed = batch*1009 + tier*313 + attempt*17
+                -- 交错准随机站位覆盖整个区间；林带是有缺口的簇，不是道路两排等距行道树。
+                local fraction = (attempt*0.61803398875 + noise(batch,tier+17)*0.63)%1
+                local s = ((batch-1+fraction)/40)*mainRoad.length
+                local p,yaw = Landscape.RoadPoint(s)
+                local angle = math.rad(yaw)
+                local side = attempt%2==0 and 1 or -1
+                local offset = tier==0 and (mainRoad.shoulder+10+noise(seed,3)*18)
+                    or (tier==1 and (mainRoad.shoulder+25+noise(seed,3)*38)
+                    or (74+noise(seed,3)*(config.width-74)))
+                if id=="circuit" then offset=(tier==2 and 102 or 84)+noise(seed,3)*30 end
+                local x,z = p.x+cos(angle)*side*offset,p.z-sin(angle)*side*offset
+                local height = tier==0 and (7.3+noise(seed,7)*3.6) or (8.4+noise(seed,7)*8.6)
+                if id=="coast" then height=height*0.78 end
+                if plant(x,z,height,noise(seed,11)*360,tier,seed) then added=added+1 end
+            end
+        end
+        -- 生成只发生在加载阶段；按192米空间块统一提交，不把同一块拆成40份。
+        if batch==40 then Trees.FlushCanopies(root,function() tick("写实森林",39,40) end) end
+        tick("写实森林",batch,40)
+    end
+    local stats = Trees.Stats()
+    print(string.format("[风景森林] %s high=%d/%d near=%d middle=%d far=%d lowTri=%d/%d chunks=%d lowCalls<=%d highTri<=%d",
+        id,planted,activeTrack.treeBudget,nearCount,stats.middle,stats.far,stats.lowTriangles,Trees.LowTriangleLimit,
+        stats.chunks,stats.lowDrawCalls,stats.highMaxTriangles))
 end
 
 ---@param scene Scene

@@ -14,7 +14,7 @@ local function flatMap()
 end
 
 -- 用可控直线剖面隔离驾驶逻辑，仍调用真实配置、规划、动力、资源与喷射授权。
-local function fixture(seed, vehicleId, level, difficulty)
+local function fixture(seed, vehicleId, level, difficulty, riderIndex)
     local map = flatMap()
     local sim = Sim.New(map)
     assert(sim:SetVehicle(vehicleId or "sport"))
@@ -31,7 +31,7 @@ local function fixture(seed, vehicleId, level, difficulty)
         boostTimer = 0, nitro = 100, slipstream = 0, immunity = 0,
         decisionTimer = 0, mistakes = 0, progress = 0, nextGate = 85,
         lastX = 0, lastY = 0, lastZ = 0, mistakeDuration = 0, recoveryTimer = 0}
-    AI.Configure(race, r, 1)
+    AI.Configure(race, r, riderIndex or 1)
     race.racers = {r}
     -- 单元测试只隔离检查点结算，真实比赛仍完全使用Race的扫掠门线判定。
     race.AdvanceGates = function(_, racer) racer.nextGate = racer.s + 85 end
@@ -94,16 +94,36 @@ local function trackFixture(track, vehicleId, seed, index, difficulty)
     return race,r
 end
 
--- 六图×九款目录实值车；600秒覆盖多圈、再生、冷却和数十次失误。
+-- 默认180秒×六图×三基础档×1/4/8号AI；full=true时覆盖全部九车型。
 -- 每步双实例重放（玩家表现刻意相反），不能用“同种子首帧”冒充确定性。
-function Checks.RealTracks(seconds)
-    local duration = seconds or 600
+function Checks.RealTracks(seconds, full, riderIndices)
+    local duration = seconds or 180
     local rows = {}
+    local indices = riderIndices or {1,4,8}
+    local vehicles = full and Catalog.AvailableIds() or {"sport","cruiser","rally"}
     for _, trackId in ipairs({"circuit","lake","coast","alpine","forest","canyon"}) do
         local track = assert(Tracks.Get(trackId))
-        for _, vehicleId in ipairs(Catalog.AvailableIds()) do
-            local race,r = trackFixture(track,vehicleId,4817,1)
-            local replay,b = trackFixture(track,vehicleId,4817,1)
+        -- 所有车型/重放实例共享不可变真实地图与Race空间索引，避免重复上万点初始化。
+        local map=trackMap(track)
+        local template=Race.New(map,Sim.New(map),{quiet=true,laps=9})
+        local function create(vehicleId,index)
+            local sim=Sim.New(map)
+            assert(sim:SetVehicle(vehicleId))
+            local race={}
+            for key,value in pairs(template) do race[key]=value end
+            setmetatable(race,{__index=Race})
+            race.sim,race.options=sim,{seed=4817,aiLevel=track.aiLevel,quiet=true}
+            race.pursuit={}
+            race.events,race.eventSeq={},0
+            race:Start()
+            local r=race.racers[index<=4 and index or index+1]
+            race.racers,race.runners,race.phase={r},{r},"racing"
+            return race,r
+        end
+        for _, vehicleId in ipairs(vehicles) do
+          for _, riderIndex in ipairs(indices) do
+            local race,r = create(vehicleId,riderIndex)
+            local replay,b = create(vehicleId,riderIndex)
             race.player.speed,race.player.rank,race.player.s = 0,9,-500
             replay.player.speed,replay.player.rank,replay.player.s = 120,1,500
             local boosts, active, powered, sumSpeed, shifts = 0,0,0,0,0
@@ -125,7 +145,12 @@ function Checks.RealTracks(seconds)
                 sumSpeed = sumSpeed+r.speed
                 if r.driveSim.gear~=gear then shifts=shifts+1 end
                 if r.boostTimer>0 then active=active+DT end
-                if r.driveSim.raceBoost>0 then powered=powered+DT end
+                if r.driveSim.raceBoost>0 then
+                    powered=powered+DT
+                    local sample=race.aiProfile[math.floor((oldS%race.length)/race.aiProfileStep)+1]
+                    assert(sample.curvature<=.012 and r.mistakeDuration<=0 and r.recoveryTimer<=0,
+                        "急弯/失误/恢复不许保留实际喷射动力")
+                end
                 if r.nitro<oldNitro-1 then
                     boosts=boosts+1
                     assert(oldTimer==0 and math.abs(r.nitro-(math.min(100,oldNitro+5*DT)-45))<1e-7,
@@ -148,18 +173,52 @@ function Checks.RealTracks(seconds)
                     lastMistake=r.mistakes
                 end
             end
-            local row = {track=trackId,vehicle=vehicleId,seconds=duration,boosts=boosts,
+            local row = {track=trackId,vehicle=vehicleId,rider=riderIndex,seconds=duration,boosts=boosts,
                 averageKmh=sumSpeed/(duration/DT)*3.6,mistakes=r.mistakes,shifts=shifts,
                 activeSeconds=active,poweredSeconds=powered,straightStarts=straightStarts,gentleStarts=gentleStarts,
                 laps=r.s/race.length,minCurvature=minCurvature,maxCurvature=maxCurvature}
             rows[#rows+1]=row
-            print(string.format("[RealTracks] %s %-10s %ds boosts=%d straight=%d gentle=%d avg=%.2fkm/h mistakes=%d shifts=%d powered=%.2fs laps=%.2f curvature=%.6f..%.6f",
-                trackId,vehicleId,duration,boosts,straightStarts,gentleStarts,row.averageKmh,r.mistakes,shifts,powered,row.laps,minCurvature,maxCurvature))
+            print(string.format("[RealTracks] %s %-10s AI%d %ds boosts=%d straight=%d gentle=%d avg=%.2fkm/h mistakes=%d shifts=%d powered=%.2fs laps=%.2f curvature=%.6f..%.6f",
+                trackId,vehicleId,riderIndex,duration,boosts,straightStarts,gentleStarts,row.averageKmh,r.mistakes,shifts,powered,row.laps,minCurvature,maxCurvature))
             assert(boosts>=2 and powered>2.5 and r.mistakes>=2 and shifts>=2,
-                trackId.."/"..vehicleId.."真实图必须自然喷射、换挡并保留失误")
+                trackId.."/"..vehicleId.."/AI"..riderIndex.."真实图必须自然喷射、换挡并保留失误")
+          end
         end
     end
     return rows
+end
+
+-- 注入表现依赖的只读spy：调用真正的Update，不创建Scene/渲染/音频设备。
+-- 引擎内可直接Feedback()；纯Lua调用方可用隔离环境加载原模块后传入。
+-- 不篡改package.loaded/引擎全局，不宣称已完成截图/实机听感验收。
+function Checks.Feedback(visuals, audioModule)
+    local Visuals=visuals or require("RaceVisuals")
+    local Audio=audioModule or require("RaceAudio")
+    local race,r=fixture(31)
+    r.speed=35
+    assert(race:Boost(r))
+    local lastBoost,lastSpeed=-1,-1
+    local runner={node={SetEnabledRecursive=function() end},visual={},active=true,
+        lean=0,poseClock=0,colorId="red",rider={model={inView=false}},
+        effects={pitch=0,bob=0,Update=function(_,dt,boost,speed) lastBoost,lastSpeed=boost,speed end,
+            Reset=function() end}}
+    local visual=setmetatable({disposed=false,visible=true,clock=0,visibilityClock=0,leanSign=1,
+        race={racers={r}},runners={[r.id]=runner},EnsurePolice=function() end,RefreshPose=function() end},{__index=Visuals})
+    visual:Update(.02,{x=0,z=0})
+    assert(lastBoost==1 and lastSpeed==r.speed,"AI boostTimer必须传到真正的effects:Update")
+    r.boostTimer=0
+    visual:Update(.02,{x=0,z=0})
+    assert(lastBoost==0,"喷射计时结束必须撤销视觉授权")
+    local played=0
+    local audio=setmetatable({stopped=false,currentRace=race,lastSeq=0,curseTimer=0,
+        unlocked=true,effectsEnabled=true,sources={},sounds={},PlayOnce=function() played=played+1 end},{__index=Audio})
+    audio:Update(.02,{},race,true)
+    assert(audio.lastSeq==race.eventSeq and played==0,"现有音频只播放玩家boost，AI事件静音")
+    race:Emit("boost","player")
+    audio:Update(.02,{},race,true)
+    assert(played==1,"玩家喷射音效链路仍保留")
+    print("[RaceAIChecks] PASS AI boostTimer -> RaceVisuals.Update -> effects；音频仅玩家(已报告)")
+    return true
 end
 
 function Checks.Run()
@@ -255,19 +314,42 @@ function Checks.Run()
 
     local gated, eager = fixture(39, "sport", 1, "hard")
     eager.speed, eager.mistakeTimer = 45, 1000
-    local originalRandom = gated.Random
-    gated.Random = function() return 0 end
+    local gearBefore,rpmBefore = eager.driveSim.gear,eager.driveSim.rpm
+    check(AI.NitroSafe(gated,eager) and eager.driveSim.gear==gearBefore and eager.driveSim.rpm==rpmBefore,
+        "安全预演不得修改真实挡位或RPM")
     AI.Plan(gated, eager, DT)
     check(eager.boostTimer > 0 and eager.nitro == 55 and eager.nitroCooldown >= 9,
         "满足直道条件的AI仍能正常喷射而不是完全禁用")
     local bendRace, cautious = fixture(39, "sport", 1, "hard")
-    bendRace.Random = function() return 0 end
     cautious.speed, cautious.mistakeTimer = 45, 1000
-    bendRace.aiProfile[45] = {curvature = 0.02, turn = 0.02, slope = 0}
+    bendRace.aiProfile[18] = {curvature = 0.04, turn = 0.04, slope = 0}
     AI.Plan(bendRace, cautious, DT)
     check(cautious.boostTimer == 0 and cautious.nitro == 100,
         "喷射结束前就会入弯时不能只因眼前平直而开氮")
-    gated.Random, bendRace.Random = originalRandom, originalRandom
+    for _, level in ipairs({.42,.60,.77,.92}) do
+        local low,rider = fixture(31,"cruiser",level)
+        rider.speed,rider.nitro,rider.mistakeTimer = 12,45,1000
+        AI.Plan(low,rider,DT)
+        check(rider.boostTimer==2.5 and rider.nitro==0,"每层级低速出弯45点即可发动，不要求23m/s或85%极速")
+    end
+    for _, kind in ipairs({"sharp","braking","traffic","oncoming","merge","shoulder","mistake","recovery","hit","empty","cooldown"}) do
+        local dangerous,rider = fixture(33,"sport",.92)
+        rider.speed,rider.mistakeTimer = 35,1000
+        if kind=="sharp" then dangerous.aiProfile[1].curvature=.04
+        elseif kind=="braking" then rider.speed=85; dangerous.aiProfile[16].curvature=.07
+        elseif kind=="traffic" or kind=="oncoming" then
+            dangerous.aiObstacles={{s=65,lane=0,speed=kind=="traffic" and 15 or -20,
+                halfWidth=1,halfLength=2.2,y=0,bike=false}}
+        elseif kind=="merge" then rider.wantedLane=3; rider.decisionTimer=1
+        elseif kind=="shoulder" then rider.lane=dangerous.roadHalfWidth+.1
+        elseif kind=="mistake" then rider.mistakeDuration=1; rider.mistakeSpeed=20
+        elseif kind=="recovery" then rider.recoveryTimer=1
+        elseif kind=="hit" then rider.hitTimer=1
+        elseif kind=="empty" then rider.nitro=44.99
+        elseif kind=="cooldown" then rider.nitroCooldown=1 end
+        AI.Plan(dangerous,rider,DT)
+        check(rider.boostTimer==0,"危险状态禁喷: "..kind)
+    end
     passed("长直道喷射授权与入弯禁喷")
 
     local baseline, clean = fixture(73)
@@ -327,6 +409,47 @@ function Checks.Run()
     lapsRace:Start(99)
     check(lapsRace.laps == 9, "过大圈数仍须限制在统一上限")
     passed("赛道圈数配置一致")
+
+    local circuit,lake,coast,alpine,forest,canyon = assert(Tracks.Get("circuit")),assert(Tracks.Get("lake")),
+        assert(Tracks.Get("coast")),assert(Tracks.Get("alpine")),assert(Tracks.Get("forest")),assert(Tracks.Get("canyon"))
+    check(circuit.aiLevel<lake.aiLevel and lake.aiLevel<coast.aiLevel and coast.aiLevel<forest.aiLevel
+        and coast.aiLevel==alpine.aiLevel and forest.aiLevel==canyon.aiLevel,"解锁层级递进且同层分支公平")
+    for _, id in ipairs(Catalog.AvailableIds()) do
+      for index=1,8 do
+       for _, difficulty in ipairs({"easy","normal","hard"}) do
+        local oldSpeed,oldAcceleration,oldReaction,oldGrace = 0,0,10,0
+        for _, level in ipairs({circuit.aiLevel,lake.aiLevel,coast.aiLevel,forest.aiLevel,999}) do
+            local rr,rider = fixture(31,id,level,difficulty,index)
+            check(rider.speedFactor>=oldSpeed and rider.acceleration>=oldAcceleration
+                and rider.reactionTime<=oldReaction and rider.mistakeGrace>=oldGrace,"同车型同车手等级参数必须单调")
+            check(rider.speedFactor<=.96 and rider.acceleration<=rr.sim.vehicle.acceleration*.97+1e-9
+                and rider.skill<=.95 and rider.reactionTime>=.25 and rider.mistakeGrace<=13.6,
+                "恶意超大等级也受硬上界，失误有有限间隔")
+            oldSpeed,oldAcceleration,oldReaction,oldGrace = rider.speedFactor,rider.acceleration,rider.reactionTime,rider.mistakeGrace
+        end
+       end
+      end
+    end
+    -- 在同一真实赛道的每个剖面点比较等级，避免把不同地图的平均速度当难度证据。
+    for _, track in ipairs(Tracks.List()) do
+        local rr,rider = trackFixture(track,"sport",31,1)
+        rider.speed=40
+        for i=1,#rr.aiProfile,11 do
+            rider.s=(i-1)*rr.aiProfileStep
+            local previous=0
+            for _, level in ipairs({.42,.60,.77,.92}) do
+                local setting={options={aiLevel=level},sim=rr.sim,map=rr.map,Random=function() return .5 end}
+                local candidate={isPlayer=true,lane=0,boostTimer=0,speed=40,s=rider.s}
+                AI.Configure(setting,candidate,1)
+                local speed=AI.CurveSpeed(rr,candidate)
+                check(speed>=previous-1e-9,"真实图同剖面弯速/预判必须随等级非递减")
+                previous=speed
+            end
+        end
+    end
+    passed("六图解锁层级、分支公平与全车型全车手三难度硬上界")
+    result.realTracks = Checks.RealTracks(100,false,{1})
+    passed("六图三车型100秒真实地图确定性长时域")
     result.passed = true
     print(string.format("[RaceAIChecks] %d项断言通过，单次失误损失%.2f米", result.assertions, loss))
     return result

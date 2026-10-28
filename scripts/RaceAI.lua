@@ -114,7 +114,11 @@ function AI.Drive(race, r, target, dt)
     local slowing = r.speed > target + 0.2
     local throttle = slowing and 0 or (mistake and 0 or (recovery and 0.42 or 1))
     -- 刹车、走宽与恢复时不能靠喷射自动补回0.9油门，剩余喷射时间照常消耗。
+    -- 急弯/突发危险可以提前断开已授权喷射动力，但不能返还资源或延长计时。
+    local index = math.floor((r.s % race.length) / race.aiProfileStep) + 1
+    local sample = race.aiProfile[index]
     local boosted = r.boostTimer > 0 and not slowing and not mistake and not recovery
+        and sample.curvature <= 0.012 and abs(r.lane) <= race.roadHalfWidth - 0.65
     local power = drive:Powertrain(dt, {throttle = throttle, boost = boosted and 1 or 0})
     local efficiency = clamp(r.acceleration / race.sim.vehicle.acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
@@ -122,8 +126,7 @@ function AI.Drive(race, r, target, dt)
     local drag = 0.20 + r.speed * r.speed * 0.00115
         + (onRoad and 0 or 4.6 * (1 - race.sim.vehicle.offroad * 0.55))
     local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
-    local index = math.floor((r.s % race.length) / race.aiProfileStep) + 1
-    local slope = race.aiProfile[index].slope or 0
+    local slope = sample.slope or 0
     local acceleration = power * efficiency * traction - drag - engineBrake
         - 9.81 * slope / sqrt(1 + slope * slope)
     local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
@@ -204,19 +207,27 @@ function AI.NitroSafe(race, r)
     preview.speedFactor, preview.acceleration = r.speedFactor, r.acceleration
     preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
     preview.boostTimer, preview.mistakeDuration, preview.recoveryTimer = duration, 0, 0
-    local startSpeed = r.speed
-    -- 100ms保守预演，留1m/s制动余量；实际驾驶仍由20ms玩家Powertrain推进。
-    for _ = 1, 25 do
+    local startSpeed, peakSpeed = r.speed, r.speed
+    -- 至少1.2秒有效加速，之后允许提前收油/有限刹车；资源计时仍消耗完整2.5秒。
+    -- 后半段不要求“永远满喷”，但任何弯点都必须有实际制动距离，不允许突然锁速。
+    for frame = 1, 25 do
         local sample = race.aiProfile[math.floor((preview.s % race.length) / race.aiProfileStep) + 1]
-        local target = AI.CurveSpeed(race, preview, true)
+        local target = AI.CurveSpeed(race, preview, preview.boostTimer > 0)
         local boostCap = race.sim.vehicle.maxSpeed * (r.speedFactor + 0.25)
-        if sample.curvature > 0.012 or target < min(boostCap, preview.speed + 1) - 1e-6 then return false end
+        local restricted = sample.curvature > 0.012 or target < min(boostCap, preview.speed - 0.2) - 1e-6
+        if restricted then
+            if frame <= 12 then return false end
+            -- 制动包络仍按当前可用喷射上限计算，不能把“收油”误当瞬间掉到普通限速。
+            local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
+            if preview.speed > target + braking * 0.1 + 1 then return false end
+            target = min(target, preview.speed - 0.25)
+        end
         AI.Drive(race, preview, target, 0.1)
+        peakSpeed = max(peakSpeed, preview.speed)
         local scale = max(0.45, abs(1 - (sample.turn or 0) * r.lane))
         preview.s = preview.s + preview.speed * 0.1 / sqrt(1 + (sample.slope or 0)^2) / scale
     end
-    -- 必须有实际增速收益，饱和极速/红线/临近制动点不浪费氮。
-    return preview.speed > startSpeed + 2
+    return peakSpeed > startSpeed + 2
 end
 
 local function laneScore(race, r, candidate, horizon)

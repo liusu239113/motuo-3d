@@ -15,20 +15,36 @@ for _,path in ipairs(HOUSE_MATS) do Decor.Resources[#Decor.Resources+1]=path;Dec
 ---@param s number
 ---@param offset number
 ---@return Node?
-local function station(root,L,s,offset)
+---@param width? number
+---@param depth? number
+local function station(root,L,s,offset,width,depth)
     local p,yaw=L.RoadPoint(s)
     local a=math.rad(yaw)
     local x,z=p.x+math.cos(a)*offset,p.z-math.sin(a)*offset
     local y=L.TerrainHeight(x,z)
-    if L.activeId~="lake" then
-        local safe=Details.Site(L,s,offset,10,12)
-        if not safe then return nil end
-        x,y,z=safe.x,safe.y,safe.z
-    end
+    local w,d=width or 10,depth or 12
+    local safe=Details.Site(L,s,offset,w,d)
+    if not safe then return nil end
+    x,y,z=safe.x,safe.y,safe.z
+    Details.Reserve(safe,math.sqrt(w*w+d*d)*.5)
     local n=root:CreateChild("赛道设施")
     n.position=V(x,y,z)
     n.rotation=Quaternion(0,yaw,0)
     return n
+end
+
+-- 既有设施也改成局部UV；栏杆竖面不再把纹理挤成一条XZ直线。
+---@param g CustomGeometry
+---@param L table
+---@param a Vector3
+---@param b Vector3
+---@param c Vector3
+---@param d Vector3
+local function face(g,L,a,b,c,d)
+    local n=(b-a):CrossProduct(c-a):Normalized()
+    local u,v=(b-a):Length()/2,(c-a):Length()/2
+    L.Vertex(g,a,n,Vector2(0,0));L.Vertex(g,b,n,Vector2(u,0));L.Vertex(g,c,n,Vector2(0,v))
+    L.Vertex(g,c,n,Vector2(0,v));L.Vertex(g,b,n,Vector2(u,0));L.Vertex(g,d,n,Vector2(u,v))
 end
 
 -- 桩与横梁按材质合批，每144米一块，保留引擎空间剔除能力。
@@ -44,10 +60,10 @@ local function box(g,L,p,right,width,height,depth)
     local x,z=right*(width*.5),forward*(depth*.5)
     local y=V(0,height,0)
     local a,b,c,d=p-x-z,p-x+z,p+x-z,p+x+z
-    local function quad(q,r,s,t) L.Triangle(g,q,s,r);L.Triangle(g,s,t,r) end
+    local function quad(q,r,s,t) face(g,L,q,s,r,t) end
     quad(a,b,c,d);quad(a+y,c+y,b+y,d+y)
-    quad(a,a+y,b,b+y);quad(c,d,c+y,d+y)
-    quad(a,c,a+y,c+y);quad(b,b+y,d,d+y)
+    face(g,L,a,b,a+y,b+y);face(g,L,c,c+y,d,d+y)
+    face(g,L,a,a+y,c,c+y);face(g,L,b,d,b+y,d+y)
 end
 
 local function infrastructure(root,L,m,tick)
@@ -60,7 +76,8 @@ local function infrastructure(root,L,m,tick)
         local lo,hi=(chunk-1)*144,math.min(length,chunk*144)
         local rail=L.Geometry(root,"合批防护栏与反光桩",m.rail)
         local reflect=L.Geometry(root,"合批反光标与制动距离牌",m.white)
-        for s=lo,hi-1,6 do
+        for segment=0,math.floor((hi-lo-1)/6) do
+            local s=lo+segment*6
             local a,yaw=L.RoadPoint(s)
             local b,yawB=L.RoadPoint(math.min(s+6,hi))
             local r=V(math.cos(math.rad(yaw)),0,-math.sin(math.rad(yaw)))
@@ -80,8 +97,8 @@ local function infrastructure(root,L,m,tick)
                 if guarded and s-lo>7 and dry and not onA and not onB then
                     for _,h in ipairs({.53,.82}) do
                         local aa,bb=railA+V(0,h,0),railB+V(0,h,0)
-                        L.Triangle(rail,aa,bb,aa+V(0,.18,0));L.Triangle(rail,aa+V(0,.18,0),bb,bb+V(0,.18,0))
-                        L.Triangle(rail,aa+V(0,.18,0),bb,aa);L.Triangle(rail,bb+V(0,.18,0),bb,aa+V(0,.18,0))
+                        face(rail,L,aa,bb,aa+V(0,.18,0),bb+V(0,.18,0))
+                        face(rail,L,bb,aa,bb+V(0,.18,0),aa+V(0,.18,0))
                     end
                     box(rail,L,railA-V(0,.18,0),r,.12,1.25,.14)
                 end
@@ -96,7 +113,9 @@ local function infrastructure(root,L,m,tick)
                 end
             end
         end
-        rail:Commit();reflect:Commit()
+        rail.drawDistance=330;reflect.drawDistance=230
+        rail.castShadows=false;reflect.castShadows=false
+        rail:GenerateTangents();rail:Commit();reflect:GenerateTangents();reflect:Commit()
         tick("赛事环境",chunk,chunks)
     end
 end
@@ -135,9 +154,9 @@ local function startArea(root,L,m)
         if k%2==0 then L.Triangle(grid,a,b,c);L.Triangle(grid,c,b,d) end
     end
     grid:Commit()
-    -- 新五图的维修区、看台与服务站在主题模块中做完整占地校验；湖图保留原设施。
+    -- 每张图细节模块都做完整占地校验；湖图额外保留原维修区。
     if L.activeId~="lake" then return end
-    local pit=station(root,L,80,road.shoulder+18)
+    local pit=station(root,L,80,road.shoulder+24,10,25)
     if not pit then return end
     pit.name="维修与赛事控制区"
     P.Add(pit,"服务间","Box",m.white,V(0,2.1,0),V(8,4.2,23),nil,false)
@@ -147,7 +166,7 @@ local function startArea(root,L,m)
         P.Add(pit,"维修编号板","Box",m.yellow,V(-4.08,3.65,z),V(.04,.45,2),nil,false)
     end
     for _,s in ipairs({65,125,185}) do
-        local flag=station(root,L,s,-road.shoulder-3)
+        local flag=station(root,L,s,-road.shoulder-5,2,2)
         if flag then
             P.Add(flag,"赛道旗杆","Cylinder",m.rail,V(0,2.5,0),V(.06,5,.06),nil,false)
             P.Add(flag,"赛事旗帜","Box",m.red,V(.55,4.4,0),V(1.1,.65,.025),nil,false)
@@ -186,12 +205,13 @@ local function existingScenery(root,L,m)
         local p=L.TrafficPose(s,offset)
         local y,onRoad=L.Height(p.x,p.z)
         local k=i%2+1
-        local model=models[k];local bounds=model.boundingBox
+        local model=assert(models[k]);local bounds=model.boundingBox
         local height=L.activeId=="canyon" and (5+i%5*2.8) or (1.3+i%3*.7)
         local scale=height/math.max(.01,bounds.size.y)
         local radius=.5*math.sqrt(bounds.size.x^2+bounds.size.z^2)*scale
-        local safe=L.activeId=="lake" or Details.Site(L,s,offset,radius*2,radius*2)~=nil
+        local safe=Details.Site(L,s,offset,radius*2,radius*2)~=nil
         if safe and not onRoad and L.WaterDepth(p.x,p.z)==0 then
+            Details.Reserve(p,radius)
             local rock=root:CreateChild("既有纹理岩石")
             local y0=math.min(L.TerrainHeight(p.x-radius,p.z),L.TerrainHeight(p.x+radius,p.z),
                 L.TerrainHeight(p.x,p.z-radius),L.TerrainHeight(p.x,p.z+radius),y)
@@ -207,12 +227,13 @@ local function existingScenery(root,L,m)
         end
     end
     if L.activeId=="lake" then
-        local cottage=station(root,L,L.RouteLength*.74,L.Roads[1].shoulder+37)
-        if not cottage then return end
-        cottage.name="既有资源乡村驿舍"
         local model=assert(cache:GetResource("Model",HOUSE))
         local bounds=model.boundingBox
         local scale=6/math.max(.01,bounds.size.y)
+        local cottage=station(root,L,L.RouteLength*.74,L.Roads[1].shoulder+37,
+            bounds.size.x*scale+.8,bounds.size.z*scale+.8)
+        if not cottage then return end
+        cottage.name="既有资源乡村驿舍"
         local mesh=cottage:CreateChild("共享木框架建筑")
         mesh:SetScale(scale);mesh.position=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
         local obj=mesh:CreateComponent("StaticModel");obj:SetModel(model)
@@ -228,6 +249,7 @@ local function existingScenery(root,L,m)
         local offset=-L.Roads[1].shoulder-20
         local p,r,f,low=Details.Site(L,s,offset,8,8)
         if p and r and f and low then
+            Details.Reserve(p,6)
             local beacon=root:CreateChild("海岬灯塔")
             beacon.position=p
             local base=L.Geometry(root,"灯塔贴地基础",m.rock)
@@ -247,6 +269,7 @@ end
 ---@param m table
 ---@param tick fun(stage:string,current:integer,total:integer)
 function Decor.Build(root,L,m,tick)
+    Details.BeginReservations()
     infrastructure(root,L,m,tick)
     startArea(root,L,m)
     kerbs(root,L,m)
