@@ -8,6 +8,7 @@ local V = Vector3
 ---@field steer? number 右正，左负，[-1,1]
 ---@field throttle? number 前进正；负值先减速再低速倒退
 ---@field brake? boolean 制动优先，不允许制动同时加速
+---@field reverseBrake? boolean 手游刹车持续持有：停稳0.45秒后进入低速倒车
 ---@field walkX? number 相机右向为正
 ---@field walkY? number 相机前向为正
 ---@field run? boolean
@@ -119,6 +120,7 @@ function Actor:Init(scene, city)
     self.vehicleId=Vehicles.EBIKE
     self.parking={}
     self.mounted, self.disposed, self.steer = false, false, 0
+    self.reverseHold=0
     self.collisionLogged, self.walkLogged, self.rideLogged = false, false, false
     self.node = scene:CreateChild("CareerActorFollowTarget")
     self.node:SetVar("CareerAssetStatus", Variant(Actor.ProxyLabel))
@@ -235,14 +237,23 @@ function Actor:RideStep(dt, controls)
     self.steer = axis(controls.steer)
     local oldSpeed = self.speed
     if controls.brake then
-        self.speed = approach(self.speed, 0, 7.5 * dt)
+        if controls.reverseBrake and self.speed<=.05 then
+            self.reverseHold=self.reverseHold+dt
+            self.speed=self.reverseHold>=.45 and approach(self.speed,-REVERSE_SPEED,1.8*dt) or 0
+        else
+            self.reverseHold=0
+            self.speed = approach(self.speed, 0, 7.5 * dt)
+        end
     elseif throttle > 0 then
+        self.reverseHold=0
         self.speed = approach(self.speed, maxSpeed * throttle * clamp(controls.speedFactor or 1,.4,1),
             (self.speed < 0 and 5.5 or acceleration) * dt)
     elseif throttle < 0 then
+        self.reverseHold=0
         self.speed = approach(self.speed, REVERSE_SPEED * throttle,
             (self.speed > 0 and 5.0 or 1.8) * dt)
     else
+        self.reverseHold=0
         self.speed = approach(self.speed, 0, 1.0 * dt)
     end
     self.speed = clamp(self.speed, -REVERSE_SPEED, maxSpeed)

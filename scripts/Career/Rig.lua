@@ -51,7 +51,13 @@ function Rig:InitCareer(parent)
             modelRotation=Quaternion.IDENTITY,parentName=parentBone and parentBone.name or nil}
         bone.node:SetTransform(bone.initialPosition,bone.initialRotation,bone.initialScale)
     end
+    local left=self:GetBonePosition("L_Upperarm")
+    local right=self:GetBonePosition("R_Upperarm")
+    local side=right-left
+    self.mesh.rotation=Quaternion(V(side.x,0,side.z):Normalized(),V.RIGHT)
+    -- 模型原始长轴在Z：先按真实左右肩校正整个人，再缓存车辆坐标下的绑定旋转。
     for _,name in ipairs(self.boneNames) do self.bind[name].modelRotation=self:GetLocalBoneTransform(name):Rotation() end
+    print(string.format("[人物朝向校正] 原左肩%s 右肩%s yaw %.1f；校正脚尖%s",left:ToString(),right:ToString(),self.mesh.rotation:YawAngle(),(self:GetBonePosition("L_ToeBase")-self:GetBonePosition("L_Foot")):ToString()))
     assert(self.bind.Hip and self.bind.L_Hand and self.bind.R_Foot,"王二狗骨架命名不兼容")
     for _,side in ipairs({-1,1}) do
         local p=side==-1 and "L_" or "R_"

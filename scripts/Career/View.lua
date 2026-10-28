@@ -7,6 +7,7 @@ local Progress = require("Career.Progression")
 local MobileControls = require("MobileControls")
 local ControlSettings = require("ControlSettings")
 local Housing = require("Career.HousingData")
+local WalkStick = require("Career.WalkStick")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -76,6 +77,8 @@ function View:Init(actions)
         widget:SetStyle{position="absolute",left=0,top=0}
         self.controlLayer:AddChild(widget)
     end
+    self.walkStick=WalkStick.New(function() return self:IsBlocking() or self.mountedControls end)
+    self.controlLayer:AddChild(self.walkStick.root)
     safe:AddChild(self.controlLayer)
     self.mountButton=btn("上车",actions.mount,false,{id="career-mount",width=72,height=46,padding=0})
     self.interactButton=btn("交互",actions.interact,false,{id="career-interact",width=82,height=46,padding=0})
@@ -327,11 +330,15 @@ function View:SetControlMode(mounted)
     if self.controlModeReady and self.mountedControls==mounted then return end
     self.controlModeReady=true; self.mountedControls=mounted
     self:ResetInput()
-    self.controls:SetActionState("gas",{label=mounted and "油门" or "前进",detail=mounted and "按住加速" or "按住行走"})
-    self.controls:SetActionState("brake",{label=mounted and "刹车" or "后退",detail=mounted and "按住制动" or "按住退步"})
+    self.walkStick.root:SetVisible(not mounted)
+    self.controls.widgets.steering:SetVisible(mounted)
+    self.controls.widgets.gas:SetVisible(mounted)
+    self.controls.widgets.brake:SetVisible(mounted)
+    self.controls:SetActionState("gas",{label="油门",detail="按住加速"})
+    self.controls:SetActionState("brake",{label="刹车 / 倒车",detail="停稳后持续按住倒车"})
     self.mountButton:SetText(mounted and "下车" or "上车")
     self.controlHint:SetText(mounted and "左右滑动转向 · 右侧油门 / 刹车 · 停稳后下车取送"
-        or "左右滑动转向 · 按住前进 · 松手停步 · 滑动画面看四周")
+        or "左下摇杆自由移动 · 松手停步 · 右侧滑动画面看四周")
 end
 function View:ConsumeLook()
     local x,y=self.lookDeltaX,self.lookDeltaY
@@ -343,14 +350,15 @@ function View:GetInput()
     local x=((down(KEY_D) or down(KEY_RIGHT)) and 1 or 0)-((down(KEY_A) or down(KEY_LEFT)) and 1 or 0)
     local y=((down(KEY_W) or down(KEY_UP)) and 1 or 0)-((down(KEY_S) or down(KEY_DOWN)) and 1 or 0)
     local c=self.controls
-    local walking=(c.gas and 1 or 0)-(c.brake and 1 or 0)
+    local sx,sy=self.walkStick.x,self.walkStick.y
     return {steer=math.max(-1,math.min(1,x+c.steer)),throttle=math.max(-1,math.min(1,y+c.throttle)),
-        walkX=x,walkY=math.max(-1,math.min(1,y+walking)),touchSteer=c.steer,
-        touchWalk=c.gas or c.brake or math.abs(c.steer)>.001,
-        run=down(KEY_SHIFT),brake=down(KEY_SPACE) or c.brake}
+        walkX=math.max(-1,math.min(1,x+sx)),walkY=math.max(-1,math.min(1,y+sy)),
+        touchSteer=0,touchWalk=false,run=down(KEY_SHIFT) or math.sqrt(sx*sx+sy*sy)>.94,
+        reverseBrake=c.brake,brake=down(KEY_SPACE) or c.brake}
 end
 function View:ResetInput()
     self.controls:Reset()
+    if self.walkStick then self.walkStick:Reset() end
     self.lookPointer=-1; self.lookDeltaX,self.lookDeltaY=0,0
 end
 function View:Dispose() self.controls:SetEnabled(false); self:ResetInput(); self.root:Destroy() end
