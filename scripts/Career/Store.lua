@@ -75,6 +75,7 @@ local Config = require "Career.Config"
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
 ---@field write fun(path: string, text: string): boolean, string?
+---@field cloud? table 仅隔离测试注入的回调桩，不替换生产账号接口
 
 ---@type CareerProfile?
 local data = nil
@@ -614,7 +615,8 @@ end
 ---@return boolean, string
 function Store.SaveCloud(callback)
     if cloudBusy or transactionBusy then return false, "存档忙" end
-    if not clientCloud then return false, "账号云存档接口不可用" end
+    local cloud=storage.cloud or clientCloud
+    if not cloud then return false, "账号云存档接口不可用" end
     local ok, message = Store.Save()
     if not ok then return false, message end
     local snapshot = Store.Get()
@@ -634,7 +636,7 @@ function Store.SaveCloud(callback)
     cloudElapsed=0
     cloudTimeout=function() finish(false,"云保存等待超过20秒，结果未确认；本地操作已恢复，云端结果请读取核对") end
     local called = pcall(function()
-        clientCloud:Set(Config.CLOUD_KEY, snapshot, {
+        cloud:Set(Config.CLOUD_KEY, snapshot, {
             ok = function() finish(true, "账号云存档已确认") end,
             error = function(code, reason) finish(false, "云保存未确认：" .. tostring(code) .. " " .. tostring(reason)) end,
             timeout = function() finish(false, "云保存超时，结果未确认，请读云档核对") end,
@@ -649,7 +651,8 @@ end
 ---@return boolean, string
 function Store.LoadCloud(callback)
     if cloudBusy or transactionBusy then return false, "存档忙" end
-    if not clientCloud then return false, "账号云存档接口不可用" end
+    local cloud=storage.cloud or clientCloud
+    if not cloud then return false, "账号云存档接口不可用" end
     local generation = cloudGeneration
     cloudBusy, cloudStatus = true, "loading"
     local finished = false
@@ -664,7 +667,7 @@ function Store.LoadCloud(callback)
     cloudElapsed=0
     cloudTimeout=function() finish(false,"云读取等待超过20秒；本地进度未覆盖，操作已恢复") end
     local called = pcall(function()
-        clientCloud:Get(Config.CLOUD_KEY, {
+        cloud:Get(Config.CLOUD_KEY, {
             ok = function(values)
                 if finished or generation ~= cloudGeneration then return end
                 local p = type(values) == "table" and values[Config.CLOUD_KEY] or nil

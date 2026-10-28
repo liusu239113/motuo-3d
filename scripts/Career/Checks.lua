@@ -105,6 +105,30 @@ function Checks.RunProgression()
         print("[生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离")
     end)
 end
+function Checks.RunCloudTimeout()
+    local files={}
+    local calls={}
+    local stub={Set=function(_,key,value,events) calls.save=events; calls.snapshot=value end,
+        Get=function(_,key,events) calls.load=events end}
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text) files[path]=text; return true end,cloud=stub},function()
+        assert(Store.NewCareer())
+        local callbacks=0
+        assert(Store.SaveCloud(function(ok) assert(not ok); callbacks=callbacks+1 end))
+        assert(not Store.Pay(1,"test"))
+        Store.UpdateCloud(21)
+        assert(callbacks==1 and Store.GetSaveStatus().cloud=="unconfirmed")
+        assert(Store.Pay(1,"test"))
+        calls.save.ok()
+        assert(callbacks==1 and Store.Get().cashCents==4999 and Store.GetSaveStatus().cloud=="unconfirmed")
+        assert(Store.LoadCloud(function(ok) assert(not ok); callbacks=callbacks+1 end))
+        Store.UpdateCloud(21)
+        assert(Store.Pay(1,"test"))
+        calls.load.ok({[Config.CLOUD_KEY]=calls.snapshot})
+        assert(callbacks==2 and Store.Get().cashCents==4998)
+        print("[云回调保护验收通过] 保存/读取超时解锁，迟到回包不确认旧版本、不覆盖新进度（回调桩测试）")
+    end)
+end
 function Checks.PrepareRace()
     assert(Store.NewCareer())
     grant(5000000,"test:race-capital")
@@ -217,6 +241,7 @@ end
 function Checks.RunWorld(session)
     Checks.RunLogic()
     Checks.RunProgression()
+    Checks.RunCloudTimeout()
     local city=assert(session.city)
     for _,point in ipairs(Config.pointList) do
         assert(city:IsFree(point.x,point.z,.32),"门前点被建筑堵塞："..point.id)
