@@ -19,6 +19,7 @@ end
 ---@class HUD : ControlEditor
 ---@field settingsReturn string
 ---@field OpenSettings fun(self:HUD)
+---@field pausedCockpitVisible boolean?
 local HUD = {}
 HUD.__index = HUD
 local AMBER, WHITE = {224, 164, 75, 255}, {233, 234, 235, 255}
@@ -200,7 +201,7 @@ function HUD:Init(actions, controls)
             pointerEvents = "box-none", children = {self.safeContent}}, self.cockpit, self.portrait}}
     UI.SetRoot(self.root)
     self:SelectVehicle(Profile.FREE_VEHICLE, false); self:SelectRider(Profile.FREE_RIDER, false); self:SelectLaps(3, false); self:SelectTrack(Profile.FREE_TRACK, false)
-    self:SetScreen("menu"); self:LayoutResponsive()
+    self:SetScreen("menu"); self:LayoutResponsive(); self:RefreshRace()
     -- Art is optional during initial menu display; never block UI construction on a download.
     for _, path in ipairs({KEYART, GARAGE}) do
         cache:GetResourceAsync("Texture2D", path, function(resource)

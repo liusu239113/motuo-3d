@@ -120,6 +120,10 @@ local function ClearActions()
 end
 
 local function SetScreen(screen)
+    -- 设置层可直接覆盖实战界面，暂停时保留仪表位置用于所见即所得编辑。
+    if screen == "pause" then
+        hud_.pausedCockpitVisible = hud_.cockpit:IsVisible()
+    end
     screen_ = screen
     ClearActions()
     hud_:SetScreen(screen)
@@ -243,7 +247,8 @@ local function FinishRidePreparation()
     hud_:SyncRadio(sound_:GetTrackTitle(), sound_.musicEnabled)
     SetScreen(portrait_ and "pause" or "ride")
     SetCamera()
-    if testMode_ == "pause" then SetScreen("pause") end
+    if testMode_ == "pause" or testMode_ == "pause-settings" then SetScreen("pause") end
+    if testMode_ == "pause-settings" then hud_:OpenSettings() end
     if testMode_ == "result" then
         sim_.finished, sim_.success = true, true
         sim_.distance, sim_.score, sim_.topSpeed = 2500, 8500, 208
@@ -621,6 +626,7 @@ function Start()
         if arg == "-benchmark" then benchmark_ = true; autoTest_ = true end
         if arg == "-quality-high" then highQuality_ = true end
         if arg == "-nomirrors" then disableMirrors_ = true end
+        if arg == "-controlchecks" then assert(require("ControlChecks").Run(hud_, touch_).passed) end
         if arg == "-aichecks" then assert(require("RaceAIChecks").Run().passed) end
         if arg == "-trackchecks" then assert(require("TrackChecks").Run(Tracks.List())) end
         if arg == "-selftest" then selfTest_ = true; assert(Sim.Test()); assert(MobileControls.Test()) end
@@ -641,6 +647,7 @@ function Start()
         if arg == "-testgarage" then testMode_ = "garage" end
         if arg == "-testsettings" then testMode_ = "settings" end
         if arg == "-testpause" then testMode_ = "pause" end
+        if arg == "-testpausesettings" then testMode_ = "pause-settings" end
         if arg == "-testresult" then testMode_ = "result" end
         if arg == "-testraceresult" then testMode_ = "race-result" end
         if arg == "-testloading" then testMode_ = "loading"; autoStart = true end

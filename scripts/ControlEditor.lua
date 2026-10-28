@@ -8,6 +8,7 @@ local Settings = require("ControlSettings")
 ---@field controlLayer Panel
 ---@field controlWidgets table<string, Widget>
 ---@field cockpit Widget
+---@field pausedCockpitVisible boolean?
 ---@field SetScreen fun(self:ControlEditor, screen:string)
 ---@field LayoutResponsive fun(self:ControlEditor)
 local Editor = {}
@@ -128,7 +129,8 @@ function Editor:OpenSettings()
             down=function(slot,event,widget) self:BeginDragSettingButton(slot,event,widget) end,
             move=function(event) self:DragSettingButton(event) end,
             up=function(event,cancelled) self:EndDragSettingButton(event,cancelled) end})
-        local cockpitVisible = self.cockpit and self.cockpit:IsVisible()
+        local cockpitVisible = (self.cockpit and self.cockpit:IsVisible())
+            or (self.settingsReturn == "pause" and self.pausedCockpitVisible)
         if self.actions.settings then self.actions.settings(true) else self:SetScreen("settings") end
         if cockpitVisible then self.cockpit:Show() end
         UI.Layout();self:ApplySettings();UI.Layout();self:RefreshSettings()

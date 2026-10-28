@@ -148,7 +148,6 @@ end
 local byId = {}
 local originalLengths={lake=4122.2,alpine=4798.3,coast=4267.0,canyon=5336.4,forest=4013.9,circuit=3764.8}
 local originalLaps={lake=3,alpine=4,coast=3,canyon=5,forest=4,circuit=5}
-local Checks=require("TrackChecks")
 for _,track in ipairs(definitions) do
     -- Landscape与赛事都消费绝对路带边缘，不能把净宽直接当作中心线偏移。
     track.shoulderMargin=track.shoulder
@@ -156,8 +155,7 @@ for _,track in ipairs(definitions) do
     track.originalLength=originalLengths[track.id]
     track.originalLaps=originalLaps[track.id]
     track.samples,track.length=Tracks.Sample(track.points,true)
-    track.checks=Checks.Analyze(track)
-    assert(#track.checks.errors==0,"赛道几何验收失败："..track.id.." "..table.concat(track.checks.errors," / "))
+    -- 完整自交检测由 TrackChecks.Run 离线执行，不把数百万次投影塞进移动端启动帧。
     track.preview={}
     for i=0,96 do
         local s=track.length*i/96

@@ -868,15 +868,19 @@ local function buildForest(scene, root, tick)
         if near then nearCount = nearCount + 1 end
     end
     for batch = 1, 40 do
-        -- 将原有202棵预算优先移到两段可见林带，不增加总数，不在固定步修改LOD。
+        -- 湖图保留既有重点林带；其他地图将原预算分摊到全程40批，不在前半程耗尽。
         local focus = activeTrack.id=="forest" or (activeTrack.id=="lake" and batch <= 20)
         local s = activeTrack.id~="lake" and ((batch-1)/40*mainRoad.length)
             or (batch <= 10 and (170 + (batch - 1) / 9 * 390)
             or (focus and (930 + (batch - 11) / 9 * 520) or ((batch - 21) / 20 * mainRoad.length)))
         local p, yaw = Landscape.RoadPoint(s)
         local angle = math.rad(yaw)
-        for k = 1, focus and 8 or 4 do
-            local i = batch * 11 + k
+        local quota=math.floor(activeTrack.treeBudget*batch/40)-math.floor(activeTrack.treeBudget*(batch-1)/40)
+        local limit=activeTrack.id=="lake" and activeTrack.treeBudget or planted+quota
+        local attempts=activeTrack.id=="lake" and (focus and 8 or 4) or (quota==0 and 0 or quota*4)
+        for k = 1, attempts do
+            if planted>=limit then break end
+            local i = batch * (activeTrack.id=="lake" and 11 or 97) + k
             local side = k % 2 == 0 and 1 or -1
             local row = math.floor((k - 1) / 2)
             local offset = side * (focus and (15 + row % 2 * 9 + noise(i, 3) * 4) or (25 + noise(i, 3) * 48))

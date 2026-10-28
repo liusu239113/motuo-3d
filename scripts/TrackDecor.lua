@@ -224,8 +224,8 @@ local function existingScenery(root,L,m)
     end
     if L.activeId=="coast" then
         -- 灯塔只落在完整陆地占地上，原来按固定分数外偏会把塔放进海里。
-        local s=L.RouteLength*.385
-        local offset=-L.Roads[1].shoulder-26
+        local s=L.RouteLength*.27
+        local offset=-L.Roads[1].shoulder-20
         local p,r,f,low=Details.Site(L,s,offset,8,8)
         if p and r and f and low then
             local beacon=root:CreateChild("海岬灯塔")

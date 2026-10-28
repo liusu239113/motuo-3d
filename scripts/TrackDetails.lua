@@ -122,6 +122,13 @@ local function foundation(ctx,s,p,r,width,depth,low)
     box(ctx,"rock",s,V(p.x,low-.25,p.z),r,width,p.y-low+.25,depth)
 end
 
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param f Vector3
+---@param low number
+---@param kind string
 local function shelter(ctx,s,p,r,f,low,kind)
     foundation(ctx,s,p,r,9,12,low)
     box(ctx,"wood",s,p+f*1.5,r,7,3.1,7)
@@ -137,16 +144,26 @@ local function shelter(ctx,s,p,r,f,low,kind)
         box(ctx,"red",s,p-f*2.12+V(0,1.63,0),r,.25,1.2,.05)
     end
     for side=-1,1,2 do
-        box(ctx,"wood",s,p+r*(side*2.6)-f*4.2+V(0,.45,0),r,2.1,.13,.65)
+        local seat=p+r*(side*2.6)-f*4.2
+        box(ctx,"wood",s,seat+V(0,.45,0),r,2.1,.13,.65)
+        for leg=-1,1,2 do box(ctx,"wood",s,seat+r*(leg*.8),r,.13,.45,.45) end
     end
 end
 
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param f Vector3
+---@param low number
 local function viewpoint(ctx,s,p,r,f,low)
     foundation(ctx,s,p,r,11,17,low)
     for _,side in ipairs({-1,1}) do
         for z=-7,7,3.5 do box(ctx,"wood",s,p+r*(side*5.1)+f*z,r,.14,1.1,.14) end
         box(ctx,"wood",s,p+r*(side*5.1)+V(0,.95,0),r,.14,.15,15)
-        box(ctx,"wood",s,p+r*(side*3.2)+V(0,.5,0),r,.7,.16,3.5)
+        local seat=p+r*(side*3.2)
+        box(ctx,"wood",s,seat+V(0,.5,0),r,.7,.16,3.5)
+        for leg=-1,1,2 do box(ctx,"wood",s,seat+f*(leg*1.25),r,.55,.5,.15) end
     end
     for x=-4,4,4 do box(ctx,"wood",s,p+r*x+f*7.5,r,.14,1.1,.14) end
     box(ctx,"wood",s,p+f*7.5+V(0,.95,0),r,10.4,.15,.14)
@@ -172,6 +189,12 @@ local function stand(ctx,s,p,r,f,low)
     box(ctx,"white",s,p-r*6.9+V(0,1.6,0),r,.12,.9,30)
 end
 
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param f Vector3
+---@param low number
 local function paddock(ctx,s,p,r,f,low)
     foundation(ctx,s,p,r,13,25,low)
     box(ctx,"white",s,p+r*2,r,7,4,21)
@@ -183,11 +206,19 @@ local function paddock(ctx,s,p,r,f,low)
     for z=-9,9,6 do box(ctx,"yellow",s,p-r*4.5+f*z,r,.35,.7,.35) end
 end
 
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param f Vector3
+---@param low number
 local function forestYard(ctx,s,p,r,f,low)
     shelter(ctx,s,p,r,f,low,"forest")
     for row=0,2 do
         for col=0,3 do
-            box(ctx,"wood",s,p+r*(5.5+row*.5)+f*(col*1.25-3),r,.5,.4,1.05)
+            local q=p+r*(5.5+row*.5)+f*(col*1.25-3)
+            local ground=ctx.L.TerrainHeight(q.x,q.z)
+            box(ctx,"wood",s,V(q.x,ground-.08,q.z),r,.5,.4,1.05)
         end
     end
 end
@@ -241,6 +272,20 @@ local function roadside(ctx,s,index)
     end
 end
 
+local function marker(ctx,s,side,sector)
+    local p,r,f=Details.Site(ctx.L,s,side*(ctx.L.Roads[1].shoulder+8),3,2)
+    if not p or not r or not f then return end
+    for leg=-1,1,2 do
+        local q=p+r*(leg*.9)
+        local y=ctx.L.TerrainHeight(q.x,q.z)
+        box(ctx,"rail",s,V(q.x,y-.12,q.z),r,.1,p.y-y+2.6,.1)
+    end
+    box(ctx,"dark",s,p+V(0,1.5,0),r,2.7,1,.16)
+    for stripe=1,sector do
+        box(ctx,"white",s,p+r*((stripe-(sector+1)*.5)*.48)-f*.09+V(0,1.72,0),r,.22,.55,.03)
+    end
+end
+
 local function walls(ctx)
     local theme=ctx.L.activeId
     if theme~="alpine" and theme~="canyon" then return end
@@ -262,7 +307,7 @@ end
 
 local plans={
     alpine={{.11,-1,"shelter"},{.27,1,"view"},{.43,-1,"view"},{.52,1,"rescue"},{.68,1,"view"},{.88,-1,"shelter"}},
-    coast={{.16,-1,"view"},{.26,-1,"view"},{.38,-1,"shelter"},{.49,1,"view"},{.67,1,"shelter"},{.84,1,"shelter"}},
+    coast={{.12,1,"shelter"},{.26,-1,"view"},{.38,-1,"shelter"},{.49,1,"view"},{.67,1,"shelter"},{.84,1,"shelter"}},
     canyon={{.09,1,"shelter"},{.25,-1,"view"},{.43,1,"shelter"},{.58,-1,"view"},{.76,1,"shelter"},{.9,-1,"view"}},
     forest={{.12,-1,"forest"},{.29,1,"shelter"},{.44,-1,"forest"},{.6,1,"view"},{.75,1,"forest"},{.9,-1,"shelter"}},
     circuit={{.04,-1,"stand"},{.12,1,"paddock"},{.28,-1,"stand"},{.45,1,"paddock"},{.64,-1,"stand"},{.83,1,"paddock"}},
@@ -278,6 +323,7 @@ function Details.Build(root,L,m,tick)
     local ctx={root=root,L=L,m=m,batches={},placed=0,rejected=0,boxes=0,nodes=0,occupied={}}
     local chunks=math.ceil(L.RouteLength/144)
     for _,plan in ipairs(plans[L.activeId] or {}) do landmark(ctx,L.RouteLength*plan[1],plan[2],plan[3]) end
+    for k=1,12 do marker(ctx,L.RouteLength*(k-.25)/12,k%2==0 and 1 or -1,(k-1)%3+1) end
     walls(ctx)
     local step=L.activeId=="circuit" and 75 or 34
     for k=1,math.floor(L.RouteLength/step) do
