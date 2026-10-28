@@ -118,6 +118,7 @@ function Rig:Reset()
     end
 end
 function Rig:PoseRide(steer)
+    self.lastSteer=steer
     self:Reset()
     self.mesh.position=V.ZERO
     self.mesh.position=self.config.hip-self:GetBonePosition("Hip")

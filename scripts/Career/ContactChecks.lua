@@ -186,21 +186,14 @@ function Checks.Vehicles(session)
         if id~="sedan" and id~="suv" and id~="truck" then
             local entry=session.actor.visuals:EnsureVehicle(id)
             local clamped=entry.rider.reachClampedFrames or 0
-            if id=="cruiser_2" then
-                local source=entry.rider.config
-                for _,delta in ipairs({.02,.04,.06,.08}) do
-                    local config={}
-                    for key,value in pairs(source) do config[key]=value end
-                    config.hip=source.hip+Vector3(delta,0,0)
-                    entry.rider.config=config
-                    entry.rider:PoseRide(0)
-                    local candidate=entry.rider:ReadPose()
-                    print(string.format("[巡航肩臂标定] 横移%.3f 左%.5f 右%.5f",delta,candidate.leftGripError,candidate.rightGripError))
-                end
-                entry.rider.config=source
-            end
             entry.rider:PoseRide(0)
             local pose=entry.rider:ReadPose()
+            assert(pose.leftGripError<.005 and pose.rightGripError<.005,id.."双手必须握住车把")
+            assert((entry.rider.reachClampedFrames or 0)==clamped,id.."骑姿不可超伸夹取")
+            for _,chain in ipairs(entry.rider.legs) do
+                local target=Vector3(chain.side*entry.rider.config.foot.x,entry.rider.config.foot.y,entry.rider.config.foot.z)
+                assert((entry.rider:GetBonePosition(chain.tip)-target):Length()<.005,id.."双脚须落在脚踏目标")
+            end
             print(string.format("[逐车骑姿] %s 左手%.5f 右手%.5f 夹取%d",id,pose.leftGripError,pose.rightGripError,(entry.rider.reachClampedFrames or 0)-clamped))
         end
     end

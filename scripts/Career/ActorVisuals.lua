@@ -78,7 +78,12 @@ function Visuals:EnsureVehicle(id)
     Assets.Add(visual,id,nil,"balanced")
     local rider=Rig.New(visual)
     rider.vehicleId,rider.classId=id,Rider.ClassFor(id)
-    rider.config=assert(Rider.Poses[id] or Rider.Poses[rider.classId])
+    local source=assert(Rider.Poses[id] or Rider.Poses[rider.classId])
+    local config={}
+    for key,value in pairs(source) do config[key]=value end
+    -- 同一人物始终1.76m；宽把巡航在座面内向右调整2cm，不能沿用旧骑手1.90m身高。
+    if id=="cruiser_2" then config.hip=source.hip+V(.02,0,0) end
+    rider.config=config
     rider.grip=Bike.GetCockpit(id).grip
     rider:SetVisible(false)
     self.vehicles[id]={node=node,visual=visual,rider=rider}
