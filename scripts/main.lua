@@ -848,6 +848,10 @@ function Start()
     end})
     -- 旧竞速页面提供返回入口，UI根只切换，不重复初始化字体或事件。
     hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=ReturnToCareer})
+    if legacyTest and not careerCheck then
+        hud_.root:SetVisible(true)
+        hud_:SetScreen(screen_)
+    end
     if careerRaceCheck_ then
         career_.options.race(require("Career.Checks").PrepareRace())
     elseif legacyTest then

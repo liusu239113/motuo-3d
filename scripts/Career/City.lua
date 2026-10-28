@@ -36,6 +36,8 @@ end
 function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
+    -- 从森林/沙漠赛事回来仍使用老街沥青与城市色板，不继承上一张赛道的地表替换。
+    assert(Landscape.SelectTrack("circuit"))
     local base = Landscape.CreateMaterials()
     self.mats = {
         road = base.road, grass = base.grass, wood = base.wood,

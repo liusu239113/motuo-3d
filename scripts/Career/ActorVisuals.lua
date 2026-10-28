@@ -42,6 +42,10 @@ function Visuals:Init(scene,target)
     local cargoDraw=box:CreateComponent("StaticModel")
     cargoDraw.model=cargo; cargoDraw.material=cache:GetResource("Material",boxMaterial); cargoDraw.castShadows=true
     local metal=Parts.Material(.08,.09,.1,.55,.55)
+    local mirror=Parts.Material(.45,.57,.62,.1,.85)
+    -- 原模型自带右镜，补左镜及支杆，避免重复叠放已有镜片。
+    Parts.Bar(self.bikeVisual,metal,V(-.28,1.03,.37),V(-.37,1.32,.37),.008)
+    Parts.Add(self.bikeVisual,"9号左后视镜","Sphere",mirror,V(-.37,1.34,.37),V(.13,.1,.035),Quaternion(0,-12,0),false)
     for _,side in ipairs({-1,1}) do
         Parts.Bar(self.bikeVisual,metal,V(side*.2,.68,-.56),V(side*.2,.88,-.91),.015)
     end
