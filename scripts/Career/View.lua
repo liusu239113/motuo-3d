@@ -251,6 +251,16 @@ function View:BuildPhone(state,offer,active)
                 button((state.raceVehicle==id and "当前参赛 · " or "选为参赛车 · ")..item.name,function() a.selectMotorcycle(id) end,false)
             else button("购买 · "..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false) end
         end
+        text("城市车库 · 到车行取车",16,C.cyan)
+        text("摩托城市限速60km/h，电动车35km/h。换车不召回：原车留在停车处；接单前需换回带箱9号。燃油独立于电量，摩托共享油量。",11,C.muted)
+        button("城市用车 · 9号电动车",function() a.cityVehicle("borrowed_ebike") end,false)
+        for _,item in ipairs(Progress.Motorcycles) do
+            if state.ownedMotorcycles[item.id] then
+                local id=item.id
+                button("城市用车 · "..item.name,function() a.cityVehicle(id) end,false)
+            end
+        end
+        button(string.format("车行摩托补给 · 20元（油量%.0f%%）",state.motorcycleFuel or 100),a.refuel,false)
         button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
         text("职业赛事",16,C.cyan)
         text(string.format("积分 %d · 冠军 %d · %s",state.career and state.career.points or 0,state.career and state.career.wins or 0,state.career and state.career.team or "尚未加入车队"),12)
@@ -295,7 +305,11 @@ function View:Update(state,actor,target,active,offer,dt)
     self.hint:SetText(need<30 and "饥饿或疲劳已降低速度：去早餐店用餐，或去住处休息。"
         or state.time>=23 and "深夜已停止派新单，请完成配送后休息。"
         or target and target.hint or "先活下去，再跑出自己的路。")
-    self.speed:SetText(actor.mounted and string.format("9号电动车  %.0f km/h",math.abs(actor.speed)*3.6) or "步行 · 车辆停在原处")
+    self.speed:SetText(actor.mounted and string.format("%s  %.0f km/h",actor:VehicleName(),math.abs(actor.speed)*3.6)
+        or "步行 · 车辆停在原处")
+    if actor.vehicleId~="borrowed_ebike" then
+        self.speed:SetText(self.speed.props.text..string.format("\n摩托燃油 %.0f%%",state.motorcycleFuel or 100))
+    end
     self.map:SetTelemetry(actor,target,active)
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))
     if self.noticeTime==0 then self.notice:SetText("") end

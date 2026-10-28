@@ -47,6 +47,7 @@ function Delivery.GetActive() return Store.Get().activeOrders[1] end
 ---@return boolean, string
 function Delivery.Accept(offerId)
     return Store.Transaction(function(p)
+        if require("Career.VehicleData").Active(p)~="borrowed_ebike" then return false,"请到车行换回带保温箱的9号电动车再接单" end
         if #p.activeOrders >= Progress.Capacity(p) then return false, string.format("配送箱已满（%d份），请先完成一单",Progress.Capacity(p)) end
         local offer = offerFor(p)
         if not offer then return false, "当前没有可接订单，请休息后再上线" end

@@ -4,6 +4,7 @@
 local Store = {}
 local Config = require "Career.Config"
 local Housing = require "Career.HousingData"
+local Vehicles = require "Career.VehicleData"
 
 ---@class CareerVehicle
 ---@field id string
@@ -44,6 +45,8 @@ local Housing = require "Career.HousingData"
 ---@field cityX? number 室内时保留城市入口，停车坐标仍为bikeX/bikeZ
 ---@field cityZ? number
 ---@field cityYaw? number
+---@field activeVehicle? string 缺省借用电动车；不影响参赛车辆
+---@field vehicleParking? table<string, table> 每辆已取出车辆的独立城市停车位
 ---@class CareerProfile
 ---@field version integer
 ---@field revision integer
@@ -76,6 +79,7 @@ local Housing = require "Career.HousingData"
 ---@field lastScheduleSeconds? number
 ---@field lastScheduleManualOrders? integer
 ---@field raceVehicle? string
+---@field motorcycleFuel? number 摩托共享油量，首次交车缺省100，电动车电量独立
 ---@field career? table
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
@@ -195,6 +199,8 @@ local function validate(p)
         or not finite(p.position.bikeX) or not finite(p.position.bikeZ) or not finite(p.position.bikeYaw) then
         return false, "生涯位置字段无效"
     end
+    if not Vehicles.ValidPosition(p.position,p.ownedMotorcycles) then return false,"城市车辆未拥有或停车字段无效" end
+    if p.motorcycleFuel~=nil and not range(p.motorcycleFuel,0,100) then return false,"摩托燃油无效" end
     if not validSpace(p.position) or ((p.position.space or "city")~="city" and p.position.space~=p.accommodation) then
         return false,"室内位置或入住信息无效"
     end
@@ -377,6 +383,7 @@ function Store.SetPosition(position)
     if not validSpace(position) then return false,"室内位置无效" end
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]
+    if not Vehicles.ValidPosition(position,p.ownedMotorcycles) then return false,"城市车辆或停车字段无效" end
     if (position.space or "city")~="city" and position.space~=p.accommodation then return false,"室内与所选住处不一致" end
     p.position = copy(position)
     return true
@@ -589,6 +596,19 @@ function Store.Charge()
     end)
 end
 
+-- 车行提供摩托补给；每次20元补满，实际到场由Session.Service检查。
+function Store.Refuel()
+    return Store.Transaction(function(p)
+        if Vehicles.Active(p)==Vehicles.EBIKE then return false,"当前是电动车，请去街边充电" end
+        if (p.motorcycleFuel or 100)>=100 then return false,"摩托燃油已满" end
+        if #p.activeOrders>0 then return false,"请先完成配送" end
+        local ok,message=Store.ApplyCash(p,-2000,"fuel","fuel:"..(#p.ledger+1))
+        if not ok then return false,message end
+        p.motorcycleFuel=100
+        return true,"摩托补给20元，燃油已满；9号电量不变"
+    end)
+end
+
 ---@return boolean, string
 function Store.Help() return Store.RequestAid() end
 
@@ -612,7 +632,11 @@ function Store.Advance(dt, distanceMeters)
     local rate = p.equipment and p.equipment.raincoat and .85 or 1
     p.energy = math.max(0, p.energy - hours * Config.ENERGY_PER_HOUR * rate)
     local batteryRate = p.equipment and p.equipment.battery and 100/65000 or Config.BATTERY_PER_METER
-    p.battery = math.max(0, p.battery - (distanceMeters or 0) * batteryRate)
+    if Vehicles.Active(p)==Vehicles.EBIKE then
+        p.battery = math.max(0, p.battery - (distanceMeters or 0) * batteryRate)
+    else
+        p.motorcycleFuel=math.max(0,(p.motorcycleFuel or 100)-(distanceMeters or 0)*100/180000)
+    end
     for _, order in ipairs(p.activeOrders) do
         order.remainingHours = order.remainingHours - hours
         order.late = order.remainingHours < 0

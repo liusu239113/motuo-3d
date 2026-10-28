@@ -1,6 +1,7 @@
 -- 生涯城市角色：独立步行、电动车动力与停车位置。
 -- 城市负责碰撞；Session负责输入、相机、电量与存档，不复用赛车速度参数。
 local Visuals = require("Career.ActorVisuals")
+local Vehicles = require("Career.VehicleData")
 local V = Vector3
 
 ---@class CareerActorInput
@@ -43,10 +44,10 @@ Actor.Resources = Visuals.Resources
 Actor.ResourceTypes = Visuals.ResourceTypes
 Actor.ProxyLabel = Visuals.ProxyLabel
 Actor.AnimationLabel = Visuals.AnimationLabel
-Actor.MAX_SPEED = 35 / 3.6 -- First-day city e-bike physics: 35km/h, NOT racing stats.
+Actor.MAX_SPEED = 35 / 3.6 -- 电动车保留首日35km/h独立动力。
 local REVERSE_SPEED = 1.6
 local WALK_SPEED, RUN_SPEED = 1.8, 3.4
-local WALK_RADIUS, BIKE_RADIUS = 0.32, 1.20
+local WALK_RADIUS = 0.32
 local MAP_LIMIT = 180
 local MOUNT_DISTANCE, STOP_SPEED = 3, 0.5
 local MAX_STEP, MAX_TIME_STEP = 0.18, 1 / 60
@@ -115,6 +116,8 @@ function Actor:Init(scene, city)
     self.scene, self.city = scene, city
     self.x, self.z, self.yaw, self.speed = 0, -20, 0, 0
     self.bikeX, self.bikeZ, self.bikeYaw = 1.5, -20, 0
+    self.vehicleId=Vehicles.EBIKE
+    self.parking={}
     self.mounted, self.disposed, self.steer = false, false, 0
     self.collisionLogged, self.walkLogged, self.rideLogged = false, false, false
     self.node = scene:CreateChild("CareerActorFollowTarget")
@@ -123,6 +126,29 @@ function Actor:Init(scene, city)
     self:SyncVisuals(0)
     print(string.format("[CareerActor] 初始步行 x=%.1f z=%.1f yaw=0；车独立停在(%.1f,%.1f)，限速35km/h",
         self.x, self.z, self.bikeX, self.bikeZ))
+end
+
+function Actor:VehicleRadius() return Vehicles.Radii[self.vehicleId] end
+function Actor:VehicleName() return Vehicles.Names[self.vehicleId] end
+function Actor:MaxSpeed() return self.vehicleId==Vehicles.EBIKE and Actor.MAX_SPEED or 60/3.6 end
+function Actor:ParkingSnapshot()
+    local parks={}
+    for id,p in pairs(self.parking) do parks[id]={x=p.x,z=p.z,yaw=p.yaw} end
+    parks[self.vehicleId]={x=self.bikeX,z=self.bikeZ,yaw=self.bikeYaw}
+    return parks
+end
+function Actor:RestoreVehicles(pos)
+    self.parking={}
+    for id,p in pairs(pos.vehicleParking or {}) do
+        local x,z=self.city:FindFree(p.x,p.z,Vehicles.Radii[id])
+        self.parking[id]={x=x,z=z,yaw=p.yaw}
+    end
+    self.vehicleId=pos.activeVehicle or Vehicles.EBIKE
+    local x,z=self.city:FindFree(pos.bikeX,pos.bikeZ,self:VehicleRadius())
+    self.bikeX,self.bikeZ,self.bikeYaw=x,z,pos.bikeYaw
+    self.parking[self.vehicleId]={x=x,z=z,yaw=pos.bikeYaw}
+    self.visuals:SetVehicle(self.vehicleId)
+    self.visuals:UpdateParking(self.parking,self.city)
 end
 
 ---@param x number
@@ -204,28 +230,30 @@ end
 ---@param controls CareerActorInput
 function Actor:RideStep(dt, controls)
     local throttle = axis(controls.throttle)
+    local maxSpeed=self:MaxSpeed()
+    local acceleration=self.vehicleId==Vehicles.EBIKE and 2.8 or 4.2
     self.steer = axis(controls.steer)
     local oldSpeed = self.speed
     if controls.brake then
         self.speed = approach(self.speed, 0, 7.5 * dt)
     elseif throttle > 0 then
-        self.speed = approach(self.speed, Actor.MAX_SPEED * throttle * clamp(controls.speedFactor or 1,.4,1),
-            (self.speed < 0 and 5.5 or 2.8) * dt)
+        self.speed = approach(self.speed, maxSpeed * throttle * clamp(controls.speedFactor or 1,.4,1),
+            (self.speed < 0 and 5.5 or acceleration) * dt)
     elseif throttle < 0 then
         self.speed = approach(self.speed, REVERSE_SPEED * throttle,
             (self.speed > 0 and 5.0 or 1.8) * dt)
     else
         self.speed = approach(self.speed, 0, 1.0 * dt)
     end
-    self.speed = clamp(self.speed, -REVERSE_SPEED, Actor.MAX_SPEED)
+    self.speed = clamp(self.speed, -REVERSE_SPEED, maxSpeed)
     -- Small bicycle-model turn radius, attenuated at road speed. Signed speed
     -- reverses steering naturally; no pivoting or leaning while parked.
-    local steeringAngle = self.steer * (30 - 12 * math.min(1, math.abs(self.speed) / Actor.MAX_SPEED))
+    local steeringAngle = self.steer * (30 - 12 * math.min(1, math.abs(self.speed) / maxSpeed))
     local yawDelta = math.deg(self.speed / 1.45 * math.tan(math.rad(steeringAngle))) * dt
     local middleYaw = math.rad(self.yaw + yawDelta * 0.5)
     local distance = (oldSpeed + self.speed) * 0.5 * dt
     local nextX, nextZ, blocked = self:Move(self.x, self.z,
-        math.sin(middleYaw) * distance, math.cos(middleYaw) * distance, BIKE_RADIUS)
+        math.sin(middleYaw) * distance, math.cos(middleYaw) * distance, self:VehicleRadius())
     local moved = math.sqrt((nextX - self.x) ^ 2 + (nextZ - self.z) ^ 2)
     self.x, self.z = nextX, nextZ
     self.yaw = wrapYaw(self.yaw + yawDelta)
@@ -239,7 +267,7 @@ function Actor:RideStep(dt, controls)
     self.bikeX, self.bikeZ, self.bikeYaw = self.x, self.z, self.yaw
     if not self.rideLogged and math.abs(self.speed) > 0.1 then
         self.rideLogged = true
-        print("[CareerActor] 城市骑行输入已驱动；独立动力2.8m/s²，35km/h封顶，不读取274km/h赛车参数")
+        print(string.format("[CareerActor] %s城市动力%.1fm/s²，限速%.0fkm/h，独立于赛道",self:VehicleName(),acceleration,maxSpeed*3.6))
     end
 end
 
@@ -280,15 +308,15 @@ function Actor:ToggleMount()
         self.speed, self.steer, self.mounted = 0, 0, true
         self.visuals:SetMounted(true)
         self:SyncVisuals(0)
-        print(string.format("[CareerActor] 上车成功(%.2f,%.2f)；%s", self.x, self.z, Actor.ProxyLabel))
-        return true, "已上车 · " .. Actor.ProxyLabel
+        print(string.format("[CareerActor] 上车成功(%.2f,%.2f)；%s", self.x, self.z, self:VehicleName()))
+        return true, "已上车 · " .. self:VehicleName()
     end
 
     -- Exit centres clear the bike's enclosing circle + walker radius. Test
     -- both sides, then fore/aft; follow each complete path with City.Move.
     -- No teleport through wall, no arbitrary map-wide search/vehicle recall.
     local heading = math.rad(self.bikeYaw)
-    local exitDistance = BIKE_RADIUS + WALK_RADIUS + 0.10
+    local exitDistance = self:VehicleRadius() + WALK_RADIUS + 0.10
     for _, exit in ipairs({{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) do
         local dx = (exit[1] * math.cos(heading) + exit[2] * math.sin(heading)) * exitDistance
         local dz = (exit[2] * math.cos(heading) - exit[1] * math.sin(heading)) * exitDistance
@@ -320,7 +348,7 @@ end
 ---@param yaw number
 function Actor:Teleport(x, z, yaw)
     if self.disposed then return end
-    local radius = self.mounted and BIKE_RADIUS or WALK_RADIUS
+    local radius = self.mounted and self:VehicleRadius() or WALK_RADIUS
     self.x, self.z = self:Move(clamp(x, -MAP_LIMIT + radius, MAP_LIMIT - radius),
         clamp(z, -MAP_LIMIT + radius, MAP_LIMIT - radius), 0, 0, radius)
     self.yaw, self.speed, self.steer = wrapYaw(yaw), 0, 0

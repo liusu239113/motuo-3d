@@ -25,14 +25,15 @@ local Actions={}
 function Actions:PositionSnapshot()
     local a=assert(self.actor)
     return {x=a.x,z=a.z,yaw=a.yaw,mounted=a.mounted,bikeX=a.bikeX,bikeZ=a.bikeZ,bikeYaw=a.bikeYaw,
-        space=self.space,cityX=self.cityX,cityZ=self.cityZ,cityYaw=self.cityYaw}
+        space=self.space,cityX=self.cityX,cityZ=self.cityZ,cityYaw=self.cityYaw,
+        activeVehicle=a.vehicleId,vehicleParking=a:ParkingSnapshot()}
 end
 function Actions:ApplySpace(space)
     self.space=space
     local city=self.city
     city:SetSpace(space)
     city:UpdateLights(Store.Get().time)
-    self.actor.visuals.bikeNode:SetEnabled(space=="city")
+    self.actor.visuals:SetCityVisible(space=="city")
     self.actor.visuals:SetMounted(self.actor.mounted)
     if self.sun then self.sun.enabled=space=="city" end
     if self.moon then self.moon.enabled=space=="city" end

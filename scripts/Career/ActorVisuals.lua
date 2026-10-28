@@ -1,6 +1,10 @@
 -- 人、战损电动车、保温箱各自独立。尺寸由MDL包围盒校准，不套用赛车比例。
 local Rig=require("Career.Rig")
 local Parts=require("Parts")
+local Assets=require("VehicleAssets")
+local Vehicles=require("Career.VehicleData")
+local Rider=require("Rider")
+local Bike=require("Bike")
 local V=Vector3
 local SCOOTER="model/873a3764f21f49e4b717387160d13d19/"
 local BOX="model/8c4f0f26f9ee4d3eac2eec49a497852f/"
@@ -54,10 +58,52 @@ function Visuals:Init(scene,target)
     self.mountedRider=Rig.New(self.bikeVisual)
     self.phase,self.gaitWeight,self.lean=0,0,0
     self.mounted,self.disposed=false,false
+    self.vehicleId=Vehicles.EBIKE
+    self.cityVisible=true
+    self.vehicles={[Vehicles.EBIKE]={node=self.bikeNode,visual=self.bikeVisual,rider=self.mountedRider}}
     self:SetMounted(false)
     self.walker:PoseWalk(0,0)
     -- 完整模型落盘后才允许城市进入可玩态。
     print(string.format("[配送装备] 电动车原尺寸%s 缩放%.4f；箱原尺寸%s 缩放%.4f；独立挂点(0,.88,-.72)",bounds.size:ToString(),scale,bb.size:ToString(),bs))
+end
+function Visuals:EnsureVehicle(id)
+    if self.vehicles[id] then return self.vehicles[id] end
+    assert(Vehicles.Known(id),"未知城市车型")
+    local node=self.bikeNode.parent:CreateChild("生涯城市摩托_"..id)
+    local visual=node:CreateChild("摩托压弯根")
+    Assets.Add(visual,id,nil,"balanced")
+    local rider=Rig.New(visual)
+    rider.vehicleId,rider.classId=id,Rider.ClassFor(id)
+    rider.config=assert(Rider.Poses[id] or Rider.Poses[rider.classId])
+    rider.grip=Bike.GetCockpit(id).grip
+    rider:SetVisible(false)
+    self.vehicles[id]={node=node,visual=visual,rider=rider}
+    node:SetEnabled(self.cityVisible)
+    return self.vehicles[id]
+end
+function Visuals:SetVehicle(id)
+    local entry=self:EnsureVehicle(id)
+    self.mountedRider:SetVisible(false)
+    self.bikeVisual.rotation=Quaternion.IDENTITY
+    self.vehicleId=id
+    self.bikeNode,self.bikeVisual,self.mountedRider=entry.node,entry.visual,entry.rider
+    self.lean=0
+    self:SetMounted(self.mounted)
+end
+function Visuals:SetCityVisible(visible)
+    self.cityVisible=visible
+    for _,entry in pairs(self.vehicles) do entry.node:SetEnabled(visible and entry.available~=false) end
+end
+function Visuals:UpdateParking(parking,city)
+    for id,entry in pairs(self.vehicles) do
+        entry.available=parking[id]~=nil
+        entry.node:SetEnabled(self.cityVisible and entry.available)
+    end
+    for id,park in pairs(parking) do
+        local entry=self:EnsureVehicle(id)
+        entry.node.position=V(park.x,city:Surface(park.x,park.z),park.z)
+        entry.node.rotation=Quaternion(0,park.yaw,0)
+    end
 end
 function Visuals:SetMounted(mounted)
     self.mounted=mounted
@@ -81,7 +127,8 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
 end
 function Visuals:Dispose()
     if self.disposed then return end
-    self.disposed=true; self.mountedRider:Dispose(); self.walker:Dispose()
-    self.bikeNode:Dispose(); self.walkNode:Dispose()
+    self.disposed=true
+    for _,entry in pairs(self.vehicles) do entry.rider:Dispose(); entry.node:Dispose() end
+    self.walker:Dispose(); self.walkNode:Dispose()
 end
 return Visuals

@@ -11,6 +11,8 @@ local Loader = require("RideLoader")
 local Theme = require("RacingTheme")
 local Progress = require("Career.Progression")
 local Housing = require("Career.HousingData")
+local Vehicles = require("Career.VehicleData")
+local VehicleActions = require("Career.VehicleActions")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -103,6 +105,8 @@ function Session:Init(options)
         workWeek=function() self:WorkWeek() end,
         buyMotorcycle=function(id) self:Service("dealer",function() return Progress.BuyMotorcycle(id) end) end,
         selectMotorcycle=function(id) self:Service("dealer",function() return Progress.SelectMotorcycle(id) end) end,
+        cityVehicle=function(id) return VehicleActions.Switch(self,id) end,
+        refuel=function() self:Service("dealer",function() return Store.Refuel() end) end,
         train=function()
             self:Service("dealer",function()
                 local p=Store.Get()
@@ -142,6 +146,8 @@ function Session:StartCareer(fresh,confirmed)
     for _,module in ipairs({City,Actor}) do
         for _,path in ipairs(module.Resources) do resources[#resources+1]=path; types[path]=module.ResourceTypes[path] end
     end
+    local vehiclePaths,vehicleTypes=VehicleActions.Resources(Store.Get())
+    for _,path in ipairs(vehiclePaths) do resources[#resources+1]=path; types[path]=vehicleTypes[path] end
     self.loader=Loader.New({},function(title,detail,fraction) self.view:ShowLoading(title,detail,fraction) end,
         function() self.building=coroutine.create(function() self:BuildWorld() end) end,
         function(detail) self.loading=false; self.view:ShowDialog("资源未准备好",detail,{{text="返回主页",onClick=function() self:Home() end}}) end,
@@ -351,12 +357,11 @@ function Session:RestorePosition()
     local p=Store.Get().position
     local a=self.actor
     self.city:SetSpace("city")
-    a.bikeX,a.bikeZ=self.city:FindFree(p.bikeX,p.bikeZ,1.2)
-    a.bikeYaw=p.bikeYaw
+    a:RestoreVehicles(p)
     a.mounted=p.mounted; a.visuals:SetMounted(p.mounted)
     self.cityX,self.cityZ,self.cityYaw=p.cityX or p.x,p.cityZ or p.z,p.cityYaw or p.yaw
     self:ApplySpace(p.space or "city")
-    local x,z=self.city:FindFree(p.x,p.z,p.mounted and 1.2 or .32)
+    local x,z=self.city:FindFree(p.x,p.z,p.mounted and a:VehicleRadius() or .32)
     a:Teleport(x,z,p.yaw); self.yaw=p.yaw
 end
 function Session:SaveCloud()
@@ -440,7 +445,10 @@ function Session:Update(dt)
     controls.speedFactor=need<15 and .45 or need<30 and .7 or 1
     if need<30 then controls.run=false end
     if state.time>=23 then controls.speedFactor=math.min(controls.speedFactor,.7) end
-    if self.actor.mounted and state.battery<=0 then controls.throttle=0; controls.brake=true end
+    local electric=self.actor.vehicleId==Vehicles.EBIKE
+    if self.actor.mounted and (electric and state.battery<=0 or not electric and (state.motorcycleFuel or 100)<=0) then
+        controls.throttle=0; controls.brake=true
+    end
     self.actor:Update(dt,controls,self.yaw)
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
     self:SavePosition()
