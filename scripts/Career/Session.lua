@@ -152,6 +152,7 @@ function Session:StartCareer(fresh,confirmed)
     for _,module in ipairs({City,Actor}) do
         for _,path in ipairs(module.Resources) do resources[#resources+1]=path; types[path]=module.ResourceTypes[path] end
     end
+    for _,path in ipairs(require("Career.Phone").Resources) do resources[#resources+1]=path; types[path]="Texture2D" end
     local vehiclePaths,vehicleTypes=VehicleActions.Resources(Store.Get())
     for _,path in ipairs(vehiclePaths) do resources[#resources+1]=path; types[path]=vehicleTypes[path] end
     self.loader=Loader.New(CareerAudio.Resources,function(title,detail,fraction) self.view:ShowLoading(title,detail,fraction) end,

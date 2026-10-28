@@ -8,6 +8,7 @@ local MobileControls = require("MobileControls")
 local ControlSettings = require("ControlSettings")
 local Housing = require("Career.HousingData")
 local WalkStick = require("Career.WalkStick")
+local Phone = require("Career.Phone")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -19,6 +20,9 @@ local function full(props) return UI.Panel(Theme.Full(props)) end
 local function money(cents) return string.format("¥ %.2f",cents/100) end
 
 ---@class CareerView
+---@field phoneContent ScrollView
+---@field phoneTitle Label
+---@field phoneClock Label
 local View = {}
 View.__index = View
 function View.New(actions)
@@ -98,15 +102,8 @@ function View:Init(actions)
         {position="absolute",bottom=12,left="28%",right="24%",textAlign="center",whiteSpace="normal",pointerEvents="none"})
     safe:AddChild(self.controlHint)
     self.game:AddChild(safe)
-    self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=14})
-    self.phoneBody=UI.Panel{width=380,maxWidth="90%",height="94%",padding=16,gap=10,borderWidth=2,borderRadius=18,
-        borderColor=C.border,backgroundColor={16,22,28,255}}
-    self.phoneTitle=label("王二狗的手机",16,C.white,{fontWeight="bold"})
-    self.phoneBody:AddChild(UI.Row{width="100%",padding=0,gap=8,children={self.phoneTitle,
-        Theme.Button("关闭",actions.closePhone,false,70,{marginLeft="auto",height=34})}})
-    self.phoneContent=UI.ScrollView{width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0}
-    self.phoneBody:AddChild(self.phoneContent)
-    self.phoneBody:AddChild(label("停车使用手机 · 游戏时间暂停",10,C.muted))
+    self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=12})
+    self.phoneBody=Phone.Create(self,actions)
     self.phone:AddChild(self.phoneBody)
     self.overlay=full{visible=false,backgroundColor={3,6,9,225},justifyContent="center",alignItems="center",padding=22}
     self.dialogBody=UI.Panel{width=520,maxWidth="100%",maxHeight="100%",padding=22,gap=14,
@@ -170,11 +167,9 @@ function View:BuildPhone(state,offer,active)
     local page=self.phonePage
     if page~="apps" then button("← 应用首页",function() a.phone("apps") end,false) end
     self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
+    self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
-        text(string.format("第%d天  %02d:%02d",state.day,math.floor(state.time),math.floor(state.time*60)%60),14,C.amber)
-        for _,app in ipairs({{"delivery","外卖骑手 · 听单抢单"},{"map","地图 · 商家与住处"},{"wallet","钱包 · 每一笔收支"},{"messages","消息 · 表哥"},{"life","生活 · 吃饭休息充电"}}) do
-            local id=app[1]; button(app[2],function() a.phone(id) end,id=="delivery","career-app-"..id)
-        end
+        Phone.Desktop(content,state,a)
     elseif page=="delivery" then
         text("南城老街站 · "..(state.online and "正在听单" or "尚未上线"),14,C.amber)
         text("配送费2.50～10.00元，接单时报价锁定。绕路不会多拿钱。",11,C.muted)
@@ -297,6 +292,8 @@ function View:BuildPhone(state,offer,active)
         button("走到床边 / 休息点过夜",a.sleepHousing,false)
         button("街边充电 · 2元",a.charge,false)
         button("低现金基础帮助（不发现金）",a.aid,false)
+        button("背景音乐 · "..(state.musicEnabled and "开启" or "关闭"),a.toggleMusic,false,"career-music")
+        button("车辆 / 脚步 / 环境音 · "..(state.effectsEnabled and "开启" or "关闭"),a.toggleEffects,false,"career-effects")
         if a.progression then button("装备 / 住房 / 生涯发展",a.progression,true) end
     end
 end
