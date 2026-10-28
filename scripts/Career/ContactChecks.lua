@@ -188,14 +188,14 @@ function Checks.Vehicles(session)
             local clamped=entry.rider.reachClampedFrames or 0
             if id=="cruiser_2" then
                 local source=entry.rider.config
-                for _,delta in ipairs({-20,-10,0,10,20}) do
+                for _,delta in ipairs({.02,.04,.06,.08}) do
                     local config={}
                     for key,value in pairs(source) do config[key]=value end
-                    config.waist,config.spine,config.chest=source.waist+delta,source.spine+delta,source.chest+delta
+                    config.hip=source.hip+Vector3(delta,0,0)
                     entry.rider.config=config
                     entry.rider:PoseRide(0)
                     local candidate=entry.rider:ReadPose()
-                    print(string.format("[巡航肩臂标定] delta%d 左%.5f 右%.5f",delta,candidate.leftGripError,candidate.rightGripError))
+                    print(string.format("[巡航肩臂标定] 横移%.3f 左%.5f 右%.5f",delta,candidate.leftGripError,candidate.rightGripError))
                 end
                 entry.rider.config=source
             end
