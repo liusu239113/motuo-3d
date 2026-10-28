@@ -1,0 +1,26 @@
+[2026-10-28 22_32_49_257][0] INFO: DownloadManager initialized
+[2026-10-28 22_32_49_259][0] INFO: a couple of Subsystems registered finish.
+[2026-10-28 22_32_49_259][0] INFO: Engine construct finish.
+[2026-10-28 22_32_49_272][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-10-28 22_32_49_956][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-28 22_32_50_474][23] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 22_32_52_875][67]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-28 22_32_52_880][67]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-28 22_32_52_880][67]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-28 22_32_52_884][67] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 22_32_54_476][93][Script] IsNetworkMode:    false
+[2026-10-28 22_32_54_496][93][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-28 22_32_54_496][93][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-28 22_32_54_496][93][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-28 22_32_54_497][93][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-28 22_32_54_499][93][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-28 22_32_55_001][93][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-28 22_32_55_391][93][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 22_32_55_395][93][Script] [赛道排版] 1280x720 / 3列 / 自然卡高+纵向滚动
+[2026-10-28 22_32_55_429][93][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-28 22_32_55_429][93][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 22_32_55_436][93][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-28 22_32_55_438][94][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 22_32_59_001][253]INFO__VALIDATE_UPDATE__:false

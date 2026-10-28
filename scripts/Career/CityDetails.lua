@@ -55,7 +55,8 @@ function Details:Batch(material, x, z)
     node.position = V(cx, 0, cz)
     local geom = node:CreateComponent("CustomGeometry")
     geom:BeginGeometry(0, TRIANGLE_LIST)
-    geom:SetMaterial(assert(self.mats[material], "City: undefined material " .. material))
+    local materialResource = assert(self.mats[material], "City: undefined material " .. material)
+    geom:SetMaterial(materialResource)
     geom.castShadows = material ~= "road" and material ~= "paint" and material ~= "yellow" and material ~= "grass"
     geom.shadowDistance = 95
     geom.drawDistance = 460
