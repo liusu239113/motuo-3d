@@ -311,7 +311,7 @@ function Checks.Shot(session)
         entry.node:SetEnabledRecursive(id==vehicle)
         print(string.format("[实拍车型隔离] %s 显示%s",id,tostring(id==vehicle)))
     end
-    if mounted and actor.visuals.vehicles[vehicle] then actor.visuals.mountedRider:SetVisible(true) end
+    if actor.visuals.vehicles[vehicle] then actor.visuals.mountedRider:SetVisible(mounted) end
     if vehicle=="sedan" or vehicle=="suv" or vehicle=="truck" then actor.visuals.walkNode:SetEnabledRecursive(false) end
 end
 return Checks
