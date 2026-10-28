@@ -96,6 +96,11 @@ function Checks.RunProgression()
         for index=2,6 do assert(Progress.EnterSeries(index)); assert(Progress.SettleRace(1,true)) end
         assert(Store.Get().flags.lifeWinner and Store.Get().career.wins==6)
         assert(Store.Load() and Store.Get().flags.lifeWinner)
+        assert(not Progress.SelectMotorcycle("rally"))
+        assert(Progress.SelectMotorcycle("sport") and Store.Get().raceVehicle=="sport")
+        local firstStory=assert(Progress.NextStory(Store.Get()))
+        assert(Progress.MarkStory(firstStory.id))
+        assert(Progress.NextStory(Store.Get()).id~=firstStory.id)
         assert(Profile.Coins()==oldCoins,"生涯不得改变旧竞速金币")
         print("[生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离")
     end)
@@ -190,7 +195,10 @@ function Checks.RunWorld(session)
             session.view.overlay:SetVisible(false)
         end
         local page=arg:match("^%-careerpage=(.+)$")
-        if page then session:OpenPhone(page) end
+        if page then
+            if page=="delivery" then session.online=true end
+            session:OpenPhone(page)
+        end
     end
     print("[生涯城市验收通过] 全部交互点/路线可达/实际骑行动力/上下车/独立停车/手机暂停")
 end

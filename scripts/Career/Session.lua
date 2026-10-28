@@ -22,6 +22,13 @@ function Session.New(options)
 end
 function Session:Init(options)
     self.options=options
+    ---@type fun()?
+    self.restoreTestStorage=nil
+    if options.test then
+        local files={}
+        self.restoreTestStorage=Store.UseTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+            write=function(path,text) files[path]=text; return true end})
+    end
     self.running,self.loading,self.online,self.disposed=false,false,false,false
     self.yaw,self.pitch,self.timer=0,14,0
     self.waypoint=""
@@ -238,7 +245,7 @@ function Session:Service(id,callback)
     local ok,detail=callback()
     self.view:Notice(detail)
     self:RefreshPhone()
-    if ok and (id=="bridge" or id=="park") then
+    if ok and (id=="bridge" or id=="park" or id=="home_old") then
         self.view:ClosePhone()
         local state=Store.Get()
         self.view:ShowDialog("第"..state.day.."天 · 又是新的一天",string.format("昨天收入 %.2f元，支出 %.2f元。\n现在现金 %.2f元。休息好了，今天继续。",
@@ -267,6 +274,7 @@ function Session:Interact()
     if nearest=="breakfast" then self:OpenPhone("life")
     elseif nearest=="bridge" or nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
+    elseif nearest=="home_old" then self:OpenPhone("life")
     elseif nearest=="dealer" then self:OpenPhone("progression")
     else self.view:Notice("这里没有待交付外卖") end
 end
@@ -417,5 +425,6 @@ function Session:Dispose()
     if self.disposed then return end
     if self.running and not self.options.test then self:SavePosition(); Store.Save() end
     self.disposed=true; self:DisposeWorld(); self.view:Dispose()
+    if self.restoreTestStorage then self.restoreTestStorage(); self.restoreTestStorage=nil end
 end
 return Session

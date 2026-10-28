@@ -236,6 +236,7 @@ function View:BuildPhone(state,offer,active)
         button("早餐店用餐 · 12元",a.eat,false)
         button("桥下免费休息至次日",function() a.rest("bridge") end,false)
         button("公园长椅免费休息至次日",function() a.rest("park") end,false)
+        button("当前住处过夜（旧宅门厅办理）",a.sleepHousing,false)
         button("街边充电 · 2元",a.charge,false)
         button("低现金基础帮助（不发现金）",a.aid,false)
         if a.progression then button("装备 / 住房 / 生涯发展",a.progression,true) end

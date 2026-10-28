@@ -687,20 +687,34 @@ end
 
 -- 测试注入只作用于作用域内，finally 恢复全部内存状态；测试绝不写玩家真实文件。
 ---@param adapter CareerStorage
----@param callback fun()
-function Store.WithTestStorage(adapter, callback)
+---@return fun()
+function Store.UseTestStorage(adapter)
     if transactionBusy or cloudBusy then error("Cannot test while storage is busy") end
     local previousStorage, previousData, previousCommitted = storage, data, committed
     local previousError, previousElapsed = loadError, elapsedSinceSave
     local previousCloudStatus, previousCloudRevision = cloudStatus, cloudRevision
     storage, data, committed, loadError = adapter, nil, nil, nil
     elapsedSinceSave = 0
-    local ok, message = pcall(callback)
-    storage, data, committed, loadError = previousStorage, previousData, previousCommitted, previousError
-    elapsedSinceSave = previousElapsed
-    cloudBusy, transactionBusy = false, false
-    cloudStatus, cloudRevision = previousCloudStatus, previousCloudRevision
-    cloudGeneration = cloudGeneration + 1
+    local restored=false
+    return function()
+        if restored then return end
+        restored=true
+        storage, data, committed, loadError = previousStorage, previousData, previousCommitted, previousError
+        elapsedSinceSave = previousElapsed
+        cloudBusy, transactionBusy = false, false
+        cloudTimeout=nil; cloudElapsed=0
+        cloudStatus, cloudRevision = previousCloudStatus, previousCloudRevision
+        cloudGeneration = cloudGeneration + 1
+    end
+end
+
+-- 同步逻辑检查使用finally恢复；异步场景检查持有显式恢复函数直到Stop。
+---@param adapter CareerStorage
+---@param callback fun()
+function Store.WithTestStorage(adapter, callback)
+    local restore=Store.UseTestStorage(adapter)
+    local ok,message=pcall(callback)
+    restore()
     if not ok then error(message) end
 end
 
