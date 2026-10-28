@@ -621,6 +621,8 @@ function Start()
         if arg == "-benchmark" then benchmark_ = true; autoTest_ = true end
         if arg == "-quality-high" then highQuality_ = true end
         if arg == "-nomirrors" then disableMirrors_ = true end
+        if arg == "-aichecks" then assert(require("RaceAIChecks").Run().passed) end
+        if arg == "-trackchecks" then assert(require("TrackChecks").Run(Tracks.List())) end
         if arg == "-selftest" then selfTest_ = true; assert(Sim.Test()); assert(MobileControls.Test()) end
         if arg == "-ride" then autoStart = true end
         if arg == "-challenge" or arg == "-race" then autoStart, challenge = true, true; firstPerson_ = false end
@@ -963,6 +965,7 @@ end
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
+    if screen_ == "settings" then return end
     if not ready_ or not bike_ or not chase_ or not helmetCamera_ then return end
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
     if benchmark_ and screen_ == "ride" then

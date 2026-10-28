@@ -859,7 +859,8 @@ local function buildForest(scene, root, tick)
         local paddock = activeTrack.id=="circuit" and distance < 60
         local summit = activeTrack.id=="alpine" and y > 130
         local key = math.floor(x / 7) .. ":" .. math.floor(z / 7)
-        if onRoad or distance < 12 or y < 13.5 or meadow or lake or sea or paddock or summit or occupied[key] then return end
+        local clearance=activeTrack.id=="lake" and 12 or math.max(12,mainRoad.shoulder+4)
+        if onRoad or distance < clearance or y < 13.5 or meadow or lake or sea or paddock or summit or occupied[key] then return end
         occupied[key] = true
         local near = distance <= 35
         Trees.Add(root, x, y - 0.06, z, height, yaw, shadow, near)

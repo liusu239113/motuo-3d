@@ -18,7 +18,8 @@ function AI.Configure(race, r, index)
     -- 赛道等级决定整组AI的强度：第一关明显放水，后段逐级提高。
     local level = clamp(tonumber(race.options.aiLevel) or 0.72, 0.4, 1.0)
     r.aiLevel = level
-    -- 速度上限：第一关约为玩家同级上限的0.80~0.88，最后一关才接近0.94。
+    -- 常规上限按0.72+等级×0.26+技术×0.05计算，叠加明确的难度修正，总上限0.96。
+    -- 这只是限速，不是实际可达极速；真实传动、气阻、弯速与失误仍会降低平均速度。
     local topFactor = 0.72 + level * 0.26
     r.speedFactor = clamp(topFactor + r.skill * 0.05 + difficulty * 0.03, 0.6, 0.96)
     r.acceleration = race.sim.vehicle.acceleration * (0.58 + level * 0.26 + r.skill * 0.10 + difficulty * 0.04)

@@ -129,8 +129,9 @@ function Settings.Save()
     end
     local file = File(SAVE_PATH, FILE_WRITE)
     if not file or not file:IsOpen() then return false, "无法写入操作方案" end
-    file:WriteString(table.concat(parts, "\n") .. "\n")
+    local written = file:WriteString(table.concat(parts, "\n") .. "\n")
     file:Close()
+    if not written then return false, "操作方案写入失败，请重试" end
     return true
 end
 

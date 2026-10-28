@@ -72,7 +72,7 @@ function Checks.Run()
                 local drive = player:Powertrain(DT, {throttle = 1, boost = boosted and 1 or 0})
                 local expected = drive - 0.20 - before * before * 0.00115
                 AI.Drive(race, r, 1000, DT)
-                check(r.speed - before <= math.max(0, expected * DT) + 1e-8,
+                check(r.speed <= math.max(0, before + expected * DT) + 1e-8,
                     id .. "/" .. difficulty .. "每步加速不得超过玩家真实传动减气阻")
                 check(r.driveSim.gear == player.gear and r.driveSim.shiftTimer == player.shiftTimer,
                     "AI必须经历玩家相同自动换挡断动力")
@@ -135,6 +135,23 @@ function Checks.Run()
     check(r.paceTarget == pace, "弯后重接油必须等待下一次反应节奏")
     passed("提前制动与反应节奏")
 
+    local gated, eager = fixture(39, "sport", 1, "hard")
+    eager.speed, eager.mistakeTimer = 45, 1000
+    local originalRandom = gated.Random
+    gated.Random = function() return 0 end
+    AI.Plan(gated, eager, DT)
+    check(eager.boostTimer > 0 and eager.nitro == 55 and eager.nitroCooldown >= 9,
+        "满足直道条件的AI仍能正常喷射而不是完全禁用")
+    local bendRace, cautious = fixture(39, "sport", 1, "hard")
+    bendRace.Random = function() return 0 end
+    cautious.speed, cautious.mistakeTimer = 45, 1000
+    bendRace.aiProfile[45] = {curvature = 0.02, turn = 0.02, slope = 0}
+    AI.Plan(bendRace, cautious, DT)
+    check(cautious.boostTimer == 0 and cautious.nitro == 100,
+        "喷射结束前就会入弯时不能只因眼前平直而开氮")
+    gated.Random, bendRace.Random = originalRandom, originalRandom
+    passed("长直道喷射授权与入弯禁喷")
+
     local baseline, clean = fixture(73)
     local flawed, errorRider = fixture(73)
     for _, pair in ipairs({{baseline, clean}, {flawed, errorRider}}) do
@@ -178,6 +195,20 @@ function Checks.Run()
     end
     check(a.mistakes >= 1 and a.rubberBand == 0, "正常运行必须出现自身节奏失误且没有橡皮筋")
     passed("确定性重放与无玩家追赶作弊")
+    local radius = 100
+    local lapMap = flatMap()
+    lapMap.RouteLength = radius * math.pi * 2
+    lapMap.RoadPoint = function(s)
+        local t = s / radius
+        return {x = radius * (1 - math.cos(t)), y = 0, z = radius * math.sin(t)}, t * 180 / math.pi
+    end
+    local lapsRace = Race.New(lapMap, Sim.New(lapMap), {laps = 5, quiet = true})
+    check(lapsRace.laps == 5, "赛道配置5圈不能被构造器静默截成3圈")
+    lapsRace:Start(9)
+    check(lapsRace.laps == 9, "开始比赛与配置必须统一支持9圈上限")
+    lapsRace:Start(99)
+    check(lapsRace.laps == 9, "过大圈数仍须限制在统一上限")
+    passed("赛道圈数配置一致")
     result.passed = true
     print(string.format("[RaceAIChecks] %d项断言通过，单次失误损失%.2f米", result.assertions, loss))
     return result
