@@ -9,13 +9,7 @@ Progress.Equipment={
     {id="raincoat",name="防风雨骑行服",price=16000,level=2,description="精力消耗降低15%"},
     {id="helmet",name="合格全盔与手套",price=45000,level=2,description="职业训练必需护具，可提前准备"},
 }
-Progress.Housing={
-    {id="bridge",name="桥下落脚点",price=0,energy=70},
-    {id="park",name="公园长椅",price=0,energy=75},
-    {id="hostel",name="青年旅舍床位",price=3000,energy=90},
-    {id="room",name="独立出租屋",price=6500,energy=100},
-    {id="apartment",name="阳光小公寓",price=15000,energy=100},
-}
+Progress.Housing=require("Career.HousingData").List
 Progress.Motorcycles={
     {id="sport",name="赤焰R1000 · 二手训练版",price=4600000},
     {id="cruiser",name="远行V1700",price=5800000},
@@ -78,7 +72,8 @@ function Progress.SetHousing(id)
     for _,h in ipairs(Progress.Housing) do if h.id==id then item=h end end
     if not item then return false,"住处不存在" end
     return Store.Transaction(function(p)
-        if p.cashCents<item.price+1200 then return false,"至少留出今晚住宿和一顿饭的钱" end
+        if p.position.space and p.position.space~="city" then return false,"请先离开当前住处再换房" end
+        if item.price>0 and p.cashCents<item.price+1200 then return false,"至少留出今晚住宿和一顿饭的钱" end
         p.accommodation=id
         return true,"已选择"..item.name.."；每次过夜才扣费，不是永久买断"
     end)
@@ -172,6 +167,9 @@ function Progress.NextStory(p)
     local stories={
         {id="firstDeliveryStory",ready=p.completedOrders>=1,title="第一笔自己挣的钱",text="王二狗盯着到账提醒看了很久。钱不多，但这顿饭，终于能靠自己挣。\n表哥：别小看第一单。记住店门和楼号，明天就能少走弯路。"},
         {id="riderStory",ready=p.completedOrders>=10,title="老街站，记住了你的名字",text="站长把你的名字写进常跑骑手名单。双单保温箱开放购买，之后每一份都要分别取餐、送达。\n王二狗：先把车箱装稳，再慢慢把生活过稳。"},
+        {id="hostelStory",ready=p.flags.stayed_hostel,title="今夜，有一张干净的床",text=require("Career.HousingData").Get("hostel").story},
+        {id="roomStory",ready=p.flags.stayed_room,title="一扇能关上的门",text=require("Career.HousingData").Get("room").story},
+        {id="apartmentStory",ready=p.flags.stayed_apartment,title="窗边的阳光",text=require("Career.HousingData").Get("apartment").story},
         {id="fiveManStory",ready=p.cashCents>=5000000 and not p.flags.firstMotorcycle,title="五万元的钥匙",text="你反复核对钱包：五万，真的攒到了。\n表哥：南城车行那辆二手训练版还在，46000元。别把钱全花光，护具训练2000，留2000周转。\n这一次，你不是借车的人了。去车行前台看看吧。"},
         {id="ownBikeStory",ready=p.flags.firstMotorcycle,title="人生第一辆摩托",text="交接钥匙时，你想起那辆陪你跑街串巷的战损9号。它没有离开，配送还要靠它。\n师傅：先带好护具，去封闭场地完成训练，再谈比赛。"},
         {id="licenseStory",ready=p.flags.professional,title="从取餐口到发车格",text="第一次完整通过顺序检查点，你知道赛道不只是更快。刹车、线路、耐心，每一样都要重新学。\n新人杯已经开放。职业奖金存入生涯钱包，不兑换独立竞速金币。"},

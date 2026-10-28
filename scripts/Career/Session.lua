@@ -10,11 +10,22 @@ local View = require("Career.View")
 local Loader = require("RideLoader")
 local Theme = require("RacingTheme")
 local Progress = require("Career.Progression")
+local Housing = require("Career.HousingData")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
+---@field PositionSnapshot fun(self:CareerSession):CareerPosition
+---@field ApplySpace fun(self:CareerSession,space:string)
+---@field ChooseHousing fun(self:CareerSession,id:string)
+---@field EnterHousing fun(self:CareerSession,id:string):boolean
+---@field LeaveHousing fun(self:CareerSession):boolean
+---@field SleepHousing fun(self:CareerSession)
+---@field ShowMorning fun(self:CareerSession,message:string)
+---@field InteriorTarget fun(self:CareerSession):table
+---@field InteractHousing fun(self:CareerSession)
 local Session={}
 Session.__index=Session
+require("Career.HousingActions").Install(Session)
 function Session.New(options)
     local self=setmetatable({},Session)
     self:Init(options or {})
@@ -32,6 +43,8 @@ function Session:Init(options)
     self.running,self.loading,self.online,self.disposed=false,false,false,false
     self.yaw,self.pitch,self.timer=0,14,0
     self.waypoint=""
+    self.space="city"
+    self.cityX,self.cityZ,self.cityYaw=0,-20,0
     ---@type Scene?
     self.scene=nil
     ---@type CareerActor?
@@ -68,7 +81,10 @@ function Session:Init(options)
             end)
             self.view:Notice(message); self:RefreshPhone()
         end,
-        mount=function() if self.actor then local _,message=self.actor:ToggleMount(); self.view:ResetInput(); self.view:Notice(message); self:SavePosition(); self:Refresh() end end,
+        mount=function()
+            if self.space~="city" then self.view:Notice("电动车停在室外，请先出门"); return end
+            if self.actor then local _,message=self.actor:ToggleMount(); self.view:ResetInput(); self.view:Notice(message); self:SavePosition(); self:Refresh() end
+        end,
         interact=function() self:Interact() end,
         setWaypoint=function(id) self.waypoint=id; self:Refresh() end,
         eat=function() self:Service("breakfast",function() return Store.Eat() end) end,
@@ -78,8 +94,10 @@ function Session:Init(options)
         save=function() self:SaveCloud() end,
         progression=function() self:OpenPhone("progression") end,
         buyEquipment=function(id) self:Service("dealer",function() return Progress.BuyEquipment(id) end) end,
-        housing=function(id) self:Service("dealer",function() return Progress.SetHousing(id) end) end,
-        sleepHousing=function() local p=Store.Get(); self:Service("home_old",function() return Store.Rest(p.accommodation) end) end,
+        housing=function(id) self:ChooseHousing(id) end,
+        sleepHousing=function() self:SleepHousing() end,
+        enterHousing=function() self:EnterHousing(Store.Get().accommodation) end,
+        leaveHousing=function() self:LeaveHousing() end,
         workWeek=function() self:WorkWeek() end,
         buyMotorcycle=function(id) self:Service("dealer",function() return Progress.BuyMotorcycle(id) end) end,
         selectMotorcycle=function(id) self:Service("dealer",function() return Progress.SelectMotorcycle(id) end) end,
@@ -156,9 +174,11 @@ function Session:BuildWorld()
     self.view:ShowLoading("装配人物与车辆","独立停车位置与配送箱挂点。",.8)
     coroutine.yield()
     self.actor=Actor.New(self.scene,self.city)
+    self.environmentHour=-1
+    self:UpdateEnvironment(Store.Get().time)
     self:RestorePosition()
     self.camera=ThirdPersonCamera.Create(self.scene,{
-        modes={normal={distance=5.8,offset=Vector3(0,1.35,0),fov=55},ride={distance=6.4,offset=Vector3(0,1.3,0),fov=60}},
+        modes={normal={distance=5.8,offset=Vector3(0,1.35,0),fov=55},ride={distance=6.4,offset=Vector3(0,1.3,0),fov=60},indoor={distance=3.1,offset=Vector3(0,1.2,0),fov=65}},
         transitionSpeed=8,farClip=450})
     renderer:SetNumViewports(1)
     renderer:SetViewport(0,Viewport:new(self.scene,self.camera:GetCamera()))
@@ -174,6 +194,7 @@ function Session:BuildWorld()
     print("[生涯] 场景与主流程已接通")
 end
 function Session:UpdateEnvironment(hour)
+    if self.city then self.city:UpdateLights(hour) end
     if not self.sky or not self.sun or not self.zone then return end
     local step=math.floor(hour*12)/12
     if step==self.environmentHour then return end
@@ -200,10 +221,11 @@ function Session:Intro()
         end}})
 end
 function Session:State()
-    local state=Store.Get(); state.online=self.online; return state
+    local state=Store.Get(); state.online=self.online; state.currentSpace=self.space; return state
 end
 function Session:Target()
     if not self.actor then return nil end
+    if self.space~="city" then return self:InteriorTarget() end
     local order=Delivery.GetActive()
     local id=self.waypoint
     if order then id=order.status=="accepted" and order.pickupId or order.dropoffId end
@@ -227,6 +249,7 @@ function Session:OpenPhone(page)
     self.view:OpenPhone(page,self:State(),Delivery.GetOffer(),Delivery.GetActive())
 end
 function Session:Accept()
+    if self.space~="city" then self.view:Notice("请先出门，再上线接单"); return end
     if not self.online then self.view:Notice("先上线听单"); return end
     self:SavePosition()
     local _,message=Delivery.Accept()
@@ -234,6 +257,7 @@ function Session:Accept()
 end
 function Session:Allowed(id)
     if not self.actor then return false,"尚未进入城市" end
+    if self.space~="city" then return false,"请先出门再使用城市服务" end
     if self.actor.mounted or math.abs(self.actor.speed)>.35 then return false,"请停稳下车后交互" end
     if Config.DistanceTo(id,self.actor.x,self.actor.z)>Config.INTERACTION_RADIUS then return false,"请先前往"..Config.points[id].label.."（2米内）" end
     return true
@@ -254,6 +278,10 @@ function Session:Service(id,callback)
 end
 function Session:Interact()
     if not self.actor then return end
+    if self.space~="city" then self:InteractHousing(); return end
+    for _,home in ipairs(Housing.List) do
+        if home.width and Config.DistanceTo(home.point,self.actor.x,self.actor.z)<=2 then self:EnterHousing(home.id); return end
+    end
     local order=Delivery.GetActive()
     if order then
         self:SavePosition()
@@ -279,6 +307,7 @@ function Session:Interact()
     else self.view:Notice("这里没有待交付外卖") end
 end
 function Session:WorkWeek()
+    if self.space~="city" then self.view:Notice("请先出门再安排工作周"); return end
     if not self.actor or self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请下车停稳后安排工作"); return end
     self.view:ShowDialog("确认推进7个游戏日？","第10天起，每周需新的10份亲送及15分钟活动。\n模拟订单均价5.80～6.20元，扣除餐食、整备和7晚住宿。亲送收入不重复结算。",{
         {text="继续亲自跑单"},
@@ -305,16 +334,18 @@ function Session:EnterRace(index)
 end
 function Session:SavePosition()
     if not self.actor or self.options.test then return end
-    local a=self.actor
-    Store.SetPosition{x=a.x,z=a.z,yaw=a.yaw,mounted=a.mounted,bikeX=a.bikeX,bikeZ=a.bikeZ,bikeYaw=a.bikeYaw}
+    return Store.SetPosition(self:PositionSnapshot())
 end
 function Session:RestorePosition()
     if not self.actor then return end
     local p=Store.Get().position
     local a=self.actor
+    self.city:SetSpace("city")
     a.bikeX,a.bikeZ=self.city:FindFree(p.bikeX,p.bikeZ,1.2)
     a.bikeYaw=p.bikeYaw
     a.mounted=p.mounted; a.visuals:SetMounted(p.mounted)
+    self.cityX,self.cityZ,self.cityYaw=p.cityX or p.x,p.cityZ or p.z,p.cityYaw or p.yaw
+    self:ApplySpace(p.space or "city")
     local x,z=self.city:FindFree(p.x,p.z,p.mounted and 1.2 or .32)
     a:Teleport(x,z,p.yaw); self.yaw=p.yaw
 end
@@ -410,7 +441,7 @@ function Session:Update(dt)
 end
 function Session:PostUpdate(dt)
     if not self.camera or not self.actor then return end
-    self.camera:SetMode(self.actor.mounted and "ride" or "normal")
+    self.camera:SetMode(self.space~="city" and "indoor" or self.actor.mounted and "ride" or "normal")
     self.camera:Update(dt,self.actor.node,self.yaw,self.pitch)
 end
 function Session:LeaveForLegacy()

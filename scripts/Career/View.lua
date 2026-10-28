@@ -6,6 +6,7 @@ local Map = require("Career.MapWidget")
 local Progress = require("Career.Progression")
 local MobileControls = require("MobileControls")
 local ControlSettings = require("ControlSettings")
+local Housing = require("Career.HousingData")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -214,7 +215,7 @@ function View:BuildPhone(state,offer,active)
         text(Progress.Chapter(state),17,C.amber)
         local level,name=Progress.Level(state)
         text(string.format("%s Lv.%d · 携带容量%d份",name,level,Progress.Capacity(state)),13)
-        text("装备、住房手续、买车与职业报名需到南城车行前台。",11,C.muted)
+        text("装备、买车与职业报名需到南城车行；住房可在手机选择，再去对应入口入住。",11,C.muted)
         button("导航到南城车行",function() a.setWaypoint("dealer"); a.closePhone() end,true)
         text("骑手装备",16,C.cyan)
         for _,item in ipairs(Progress.Equipment) do
@@ -223,13 +224,15 @@ function View:BuildPhone(state,offer,active)
             button((state.equipment and state.equipment[id] and "已拥有 · " or "购入 · ")..item.name..string.format(" ¥%.0f / Lv.%d",item.price/100,item.level),function() a.buyEquipment(id) end,false)
         end
         text("改善住处 · 按晚付费",16,C.cyan)
-        text("首版租住服务统一从旧宅门厅进入，地图中可导航。",10,C.muted)
+        text("旅舍、出租屋、公寓各有入口和室内。进门不收费，到床边确认休息才支付一晚。",10,C.muted)
         for _,item in ipairs(Progress.Housing) do
             local id=item.id
             button((state.accommodation==id and "当前 · " or "选择 · ")..item.name..string.format(" ¥%.0f/晚",item.price/100),function() a.housing(id) end,false)
         end
-        button("前往旧宅门厅过夜",function() a.setWaypoint("home_old"); a.closePhone() end,false)
-        button("在门厅办理当前住处过夜",a.sleepHousing,false)
+        local home=assert(Housing.Get(state.accommodation))
+        button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
+        if home.width then button("到门口进入住处",a.enterHousing,false) end
+        button("到休息点过夜",a.sleepHousing,false)
         text("工作周 · 解锁后可选",16,C.cyan)
         text("第10天起开放，每周需重新亲送10单并活动15分钟。亲送与模拟收入不重复，房费按7晚另算。",11,C.muted)
         button("查看并确认7天排班",a.workWeek,false)
@@ -258,7 +261,12 @@ function View:BuildPhone(state,offer,active)
         button("早餐店用餐 · 12元",a.eat,false)
         button("桥下免费休息至次日",function() a.rest("bridge") end,false)
         button("公园长椅免费休息至次日",function() a.rest("park") end,false)
-        button("当前住处过夜（旧宅门厅办理）",a.sleepHousing,false)
+        local home=assert(Housing.Get(state.accommodation))
+        text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
+        button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
+        if state.currentSpace and state.currentSpace~="city" then button("到房门旁出门",a.leaveHousing,false)
+        elseif home.width then button("到门口进入住处",a.enterHousing,false) end
+        button("走到床边 / 休息点过夜",a.sleepHousing,false)
         button("街边充电 · 2元",a.charge,false)
         button("低现金基础帮助（不发现金）",a.aid,false)
         if a.progression then button("装备 / 住房 / 生涯发展",a.progression,true) end
@@ -268,7 +276,11 @@ function View:Update(state,actor,target,active,offer,dt)
     self.lastActor,self.lastTarget=actor,target
     self:SetControlMode(actor.mounted)
     self:LayoutControls()
-    self.interactButton:SetText(active and (active.status=="accepted" and "取餐" or "送达") or "交互")
+    local indoor=state.currentSpace and state.currentSpace~="city"
+    self.mountButton:SetVisible(not indoor)
+    self.map.root:SetVisible(not indoor)
+    self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
+        or active and (active.status=="accepted" and "取餐" or "送达") or "交互")
     self.status:SetText(string.format("王二狗  %s  第%d天 %02d:%02d\n饱腹 %.0f · 精力 %.0f · 电量 %.0f%%",money(state.cashCents),state.day,
         math.floor(state.time),math.floor(state.time*60)%60,state.hunger,state.energy,state.battery))
     self.objective:SetText(target and (target.name..string.format(" · %.0f米",target.distance)) or "打开右下角手机 → 外卖骑手 → 上线听单")

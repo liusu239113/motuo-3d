@@ -3,7 +3,11 @@ local Details = require("Career.CityDetails")
 local Landscape = require("Landscape")
 local Parts = require("Parts")
 local Config = require("Career.Config")
+local Housing = require("Career.HousingData")
+local Interior = require("Career.Interior")
 ---@class CareerCity
+---@field SetSpace fun(self:CareerCity,id:string)
+---@field UpdateLights fun(self:CareerCity,hour:number)
 local City = {}
 City.__index = City
 local architecture={
@@ -36,6 +40,9 @@ end
 function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
+    self.space="city"
+    ---@type Light[]
+    self.nightLights={}
     -- 从森林/沙漠赛事回来仍使用老街沥青与城市色板，不继承上一张赛道的地表替换。
     assert(Landscape.SelectTrack("circuit"))
     local base = Landscape.CreateMaterials()
@@ -56,6 +63,7 @@ function City:Init(scene)
     self:BuildBlocks()
     self:BuildPlaces()
     self.stats = self.details:Finish()
+    self.interior=Interior.New(scene,self.mats)
     self.stats.buildings, self.stats.obstacles = self.buildings, #self.obstacles
     print(string.format("[生涯城市] %d栋建筑 / %d批次 / %.0f三角面 / %d招牌 / %d碰撞区域",
         self.buildings, self.stats.batches, self.stats.triangles, self.stats.signs, #self.obstacles))
@@ -94,6 +102,7 @@ function City:BuildRoads()
         for z=-145,145,42 do
             if math.abs(z)>18 and math.abs(z-100)>18 and not (x==0 and z< -40) then
                 d:Lamp(x-9.4,z,90)
+                self:NightLight(x-7.8,4.2,z,5,12)
             end
         end
     end
@@ -228,6 +237,13 @@ function City:BuildPlaces()
             d:Sign(point.label,point.x,2.5,point.z,0,.34)
         end
     end
+    for _,home in ipairs(Housing.List) do
+        if home.width then
+            d:Sign(home.name..string.format(" · %.0f元/晚",home.price/100),home.x,2.4,home.z,0,.32)
+            d:Ground("paint",home.x,home.z,2.2,2.2,.084)
+            self:NightLight(home.x,2.6,home.z,3,8)
+        end
+    end
     -- 充电桩和门厅标识与Config同源。
     d:Box("metal",24,.9,-9,.65,1.8,.65)
     d:Box("lamp",24,1.2,-9.35,.43,.36,.035)
@@ -240,9 +256,27 @@ function City:BuildPlaces()
     end
 end
 
+function City:NightLight(x,y,z,brightness,range)
+    local node=self.root:CreateChild("夜间路灯")
+    node.position=Vector3(x,y,z)
+    local light=node:CreateComponent("Light")
+    light.lightType=LIGHT_POINT; light.color=Color(1,.78,.46)
+    light.range=range; light.brightness=brightness; light.castShadows=false; light.enabled=false
+    self.nightLights[#self.nightLights+1]=light
+end
+function City:UpdateLights(hour)
+    local on=hour>=18 or hour<6
+    for _,light in ipairs(self.nightLights) do light.enabled=on end
+end
+function City:SetSpace(id)
+    self.space=id
+    self.root:SetEnabledRecursive(id=="city")
+    self.interior:SetSpace(id)
+end
 function City:Surface(x,z) return .085 end
 
 function City:IsFree(x,z,radius)
+    if self.space~="city" then return self.interior:IsFree(x,z,radius) end
     if math.abs(x)>180-radius or math.abs(z)>180-radius then return false end
     for _,o in ipairs(self.obstacles) do
         if x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then return false end
@@ -251,6 +285,7 @@ function City:IsFree(x,z,radius)
 end
 
 function City:FindFree(x,z,radius)
+    if self.space~="city" then return self.interior:FindFree(x,z,radius) end
     local limit=180-radius
     local px,pz=math.max(-limit,math.min(limit,x)),math.max(-limit,math.min(limit,z))
     if self:IsFree(px,pz,radius) then return px,pz end
@@ -265,6 +300,7 @@ function City:FindFree(x,z,radius)
 end
 
 function City:Move(x,z,dx,dz,radius)
+    if self.space~="city" then return self.interior:Move(x,z,dx,dz,radius) end
     local count=math.max(1,math.ceil(math.sqrt(dx*dx+dz*dz)/.1))
     local sx,sz=dx/count,dz/count
     for _=1,count do

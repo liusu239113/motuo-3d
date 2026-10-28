@@ -3,6 +3,7 @@
 -- 本地文件并不等于账号持久化，尤其 WASM 刷新会丢失；云接口必须显式调用并等回调。
 local Store = {}
 local Config = require "Career.Config"
+local Housing = require "Career.HousingData"
 
 ---@class CareerVehicle
 ---@field id string
@@ -39,6 +40,10 @@ local Config = require "Career.Config"
 ---@field bikeX number
 ---@field bikeZ number
 ---@field bikeYaw number
+---@field space? string 缺省city，兼容已有v1档
+---@field cityX? number 室内时保留城市入口，停车坐标仍为bikeX/bikeZ
+---@field cityZ? number
+---@field cityYaw? number
 ---@class CareerProfile
 ---@field version integer
 ---@field revision integer
@@ -137,6 +142,16 @@ local function range(value, lo, hi)
     return finite(value) and value >= lo and value <= hi
 end
 
+local function validSpace(pos)
+    local space=pos.space or "city"
+    if space=="city" then return true end
+    local home=Housing.Get(space)
+    return home~=nil and home.width~=nil and not pos.mounted
+        and range(pos.x,-home.width/2+.32,home.width/2-.32)
+        and range(pos.z,-home.depth/2+.32,home.depth/2-.32)
+        and finite(pos.cityX) and finite(pos.cityZ) and finite(pos.cityYaw)
+end
+
 local function booleanMap(value)
     if type(value) ~= "table" then return false end
     for key, enabled in pairs(value) do
@@ -179,6 +194,9 @@ local function validate(p)
         or not finite(p.position.yaw) or type(p.position.mounted) ~= "boolean"
         or not finite(p.position.bikeX) or not finite(p.position.bikeZ) or not finite(p.position.bikeYaw) then
         return false, "生涯位置字段无效"
+    end
+    if not validSpace(p.position) or ((p.position.space or "city")~="city" and p.position.space~=p.accommodation) then
+        return false,"室内位置或入住信息无效"
     end
     local equipment = p.equipment or {}
     if not booleanMap(equipment) then return false, "装备字段无效" end
@@ -356,8 +374,10 @@ function Store.SetPosition(position)
         or not finite(position.bikeX) or not finite(position.bikeZ) or not finite(position.bikeYaw) then
         return false, "位置字段无效"
     end
+    if not validSpace(position) then return false,"室内位置无效" end
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]
+    if (position.space or "city")~="city" and position.space~=p.accommodation then return false,"室内与所选住处不一致" end
     p.position = copy(position)
     return true
 end
@@ -503,11 +523,11 @@ end
 ---@return boolean, string
 function Store.Rest(pointId)
     local place = pointId or "bridge"
-    local places={bridge={price=0,energy=70},park={price=0,energy=75},hostel={price=3000,energy=90},room={price=6500,energy=100},apartment={price=15000,energy=100}}
-    local room=places[place]
+    local room=Housing.Get(place)
     if not room then return false,"住处不存在" end
     return Store.Transaction(function(p)
         if #p.activeOrders > 0 then return false, "请先完成当前配送再休息" end
+        if (p.position.space or "city")~="city" and p.position.space~=place then return false,"请先离开当前房间" end
         if room.price>0 then
             local ok,message=Store.ApplyCash(p,-room.price,"lodging","lodging:"..p.day)
             if not ok then return false,message end
@@ -528,6 +548,7 @@ function Store.Rest(pointId)
         p.battery = math.max(p.battery, 35)
         p.vehicle.condition = math.max(p.vehicle.condition, 35)
         p.flags.firstRest = true
+        if room.price>0 then p.flags["stayed_"..place]=true end
         p.phase = "working"
         return true, room.price==0 and "免费休息至次日08:00，已本地保存"
             or string.format("住宿支出%.2f元，休息至次日08:00，已本地保存",room.price/100)
