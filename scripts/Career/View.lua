@@ -131,7 +131,7 @@ function View:BuildPhone(state,offer,active)
     local function button(t,fn,primary,id) content:AddChild(btn(t,fn,primary,{id=id})) end
     local page=self.phonePage
     if page~="apps" then button("← 应用首页",function() a.phone("apps") end,false) end
-    self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活"})[page] or "手机")
+    self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     if page=="apps" then
         text(string.format("第%d天  %02d:%02d",state.day,math.floor(state.time),math.floor(state.time*60)%60),14,C.amber)
         for _,app in ipairs({{"delivery","外卖骑手 · 听单抢单"},{"map","地图 · 商家与住处"},{"wallet","钱包 · 每一笔收支"},{"messages","消息 · 表哥"},{"life","生活 · 吃饭休息充电"}}) do

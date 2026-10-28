@@ -443,6 +443,10 @@ function HUD:BuildPauseAndResult()
     end, false, 100)
     self.qualityButton = button("画质 · 流畅", function() if a.quality then self:SetQuality(a.quality() or self.qualityName) end end, false, 112)
     self.qualityButton:SetDisabled(type(a.quality) ~= "function")
+    self.careerPauseReturn = button("主菜单", a.menu, false, 160)
+    self.careerPauseRestart = button("重新开始", a.restart, false, 130)
+    self.resultRestart = button("再赛一次 →", a.restart, true, 160)
+    self.resultReturn = button("返回主菜单", a.menu, false, 150)
     self.pause = UI.Panel(fill({visible = false, backgroundColor = {5, 8, 11, 225}, padding = 12,
         alignItems = "center", justifyContent = "center", children = {
             RacingTheme.Card {width = "92%", maxWidth = 680, height = "96%", padding = 18, gap = 12, children = {
@@ -456,7 +460,7 @@ function HUD:BuildPauseAndResult()
                             UI.Row {padding = 0, gap = 10, children = {self.score, self.health}},
                             self.radioTitle,
                             UI.Row {padding = 0, gap = 7, children = {button("上一首", a.previousTrack, false, 90), self.radioToggle, button("下一首", a.nextTrack, false, 90)}}, help()}}}},
-                    UI.Row {padding = 0, gap = 8, children = {button("重新开始", a.restart, false, 130), button("主菜单", a.menu, false, 130)}}}}}}))
+                    UI.Row {padding = 0, gap = 8, children = {self.careerPauseRestart, self.careerPauseReturn}}}}}}))
     self.resultTitle = label("竞速结算", 24, WHITE, {maxLines = 2, whiteSpace = "normal", width = "100%"})
     self.resultStats = label("", 11, MUTED, {maxLines = 5, whiteSpace = "normal", width = "100%"})
     local list = UI.Column {width = "100%", padding = 0, gap = 4}
@@ -471,7 +475,13 @@ function HUD:BuildPauseAndResult()
                     RacingTheme.Kicker("FINISH LINE / 比赛结果"),
                     UI.ScrollView {width = "100%", padding = 0, flexGrow = 1, flexBasis = 0, flexShrink = 1, children = {
                         UI.Column {width = "100%", padding = 0, gap = 9, children = {self.resultTitle, self.resultStats, list}}}},
-                    UI.Row {padding = 0, gap = 8, children = {button("再赛一次 →", a.restart, true, 160), button("返回主菜单", a.menu, false, 150)}}}}}}))
+                    UI.Row {padding = 0, gap = 8, children = {self.resultRestart, self.resultReturn}}}}}}))
+end
+function HUD:SetCareerRace(enabled)
+    self.careerPauseRestart:SetVisible(not enabled)
+    self.careerPauseReturn:SetText(enabled and "返回生涯（保留报名）" or "主菜单")
+    self.resultRestart:SetVisible(not enabled)
+    self.resultReturn:SetText(enabled and "返回王二狗生涯" or "返回主菜单")
 end
 function HUD:BuildLoading()
     local a = self.actions

@@ -244,7 +244,10 @@ function Session:EnterRace(index)
     end
     local pending=Store.Get().career.pending
     if self.options.race then
-        self:SavePosition(); Store.Save(); self.view:ClosePhone(); self:DisposeWorld()
+        self:SavePosition()
+        local saved,detail=Store.Save()
+        if not saved then self.view:Notice(detail); return end
+        self.view:ClosePhone(); self:DisposeWorld()
         self.options.race(pending)
     end
 end

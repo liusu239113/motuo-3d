@@ -47,7 +47,7 @@ function Delivery.GetActive() return Store.Get().activeOrders[1] end
 ---@return boolean, string
 function Delivery.Accept(offerId)
     return Store.Transaction(function(p)
-        if #p.activeOrders >= Progress.Capacity(p) then return false, "新手容量为1，请先完成当前订单" end
+        if #p.activeOrders >= Progress.Capacity(p) then return false, string.format("配送箱已满（%d份），请先完成一单",Progress.Capacity(p)) end
         local offer = offerFor(p)
         if not offer then return false, "当前没有可接订单，请休息后再上线" end
         if offerId and offerId ~= offer.id then return false, "订单已变更，请刷新后接单" end

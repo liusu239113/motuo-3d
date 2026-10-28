@@ -157,6 +157,9 @@ function Progress.EnterSeries(index)
     end)
 end
 function Progress.SettleRace(place,finished)
+    if type(place)~="number" or place%1~=0 or place<1 or place>9 or type(finished)~="boolean" then
+        return false,"赛事名次或完赛状态无效"
+    end
     return Store.Transaction(function(p)
         extras(p)
         local race=p.career.pending
@@ -170,7 +173,8 @@ function Progress.SettleRace(place,finished)
         if p.career.points>=9 then p.career.team="南城极速车队" end
         if race.series==6 and finished and place==1 then p.flags.lifeWinner=true; p.career.team="年度冠军车队" end
         p.career.pending=false; p.day=p.day+1; p.time=8; p.energy=65
-        return true,string.format("生涯赛事结算：第%d名，奖金%.2f元。职业积分%d。",place,reward/100,p.career.points)
+        return true,finished and string.format("生涯赛事结算：第%d名，奖金%.2f元。职业积分%d。",place,reward/100,p.career.points)
+            or "本场未完赛，不发奖金、不加积分。报名已结清，可重新报名。"
     end)
 end
 return Progress

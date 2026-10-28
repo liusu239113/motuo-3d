@@ -21,6 +21,9 @@ local CareerSession = require("Career.Session")
 ---@type CareerSession?
 local career_ = nil
 local careerMode_ = false
+local careerRace_ = false
+local CareerProgress = require("Career.Progression")
+local CareerStore = require("Career.Store")
 
 ---@type RideRace?
 local race_ = nil
@@ -308,11 +311,11 @@ local function ConfirmVehicle(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
     local track = assert(Tracks.Get(selectedTrack_))
-    if not Profile.TrackUnlocked(track.id) and not autoTest_ and not trackTest_ and testShot_ == "" then
+    if not careerRace_ and not Profile.TrackUnlocked(track.id) and not autoTest_ and not trackTest_ and testShot_ == "" then
         hud_:ShowNotice("赛道尚未开放", "请在赛道选择中查看解锁条件，通关前置赛道或确认使用金币解锁后再出发。")
         return
     end
-    selectedLaps_ = track.laps
+    if not careerRace_ then selectedLaps_ = track.laps end
     hud_:SelectLaps(selectedLaps_, false)
     if sound_ then sound_:Unlock() end
     if raceAudio_ then raceAudio_:Unlock() end
@@ -328,7 +331,29 @@ local function ConfirmVehicle(id)
         0, loadPhase_ == "reuse" and "无需重复下载或构建" or "开始后选车，再下载资源")
 end
 
+local function SettleCareerResult()
+    if not careerRace_ or not race_ or race_.phase ~= "finished" then return true,"赛事报名已保留，可在车行继续" end
+    local profile=CareerStore.Get()
+    if not (profile.career and profile.career.pending) then return true,"赛事奖金已保存" end
+    local ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true)
+    if ok then sim_.coinsEarned=0 else print("[生涯赛事保存失败] "..message) end
+    return ok,message
+end
+
+local function ReturnToCareer()
+    local ok,message=SettleCareerResult()
+    if not ok then hud_:ShowNotice("结算尚未保存",message.."\n请稍后再次点击返回生涯，未重复扣报名费。"); return end
+    if loader_ then loader_:Cancel(); loader_=nil end
+    hud_:CloseModal()
+    DisposeRideWorld(); touch_:SetEnabled(false); hud_.root:SetVisible(false)
+    careerMode_,careerRace_=true,false
+    hud_:SetCareerRace(false)
+    career_:Home(message)
+end
+
 local function RestartRide()
+    -- 生涯每次报名只结算一次；结果页回生涯再报名，不能复用已结算门票刷奖金。
+    if careerRace_ then ReturnToCareer(); return end
     if not ready_ or screen_ == "loading" then return end
     ConfirmVehicle(selectedVehicle_)
 end
@@ -340,6 +365,7 @@ local function PauseRide()
 end
 
 local function MainMenu()
+    if careerRace_ then ReturnToCareer(); return end
     if sound_ then sound_:Unlock() end
     if raceAudio_ then raceAudio_:Silence() end
     if race_ then race_:Stop() end
@@ -799,15 +825,20 @@ function Start()
         if arg == "-careerchecks" then careerCheck, careerStart = true, true; legacyTest = false end
     end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
-        careerMode_=false
+        careerMode_,careerRace_=false,false
+        hud_:SetCareerRace(false)
         hud_.root:SetVisible(true); UI.SetRoot(hud_.root); MainMenu()
+    end, race=function(pending)
+        careerMode_,careerRace_=false,true
+        hud_:SetCareerRace(true)
+        hud_.root:SetVisible(true); UI.SetRoot(hud_.root)
+        selectedTrack_,selectedVehicle_,selectedLaps_=pending.track,pending.vehicle,pending.laps
+        pendingChallenge_,firstPerson_=true,false
+        screen_="menu"
+        ConfirmVehicle(selectedVehicle_)
     end})
     -- 旧竞速页面提供返回入口，UI根只切换，不重复初始化字体或事件。
-    hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=function()
-        if loader_ then loader_:Cancel(); loader_=nil end
-        DisposeRideWorld(); touch_:SetEnabled(false); hud_.root:SetVisible(false)
-        careerMode_=true; career_:Home()
-    end})
+    hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=ReturnToCareer})
     if legacyTest then
         UI.SetRoot(hud_.root)
     else
@@ -1045,7 +1076,10 @@ function HandleUpdate(eventType, eventData)
         local finished = sim_.finished or (pendingChallenge_ and race_ and race_.phase == "finished")
         if finished and not resultShown_ then
             resultShown_ = true
-            if pendingChallenge_ and race_ and race_.player then
+            if careerRace_ and race_ and race_.player then
+                local _,message=SettleCareerResult()
+                hud_:ShowNotice("生涯赛事",message.."\n点击返回生涯继续；未完赛不会发放奖金。")
+            elseif pendingChallenge_ and race_ and race_.player then
                 -- 名次越高金币越多；被抓按末位结算，仍给参与奖励。
                 local place = race_.player.rank or 9
                 local track = Tracks.Get(selectedTrack_)
@@ -1088,6 +1122,11 @@ end
 ---@param eventData InputFocusEventData
 function HandleInputFocus(eventType, eventData)
     if not eventData:GetBool("Focus") or eventData:GetBool("Minimized") then
+        if careerMode_ and career_ then
+            career_.view:ResetInput()
+            if career_.running and not career_.view:IsBlocking() then career_:Pause() end
+            return
+        end
         touch_:Reset(); ClearActions()
         if screen_ == "ride" then SetScreen("pause") end
         print("[手机操作] 失去焦点，清空所有持续操作与特技脉冲")

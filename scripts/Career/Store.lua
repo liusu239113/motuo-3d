@@ -495,7 +495,8 @@ function Store.Rest(pointId)
         p.vehicle.condition = math.max(p.vehicle.condition, 35)
         p.flags.firstRest = true
         p.phase = "working"
-        return true, "免费休息至次日08:00，已本地保存"
+        return true, room.price==0 and "免费休息至次日08:00，已本地保存"
+            or string.format("住宿支出%.2f元，休息至次日08:00，已本地保存",room.price/100)
     end)
 end
 

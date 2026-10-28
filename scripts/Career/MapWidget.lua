@@ -43,17 +43,12 @@ function MapWidget:Init(id)
     self.roads = UI.Panel {position = "absolute", top = 10, right = 10, bottom = 10, left = 10,
         padding = 0, pointerEvents = "none"}
     local roadColor = {92, 111, 120, 150}
-    for _, x in ipairs({-100, 0, 100}) do
-        segment(self.roads, {x = x, z = -180}, {x = x, z = 180}, roadColor, 3)
+    for _, x in ipairs({-172, -100, 0, 100, 172}) do
+        segment(self.roads, {x = x, z = -172}, {x = x, z = 172}, roadColor, 3)
     end
-    for _, z in ipairs({0, 100}) do
-        segment(self.roads, {x = -180, z = z}, {x = 180, z = z}, roadColor, 3)
+    for _, z in ipairs({-172, 0, 100, 172}) do
+        segment(self.roads, {x = -172, z = z}, {x = 172, z = z}, roadColor, 3)
     end
-    -- City boundary and outer ring share the world extent [-180,180].
-    segment(self.roads, {x = -180, z = -180}, {x = 180, z = -180}, roadColor, 3)
-    segment(self.roads, {x = -180, z = 180}, {x = 180, z = 180}, roadColor, 3)
-    segment(self.roads, {x = -180, z = -180}, {x = -180, z = 180}, roadColor, 3)
-    segment(self.roads, {x = 180, z = -180}, {x = 180, z = 180}, roadColor, 3)
     self.route = UI.Panel {position = "absolute", top = 0, right = 0, bottom = 0, left = 0,
         padding = 0, pointerEvents = "none"}
     self.roads:AddChild(self.route)
@@ -96,7 +91,7 @@ function MapWidget:SetTelemetry(actor, target, order)
     end
     local key = tostring(order.id or "") .. ":" .. tostring(order.status or "")
     if key ~= self.routeKey then
-        for _, child in ipairs(self.route:GetChildren()) do child:Destroy() end
+        self.route:ClearChildren()
         self.routeKey = key
         local points = order.route or {}
         for i = 2, #points do segment(self.route, points[i - 1], points[i], C.amber, 3) end
