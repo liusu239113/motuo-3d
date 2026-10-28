@@ -1,0 +1,236 @@
+[2026-10-29 01_45_01_684][0] INFO: DownloadManager initialized
+[2026-10-29 01_45_01_686][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 01_45_01_686][0] INFO: Engine construct finish.
+[2026-10-29 01_45_01_692][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-10-29 01_45_02_649][0] ERROR: Could not initialize audio output
+[2026-10-29 01_45_02_652][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 01_45_03_427][16] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 01_45_05_308][41]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 01_45_05_312][41]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 01_45_05_312][41]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 01_45_05_314][41] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 01_45_06_775][67][Script] IsNetworkMode:    false
+[2026-10-29 01_45_06_792][67][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 01_45_06_792][67][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 01_45_06_792][67][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 01_45_06_792][67][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 01_45_06_795][67][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 01_45_07_258][67][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 01_45_07_389][67][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 01_45_07_392][67][Script] [赛道排版] 1012x569 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 01_45_07_400][67][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 01_45_07_400][67][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 01_45_07_406][67][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 01_45_07_459][67][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 01_45_07_460][67][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 01_45_07_461][68][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 01_45_13_293][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 01_45_13_293][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 01_45_13_293][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_13_293][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_13_293][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_13_310][100] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 01_45_13_311][100] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 01_45_13_329][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 01_45_13_329][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_13_329][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_13_352][102] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 01_45_13_352][102] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 01_45_17_547][125][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 01_45_17_548][125][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 01_45_17_548][125][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 01_45_17_548][125][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 01_45_17_548][125][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 01_45_17_548][125][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 01_45_17_548][125][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 01_45_18_265][125][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 01_45_18_267][125][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 01_45_18_270][125][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 01_45_18_270][125][Script] [生涯城市] 33栋建筑 / 468批次 / 145270三角面 / 33招牌 / 40碰撞区域
+[2026-10-29 01_45_18_346][126][Script] [王二狗] 正式角色 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 01_45_18_349][126][Script] [王二狗] 正式角色 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 01_45_18_351][126][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 01_45_18_353][126][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 01_45_18_355][126][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 01_45_18_355][126][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 01_45_18_359][126][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 01_45_18_359][126][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 01_45_18_360][126][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 01_45_18_360][126][Script] [Career.Store] loaded revision=3 day=1 cashCents=5000 orders=1
+[2026-10-29 01_45_18_361][126][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 01_45_18_361][126][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 01_45_18_361][126][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 01_45_18_361][126][Script] [Career.Store] loaded revision=4 day=1 cashCents=5500 orders=0
+[2026-10-29 01_45_18_362][126][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 01_45_18_362][126][Script] [Career.Store] loaded revision=6 day=2 cashCents=4300 orders=0
+[2026-10-29 01_45_18_362][126][Script] [生涯逻辑验收通过] 50元开局/借车/171m教学5元/远程与骑乘拒绝/先取后送/结算幂等/读档/磁盘失败回滚/吃饭/次日/坏档保护
+[2026-10-29 01_45_18_362][126][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 01_45_18_363][126][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 01_45_18_363][126][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 01_45_18_363][126][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 01_45_18_363][126][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 01_45_18_363][126][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 01_45_18_364][126][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 01_45_18_364][126][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 01_45_18_364][126][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 01_45_18_365][126][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 01_45_18_365][126][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 01_45_18_365][126][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 01_45_18_365][126][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-29 01_45_18_365][126][Script] [Career.Delivery] accepting career-v1-5 feeCents=275
+[2026-10-29 01_45_18_366][126][Script] [Career.Delivery] picked up career-v1-5
+[2026-10-29 01_45_18_366][126][Script] [Career.Delivery] delivering career-v1-5 feeCents=275
+[2026-10-29 01_45_18_366][126][Script] [Career.Delivery] accepting career-v1-6 feeCents=288
+[2026-10-29 01_45_18_366][126][Script] [Career.Delivery] picked up career-v1-6
+[2026-10-29 01_45_18_367][126][Script] [Career.Delivery] delivering career-v1-6 feeCents=288
+[2026-10-29 01_45_18_367][126][Script] [Career.Delivery] accepting career-v1-7 feeCents=290
+[2026-10-29 01_45_18_367][126][Script] [Career.Delivery] picked up career-v1-7
+[2026-10-29 01_45_18_367][126][Script] [Career.Delivery] delivering career-v1-7 feeCents=290
+[2026-10-29 01_45_18_368][126][Script] [Career.Delivery] accepting career-v1-8 feeCents=276
+[2026-10-29 01_45_18_368][126][Script] [Career.Delivery] picked up career-v1-8
+[2026-10-29 01_45_18_369][126][Script] [Career.Delivery] delivering career-v1-8 feeCents=276
+[2026-10-29 01_45_18_369][126][Script] [Career.Delivery] accepting career-v1-9 feeCents=283
+[2026-10-29 01_45_18_369][126][Script] [Career.Delivery] picked up career-v1-9
+[2026-10-29 01_45_18_369][126][Script] [Career.Delivery] delivering career-v1-9 feeCents=283
+[2026-10-29 01_45_18_370][126][Script] [Career.Delivery] accepting career-v1-10 feeCents=275
+[2026-10-29 01_45_18_370][126][Script] [Career.Delivery] picked up career-v1-10
+[2026-10-29 01_45_18_371][126][Script] [Career.Delivery] delivering career-v1-10 feeCents=275
+[2026-10-29 01_45_18_372][126][Script] [Career.Delivery] accepting career-v1-11 feeCents=275
+[2026-10-29 01_45_18_373][126][Script] [Career.Delivery] accepting career-v1-12 feeCents=288
+[2026-10-29 01_45_18_374][126][Script] [Career.Delivery] picked up career-v1-12
+[2026-10-29 01_45_18_375][126][Script] [Career.Delivery] delivering career-v1-12 feeCents=288
+[2026-10-29 01_45_18_375][126][Script] [Career.Delivery] picked up career-v1-11
+[2026-10-29 01_45_18_376][126][Script] [Career.Delivery] delivering career-v1-11 feeCents=275
+[2026-10-29 01_45_18_384][126][Script] [Career.Store] loaded revision=51 day=17 cashCents=484184 orders=0
+[2026-10-29 01_45_18_384][126][Script] [Career.Delivery] accepting career-v1-13 feeCents=290
+[2026-10-29 01_45_18_385][126][Script] [Career.Delivery] picked up career-v1-13
+[2026-10-29 01_45_18_385][126][Script] [Career.Delivery] delivering career-v1-13 feeCents=290
+[2026-10-29 01_45_18_386][126][Script] [Career.Delivery] accepting career-v1-14 feeCents=276
+[2026-10-29 01_45_18_387][126][Script] [Career.Delivery] picked up career-v1-14
+[2026-10-29 01_45_18_387][126][Script] [Career.Delivery] delivering career-v1-14 feeCents=276
+[2026-10-29 01_45_18_388][126][Script] [Career.Delivery] accepting career-v1-15 feeCents=283
+[2026-10-29 01_45_18_388][126][Script] [Career.Delivery] picked up career-v1-15
+[2026-10-29 01_45_18_389][126][Script] [Career.Delivery] delivering career-v1-15 feeCents=283
+[2026-10-29 01_45_18_389][126][Script] [Career.Delivery] accepting career-v1-16 feeCents=275
+[2026-10-29 01_45_18_390][126][Script] [Career.Delivery] picked up career-v1-16
+[2026-10-29 01_45_18_391][126][Script] [Career.Delivery] delivering career-v1-16 feeCents=275
+[2026-10-29 01_45_18_391][126][Script] [Career.Delivery] accepting career-v1-17 feeCents=275
+[2026-10-29 01_45_18_392][126][Script] [Career.Delivery] picked up career-v1-17
+[2026-10-29 01_45_18_392][126][Script] [Career.Delivery] delivering career-v1-17 feeCents=275
+[2026-10-29 01_45_18_393][126][Script] [Career.Delivery] accepting career-v1-18 feeCents=288
+[2026-10-29 01_45_18_393][126][Script] [Career.Delivery] picked up career-v1-18
+[2026-10-29 01_45_18_394][126][Script] [Career.Delivery] delivering career-v1-18 feeCents=288
+[2026-10-29 01_45_18_395][126][Script] [Career.Delivery] accepting career-v1-19 feeCents=290
+[2026-10-29 01_45_18_396][126][Script] [Career.Delivery] picked up career-v1-19
+[2026-10-29 01_45_18_397][126][Script] [Career.Delivery] delivering career-v1-19 feeCents=290
+[2026-10-29 01_45_18_398][126][Script] [Career.Delivery] accepting career-v1-20 feeCents=276
+[2026-10-29 01_45_18_399][126][Script] [Career.Delivery] picked up career-v1-20
+[2026-10-29 01_45_18_399][126][Script] [Career.Delivery] delivering career-v1-20 feeCents=276
+[2026-10-29 01_45_18_400][126][Script] [Career.Delivery] accepting career-v1-21 feeCents=283
+[2026-10-29 01_45_18_401][126][Script] [Career.Delivery] picked up career-v1-21
+[2026-10-29 01_45_18_402][126][Script] [Career.Delivery] delivering career-v1-21 feeCents=283
+[2026-10-29 01_45_18_403][126][Script] [Career.Delivery] accepting career-v1-22 feeCents=275
+[2026-10-29 01_45_18_404][126][Script] [Career.Delivery] picked up career-v1-22
+[2026-10-29 01_45_18_405][126][Script] [Career.Delivery] delivering career-v1-22 feeCents=275
+[2026-10-29 01_45_18_405][126][Script] [Career.Delivery] accepting career-v1-23 feeCents=275
+[2026-10-29 01_45_18_406][126][Script] [Career.Delivery] picked up career-v1-23
+[2026-10-29 01_45_18_407][126][Script] [Career.Delivery] delivering career-v1-23 feeCents=275
+[2026-10-29 01_45_18_408][126][Script] [Career.Delivery] accepting career-v1-24 feeCents=288
+[2026-10-29 01_45_18_409][126][Script] [Career.Delivery] picked up career-v1-24
+[2026-10-29 01_45_18_410][126][Script] [Career.Delivery] delivering career-v1-24 feeCents=288
+[2026-10-29 01_45_18_411][126][Script] [Career.Delivery] accepting career-v1-25 feeCents=290
+[2026-10-29 01_45_18_412][126][Script] [Career.Delivery] picked up career-v1-25
+[2026-10-29 01_45_18_412][126][Script] [Career.Delivery] delivering career-v1-25 feeCents=290
+[2026-10-29 01_45_18_413][126][Script] [Career.Delivery] accepting career-v1-26 feeCents=276
+[2026-10-29 01_45_18_414][126][Script] [Career.Delivery] picked up career-v1-26
+[2026-10-29 01_45_18_415][126][Script] [Career.Delivery] delivering career-v1-26 feeCents=276
+[2026-10-29 01_45_18_416][126][Script] [Career.Delivery] accepting career-v1-27 feeCents=283
+[2026-10-29 01_45_18_417][126][Script] [Career.Delivery] picked up career-v1-27
+[2026-10-29 01_45_18_418][126][Script] [Career.Delivery] delivering career-v1-27 feeCents=283
+[2026-10-29 01_45_18_419][126][Script] [Career.Delivery] accepting career-v1-28 feeCents=275
+[2026-10-29 01_45_18_420][126][Script] [Career.Delivery] picked up career-v1-28
+[2026-10-29 01_45_18_421][126][Script] [Career.Delivery] delivering career-v1-28 feeCents=275
+[2026-10-29 01_45_18_422][126][Script] [Career.Delivery] accepting career-v1-29 feeCents=275
+[2026-10-29 01_45_18_423][2026-10-29 01_45_19_254][126] ERROR: Execute Lua function failed: [string "Career/Session"]:397: [string "Career/Checks"]:306: 空白画面拖动必须驱动触屏视角
+stack traceback:
+	[C]: in function 'error'
+	[string "Career/Session"]:397: in method 'Update'
+	[string "main"]:957: in function 'HandleUpdate'
+[126][Script] [Career.Delivery] picked up career-v1-29
+[2026-10-29 01_45_18_424][126][Script] [Career.Delivery] delivering career-v1-29 feeCents=275
+[2026-10-29 01_45_18_428][126][Script] [Career.Delivery] accepting career-v1-30 feeCents=288
+[2026-10-29 01_45_18_429][126][Script] [Career.Delivery] picked up career-v1-30
+[2026-10-29 01_45_18_430][126][Script] [Career.Delivery] delivering career-v1-30 feeCents=288
+[2026-10-29 01_45_18_431][126][Script] [Career.Delivery] accepting career-v1-31 feeCents=290
+[2026-10-29 01_45_18_432][126][Script] [Career.Delivery] picked up career-v1-31
+[2026-10-29 01_45_18_433][126][Script] [Career.Delivery] delivering career-v1-31 feeCents=290
+[2026-10-29 01_45_18_435][126][Script] [Career.Delivery] accepting career-v1-32 feeCents=276
+[2026-10-29 01_45_18_436][126][Script] [Career.Delivery] picked up career-v1-32
+[2026-10-29 01_45_18_437][126][Script] [Career.Delivery] delivering career-v1-32 feeCents=276
+[2026-10-29 01_45_18_442][126][Script] [Career.Delivery] accepting career-v1-33 feeCents=283
+[2026-10-29 01_45_18_443][126][Script] [Career.Delivery] picked up career-v1-33
+[2026-10-29 01_45_18_444][126][Script] [Career.Delivery] delivering career-v1-33 feeCents=283
+[2026-10-29 01_45_18_445][126][Script] [Career.Delivery] accepting career-v1-34 feeCents=275
+[2026-10-29 01_45_18_446][126][Script] [Career.Delivery] picked up career-v1-34
+[2026-10-29 01_45_18_447][126][Script] [Career.Delivery] delivering career-v1-34 feeCents=275
+[2026-10-29 01_45_18_448][126][Script] [Career.Delivery] accepting career-v1-35 feeCents=275
+[2026-10-29 01_45_18_449][126][Script] [Career.Delivery] picked up career-v1-35
+[2026-10-29 01_45_18_450][126][Script] [Career.Delivery] delivering career-v1-35 feeCents=275
+[2026-10-29 01_45_18_452][126][Script] [Career.Delivery] accepting career-v1-36 feeCents=288
+[2026-10-29 01_45_18_453][126][Script] [Career.Delivery] picked up career-v1-36
+[2026-10-29 01_45_18_455][126][Script] [Career.Delivery] delivering career-v1-36 feeCents=288
+[2026-10-29 01_45_18_456][126][Script] [Career.Delivery] accepting career-v1-37 feeCents=290
+[2026-10-29 01_45_18_457][126][Script] [Career.Delivery] picked up career-v1-37
+[2026-10-29 01_45_18_458][126][Script] [Career.Delivery] delivering career-v1-37 feeCents=290
+[2026-10-29 01_45_18_492][126][Script] [Career.Delivery] accepting career-v1-38 feeCents=276
+[2026-10-29 01_45_18_494][126][Script] [Career.Delivery] picked up career-v1-38
+[2026-10-29 01_45_18_495][126][Script] [Career.Delivery] delivering career-v1-38 feeCents=276
+[2026-10-29 01_45_18_496][126][Script] [Career.Delivery] accepting career-v1-39 feeCents=283
+[2026-10-29 01_45_18_498][126][Script] [Career.Delivery] picked up career-v1-39
+[2026-10-29 01_45_18_499][126][Script] [Career.Delivery] delivering career-v1-39 feeCents=283
+[2026-10-29 01_45_18_500][126][Script] [Career.Delivery] accepting career-v1-40 feeCents=275
+[2026-10-29 01_45_18_501][126][Script] [Career.Delivery] picked up career-v1-40
+[2026-10-29 01_45_18_503][126][Script] [Career.Delivery] delivering career-v1-40 feeCents=275
+[2026-10-29 01_45_18_506][126][Script] [Career.Delivery] accepting career-v1-41 feeCents=275
+[2026-10-29 01_45_18_507][126][Script] [Career.Delivery] accepting career-v1-42 feeCents=288
+[2026-10-29 01_45_18_509][126][Script] [Career.Delivery] accepting career-v1-43 feeCents=290
+[2026-10-29 01_45_18_511][126][Script] [Career.Delivery] accepting career-v1-44 feeCents=276
+[2026-10-29 01_45_18_513][126][Script] [Career.Delivery] picked up career-v1-44
+[2026-10-29 01_45_18_514][126][Script] [Career.Delivery] delivering career-v1-44 feeCents=276
+[2026-10-29 01_45_18_516][126][Script] [Career.Delivery] picked up career-v1-43
+[2026-10-29 01_45_18_517][126][Script] [Career.Delivery] delivering career-v1-43 feeCents=290
+[2026-10-29 01_45_18_519][126][Script] [Career.Delivery] picked up career-v1-42
+[2026-10-29 01_45_18_520][126][Script] [Career.Delivery] delivering career-v1-42 feeCents=288
+[2026-10-29 01_45_18_522][126][Script] [Career.Delivery] picked up career-v1-41
+[2026-10-29 01_45_18_523][126][Script] [Career.Delivery] delivering career-v1-41 feeCents=275
+[2026-10-29 01_45_18_528][126][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 01_45_18_543][126][Script] [Career.Store] loaded revision=155 day=20 cashCents=185000 orders=0
+[2026-10-29 01_45_18_544][126][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 01_45_18_568][126][Script] [Career.Store] loaded revision=168 day=27 cashCents=3670000 orders=0
+[2026-10-29 01_45_18_574][126][Script] [生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离
+[2026-10-29 01_45_18_574][126][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 01_45_18_574][126][Script] [Career.Store] cloud save unconfirmed
+[2026-10-29 01_45_18_575][126][Script] [云回调保护验收通过] 保存/读取超时解锁，迟到回包不确认旧版本、不覆盖新进度（回调桩测试）
+[2026-10-29 01_45_18_705][126][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 01_45_18_707][126][Script] [骑手IK] career_ebike L_Hand 目标0.5779m超出骨长范围，安全夹取
+[2026-10-29 01_45_18_707][126][Script] [骑手IK] career_ebike R_Hand 目标0.5591m超出骨长范围，安全夹取
+[2026-10-29 01_45_18_708][126][Script] [CareerActor] 上车成功(1.50,-20.00)；战损9号 · 独立外卖箱
+[2026-10-29 01_45_18_723][126][Script] [CareerActor] 城市骑行输入已驱动；独立动力2.8m/s²，35km/h封顶，不读取274km/h赛车参数
+[2026-10-29 01_45_19_076][126][Script] [CareerActor] 下车成功 人(-0.12,-12.31)，车留在(1.50,-12.31)
+[2026-10-29 01_45_19_076][126][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-29 01_45_19_081][126][Script] [骑手IK] career_ebike L_Foot 目标0.8100m超出骨长范围，安全夹取
+[2026-10-29 01_45_19_115][126][Script] [骑手IK] career_ebike R_Foot 目标0.8133m超出骨长范围，安全夹取
+[2026-10-29 01_45_19_144][126][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 01_45_19_148][126][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 01_45_19_152][126][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 01_45_19_154][126][Script] [CareerActor] 上车成功(1.50,-20.00)；战损9号 · 独立外卖箱
+[2026-10-29 01_45_19_154][126][Script] [生涯提示] 已上车 · 战损9号 · 独立外卖箱
+[2026-10-29 01_45_19_248][126][Script] [CareerActor] 下车成功 人(-0.12,-15.67)，车留在(1.50,-15.67)
+[2026-10-29 01_45_19_248][126][Script] [生涯提示] 已停车下车，车辆留在原处
+[2026-10-29 01_45_19_251][126][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-29 01_45_19_254][126][Script] [生涯错误] [string "Career/Checks"]:306: 空白画面拖动必须驱动触屏视角
+[2026-10-29 01_45_22_416][297]INFO__VALIDATE_UPDATE__:false
+
+PROCESS_EXIT=1
