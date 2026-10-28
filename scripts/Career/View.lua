@@ -28,6 +28,14 @@ function View.New(actions)
 end
 function View:Init(actions)
     self.actions=actions
+    for key,action in pairs(actions) do
+        if type(action)=="function" and key~="sound" and key~="saveStatus" then
+            actions[key]=function(...)
+                if actions.sound then actions.sound() end
+                return action(...)
+            end
+        end
+    end
     self.phonePage=""
     self.blocked=false
     -- 与原竞速共用组件、图片、多指归属和玩家操作方案；实例分开，避免覆盖旧HUD的控件引用。
@@ -334,8 +342,10 @@ function View:SetControlMode(mounted)
     self.controls.widgets.steering:SetVisible(mounted)
     self.controls.widgets.gas:SetVisible(mounted)
     self.controls.widgets.brake:SetVisible(mounted)
+    -- 可见性改变会令隐藏控件暂时没有布局，重新布置当前模式，不复用隐藏前的缓存。
+    self.controlWidth,self.controlHeight=0,0
     self.controls:SetActionState("gas",{label="油门",detail="按住加速"})
-    self.controls:SetActionState("brake",{label="刹车 / 倒车",detail="停稳后持续按住倒车"})
+    self.controls:SetActionState("brake",{label="刹车 / 倒车",detail="停稳按住倒车"})
     self.mountButton:SetText(mounted and "下车" or "上车")
     self.controlHint:SetText(mounted and "左右滑动转向 · 右侧油门 / 刹车 · 停稳后下车取送"
         or "左下摇杆自由移动 · 松手停步 · 右侧滑动画面看四周")

@@ -13,6 +13,7 @@ local Progress = require("Career.Progression")
 local Housing = require("Career.HousingData")
 local Vehicles = require("Career.VehicleData")
 local VehicleActions = require("Career.VehicleActions")
+local CareerAudio = require("Career.Audio")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -64,11 +65,16 @@ function Session:Init(options)
     self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
+    ---@type CareerSoundscape?
+    self.audio=nil
     ---@type RideLoader?
     self.loader=nil
     ---@type thread?
     self.building=nil
     self.view=View.New({
+        sound=function() if self.audio then self.audio:Unlock(); self.audio:Once("tap") end end,
+        toggleMusic=function() if self.audio then self.audio.musicEnabled=not self.audio.musicEnabled; self:RefreshPhone() end end,
+        toggleEffects=function() if self.audio then self.audio.effectsEnabled=not self.audio.effectsEnabled; self:RefreshPhone() end end,
         startCareer=function(fresh) self:StartCareer(fresh) end,
         legacy=function() self:LeaveForLegacy() end,
         pause=function() self:Pause() end,
@@ -148,7 +154,7 @@ function Session:StartCareer(fresh,confirmed)
     end
     local vehiclePaths,vehicleTypes=VehicleActions.Resources(Store.Get())
     for _,path in ipairs(vehiclePaths) do resources[#resources+1]=path; types[path]=vehicleTypes[path] end
-    self.loader=Loader.New({},function(title,detail,fraction) self.view:ShowLoading(title,detail,fraction) end,
+    self.loader=Loader.New(CareerAudio.Resources,function(title,detail,fraction) self.view:ShowLoading(title,detail,fraction) end,
         function() self.building=coroutine.create(function() self:BuildWorld() end) end,
         function(detail) self.loading=false; self.view:ShowDialog("资源未准备好",detail,{{text="返回主页",onClick=function() self:Home() end}}) end,
         resources,types)
@@ -189,6 +195,8 @@ function Session:BuildWorld()
     self.view:ShowLoading("装配人物与车辆","独立停车位置与配送箱挂点。",.8)
     coroutine.yield()
     self.actor=Actor.New(self.scene,self.city)
+    self.audio=CareerAudio.New(self.scene)
+    self.audio:Unlock()
     self.environmentHour=-1
     self:UpdateEnvironment(Store.Get().time)
     self:RestorePosition()
@@ -237,7 +245,10 @@ function Session:Intro()
         end}})
 end
 function Session:State()
-    local state=Store.Get(); state.online=self.online; state.currentSpace=self.space; return state
+    local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
+    state.musicEnabled=self.audio and self.audio.musicEnabled
+    state.effectsEnabled=self.audio and self.audio.effectsEnabled
+    return state
 end
 function Session:Target()
     if not self.actor then return nil end
@@ -407,6 +418,7 @@ function Session:Update(dt)
     if not self.running or not self.actor then return end
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
+    if self.audio then self.audio:Update(dt,self.actor,self.view:IsBlocking(),self.space~="city",self.view:GetInput(),Delivery.GetOffer()) end
     if input:GetKeyPress(KEY_ESCAPE) then
         if self.view.phonePage~="" then self.view:ClosePhone()
         elseif not self.view:IsBlocking() then self:Pause() end
@@ -447,7 +459,7 @@ function Session:Update(dt)
     if state.time>=23 then controls.speedFactor=math.min(controls.speedFactor,.7) end
     local electric=self.actor.vehicleId==Vehicles.EBIKE
     if self.actor.mounted and (electric and state.battery<=0 or not electric and (state.motorcycleFuel or 100)<=0) then
-        controls.throttle=0; controls.brake=true
+        controls.throttle=0; controls.brake=true; controls.reverseBrake=false
     end
     self.actor:Update(dt,controls,self.yaw)
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
@@ -473,6 +485,7 @@ function Session:DisposeWorld()
     if self.loader then self.loader:Cancel(); self.loader=nil end
     self.building=nil
     renderer:SetNumViewports(0)
+    if self.audio then self.audio:Stop(); self.audio=nil end
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.scene then self.scene:Dispose(); self.scene=nil end
     self.city,self.camera,self.zone,self.sun,self.moon,self.sky=nil,nil,nil,nil,nil,nil

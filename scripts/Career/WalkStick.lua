@@ -11,7 +11,7 @@ function Stick:Init(blocked)
     self.x,self.y,self.pointer=0,0,-1
     self.blocked=blocked
     self.knob=UI.Panel{position="absolute",left=49,top=49,width=58,height=58,borderRadius=29,
-        backgroundGradient={type="linear",direction="vertical",colors={{112,133,141,235},{37,51,62,245}}},
+        backgroundGradient={type="linear",direction="to-bottom",from={112,133,141,235},to={37,51,62,245}},
         borderWidth=2,borderColor={194,221,225,210},pointerEvents="none",padding=0}
     self.root=UI.Panel{id="career-walk-stick",position="absolute",left=22,bottom=26,width=156,height=156,
         borderRadius=78,padding=0,backgroundColor={10,20,27,125},borderWidth=2,borderColor={185,215,221,130},
