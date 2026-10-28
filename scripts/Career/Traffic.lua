@@ -2,6 +2,7 @@
 local Routes=require("Career.TrafficRoutes")
 local Assets=require("VehicleAssets")
 local Pedestrians=require("Career.Pedestrians")
+local Contact=require("Career.VehicleContact")
 ---@class CityTraffic
 ---@field cars table[]
 ---@field IsFree fun(self:CityTraffic,x:number,z:number,r:number):boolean
@@ -67,8 +68,9 @@ function Traffic:Init(city,actor)
         for n=1,3 do
             local id=Assets.TrafficIds[(ri+n-2)%#Assets.TrafficIds+1]
             local node=Assets.Add(self.root,id,nil,"distant")
+            if id=="truck" then Contact.CompleteTruck(node) end
             local size=node:GetVar("VehicleSize"):GetVector3()
-            local car={node=node,route=route,routeId=ri,s=35+(n-1)*200+ri*7,x=0,z=0,yaw=0,speed=0,cruise=5.5+(ri+n)%3,length=size.z,width=size.x}
+            local car={id=id,node=node,route=route,routeId=ri,s=35+(n-1)*200+ri*7,x=0,z=0,yaw=0,speed=0,cruise=5.5+(ri+n)%3,length=size.z,width=size.x}
             local placed=false
             for _=1,80 do
                 self:Place(car)
@@ -92,14 +94,9 @@ function Traffic:Blockers()
 end
 function Traffic:Place(car)
     car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
-    -- 轿车/SUV轴位由最低胎面顶点测得；货车底盘含低垂附件，暂保留中心查高。
-    local front,rear=0,0
-    if car.node.name:find("sedan") then front,rear=1.35029,-1.26928 end
-    if car.node.name:find("suv") then front,rear=1.41184,-1.508415 end
-    local height,pitch=self.city:Surface(car.x,car.z),0
-    if front>0 then height,pitch=self.city:VehicleSurface(car.x,car.z,car.yaw,front,rear) end
+    local height,pitch,roll=Contact.Solve(self.city,car.id,car.x,car.z,car.yaw,0)
     car.node.position=Vector3(car.x,height,car.z)
-    car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch or 0,Vector3.RIGHT)
+    car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
 end
 function Traffic:CanPlace(car,blockers)
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end

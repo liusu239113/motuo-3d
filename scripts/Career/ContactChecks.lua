@@ -136,19 +136,60 @@ function Checks.Run(session)
     end
     local front=actor.visuals.mountedRider:ReadPose()
     assert(front.leftGripError<.005 and front.rightGripError<.005,"修肘不能脱离握把")
+    local Contact=require("Career.VehicleContact")
     for _,roll in ipairs({-10,-5,0,5,10}) do
         actor.visuals:SetMounted(true)
         actor.visuals:Update(1,35/3.6,roll/10,0,session.city:Surface(0,-20),-20,0)
-        local low=math.huge
-        for _,p in ipairs({Vector3(-.031924,.002834,0),Vector3(-.009846,0,0),Vector3(.016007,0,0),Vector3(.040051,.002834,0)}) do
-            low=math.min(low,(actor.visuals.bikeVisual.rotation*p).y+actor.visuals.bikeVisual.position.y)
+        for _,w in ipairs(Contact.Wheels.borrowed_ebike) do
+            local low=math.huge
+            for _,p in ipairs(w.points) do
+                local world=actor.visuals.bikeVisual.worldTransform*p --[[@as Vector3]]
+                low=math.min(low,world.y-session.city:Surface(world.x,world.z))
+            end
+            assert(math.abs(low)<.001,"压弯前后胎底必须保持接地")
         end
-        assert(math.abs(low)<.0001,"压弯胎底必须保持接地")
     end
+    Checks.Vehicles(session)
     actor.visuals:SetMounted(false)
     print("[接触验收通过] 64相位无超伸/八相位鞋底/站姿与骑姿后弯肘/握把/道路人行道公园查高/五角度压弯胎底")
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
     Checks.Shot(session)
+end
+function Checks.Vehicles(session)
+    local Contact=require("Career.VehicleContact")
+    local Vehicles=require("Career.VehicleData")
+    local ids={Vehicles.EBIKE,table.unpack(Vehicles.Ids)}
+    for _,id in ipairs({"sedan","suv","truck"}) do ids[#ids+1]=id end
+    local count=0
+    for _,id in ipairs(ids) do
+        for _,yaw in ipairs({0,45,90,180,270}) do
+            for _,x in ipairs({0,6,12}) do
+                for _,lean in ipairs(#Contact.Wheels[id]==2 and {-10,0,10} or {0}) do
+                    local y,pitch,roll=Contact.Solve(session.city,id,x,-20,yaw,lean)
+                    local rotation=Quaternion(0,yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+                    local maxGap,minGap=-math.huge,math.huge
+                    for _,w in ipairs(Contact.Wheels[id]) do
+                        local center=rotation*Vector3(w.x,0,w.z)
+                        local ground=session.city:Surface(x+center.x,-20+center.z)
+                        local low=math.huge
+                        for _,p in ipairs(w.points) do low=math.min(low,y+(rotation*p).y-ground) end
+                        minGap,maxGap=math.min(minGap,low),math.max(maxGap,low)
+                    end
+                    assert(minGap>-.0001 and minGap<.001,id.."胎面不能悬空或穿地")
+                    if #Contact.Wheels[id]==2 then assert(maxGap<.001,id.."前后两轮都须接地") end
+                    count=count+1
+                end
+            end
+        end
+        if id~="sedan" and id~="suv" and id~="truck" then
+            local entry=session.actor.visuals:EnsureVehicle(id)
+            local clamped=entry.rider.reachClampedFrames or 0
+            entry.rider:PoseRide(0)
+            local pose=entry.rider:ReadPose()
+            print(string.format("[逐车骑姿] %s 左手%.5f 右手%.5f 夹取%d",id,pose.leftGripError,pose.rightGripError,(entry.rider.reachClampedFrames or 0)-clamped))
+        end
+    end
+    print(string.format("[逐车胎面验收通过] 13款/%d组方向路沿压弯，刚性四轮不强求不共面路沿四点全贴",count))
 end
 function Checks.Shot(session)
     local actor=session.actor
@@ -156,7 +197,13 @@ function Checks.Shot(session)
     local phase,weight,yaw,run=0,0,110,0
     local curb=false
     local mounted=false
+    local vehicle="borrowed_ebike"
+    local lean=0
     for _,arg in ipairs(GetArguments()) do
+        local selected=arg:match("^%-contactvehicle=([%w_]+)$")
+        if selected then vehicle=selected end
+        local angle=arg:match("^%-contactlean=([%-%d%.]+)$")
+        if angle then lean=tonumber(angle) or 0 end
         local value=arg:match("^%-contactphase=([%.%d]+)$")
         if value then phase=tonumber(value) or 0;weight=1 end
         value=arg:match("^%-contactyaw=([%-%d%.]+)$")
@@ -170,8 +217,23 @@ function Checks.Shot(session)
     actor:Teleport(curb and 6 or mounted and 0 or 2,mounted and -17 or -20,curb and 90 or 0)
     rig.ground=session.city
     -- Teleport内部会重算Pose，受控相位必须最后应用，暂停后才可复现实拍。
-    if mounted then actor.visuals.mountedRider:PoseRide(0)
-    else actor.visuals.walker:PoseWalk(phase,weight,run) end
+    if vehicle=="sedan" or vehicle=="suv" or vehicle=="truck" then
+        local Contact=require("Career.VehicleContact")
+        local root=require("VehicleAssets").Add(session.scene,vehicle,nil,"distant")
+        if vehicle=="truck" then Contact.CompleteTruck(root) end
+        local x=curb and 6 or 0
+        local y,pitch,roll=Contact.Solve(session.city,vehicle,x,-17,curb and 90 or 0,0)
+        root.position=Vector3(x,y,-17)
+        root.rotation=Quaternion(0,curb and 90 or 0,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+        actor.visuals:SetCityVisible(false)
+        actor.visuals.walkNode:SetEnabled(false)
+        actor.node.position=Vector3(x,y,-17)
+    else
+        actor.visuals:SetVehicle(vehicle)
+        actor.visuals:Update(1,35/3.6,lean/10,actor.bikeX,session.city:Surface(actor.bikeX,actor.bikeZ),actor.bikeZ,actor.bikeYaw)
+        if mounted then actor.visuals.mountedRider:PoseRide(0)
+        else actor.visuals.walker:PoseWalk(phase,weight,run) end
+    end
     session.yaw,session.pitch=yaw,2
     session:UpdateEnvironment(12)
     session.camera:SetModeConfig("normal",{distance=3.8,offset=Vector3(0,1,0),fov=52})

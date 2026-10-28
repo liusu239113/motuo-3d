@@ -5,6 +5,7 @@ local Assets=require("VehicleAssets")
 local Vehicles=require("Career.VehicleData")
 local Rider=require("Rider")
 local Bike=require("Bike")
+local Contact=require("Career.VehicleContact")
 local V=Vector3
 local SCOOTER="model/873a3764f21f49e4b717387160d13d19/"
 local BOX="model/8c4f0f26f9ee4d3eac2eec49a497852f/"
@@ -105,10 +106,9 @@ function Visuals:UpdateParking(parking,city)
     end
     for id,park in pairs(parking) do
         local entry=self:EnsureVehicle(id)
-        local height,pitch=city:Surface(park.x,park.z),0
-        if id==Vehicles.EBIKE then height,pitch=city:VehicleSurface(park.x,park.z,park.yaw,.729281,-.617155) end
+        local height,pitch,roll=Contact.Solve(city,id,park.x,park.z,park.yaw,0)
         entry.node.position=V(park.x,height,park.z)
-        entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch or 0,V.RIGHT)
+        entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch,V.RIGHT)*Quaternion(roll,V.FORWARD)
     end
 end
 function Visuals:SetMounted(mounted)
@@ -118,25 +118,17 @@ function Visuals:SetMounted(mounted)
 end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.disposed then return end
-    local height,pitch=bikeY,0
-    if self.city and self.vehicleId==Vehicles.EBIKE then
-        height,pitch=self.city:VehicleSurface(bikeX,bikeZ,bikeYaw,.729281,-.617155)
-    end
-    self.bikeNode.position=V(bikeX,height,bikeZ)
-    self.bikeNode.rotation=Quaternion(0,bikeYaw,0)*Quaternion(tonumber(pitch) or 0,V.RIGHT)
     if self.mounted then
         local target=steer*math.min(1,math.abs(speed)/(35/3.6))*10
         self.lean=self.lean+(target-self.lean)*(1-math.exp(-dt*10))
-        local roll=Quaternion(0,0,self.lean)
-        self.bikeVisual.rotation=roll
-        -- 原MDL轮胎横截面下凸包（米），压弯后最低点仍与道路接触，不让车身穿地。
-        if self.vehicleId==Vehicles.EBIKE then
-            local lowest=0
-            for _,p in ipairs({V(-.031924,.002834,0),V(-.009846,0,0),V(.016007,0,0),V(.040051,.002834,0)}) do
-                lowest=math.min(lowest,(roll*p).y)
-            end
-            self.bikeVisual.position=V(0,-lowest,0)
-        end
+    else self.lean=0 end
+    local height,pitch,roll=bikeY,0,self.lean
+    if self.city then height,pitch,roll=Contact.Solve(self.city,self.vehicleId,bikeX,bikeZ,bikeYaw,self.lean) end
+    self.bikeNode.position=V(bikeX,height,bikeZ)
+    self.bikeNode.rotation=Quaternion(0,bikeYaw,0)*Quaternion(pitch,V.RIGHT)
+    self.bikeVisual.rotation=Quaternion(roll,V.FORWARD)
+    self.bikeVisual.position=V.ZERO
+    if self.mounted then
         self.mountedRider:PoseRide(0)
     else
         -- 轻推摇杆同时降低步频；不能只缩步幅，否则低速仍像原地碎步。
