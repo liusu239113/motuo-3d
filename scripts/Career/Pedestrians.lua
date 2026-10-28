@@ -41,6 +41,7 @@ function Pedestrians.New(root,city)
 end
 function Pedestrians:Init(root,city)
     self.city=city
+    self.poseTime=0
     self.people={}
     for i,p in ipairs(paths) do
         local node=root:CreateChild("老街行人"..i)
@@ -60,6 +61,10 @@ function Pedestrians:Place(p)
     p.node.rotation=Quaternion(0,math.deg(math.atan((p.path[3]-p.path[1])*p.direction,(p.path[4]-p.path[2])*p.direction)),0)
 end
 function Pedestrians:Update(dt,blockers)
+    self.poseTime=self.poseTime+dt
+    local poseReady=self.poseTime>=1/20
+    if poseReady then self.poseTime=self.poseTime%(1/20) end
+    local viewer=blockers[1]
     for _,p in ipairs(self.people) do
         local old=p.s
         local candidate=p.s+p.direction*p.speed*dt
@@ -73,7 +78,10 @@ function Pedestrians:Update(dt,blockers)
         local moved=math.abs(p.s-old)
         p.phase=p.phase+moved*8
         self:Place(p)
-        p.rig:PoseWalk(p.phase,moved>.0001 and .8 or 0)
+        -- 位移与碰撞每帧更新；85m绘制距离之外不做IK，近处骨骼限20Hz。
+        if poseReady and (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2 then
+            p.rig:PoseWalk(p.phase,moved>.0001 and .8 or 0)
+        end
     end
 end
 return Pedestrians

@@ -57,6 +57,8 @@ end
 function Traffic:Init(city,actor)
     self.city,self.actor=city,actor
     self.root=city.root:CreateChild("老街动态交通")
+    -- 室内读档时，后创建的交通节点也必须继承城市层隐藏状态。
+    self.root.enabled=city.space=="city"
     self.cars={}
     self.time,self.active,self.disposed=0,true,false
     self.pedestrians=Pedestrians.New(self.root,city)

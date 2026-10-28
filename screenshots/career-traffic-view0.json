@@ -1,0 +1,100 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 223269,
+    "frames_completed": 350,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 13332.2ms (threshold: 2000ms)",
+                    "frame": 97
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 1413,
+            "component_count": 920,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1143.3409423828126
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.610000610351564
+        },
+        {
+            "frame": 175,
+            "phase": "run",
+            "nodes": 111,
+            "components": 104,
+            "hash": 2474411505,
+            "frame_time_ms": 632.3060302734375
+        },
+        {
+            "frame": 350,
+            "phase": "run",
+            "nodes": 111,
+            "components": 104,
+            "hash": 2474411505,
+            "frame_time_ms": 630.5130004882813
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 13332.169921875,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 4,
+        "SkyLightCapture": 1,
+        "Light": 23,
+        "ProceduralSky": 1,
+        "Skybox": 1,
+        "CustomGeometry": 547,
+        "StaticModel": 283,
+        "Text3D": 40,
+        "AnimatedModel": 10,
+        "SoundSource": 8
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 1,
+        "total_errors": 1
+    }
+}
