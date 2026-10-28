@@ -47,7 +47,30 @@ local function box(ctx,material,s,p,r,width,height,depth)
     local x,z=r*(width*.5),f*(depth*.5)
     local y=V(0,height,0)
     local a,b,c,d=p-x-z,p-x+z,p+x-z,p+x+z
-    local function quad(q,t,u,v) ctx.L.Triangle(g,q,u,t);ctx.L.Triangle(g,u,v,t) end
+    -- 每面按法线主轴选择投影平面，统一四米重复尺度；竖直侧壁不能只用世界XZ。
+    -- 共用同一四边形法线与投影，两个三角形在对角线处保持相同UV与切线方向。
+    ---@param q Vector3
+    ---@param t Vector3
+    ---@param u Vector3
+    ---@param v Vector3
+    local function quad(q,t,u,v)
+        local normal=(u-q):CrossProduct(t-q):Normalized()
+        local ax,ay,az=math.abs(normal.x),math.abs(normal.y),math.abs(normal.z)
+        ---@param point Vector3
+        local function vertex(point)
+            local uv=Vector2(point.x/4,point.z/4)
+            if ax>=ay and ax>=az then
+                uv=Vector2(point.z/4,point.y/4)
+            elseif az>=ay then
+                uv=Vector2(point.x/4,point.y/4)
+            end
+            g:DefineVertex(point)
+            g:DefineNormal(normal)
+            g:DefineTexCoord(uv)
+        end
+        vertex(q);vertex(u);vertex(t)
+        vertex(u);vertex(v);vertex(t)
+    end
     quad(a,b,c,d);quad(a+y,c+y,b+y,d+y)
     quad(a,a+y,b,b+y);quad(c,d,c+y,d+y)
     quad(a,c,a+y,c+y);quad(b,b+y,d,d+y)

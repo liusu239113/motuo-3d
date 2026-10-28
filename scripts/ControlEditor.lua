@@ -57,7 +57,7 @@ function Editor:BuildSettings()
             Settings.Scale(self.settingsSlot, delta)
             self:ApplySettings(); self:RefreshSettings(); self:SaveSettings("尺寸已保存")
         end
-        self.settingsTools = UI.Panel {width="100%", height=270, padding=10, gap=6,
+        self.settingsTools = UI.Panel {width="100%", padding=10, gap=6,
             backgroundColor={9,17,24,225}, borderRadius=5, visible=false, children={
                 self.settingsSchemeLabel, self.settingsSchemeRow,
                 UI.Row {padding=0, gap=5, children={

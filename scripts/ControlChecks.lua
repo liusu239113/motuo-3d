@@ -428,6 +428,70 @@ function Checks.Run(hud, controls)
         finish(PointerEvent.Types.PointerCancel, FIRST)
         zero("所有回归组结束后不得残留驾驶输入")
         passed("重读配置重新应用到真实MobileControls方向与死区")
+
+        -- 两方案仅占一行，不能代表六方案换行后的工具面板完整性。
+        -- 保留上面的两方案深拷贝与两次重读断言，再通过实际按钮补满六方案。
+        hud:SetScreen("pause"); layout(); open()
+        click(hud.settingsToolbarButton)
+        local copyButton = assert(findButton(hud.settingsTools, "复制当前"), "[ControlChecks] 缺少复制当前按钮")
+        for expectedCount = 3, 6 do
+            click(copyButton)
+            check(#Settings.All() == expectedCount and Settings.ActiveIndex() == expectedCount,
+                "补满六方案必须由真实复制按钮创建并激活方案")
+        end
+        layout()
+        check(hud.settingsTools:IsVisible(), "六方案检查必须在工具面板真实展开时执行")
+        local tools = rect(hud.settingsTools)
+        local chrome = rect(hud.settingsChrome)
+        local schemeRow = rect(hud.settingsSchemeRow)
+        local firstScheme = rect(assert(hud.settingsSchemeButtons[1]))
+        local lastScheme = rect(assert(hud.settingsSchemeButtons[6]))
+        local tolerance = 1 / UI.GetScale() + 0.30
+        check(lastScheme.y > firstScheme.y + firstScheme.h - tolerance
+            and schemeRow.h >= firstScheme.h + lastScheme.h,
+            "六方案必须真实形成至少两行，不能仍按两方案单行空测")
+        local childrenChecked = 0
+        local function containedChildren(parent)
+            for _, child in ipairs(parent:GetChildren()) do
+                if child:IsVisible() then
+                    local childRect = rect(child)
+                    check(childRect.y + childRect.h <= tools.y + tools.h + tolerance,
+                        "六方案时所有可见子控件底边必须落在工具面板内：" .. tostring(child.props.text or child.props.id or "容器"))
+                    childrenChecked = childrenChecked + 1
+                    containedChildren(child)
+                end
+            end
+        end
+        containedChildren(hud.settingsTools)
+        check(childrenChecked >= 15, "必须实际遍历六方案按钮、滑杆和底部提示，不能空检查容器")
+        local _, viewportHeight = UI.GetViewportSize()
+        check(tools.y + tools.h <= viewportHeight + tolerance
+            and tools.y + tools.h <= chrome.y + chrome.h + tolerance,
+            "六方案完整面板不得伸出屏幕或绝对定位祖先的命中边界")
+
+        local deadzoneSlider = hud.settingsDeadzone
+        local lower = rect(deadzoneSlider)
+        local inset = math.min(lower.h * 0.1, math.max(1, 1 / UI.GetScale()))
+        local lowerFraction = 1 - inset / lower.h
+        check(lowerFraction > 0.75, "新触摸必须靠近死区滑杆内部下缘，不能复用轨道中心命中")
+        local beforeLowerSave = store.writes
+        local _, lowerY = down(deadzoneSlider, FIRST, 0.5, lowerFraction, true)
+        check(lowerY > lower.y + lower.h * 0.75 and deadzoneSlider.state.dragging,
+            "死区滑杆下缘必须真实命中自身并开始拖动，不能落到背后的驾驶控件")
+        local props = deadzoneSlider.props
+        local targetValue = 11
+        local targetX = lower.x + props.thumbSize / 2
+            + (targetValue - props.min) / (props.max - props.min) * (lower.w - props.thumbSize)
+        send(PointerEvent.Types.PointerMove, FIRST, targetX, lowerY, true)
+        check(near(deadzoneSlider:GetValue(), targetValue)
+            and near(Settings.Current().steeringDeadzone, targetValue / 100),
+            "六方案时从滑杆下缘开始的真实拖动必须更新当前方案死区")
+        check(store.writes == beforeLowerSave, "六方案滑杆下缘拖动中不得提前保存")
+        finish(PointerEvent.Types.PointerUp, FIRST)
+        check(not deadzoneSlider.state.dragging and store.writes == beforeLowerSave + 1,
+            "六方案滑杆下缘手势抬手必须结束拖动并保存一次")
+        zero("六方案工具面板手势不得触发背后的驾驶输入")
+        passed("六方案真实换行、全部子控件完整容纳、死区滑杆下缘新触摸命中与保存")
     end)
 
     -- 每步清理独立 pcall：即使某个 UI 恢复步骤失败，也必须继续恢复共享函数和业务回调。
