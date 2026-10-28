@@ -139,7 +139,8 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
         end
         self.mountedRider:PoseRide(0)
     else
-        local target=math.min(1,math.abs(speed)/1.8)
+        -- 轻推摇杆同时降低步频；不能只缩步幅，否则低速仍像原地碎步。
+        local target=math.sqrt(math.min(1,math.abs(speed)/1.8))
         local run=math.max(0,math.min(1,(math.abs(speed)-1.8)/1.6))
         local blend=1-math.exp(-dt*14)
         self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*blend

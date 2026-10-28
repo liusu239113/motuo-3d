@@ -89,7 +89,7 @@ function Checks.Run(session)
         assert((npc.reachClampedFrames or 0)==clamped,"不同体型路人不可超伸")
     end
     for _,speed in ipairs({.18,.6,1.8,3.4}) do
-        local w=math.min(1,speed/1.8)
+        local w=math.sqrt(math.min(1,speed/1.8))
         local r=math.max(0,math.min(1,(speed-1.8)/1.6))
         local cycle=require("Career.Rig").CycleLength(w,r)
         rig.ground=nil
