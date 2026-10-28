@@ -239,7 +239,20 @@ function Checks.Vehicles(session)
             print(string.format("[逐车骑姿] %s 左手%.5f 右手%.5f 夹取%d",id,pose.leftGripError,pose.rightGripError,(entry.rider.reachClampedFrames or 0)-clamped))
         end
     end
-    print(string.format("[逐车胎面验收通过] 13款/%d组方向路沿压弯，刚性四轮不强求不共面路沿四点全贴",count))
+    local visuals=session.actor.visuals
+    visuals:SetCityVisible(false)
+    for _,entry in pairs(visuals.vehicles) do
+        assert(not entry.node.enabled,"室内车辆根必须隐藏")
+        for _,child in ipairs(entry.node:GetChildren(true)) do assert(not child.enabled,"室内不可残留车辆子模型") end
+    end
+    visuals:UpdateParking(session.actor.parking,session.city)
+    visuals:SetCityVisible(true)
+    for id,entry in pairs(visuals.vehicles) do
+        if not session.actor.parking[id] then
+            for _,child in ipairs(entry.node:GetChildren(true)) do assert(not child.enabled,"未持有车型不可残留幽灵子模型") end
+        end
+    end
+    print(string.format("[逐车胎面验收通过] 13款/%d组方向路沿压弯，刚性四轮不强求不共面路沿四点全贴；室内与未持有子模型递归隐藏",count))
 end
 function Checks.Shot(session)
     local actor=session.actor

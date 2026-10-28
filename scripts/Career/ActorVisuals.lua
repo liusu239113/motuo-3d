@@ -87,7 +87,8 @@ function Visuals:EnsureVehicle(id)
     rider.grip=Bike.GetCockpit(id).grip
     rider:SetVisible(false)
     self.vehicles[id]={node=node,visual=visual,rider=rider}
-    node:SetEnabled(self.cityVisible)
+    node:SetEnabledRecursive(self.cityVisible)
+    rider:SetVisible(false)
     return self.vehicles[id]
 end
 function Visuals:SetVehicle(id)
@@ -102,12 +103,18 @@ function Visuals:SetVehicle(id)
 end
 function Visuals:SetCityVisible(visible)
     self.cityVisible=visible
-    for _,entry in pairs(self.vehicles) do entry.node:SetEnabled(visible and entry.available~=false) end
+    for id,entry in pairs(self.vehicles) do
+        local enabled=visible and entry.available~=false
+        entry.node:SetEnabledRecursive(enabled)
+        entry.rider:SetVisible(enabled and self.mounted and id==self.vehicleId)
+    end
 end
 function Visuals:UpdateParking(parking,city)
     for id,entry in pairs(self.vehicles) do
         entry.available=parking[id]~=nil
-        entry.node:SetEnabled(self.cityVisible and entry.available)
+        local enabled=self.cityVisible and entry.available
+        entry.node:SetEnabledRecursive(enabled)
+        entry.rider:SetVisible(enabled and self.mounted and id==self.vehicleId)
     end
     for id,park in pairs(parking) do
         local entry=self:EnsureVehicle(id)
@@ -118,7 +125,7 @@ function Visuals:UpdateParking(parking,city)
 end
 function Visuals:SetMounted(mounted)
     self.mounted=mounted
-    self.walkNode:SetEnabledRecursive(not mounted); self.mountedRider:SetVisible(mounted)
+    self.walkNode:SetEnabledRecursive(not mounted); self.mountedRider:SetVisible(mounted and self.cityVisible)
     if not mounted then self.lean=0; self.bikeVisual.rotation=Quaternion.IDENTITY; self.bikeVisual.position=V.ZERO end
 end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
