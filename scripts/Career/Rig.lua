@@ -23,7 +23,7 @@ function Rig:InitCareer(parent,asset)
     self.parent=parent
     self.vehicleId,self.classId,self.colorId="career_ebike","career","original"
     self.config={hip=V(0,.85,-.18),foot=V(.17,.27,.16),waist=18,spine=26,chest=32,head=0,
-        kneeHint=V(.12,0,1),elbowHint=V(.8,-.6,-.3)}
+        kneeHint=V(.12,0,1),elbowHint=V(.35,-.5,-1)}
     -- 车身纠正前后后，从实际顶点读到握把高度1.11～1.14m、前向约.35m。
     self.grip=V(.32,1.12,.36)
     self.node=parent:CreateChild(asset.name.."骨骼")
@@ -90,6 +90,7 @@ function Rig:PoseWalk(phase,weight)
     -- 髋点随跨步降低而不是缩短步幅；膝向前、肘向后，禁止反关节。
     local stride=.30*w
     self.mesh.position=self.standOffset
+    ---@type Vector3[]
     local targets={}
     local drop=.025*w
     for i,chain in ipairs(self.legs) do

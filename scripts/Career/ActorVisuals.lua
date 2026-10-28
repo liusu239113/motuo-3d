@@ -86,6 +86,7 @@ function Visuals:SetVehicle(id)
     local entry=self:EnsureVehicle(id)
     self.mountedRider:SetVisible(false)
     self.bikeVisual.rotation=Quaternion.IDENTITY
+    self.bikeVisual.position=V.ZERO
     self.vehicleId=id
     self.bikeNode,self.bikeVisual,self.mountedRider=entry.node,entry.visual,entry.rider
     self.lean=0
@@ -109,7 +110,7 @@ end
 function Visuals:SetMounted(mounted)
     self.mounted=mounted
     self.walkNode:SetEnabledRecursive(not mounted); self.mountedRider:SetVisible(mounted)
-    if not mounted then self.lean=0; self.bikeVisual.rotation=Quaternion.IDENTITY end
+    if not mounted then self.lean=0; self.bikeVisual.rotation=Quaternion.IDENTITY; self.bikeVisual.position=V.ZERO end
 end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.disposed then return end
@@ -117,7 +118,16 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.mounted then
         local target=steer*math.min(1,math.abs(speed)/(35/3.6))*10
         self.lean=self.lean+(target-self.lean)*(1-math.exp(-dt*10))
-        self.bikeVisual.rotation=Quaternion(0,0,self.lean)
+        local roll=Quaternion(0,0,self.lean)
+        self.bikeVisual.rotation=roll
+        -- 原MDL轮胎横截面下凸包（米），压弯后最低点仍与道路接触，不让车身穿地。
+        if self.vehicleId==Vehicles.EBIKE then
+            local lowest=0
+            for _,p in ipairs({V(-.031924,.002834,0),V(-.009846,0,0),V(.016007,0,0),V(.040051,.002834,0)}) do
+                lowest=math.min(lowest,(roll*p).y)
+            end
+            self.bikeVisual.position=V(0,-lowest,0)
+        end
         self.mountedRider:PoseRide(0)
     else
         local target=math.min(1,math.abs(speed)/1.8)

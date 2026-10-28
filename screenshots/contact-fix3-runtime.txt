@@ -1,0 +1,215 @@
+[2026-10-29 04_42_12_672][0] ERROR: Could not initialize audio output
+[2026-10-29 04_42_12_712][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_12_712][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_12_713][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_12_713][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_13_411][42] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_13_412][42] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_13_412][42] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_12_324][0] INFO: DownloadManager initialized
+[2026-10-29 04_42_12_325][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 04_42_12_326][0] INFO: Engine construct finish.
+[2026-10-29 04_42_12_660][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 04_42_12_675][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 04_42_12_677][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 04_42_13_391][42] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 04_42_15_331][141]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 04_42_15_334][141]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 04_42_15_334][141]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 04_42_15_336][141] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 04_42_16_582][167] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 04_42_16_586][167][Script] IsNetworkMode:    false
+[2026-10-29 04_42_16_603][167][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 04_42_16_603][167][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 04_42_16_603][167][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 04_42_16_603][167][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 04_42_16_606][167][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 04_42_17_078][167][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 04_42_17_473][167][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 04_42_17_476][167][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 04_42_17_506][167][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 04_42_17_506][167][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 04_42_17_513][167][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 04_42_17_581][167][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 04_42_17_582][167][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 04_42_17_583][168][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 04_42_20_193][207] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 04_42_20_193][207] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 04_42_20_193][207] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_20_193][207] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_20_193][207] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_20_211][208] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 04_42_20_211][208] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 04_42_20_230][209] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 04_42_20_230][209] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_20_230][209] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_20_248][210] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 04_42_20_248][210] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 04_42_25_333][262][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 04_42_25_333][262][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 04_42_25_333][262][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 04_42_25_333][262][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 04_42_25_333][262][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 04_42_25_333][262][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 04_42_25_333][262][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 04_42_26_022][262][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 04_42_26_024][262][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 04_42_26_026][262][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 04_42_26_027][262][Script] [生涯城市] 33栋建筑 / 474批次 / 145486三角面 / 33招牌 / 40碰撞区域
+[2026-10-29 04_42_26_030][263][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 04_42_26_030][263][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 04_42_26_032][263][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 04_42_26_032][263][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 04_42_26_033][263][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 04_42_26_034][263][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 steps audio/sfx/career_step_single.wav
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-29 04_42_26_034][263][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-29 04_42_26_035][263][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 04_42_26_037][263][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 04_42_26_037][263][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 04_42_26_040][263][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 04_42_26_040][263][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 04_42_26_042][263][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 04_42_26_043][263][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 04_42_26_045][263][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 04_42_26_045][263][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 04_42_26_054][263][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 04_42_26_055][263][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 04_42_26_057][263][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 04_42_26_057][263][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 04_42_26_060][263][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 04_42_26_060][263][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 04_42_26_063][263][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 04_42_26_063][263][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 04_42_26_064][263][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 04_42_26_064][263][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 04_42_26_064][263][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 04_42_26_064][263][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 04_42_26_065][263][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 04_42_26_066][263][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 04_42_26_066][263][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 04_42_26_066][263][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-29 04_42_26_066][263][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 04_42_26_070][263][Script] [阴影接触] 9.9999997473788e-05/0.25/0.0
+[2026-10-29 04_42_26_639][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.43 - 0.28 1.64 0.48 左鞋底-0.00000 右鞋底-0.00192 HipVector3(-0.00500377, 0.715186, 0.0582867)
+[2026-10-29 04_42_26_639][263][Script] [真实肘部] L_Hand 肩Vector3(-0.207378, 1.23951, 0.0339422) 肘Vector3(-0.235056, 1.05418, -0.165262) 腕Vector3(-0.242378, 0.814714, -0.181058)
+[2026-10-29 04_42_26_640][263][Script] [真实肘部] R_Hand 肩Vector3(0.192241, 1.2395, 0.0339417) 肘Vector3(0.220957, 0.969503, 0.136602) 腕Vector3(0.227241, 0.809769, 0.298941)
+[2026-10-29 04_42_27_138][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.34 - 0.29 1.74 0.38 左鞋底-0.00000 右鞋底0.09001 HipVector3(-0.00500377, 0.809104, 0.0582867)
+[2026-10-29 04_42_27_138][263][Script] [真实肘部] L_Hand 肩Vector3(-0.20624, 1.33343, 0.024029) 肘Vector3(-0.233795, 1.1153, -0.138623) 腕Vector3(-0.24124, 0.875989, -0.120677)
+[2026-10-29 04_42_27_138][263][Script] [真实肘部] R_Hand 肩Vector3(0.192893, 1.33341, 0.0437478) 肘Vector3(0.22164, 1.0494, 0.096394) 腕Vector3(0.227893, 0.871391, 0.238453)
+[2026-10-29 04_42_27_575][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.16 - 0.28 1.74 0.28 左鞋底-0.00000 右鞋底0.12804 HipVector3(-0.00500377, 0.809104, 0.0582867)
+[2026-10-29 04_42_27_575][263][Script] [真实肘部] L_Hand 肩Vector3(-0.205626, 1.33343, 0.0199417) 肘Vector3(-0.233217, 1.06875, -0.0431515) 腕Vector3(-0.240626, 0.845524, 0.0449416)
+[2026-10-29 04_42_27_576][263][Script] [真实肘部] R_Hand 肩Vector3(0.193021, 1.33341, 0.0478172) 肘Vector3(0.221714, 1.05143, -0.0147994) 腕Vector3(0.228021, 0.84121, 0.0728172)
+[2026-10-29 04_42_28_077][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.27 - 0.28 1.72 0.36 左鞋底-0.00000 右鞋底0.09069 HipVector3(-0.00500377, 0.794089, 0.0582867)
+[2026-10-29 04_42_28_077][263][Script] [真实肘部] L_Hand 肩Vector3(-0.20624, 1.31842, 0.024029) 肘Vector3(-0.233908, 1.05051, 0.071529) 腕Vector3(-0.24124, 0.860973, 0.218735)
+[2026-10-29 04_42_28_077][263][Script] [真实肘部] R_Hand 肩Vector3(0.192893, 1.3184, 0.0437478) 肘Vector3(0.221596, 1.08299, -0.123641) 腕Vector3(0.227893, 0.856376, -0.100958)
+[2026-10-29 04_42_28_601][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.41 - 0.28 1.66 0.46 左鞋底0.00000 右鞋底-0.00047 HipVector3(-0.00500377, 0.731108, 0.0582867)
+[2026-10-29 04_42_28_601][263][Script] [真实肘部] L_Hand 肩Vector3(-0.207378, 1.25543, 0.0339422) 肘Vector3(-0.23501, 1.00073, 0.129652) 腕Vector3(-0.242378, 0.830637, 0.298942)
+[2026-10-29 04_42_28_601][263][Script] [真实肘部] R_Hand 肩Vector3(0.192241, 1.25542, 0.0339417) 肘Vecto[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_213][263] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_214][263] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_214][263] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_214][263] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_214][263] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 04_42_31_251][263] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+r3(0.22109, 1.05328, -0.172375) 腕Vector3(0.227241, 0.825692, -0.181058)
+[2026-10-29 04_42_29_089][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.32 - 0.28 1.74 0.37 左鞋底0.09192 右鞋底-0.00033 HipVector3(-0.00500377, 0.809104, 0.0582867)
+[2026-10-29 04_42_29_089][263][Script] [真实肘部] L_Hand 肩Vector3(-0.208025, 1.33343, 0.0439002) 肘Vector3(-0.235694, 1.06552, 0.0914002) 腕Vector3(-0.243025, 0.875988, 0.238606)
+[2026-10-29 04_42_29_089][263][Script] [真实肘部] R_Hand 肩Vector3(0.191107, 1.33341, 0.0241803) 肘Vector3(0.21981, 1.09801, -0.143209) 腕Vector3(0.226107, 0.871391, -0.120525)
+[2026-10-29 04_42_29_508][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.16 - 0.28 1.74 0.31 左鞋底0.13000 右鞋底-0.00111 HipVector3(-0.00500377, 0.809104, 0.0582867)
+[2026-10-29 04_42_29_509][263][Script] [真实肘部] L_Hand 肩Vector3(-0.208149, 1.33343, 0.0480324) 肘Vector3(-0.235741, 1.06875, -0.0150609) 腕Vector3(-0.243149, 0.845523, 0.0730323)
+[2026-10-29 04_42_29_509][263][Script] [真实肘部] R_Hand 肩Vector3(0.190497, 1.33341, 0.0201558) 肘Vector3(0.21919, 1.05143, -0.0424609) 腕Vector3(0.225497, 0.84121, 0.0451558)
+[2026-10-29 04_42_30_004][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.28 - 0.28 1.71 0.39 左鞋底0.09192 右鞋底-0.00155 HipVector3(-0.00500377, 0.785963, 0.0582867)
+[2026-10-29 04_42_30_004][263][Script] [真实肘部] L_Hand 肩Vector3(-0.208025, 1.31029, 0.0439002) 肘Vector3(-0.23558, 1.09216, -0.118751) 腕Vector3(-0.243025, 0.852848, -0.100805)
+[2026-10-29 04_42_30_004][263][Script] [真实肘部] R_Hand 肩Vector3(0.191107, 1.31027, 0.0241803) 肘Vector3(0.219854, 1.02626, 0.0768265) 腕Vector3(0.226107, 0.84825, 0.218886)
+[2026-10-29 04_42_30_505][263][Script] [真实蒙皮接触] 模型-0.29 -0.00 -0.17 - 0.28 1.75 0.18 左鞋底-0.00000 右鞋底-0.00080 HipVector3(-0.00500377, 0.822669, 0.0582867)
+[2026-10-29 04_42_30_505][263][Script] [真实肘部] L_Hand 肩Vector3(-0.207378, 1.34523, 0.00835072) 肘Vector3(-0.23497, 1.08055, -0.0547425) 腕Vector3(-0.242378, 0.857318, 0.0333506)
+[2026-10-29 04_42_30_505][263][Script] [真实肘部] R_Hand 肩Vector3(0.192241, 1.34521, 0.00835074) 肘Vector3(0.220935, 1.06322, -0.0542659) 腕Vector3(0.227241, 0.853005, 0.0333507)
+[2026-10-29 04_42_31_122][263][Script] [真实蒙皮接触] 模型-0.44 0.24 -0.35 - 0.46 1.74 0.48 左鞋底0.23807 右鞋底0.23723 HipVector3(-5.20026e-10, 0.85, -0.18)
+[2026-10-29 04_42_31_122][263][Script] [真实肘部] L_Hand 肩Vector3(-0.202375, 1.33698, 0.0102018) 肘Vector3(-0.387297, 1.14998, 0.0852306) 腕Vector3(-0.32, 1.132, 0.315)
+[2026-10-29 04_42_31_122][263][Script] [真实肘部] R_Hand 肩Vector3(0.197245, 1.33697, 0.0101934) 肘Vector3(0.391025, 1.13978, 0.0986589) 腕Vector3(0.32, 1.132, 0.315)
+[2026-10-29 04_42_31_122][263][Script] [接触诊断] 地表(0,-20)=0.055
+[2026-10-29 04_42_31_123][263][Script] [CareerActor] 仅测试/恢复 Teleport(2.00,-20.00,0.0)，mounted=false
+[2026-10-29 04_42_31_124][263][Script] [生涯] 场景与主流程已接通
+[2026-10-29 04_42_33_690][407]INFO__VALIDATE_UPDATE__:false
+[2026-10-29 04_42_33_697][407][Script] [CareerActor] 已释放人物、独立停放车与配送装备

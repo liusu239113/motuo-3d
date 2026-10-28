@@ -53,6 +53,15 @@ function Checks.Run(session)
     end
     actor.visuals.mountedRider:PoseRide(0)
     Checks.SkinBounds(actor.visuals.mountedRider)
+    for _,c in ipairs(actor.visuals.mountedRider.arms) do
+        local rig=actor.visuals.mountedRider
+        local a,b,e=rig:GetBonePosition(c.upper),rig:GetBonePosition(c.tip),rig:GetBonePosition(c.lower)
+        local t=(e.y-a.y)/(b.y-a.y)
+        assert(e.z<a.z+(b.z-a.z)*t-.03,"骑姿肘部必须在肩腕连线后侧")
+    end
+    for _,p in ipairs({{0,-20,.055},{-50,-50,0},{-50,9,.069},{120,-25,.10}}) do
+        assert(math.abs(session.city:Surface(p[1],p[2])-p[3])<.0001,"地表查询必须匹配视觉地面")
+    end
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
     local phase,weight,yaw=0,0,110
     local mounted=false
