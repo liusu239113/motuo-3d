@@ -351,6 +351,7 @@ function Checks.RunWorld(session)
     session.view:ClosePhone()
     session:Refresh()
     Checks.RunMobile(session)
+    require("Career.HousingChecks").Run(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then
@@ -362,6 +363,8 @@ function Checks.RunWorld(session)
             session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})
             session.view.overlay:SetVisible(false)
         end
+        local home=arg:match("^%-careerhousing=(.+)$")
+        if home then require("Career.HousingChecks").Shot(session,home) end
         local page=arg:match("^%-careerpage=(.+)$")
         if page then
             if page=="delivery" then session.online=true end
