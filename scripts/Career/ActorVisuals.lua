@@ -105,11 +105,10 @@ function Visuals:UpdateParking(parking,city)
     end
     for id,park in pairs(parking) do
         local entry=self:EnsureVehicle(id)
-        local front,rear=.729281,-.617155
-        if id~=Vehicles.EBIKE then local length=Assets.Vehicles[id].targetLength; front,rear=length*.32,-length*.32 end
-        local height,pitch=city:VehicleSurface(park.x,park.z,park.yaw,front,rear)
+        local height,pitch=city:Surface(park.x,park.z),0
+        if id==Vehicles.EBIKE then height,pitch=city:VehicleSurface(park.x,park.z,park.yaw,.729281,-.617155) end
         entry.node.position=V(park.x,height,park.z)
-        entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch,V.RIGHT)
+        entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch or 0,V.RIGHT)
     end
 end
 function Visuals:SetMounted(mounted)
@@ -120,16 +119,11 @@ end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.disposed then return end
     local height,pitch=bikeY,0
-    if self.city then
-        local front,rear=.729281,-.617155
-        if self.vehicleId~=Vehicles.EBIKE then
-            local length=Assets.Vehicles[self.vehicleId].targetLength
-            front,rear=length*.32,-length*.32
-        end
-        height,pitch=self.city:VehicleSurface(bikeX,bikeZ,bikeYaw,front,rear)
+    if self.city and self.vehicleId==Vehicles.EBIKE then
+        height,pitch=self.city:VehicleSurface(bikeX,bikeZ,bikeYaw,.729281,-.617155)
     end
     self.bikeNode.position=V(bikeX,height,bikeZ)
-    self.bikeNode.rotation=Quaternion(0,bikeYaw,0)*Quaternion(pitch,V.RIGHT)
+    self.bikeNode.rotation=Quaternion(0,bikeYaw,0)*Quaternion(tonumber(pitch) or 0,V.RIGHT)
     if self.mounted then
         local target=steer*math.min(1,math.abs(speed)/(35/3.6))*10
         self.lean=self.lean+(target-self.lean)*(1-math.exp(-dt*10))

@@ -294,6 +294,12 @@ end
 -- 侧视接触设计（米）： rear<0 --- 车根0 --- front>0。
 -- 前后触地点分别采样；前轮上坎先抬车头，后轮仍落旧路面，停车跨坎同样适用。
 -- 地表最高仅10cm，两次投影迭代处理俯仰后的轮距收缩，不改变XZ碰撞域。
+---@param x number
+---@param z number
+---@param yaw number
+---@param front number
+---@param rear number
+---@return number, number
 function City:VehicleSurface(x,z,yaw,front,rear)
     local a=math.rad(yaw)
     local pitch,y=0,self:Surface(x,z)

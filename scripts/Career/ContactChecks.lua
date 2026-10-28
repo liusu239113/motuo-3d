@@ -35,6 +35,9 @@ function Checks.SkinBounds(rig)
     return bounds,feet
 end
 function Checks.Run(session)
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-contactshot" then Checks.Shot(session);return end
+    end
     local actor=session.actor
     ---@type CareerRig
     local rig=actor.visuals.walker
@@ -51,6 +54,7 @@ function Checks.Run(session)
     end
     rig.ground=session.city
     actor.mounted=false;actor.visuals:SetMounted(false)
+    actor:Teleport(0,-20,0)
     -- 身体位于人行道边缘，左右脚跨在不同高度，分别验证鞋底而不是仅查角色根。
     for _,x in ipairs({5.9,6.0,6.1,11.9,12.0,12.1}) do
         actor:Teleport(x,-20,0)
@@ -75,8 +79,29 @@ function Checks.Run(session)
         if speed==3.4 then assert(visuals.runWeight>.99,"跑步应切换慢跑摆臂") end
         if speed==0 then assert(visuals.gaitWeight==0 and visuals.runWeight==0,"停止后必须完全回到站姿") end
     end
+    for _,person in ipairs(session.traffic.pedestrians.people) do
+        local npc=person.rig
+        local clamped=npc.reachClampedFrames or 0
+        for i=0,7 do
+            npc:PoseWalk(i*math.pi/4,.8)
+            assert(math.abs(math.min(npc:SoleHeight("L_Foot"),npc:SoleHeight("R_Foot")))<.006,"路人鞋底须贴在人行道上")
+        end
+        assert((npc.reachClampedFrames or 0)==clamped,"不同体型路人不可超伸")
+    end
+    for _,speed in ipairs({.18,.6,1.8,3.4}) do
+        local w=math.min(1,speed/1.8)
+        local r=math.max(0,math.min(1,(speed-1.8)/1.6))
+        local cycle=require("Career.Rig").CycleLength(w,r)
+        rig.ground=nil
+        rig:PoseWalk(.3,w,r)
+        local a=rig:GetBonePosition("L_Foot")
+        local travel=cycle*.08/(2*math.pi)
+        rig:PoseWalk(.38,w,r)
+        local b=rig:GetBonePosition("L_Foot")
+        assert(math.abs((b.z-a.z)+travel)<.001,"支撑脚向后位移必须抵消前进距离")
+    end
     rig.ground=nil
-    print("[动态接触验收通过] 15组速度混合/跨路沿双脚/四方向前后轮/慢走起停与跑步切换")
+    print("[动态接触验收通过] 15组速度混合/八位路人/支撑脚滑移/跨路沿双脚/四方向前后轮/慢走起停与跑步切换")
     print("[阴影接触] "..tostring(session.sun.shadowBias.constantBias).."/"..tostring(session.sun.shadowBias.slopeScaledBias).."/"..tostring(session.sun.shadowBias.normalOffset))
     local clamped=actor.visuals.walker.reachClampedFrames or 0
     local hipLow,hipHigh=math.huge,-math.huge
@@ -123,6 +148,11 @@ function Checks.Run(session)
     actor.visuals:SetMounted(false)
     print("[接触验收通过] 64相位无超伸/八相位鞋底/站姿与骑姿后弯肘/握把/道路人行道公园查高/五角度压弯胎底")
     print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
+    Checks.Shot(session)
+end
+function Checks.Shot(session)
+    local actor=session.actor
+    local rig=actor.visuals.walker
     local phase,weight,yaw,run=0,0,110,0
     local curb=false
     local mounted=false

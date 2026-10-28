@@ -92,9 +92,14 @@ function Traffic:Blockers()
 end
 function Traffic:Place(car)
     car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
-    local height,pitch=self.city:VehicleSurface(car.x,car.z,car.yaw,car.length*.32,-car.length*.32)
+    -- 轿车/SUV轴位由最低胎面顶点测得；货车底盘含低垂附件，暂保留中心查高。
+    local front,rear=0,0
+    if car.node.name:find("sedan") then front,rear=1.35029,-1.26928 end
+    if car.node.name:find("suv") then front,rear=1.41184,-1.508415 end
+    local height,pitch=self.city:Surface(car.x,car.z),0
+    if front>0 then height,pitch=self.city:VehicleSurface(car.x,car.z,car.yaw,front,rear) end
     car.node.position=Vector3(car.x,height,car.z)
-    car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch,Vector3.RIGHT)
+    car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch or 0,Vector3.RIGHT)
 end
 function Traffic:CanPlace(car,blockers)
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
