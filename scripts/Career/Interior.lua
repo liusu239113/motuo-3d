@@ -83,8 +83,8 @@ function Interior:Build(home)
         for _,sx in ipairs({-1,1}) do d:Box("leather",2+sx*1.2,.7,3.7,.18,.6,.85) end
         self:Solid(home,d,"wood",1.6,.35,2,1.4,.65,.7)
         d:Box("linen",1.6,.7,2,.3,.04,.22)
-        self:Solid(home,d,"trim",-1.6,.5,-4.75,3.2,.95,.5)
-        d:Box("metal",-1.4,1,-4.75,.65,.04,.42)
+        self:Solid(home,d,"trim",-3.2,.5,-4.75,2.6,.95,.5)
+        d:Box("metal",-3.2,1,-4.75,.65,.04,.42)
         d:Box("glass",0,1.85,5.4,3.6,1.6,.025)
         for _,side in ipairs({-1,1}) do d:Box("blanket",side*2,1.9,5.3,.35,1.9,.14) end
     else d:Box("glass",.6,1.9,h/2-.1,1.7,1.25,.03) end
