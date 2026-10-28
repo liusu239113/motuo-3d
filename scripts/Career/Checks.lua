@@ -372,7 +372,16 @@ function Checks.RunWorld(session)
             if not actor.mounted then assert(actor:ToggleMount()) end
             session:Refresh()
             actor:SyncVisuals(1)
-            session.yaw,session.pitch=90,10
+            local pose=actor.visuals.mountedRider:ReadPose()
+            print(string.format("[生涯握把验收] 左%.4fm 右%.4fm Hip=%s Head=%s",pose.leftGripError,pose.rightGripError,pose.hip:ToString(),pose.head:ToString()))
+            assert(pose.leftGripError<.005 and pose.rightGripError<.005,"双手必须实际到握把，不靠超伸夹取")
+            session.yaw,session.pitch=90,8
+            for _,option in ipairs(GetArguments()) do
+                local angle=option:match("^%-careerangle=([%-%.%d]+)$")
+                if angle then session.yaw=tonumber(angle) or 90 end
+            end
+            session.camera:SetModeConfig("normal",{distance=3.1,offset=Vector3(0,1.0,0),fov=48})
+            session.camera:SetModeConfig("ride",{distance=3.1,offset=Vector3(0,1.0,0),fov=48})
             session.camera:Update(1,actor.node,session.yaw,session.pitch)
             session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})
             session.view.overlay:SetVisible(false)

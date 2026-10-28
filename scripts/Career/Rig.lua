@@ -21,7 +21,7 @@ end
 function Rig:InitCareer(parent)
     self.parent=parent
     self.vehicleId,self.classId,self.colorId="career_ebike","career","original"
-    self.config={hip=V(0,.85,-.18),foot=V(.17,.27,.16),waist=8,spine=12,chest=16,head=0,
+    self.config={hip=V(0,.85,-.18),foot=V(.17,.27,.16),waist=18,spine=26,chest=32,head=0,
         kneeHint=V(.12,0,1),elbowHint=V(.8,-.6,-.3)}
     self.grip=V(.29,1.02,.38)
     self.node=parent:CreateChild("王二狗骨骼")
