@@ -251,7 +251,9 @@ function Checks.Shot(session)
         actor.visuals.walkNode:SetEnabled(false)
         actor.node.position=Vector3(x,y,-17)
     else
+        actor.vehicleId=vehicle
         actor.visuals:SetVehicle(vehicle)
+        for id,entry in pairs(actor.visuals.vehicles) do entry.node:SetEnabled(id==vehicle) end
         actor.visuals:Update(1,35/3.6,lean/10,actor.bikeX,session.city:Surface(actor.bikeX,actor.bikeZ),actor.bikeZ,actor.bikeYaw)
         if mounted then actor.visuals.mountedRider:PoseRide(0)
         else actor.visuals.walker:PoseWalk(phase,weight,run) end
