@@ -90,7 +90,7 @@ function Symbol:Render(vg)
 end
 local function iconButton(symbol, action)
     local names = {camera = "视角", pause = "暂停", recover = "复位"}
-    return UI.Button {text = names[symbol] or "返回", width = 54, height = 54, padding = 0,
+    return UI.Button {text = names[symbol] or "返回", variant = "secondary", width = 54, height = 54, padding = 0,
         paddingTop = 29, fontSize = 9, borderRadius = 6, borderWidth = 1,
         textColor = WHITE, borderColor = BORDER, backgroundColor = {9, 17, 24, 215},
         pressedBackgroundColor = {112, 79, 34, 240}, hoverBackgroundColor = {30, 48, 60, 235},

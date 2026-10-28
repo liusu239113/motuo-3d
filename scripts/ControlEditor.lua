@@ -34,7 +34,7 @@ function Editor:BuildSettings()
         self.settingsHint:SetStyle({textAlign="center"})
         self.settingsSelection = label("已选：转向")
         self.settingsSchemeButtons = {}
-        self.settingsSchemeRow = UI.Row {padding=0, gap=5, flexWrap="wrap"}
+        self.settingsSchemeRow = UI.Row {width="100%", minWidth=0, padding=0, gap=5, flexWrap="wrap"}
         self.settingsSensitivityValue, self.settingsDeadzoneValue = label(""), label("")
         local function saved() self:SaveSettings("已保存并应用") end
         self.settingsSensitivity = UI.Slider {width="100%", min=50, max=160, step=1, value=100,

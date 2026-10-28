@@ -134,6 +134,47 @@ function Checks.Dialogs(hud)
     print("[RacingUIChecks] PASS 覆盖阻断/不足禁购买/明确确认/重复点击/关闭/换页/通用提示")
     return true
 end
+function Checks.Controls(hud)
+    local controls, oldScreen = hud.controls, hud.screen
+    local saved = {}
+    for key, detail in pairs(controls.details) do
+        saved[key] = {text = detail:GetText(), state = controls.actionStates[key]}
+    end
+    hud:SetScreen("ride"); UI.Layout(); hud:ApplySettings(); UI.Layout()
+    local checked = 0
+    local ok, failure = pcall(function()
+        local samples = {"前轮抬起 · 松手放下", "车速过高 · 先减速", "竞速专用", "喷射 2.5s", "这是一条非常长的不可用原因，不能挤压标题"}
+        for key, detail in pairs(controls.details) do
+            for _, text in ipairs(samples) do
+                controls:SetActionState(key, {state = "blocked", detail = text})
+                UI.Layout()
+                -- 连续真实渲染两次，捕捉 Label 首帧自动换行涨高的回归。
+                detail:Render(UI.GetNVGContext()); UI.Layout()
+                detail:Render(UI.GetNVGContext()); UI.Layout()
+                local d = detail:GetAbsoluteLayout()
+                local caption = controls.captions[key]:GetAbsoluteLayout()
+                local owner = controls.widgets[key]:GetAbsoluteLayout()
+                demand(not detail.autoWidth_ and detail.props.whiteSpace == "nowrap", "状态必须使用明确宽度单行布局")
+                demand(math.abs(d.h - 15) < 2, "长状态经过渲染后不得涨高")
+                demand(caption.y + caption.h <= d.y + 1, "标题和状态不能重叠：" .. key)
+                demand(inside(d, owner, 2) and inside(caption, owner, 2), "标题与状态须包含在真实按钮内")
+                checked = checked + 1
+            end
+        end
+        for _, control in ipairs(hud.rightTop:GetChildren()) do
+            demand(control.props.variant == "secondary", "相机暂停须为次级按钮")
+        end
+        demand(hud.recoverButton.props.variant == "secondary", "复位须为次级按钮")
+    end)
+    for key, previous in pairs(saved) do
+        controls.actionStates[key] = previous.state
+        controls.details[key]:SetText(previous.text)
+    end
+    hud:SetScreen(oldScreen); UI.Layout()
+    demand(ok, tostring(failure))
+    print(string.format("[RacingUIChecks] PASS 驾驶长状态不涨高/标题状态分离/次级功能按钮：%d组", checked))
+    return checked
+end
 function Checks.Run(hud)
     demand(not hud:IsModalOpen(), "回归前须关闭已有业务弹窗")
     local labels = 0
@@ -141,7 +182,8 @@ function Checks.Run(hud)
         labels = labels + Checks.Layout(hud, size[1], size[2])
     end
     Checks.Dialogs(hud)
+    local controls = Checks.Controls(hud)
     print("[RacingUIChecks] 全部通过；ControlChecks请单独继续执行")
-    return {passed = true, labels = labels, resolutions = 3}
+    return {passed = true, labels = labels, resolutions = 3, controls = controls}
 end
 return Checks

@@ -181,11 +181,25 @@ function Controls:ConsumeActions()
     return result
 end
 
+local function shortDetail(detail)
+    -- 按键内只显示短状态；完整限制原因仍由 HUD 中央提示与操作帮助说明。
+    local phrases = {
+        ["前轮抬起 · 松手放下"] = "抬轮中", ["车速过高 · 先减速"] = "先减速",
+        ["点按起跳旋转"] = "点按旋转", ["腾空 · 点按旋转"] = "腾空旋转",
+        ["损坏 · 先复位"] = "先复位", ["正在旋转"] = "旋转中", ["先加速至15"] = "先加速",
+        ["先稳住车身"] = "稳住车身", ["就绪 · 耗45"] = "就绪",
+        ["正在烧胎"] = "烧胎中",
+    }
+    if phrases[detail] then return phrases[detail] end
+    -- 未知的长原因不塞进小按键，避免长文被截得只剩半句话。
+    if utf8.len(detail) and utf8.len(detail) > 7 then return "暂不可用" end
+    return detail
+end
 function Controls:SetActionState(key, state)
     -- Display-only contract. Never gate ownership or change the gameplay resource here.
     self.actionStates[key] = state or {}
     if self.captions[key] and state.label then self.captions[key]:SetText(state.label) end
-    if self.details[key] and state.detail then self.details[key]:SetText(state.detail) end
+    if self.details[key] and state.detail then self.details[key]:SetText(shortDetail(state.detail)) end
     self:Refresh()
 end
 function Controls:UpdateFeedback(dt)
@@ -310,12 +324,15 @@ function Controls:CreateHold(key, text, width, height)
         graphicProps.mark = key
         graphic = ControlMark(graphicProps)
     end
-    local caption = UI.Label {position = "absolute", left = 1, right = 1, bottom = 15, height = 17,
-        text = text ~= "" and text or CAPTIONS[key] or key, fontSize = 10, fontWeight = "bold", lineHeight = 1,
+    -- 明确给出宽度，禁止 Label 把长状态当作 autoWidth 自动换行并向上顶住标题。
+    local caption = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 19, height = 17,
+        paddingHorizontal = 3, text = CAPTIONS[key] or (text ~= "" and text or key),
+        fontSize = 10, fontWeight = "bold", lineHeight = 1, maxLines = 1, whiteSpace = "nowrap",
         fontColor = {239, 245, 247, 255}, textAlign = "center", pointerEvents = "none"}
-    local detail = UI.Label {position = "absolute", left = 1, right = 1, bottom = 2, height = 13,
-        text = DETAILS[key] or "点按", fontSize = 7, lineHeight = 1,
-        fontColor = {162, 184, 195, 255}, textAlign = "center", pointerEvents = "none"}
+    local detail = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 2, height = 15,
+        paddingHorizontal = 3, text = DETAILS[key] or "点按", fontSize = 8, lineHeight = 1,
+        maxLines = 1, whiteSpace = "nowrap", fontColor = {162, 184, 195, 255},
+        textAlign = "center", pointerEvents = "none"}
     local hold = UI.Panel {id = key, width = width or 76, height = height or 80, padding = 0,
         borderRadius = 8, backgroundColor = {9, 17, 24, 210}, borderWidth = 1,
         borderColor = {149, 174, 189, 140}, pointerEvents = "box-only",
