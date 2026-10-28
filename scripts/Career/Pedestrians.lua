@@ -76,7 +76,7 @@ function Pedestrians:Update(dt,blockers)
         for _,other in ipairs(self.people) do if other~=p and (x-other.x)^2+(z-other.z)^2<.85^2 then free=false end end
         if free then p.s=candidate end
         local moved=math.abs(p.s-old)
-        p.phase=p.phase+moved*2*math.pi/(1.40*.8)
+        p.phase=p.phase+moved*2*math.pi/(1.20*.8)
         self:Place(p)
         -- 位移与碰撞每帧更新；85m绘制距离之外不做IK，近处骨骼限20Hz。
         if poseReady and (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2 then

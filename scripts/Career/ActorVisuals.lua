@@ -122,7 +122,7 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     else
         local target=math.min(1,math.abs(speed)/1.8)
         self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*(1-math.exp(-dt*14))
-        local cycle=1.40*math.max(.30,self.gaitWeight)
+        local cycle=1.20*math.max(.30,self.gaitWeight)
         self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/cycle)%(math.pi*2)
         self.walker:PoseWalk(self.phase,self.gaitWeight)
     end

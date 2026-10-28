@@ -86,9 +86,9 @@ end
 function Rig:PoseWalk(phase,weight)
     self:Reset()
     local w=math.max(0,math.min(1,weight))
-    -- 完整跨步1.40m；支撑半周期匀速向后，摆动半周期前送并抬脚。
+    -- 完整跨步1.20m；支撑半周期匀速向后，摆动半周期前送并抬脚。
     -- 髋点随跨步降低而不是缩短步幅；膝向前、肘向后，禁止反关节。
-    local stride=.35*w
+    local stride=.30*w
     self.mesh.position=self.standOffset-V(0,(.085+.015*math.cos(phase*2))*w,0)
     self:SetBodyRotation("Waist",4*w,math.sin(phase)*2*w)
     self:SetBodyRotation("Spine01",3*w,-math.sin(phase)*3*w)
