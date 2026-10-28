@@ -1,7 +1,5 @@
--- City career actor, adapted from scaffold-3d-character's separate world root /
--- model nodes. City owns collision geometry; Session owns input, camera, battery
--- and saves. No racing Simulation/Bike behavior is modified or reused here.
--- 正式王二狗与电动车仍待 reviewed 预览确认；目前仅“现有赛车资产调试代理”。
+-- 生涯城市角色：独立步行、电动车动力与停车位置。
+-- 城市负责碰撞；Session负责输入、相机、电量与存档，不复用赛车速度参数。
 local Visuals = require("Career.ActorVisuals")
 local V = Vector3
 
@@ -191,7 +189,7 @@ function Actor:WalkStep(dt, controls, cameraYaw)
     if blocked then self:LogCollision() end
     if not self.walkLogged then
         self.walkLogged = true
-        print("[CareerActor] 步行输入已驱动；walkX右正/walkY前正，相机相对；原赛车资产程序化过渡")
+        print("[CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度")
     end
 end
 
@@ -332,7 +330,7 @@ function Actor:Dispose()
     self.disposed = true
     self.visuals:Dispose()
     self.node:Dispose()
-    print("[CareerActor] 已释放人物、独立停放车与调试代理表现")
+    print("[CareerActor] 已释放人物、独立停放车与配送装备")
 end
 
 return Actor

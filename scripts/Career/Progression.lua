@@ -83,20 +83,27 @@ function Progress.SetHousing(id)
         return true,"已选择"..item.name.."；每次过夜才扣费，不是永久买断"
     end)
 end
--- 排班是一段明确推进的游戏时间，不按真实离线时间结算。
--- 必须亲送10单及休息过、无活动订单；7天包含6个工作日和1天休息。
--- 1680/2070/241320分毛收入，扣42000分餐食+基础整备及6晚房费。
+-- 每次周排班都需要新完成15分钟活动与10份亲送，不允许连点快进刷现金。
+-- 亲送收入已即时入账；这里只补未亲送订单，餐食/整备与7晚住宿另记支出。
 function Progress.WorkWeek()
     return Store.Transaction(function(p)
         extras(p)
-        if p.completedOrders<10 or not p.flags.firstRest then return false,"先亲自完成10单并休息一晚，熟悉送餐后解锁周排班" end
+        if p.day<10 or p.completedOrders<10 or not p.flags.firstRest then return false,"第10天起，亲送10单并休息过后开放周排班" end
+        local manual=p.completedOrders-(p.lastScheduleManualOrders or 0)
+        local seconds=(p.activeSeconds or 0)-(p.lastScheduleSeconds or 0)
+        if manual<10 or seconds<900 then
+            return false,string.format("本周代表班次：亲送%d/10单，活动%.0f/15分钟。每周都需重新亲跑。",manual,seconds/60)
+        end
         if #p.activeOrders>0 then return false,"先完成所有手头订单" end
         if p.hunger<35 or p.energy<40 then return false,"先吃饭休息，身体不适合排班" end
         local level=Progress.Level(p)
-        local gross=level>=4 and 241320 or level>=3 and 207000 or 168000
+        local total=level>=4 and 348 or level>=3 and 300 or 240
+        local average=level>=4 and 620 or level>=3 and 600 or 580
+        local simulated=math.max(0,total-manual)
+        local gross=simulated*average
         local housing=0
-        for _,h in ipairs(Progress.Housing) do if h.id==p.accommodation then housing=h.price*6 end end
-        local costs=42000+housing
+        for _,h in ipairs(Progress.Housing) do if h.id==p.accommodation then housing=h.price*7 end end
+        local costs=17600+30*simulated+housing
         if p.cashCents+gross<costs then return false,"该住处的排班支出超过现有现金与收入" end
         local key="week:"..(p.weeksWorked+1)
         local ok,message=Store.ApplyCash(p,gross,"scheduled_delivery",key..":income")
@@ -104,11 +111,13 @@ function Progress.WorkWeek()
         local paid,detail=Store.ApplyCash(p,-costs,"scheduled_living",key..":cost")
         if not paid then return false,detail end
         p.weeksWorked=p.weeksWorked+1
-        p.simulatedOrders=p.simulatedOrders+math.floor(gross/650)
+        p.simulatedOrders=p.simulatedOrders+simulated
+        p.lastScheduleManualOrders=p.completedOrders
+        p.lastScheduleSeconds=p.activeSeconds or 0
         p.day=p.day+7; p.time=8; p.hunger=65; p.energy=85; p.battery=80
         p.flags.weekSchedule=true
         p.lastDaySummary={day=p.day-1,incomeCents=gross,expenseCents=costs,balanceCents=p.cashCents}
-        return true,string.format("7天排班结束：配送收入%.2f元，生活整备与住宿%.2f元，净存%.2f元。没有与亲跑订单重复结算。",gross/100,costs/100,(gross-costs)/100)
+        return true,string.format("7天排班结束：本周亲送%d单已另结；模拟%d单，收入%.2f元，餐食整备住宿%.2f元，新增净存%.2f元。",manual,simulated,gross/100,costs/100,(gross-costs)/100)
     end)
 end
 function Progress.BuyMotorcycle(id)

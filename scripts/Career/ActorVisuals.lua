@@ -25,7 +25,7 @@ function Visuals:Init(scene,target)
     local body=self.bikeVisual:CreateChild("正式战损电动车")
     local model=cache:GetResource("Model",scooterModel)
     local bounds=model.boundingBox
-    -- 实际顶点PCA长轴=(-.721,0,.693)，车头由实拍确认，旋转46.1度对齐+Z。
+    -- 实际顶点PCA长轴=(-.721,0,.693)，旋转46.1度对齐城市车辆纵轴。
     local scale=1.90/1.3094
     body:SetScale(scale)
     body.rotation=Quaternion(0,46.1,0)

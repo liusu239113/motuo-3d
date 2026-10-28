@@ -67,6 +67,9 @@ local Config = require "Career.Config"
 ---@field equipment? table<string, boolean>
 ---@field simulatedOrders? integer
 ---@field weeksWorked? integer
+---@field activeSeconds? number
+---@field lastScheduleSeconds? number
+---@field lastScheduleManualOrders? integer
 ---@field career? table
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
@@ -84,6 +87,16 @@ local cloudBusy = false
 local cloudStatus = "not_requested"
 local cloudRevision = -1
 local cloudGeneration = 0
+local cloudElapsed = 0
+---@type fun()?
+local cloudTimeout = nil
+
+-- 独立于手机/暂停的网络看门狗；迟到回包由请求闭包拒绝，不能再次覆盖本地进度。
+function Store.UpdateCloud(dt)
+    if not cloudBusy then return end
+    cloudElapsed=cloudElapsed+math.max(0,dt)
+    if cloudElapsed>=20 and cloudTimeout then cloudTimeout() end
+end
 
 local function copy(value)
     if type(value) ~= "table" then return value end
@@ -169,6 +182,11 @@ local function validate(p)
     if not booleanMap(equipment) then return false, "装备字段无效" end
     if p.simulatedOrders ~= nil and not integer(p.simulatedOrders,0) then return false,"排班完成数无效" end
     if p.weeksWorked ~= nil and not integer(p.weeksWorked,0) then return false,"排班周数无效" end
+    for _,key in ipairs({"activeSeconds","lastScheduleSeconds"}) do
+        if p[key]~=nil and not range(p[key],0,9007199254740991) then return false,"班次时间无效" end
+    end
+    if p.lastScheduleManualOrders~=nil and (not integer(p.lastScheduleManualOrders,0)
+        or p.lastScheduleManualOrders>p.completedOrders) then return false,"班次订单数无效" end
     if p.career ~= nil then
         local c=p.career
         if type(c)~="table" or not integer(c.starts,0) or not integer(c.wins,0) or not integer(c.points,0)
@@ -551,6 +569,7 @@ function Store.Advance(dt, distanceMeters)
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]
     local hours = math.min(dt * Config.GAME_HOURS_PER_SECOND, 24 - p.time)
+    p.activeSeconds=(p.activeSeconds or 0)+hours/Config.GAME_HOURS_PER_SECOND
     p.time = p.time + hours
     p.hunger = math.max(0, p.hunger - hours * Config.HUNGER_PER_HOUR)
     local rate = p.equipment and p.equipment.raincoat and .85 or 1
@@ -591,11 +610,14 @@ function Store.SaveCloud(callback)
         if finished or generation ~= cloudGeneration then return end
         finished = true
         cloudBusy = false
+        cloudTimeout=nil
         cloudStatus = success and "confirmed" or "unconfirmed"
         if success then cloudRevision = snapshot.revision end
         print("[Career.Store] cloud save " .. cloudStatus)
         if callback then callback(success, detail) end
     end
+    cloudElapsed=0
+    cloudTimeout=function() finish(false,"云保存等待超过20秒，结果未确认；本地操作已恢复，云端结果请读取核对") end
     local called = pcall(function()
         clientCloud:Set(Config.CLOUD_KEY, snapshot, {
             ok = function() finish(true, "账号云存档已确认") end,
@@ -620,9 +642,12 @@ function Store.LoadCloud(callback)
         if finished or generation ~= cloudGeneration then return end
         finished = true
         cloudBusy = false
+        cloudTimeout=nil
         cloudStatus = success and "confirmed" or "unconfirmed"
         callback(success, detail)
     end
+    cloudElapsed=0
+    cloudTimeout=function() finish(false,"云读取等待超过20秒；本地进度未覆盖，操作已恢复") end
     local called = pcall(function()
         clientCloud:Get(Config.CLOUD_KEY, {
             ok = function(values)

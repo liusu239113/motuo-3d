@@ -2,7 +2,100 @@
 local Store=require("Career.Store")
 local Delivery=require("Career.Delivery")
 local Config=require("Career.Config")
+local Progress=require("Career.Progression")
+local Profile=require("Profile")
 local Checks={}
+-- 仅内存验收可注入启动资金，生产流程没有此入口。
+local function grant(cents,key)
+    assert(Store.Transaction(function(p) return Store.ApplyCash(p,cents,"test_fixture",key) end))
+end
+local function completeOrder()
+    local offer=assert(Delivery.GetOffer())
+    assert(Delivery.Accept(offer.id))
+    local pickup,dropoff=Config.points[offer.pickupId],Config.points[offer.dropoffId]
+    assert(Delivery.Pickup(offer.id,pickup.x,pickup.z))
+    assert(Delivery.Deliver(offer.id,dropoff.x,dropoff.z))
+end
+function Checks.RunProgression()
+    local files={}
+    local failWrite=false
+    local oldCoins=Profile.Coins()
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text) if failWrite then return false,"模拟磁盘失败" end; files[path]=text; return true end},function()
+        assert(Store.NewCareer())
+        assert(not Progress.BuyEquipment("insulated_box"))
+        assert(not Progress.BuyMotorcycle("sport"))
+        assert(not Progress.EnterSeries(1))
+        for _=1,10 do completeOrder() end
+        assert(Progress.Level(Store.Get())==2)
+        grant(400000,"test:equipment")
+        assert(Progress.BuyEquipment("insulated_box"))
+        assert(not Progress.BuyEquipment("insulated_box"))
+        local a=assert(Delivery.GetOffer()); assert(Delivery.Accept(a.id))
+        local b=assert(Delivery.GetOffer()); assert(Delivery.Accept(b.id))
+        assert(a.id~=b.id and #Store.Get().activeOrders==2 and not Delivery.Accept())
+        for _,order in ipairs({b,a}) do
+            local pickup,dropoff=Config.points[order.pickupId],Config.points[order.dropoffId]
+            assert(Delivery.Pickup(order.id,pickup.x,pickup.z))
+            assert(Delivery.Deliver(order.id,dropoff.x,dropoff.z))
+        end
+        assert(Store.Get().completedOrders==12 and #Store.Get().activeOrders==0)
+        assert(Progress.SetHousing("hostel"))
+        local cash=Store.Get().cashCents
+        local ok,message=Store.Rest("hostel")
+        assert(ok and Store.Get().cashCents==cash-3000 and not message:find("免费"))
+        assert(not Progress.WorkWeek(),"不能新手期直接跳周")
+        for _=1,8 do assert(Store.Rest("bridge")) end
+        assert(not Progress.WorkWeek(),"亲送足但活动时间不足不能排班")
+        assert(Store.Advance(900,0))
+        local before=Store.Get()
+        assert(Progress.WorkWeek())
+        local after=Store.Get()
+        assert(after.day==before.day+7 and after.weeksWorked==1 and after.simulatedOrders==228)
+        assert(after.cashCents==before.cashCents+228*580-17600-228*30)
+        assert(not Progress.WorkWeek(),"不能连续点击重复排班")
+        assert(Store.Load() and Store.Get().weeksWorked==1)
+        for _=1,28 do completeOrder() end
+        assert(Progress.Level(Store.Get())>=3)
+        assert(Progress.BuyEquipment("large_box") and Progress.Capacity(Store.Get())==4)
+        ---@type CareerOrder[]
+        local orders={}
+        for _=1,4 do local order=assert(Delivery.GetOffer()); assert(Delivery.Accept(order.id)); orders[#orders+1]=order end
+        assert(not Delivery.Accept())
+        for i=4,1,-1 do
+            local order=orders[i]; local from,to=Config.points[order.pickupId],Config.points[order.dropoffId]
+            assert(Delivery.Pickup(order.id,from.x,from.z)); assert(Delivery.Deliver(order.id,to.x,to.z))
+            assert(#Store.Get().activeOrders==i-1)
+        end
+        grant(4999999-Store.Get().cashCents,"test:threshold")
+        assert(not Progress.BuyMotorcycle("sport"),"未到5万元不可首购")
+        grant(1,"test:one-cent")
+        failWrite=true; assert(not Progress.BuyMotorcycle("sport")); failWrite=false
+        assert(Store.Get().cashCents==5000000 and not Store.Get().ownedMotorcycles.sport)
+        assert(Progress.BuyMotorcycle("sport"))
+        assert(Store.Get().cashCents==400000 and Store.Get().ownedMotorcycles.sport)
+        assert(Progress.Train() and Store.Get().cashCents==200000)
+        assert(not Progress.Train())
+        assert(Progress.EnterSeries(1))
+        assert(Store.Get().cashCents==185000 and Store.Get().career.pending.laps==2)
+        assert(not Progress.EnterSeries(1))
+        assert(Store.Save() and Store.Load() and Store.Get().career.pending)
+        assert(not Progress.SettleRace(0,true))
+        failWrite=true; assert(not Progress.SettleRace(1,true)); failWrite=false
+        assert(Store.Get().career.pending and Store.Get().cashCents==185000)
+        assert(Progress.SettleRace(1,true))
+        assert(Store.Get().cashCents==275000 and Store.Get().career.points==3)
+        assert(not Progress.SettleRace(1,true),"同一场不可重复获奖")
+        assert(Progress.EnterSeries(1)); local noFinish=Store.Get().cashCents
+        assert(Progress.SettleRace(9,false))
+        assert(Store.Get().cashCents==noFinish and Store.Get().career.points==3)
+        for index=2,6 do assert(Progress.EnterSeries(index)); assert(Progress.SettleRace(1,true)) end
+        assert(Store.Get().flags.lifeWinner and Store.Get().career.wins==6)
+        assert(Store.Load() and Store.Get().flags.lifeWinner)
+        assert(Profile.Coins()==oldCoins,"生涯不得改变旧竞速金币")
+        print("[生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离")
+    end)
+end
 function Checks.RunLogic()
     local files={}
     local failWrite=false
@@ -49,6 +142,7 @@ function Checks.RunLogic()
 end
 function Checks.RunWorld(session)
     Checks.RunLogic()
+    Checks.RunProgression()
     local city=assert(session.city)
     for _,point in ipairs(Config.pointList) do
         assert(city:IsFree(point.x,point.z,.32),"门前点被建筑堵塞："..point.id)

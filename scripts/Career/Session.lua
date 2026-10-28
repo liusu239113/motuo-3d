@@ -228,7 +228,7 @@ function Session:Interact()
 end
 function Session:WorkWeek()
     if not self.actor or self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请下车停稳后安排工作"); return end
-    self.view:ShowDialog("确认推进7个游戏日？","6天配送、1天休息。自动扣除餐食整备及已选择住处费用。\n这是可选排班，不是真实时间挂机，也不替代手头的订单。",{
+    self.view:ShowDialog("确认推进7个游戏日？","第10天起，每周需新的10份亲送及15分钟活动。\n模拟订单均价5.80～6.20元，扣除餐食、整备和7晚住宿。亲送收入不重复结算。",{
         {text="继续亲自跑单"},
         {text="确认7天排班",primary=true,onClick=function()
             self:SavePosition(); local _,message=Progress.WorkWeek(); self.view:Notice(message); self:RefreshPhone()
@@ -299,6 +299,7 @@ function Session:Update(dt)
                 self.building=nil; self.loading=false; self:DisposeWorld()
                 self.view:ShowDialog("城市准备失败",tostring(message),{{text="返回主页",onClick=function() self:Home() end}})
                 print("[生涯错误] "..tostring(message))
+                if self.options.test then error(message) end
             elseif coroutine.status(self.building)=="dead" then self.building=nil end
         elseif self.loader then self.loader:Update() end
         return

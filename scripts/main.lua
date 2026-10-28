@@ -203,8 +203,9 @@ local function ResetRideState()
         race_.options.vehicleIds = Catalog.AvailableIds()
         -- 换图时同步该赛道的AI强度，重赛不会沿用上一张图。
         race_.options.aiLevel = aiLevel
+        race_.options.professional = careerRace_
         race_:Reset(sim_, selectedLaps_)
-        race_:SetTraffic(world_.traffic)
+        race_:SetTraffic(careerRace_ and {} or world_.traffic)
         sim_.message, sim_.messageTimer = "Shift 氮气 · Q 翘头 / Z 烧胎 / X 180° / V 360°", 6
         race_.player.colorId = selectedRider_
         if raceVisuals_ then
@@ -937,6 +938,7 @@ end
 ---@param eventType string
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
+    CareerStore.UpdateCloud(eventData:GetFloat("TimeStep"))
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
     if careerMode_ and career_ then career_:Update(dt); return end
     clock_ = clock_ + dt

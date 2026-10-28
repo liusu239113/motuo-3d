@@ -6,7 +6,11 @@ local Map = require("Career.MapWidget")
 local Progress = require("Career.Progression")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
-local function btn(text,click,primary,props) return Theme.Button(text,click,primary,"100%",props) end
+local function btn(text,click,primary,props)
+    props=props or {}
+    local width=props.width or "100%"
+    return Theme.Button(text,click,primary,width,props)
+end
 local function full(props) return UI.Panel(Theme.Full(props)) end
 local function money(cents) return string.format("¥ %.2f",cents/100) end
 
@@ -205,7 +209,7 @@ function View:BuildPhone(state,offer,active)
         button("前往旧宅门厅过夜",function() a.setWaypoint("home_old"); a.closePhone() end,false)
         button("在门厅办理当前住处过夜",a.sleepHousing,false)
         text("工作周 · 解锁后可选",16,C.cyan)
-        text("先亲送10单并休息过。一次推进7游戏日，收入与生活支出分笔记账。",11,C.muted)
+        text("第10天起开放，每周需重新亲送10单并活动15分钟。亲送与模拟收入不重复，房费按7晚另算。",11,C.muted)
         button("查看并确认7天排班",a.workWeek,false)
         text("人生第一辆摩托",16,C.cyan)
         text("现金达到5万元后首购二手训练版：46000元；另备2000元护具训练、2000元周转。",11,C.muted)

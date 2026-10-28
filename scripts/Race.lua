@@ -765,6 +765,10 @@ end
 
 ---@param dt number
 function Race:UpdatePursuit(dt)
+    if self.options.professional then
+        self.pursuit.active,self.pursuit.state=false,"closed_course"
+        return
+    end
     local target = self:Last()
     local p = self.pursuit
     if target.finished or target.eliminated then p.active, p.state = false, "finished"; return end
