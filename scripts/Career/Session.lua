@@ -75,7 +75,15 @@ function Session:Init(options)
         sleepHousing=function() local p=Store.Get(); self:Service("home_old",function() return Store.Rest(p.accommodation) end) end,
         workWeek=function() self:WorkWeek() end,
         buyMotorcycle=function(id) self:Service("dealer",function() return Progress.BuyMotorcycle(id) end) end,
-        train=function() self:Service("dealer",function() return Progress.Train() end) end,
+        train=function()
+            self:Service("dealer",function()
+                local p=Store.Get()
+                if p.career and p.career.pending and p.career.pending.training then return true,"训练报名已保留" end
+                return Progress.Train()
+            end)
+            local p=Store.Get()
+            if p.career and p.career.pending and p.career.pending.training then self:EnterRace(1) end
+        end,
         race=function(index) self:EnterRace(index) end,
         loadCloud=function() self:LoadCloud() end,
         saveStatus=function() local status=Store.GetSaveStatus(); return "账号云档状态："..status.cloud.."。网页版刷新前请等待confirmed。" end,
@@ -287,7 +295,7 @@ function Session:EnterRace(index)
     end
 end
 function Session:SavePosition()
-    if not self.actor then return end
+    if not self.actor or self.options.test then return end
     local a=self.actor
     Store.SetPosition{x=a.x,z=a.z,yaw=a.yaw,mounted=a.mounted,bikeX=a.bikeX,bikeZ=a.bikeZ,bikeYaw=a.bikeYaw}
 end
@@ -358,6 +366,7 @@ function Session:Update(dt)
     elseif self.actor.mounted then
         self.yaw=self.yaw+((self.actor.yaw-self.yaw+180)%360-180)*math.min(1,dt*2.5)
     end
+    if self.options.test then return end
     local x,z=self.actor.x,self.actor.z
     local controls=self.view:GetInput()
     local state=Store.Get()
@@ -381,7 +390,7 @@ function Session:PostUpdate(dt)
     self.camera:Update(dt,self.actor.node,self.yaw,self.pitch)
 end
 function Session:LeaveForLegacy()
-    if self.running then self:SavePosition(); Store.Save() end
+    if self.running and not self.options.test then self:SavePosition(); Store.Save() end
     self:DisposeWorld()
     if self.options.legacy then self.options.legacy() end
 end
@@ -396,7 +405,7 @@ function Session:DisposeWorld()
 end
 function Session:Dispose()
     if self.disposed then return end
-    if self.running then self:SavePosition(); Store.Save() end
+    if self.running and not self.options.test then self:SavePosition(); Store.Save() end
     self.disposed=true; self:DisposeWorld(); self.view:Dispose()
 end
 return Session

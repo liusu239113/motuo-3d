@@ -217,7 +217,7 @@ function View:BuildPhone(state,offer,active)
             local id=item.id
             button((state.ownedMotorcycles[id] and "已拥有 · " or "购买 · ")..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false)
         end
-        button("三天入门训练与护具 · 总计2000元",a.train,true)
+        button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
         text("职业赛事",16,C.cyan)
         text(string.format("积分 %d · 冠军 %d · %s",state.career and state.career.points or 0,state.career and state.career.wins or 0,state.career and state.career.team or "尚未加入车队"),12)
         for index,series in ipairs(Progress.Series) do

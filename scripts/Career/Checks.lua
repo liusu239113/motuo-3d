@@ -76,7 +76,10 @@ function Checks.RunProgression()
         assert(Progress.BuyMotorcycle("sport"))
         assert(Store.Get().cashCents==400000 and Store.Get().ownedMotorcycles.sport)
         assert(Progress.Train() and Store.Get().cashCents==200000)
-        assert(not Progress.Train())
+        assert(not Store.Get().flags.professional and Store.Get().career.pending.training)
+        assert(not Progress.EnterSeries(1) and not Progress.CompleteTraining(false))
+        assert(Progress.CompleteTraining(true) and Store.Get().flags.professional)
+        assert(not Progress.CompleteTraining(true) and not Progress.Train())
         assert(Progress.EnterSeries(1))
         assert(Store.Get().cashCents==185000 and Store.Get().career.pending.laps==2)
         assert(not Progress.EnterSeries(1))
@@ -157,7 +160,10 @@ function Checks.RunWorld(session)
         end
     end
     local actor=assert(session.actor)
-    assert(not actor.mounted)
+    -- 世界测试不假定玩家存档是步行态；使用固定空旷测试点，结束后恢复原停车位置。
+    actor.mounted=false; actor.visuals:SetMounted(false)
+    actor.bikeX,actor.bikeZ,actor.bikeYaw=1.5,-20,0
+    actor:Teleport(0,-20,0)
     assert(actor:ToggleMount())
     for _=1,120 do actor:Update(1/60,{throttle=1,steer=0},0) end
     assert(actor.speed>1 and actor.speed<=35/3.6)
@@ -176,7 +182,8 @@ function Checks.RunWorld(session)
     session:Refresh()
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careerpose=ride" then
-            assert(actor:ToggleMount()); actor:SyncVisuals(1)
+            if not actor.mounted then assert(actor:ToggleMount()) end
+            actor:SyncVisuals(1)
             session.yaw,session.pitch=90,10
             session.camera:Update(1,actor.node,session.yaw,session.pitch)
             session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})

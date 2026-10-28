@@ -139,13 +139,24 @@ function Progress.Train()
         extras(p)
         if not p.flags.firstMotorcycle then return false,"先购买人生第一辆摩托" end
         if p.flags.professional then return false,"已完成入门训练" end
+        if p.career.pending then return false,"已有训练或赛事报名，请继续当前项目" end
         local cost=p.equipment.helmet and 155000 or 200000
         if p.cashCents<cost+200000 then return false,"训练护具后还需保留2000元生活周转金" end
         local ok,message=Store.ApplyCash(p,-cost,"training","training:license")
         if not ok then return false,message end
-        p.equipment.helmet=true; p.flags.professional=true; p.career.team="南城新人训练营"
+        p.equipment.helmet=true; p.career.team="南城新人训练营"
+        p.career.pending={id="training:license",series=1,vehicle="sport",track="circuit",laps=1,training=true}
+        return true,"已报名封闭场地训练：完成1圈顺序检查点，学会刹车与复位。通过后才获得职业资格。"
+    end)
+end
+function Progress.CompleteTraining(finished)
+    return Store.Transaction(function(p)
+        extras(p)
+        if not (p.career.pending and p.career.pending.training) then return false,"没有待完成的训练" end
+        if not finished then return false,"训练未通过，报名保留，可以免费重练" end
+        p.flags.professional=true; p.career.pending=false
         p.day=p.day+3; p.time=8; p.energy=90; p.hunger=70
-        return true,"完成三天入门安全与封闭场地训练。职业赛事入口已开放；旧竞速仍是独立模式。"
+        return true,"封闭场地训练通过！已掌握顺序检查点与完赛规则，三天课程结束，职业资格开放。"
     end)
 end
 function Progress.EnterSeries(index)
@@ -173,6 +184,7 @@ function Progress.SettleRace(place,finished)
         extras(p)
         local race=p.career.pending
         if not race then return false,"没有生涯待结算赛事" end
+        if race.training then return false,"训练必须通过训练资格入口结算" end
         local series=Progress.Series[race.series]
         local reward=finished and math.floor(series.reward*math.max(.1,(10-place)/9)) or 0
         local ok,message=Store.ApplyCash(p,reward,"career_race",race.id..":reward")

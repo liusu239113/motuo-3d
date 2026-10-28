@@ -338,7 +338,11 @@ local function SettleCareerResult()
     if not careerRace_ or not race_ or race_.phase ~= "finished" then return true,"赛事报名已保留，可在车行继续" end
     local profile=CareerStore.Get()
     if not (profile.career and profile.career.pending) then return true,"赛事奖金已保存" end
-    local ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true)
+    local pending=profile.career.pending
+    if pending.training and not race_.player.finished then return true,"训练尚未通过，报名保留，可免费继续练习" end
+    local ok,message
+    if pending.training then ok,message=CareerProgress.CompleteTraining(race_.player.finished==true)
+    else ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true) end
     if ok then sim_.coinsEarned=0 else print("[生涯赛事保存失败] "..message) end
     return ok,message
 end
