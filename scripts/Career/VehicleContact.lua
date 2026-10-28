@@ -71,37 +71,40 @@ function Contact.Solve(city,id,x,z,yaw,lean)
     local pitch,roll=0,lean or 0
     local yawRotation=Quaternion(0,yaw,0)
     local heights={}
-    -- 用每轮实际最低胎面求前后差。四轮允许刚性车身在不共面路沿上三点支撑；不强行穿地求四轮全贴。
+    local function support(w,pitchAngle,rollAngle)
+        local rotation=Quaternion(pitchAngle,V.RIGHT)*Quaternion(rollAngle,V.FORWARD)
+        local needed=-math.huge
+        for _,p in ipairs(w.points) do
+            local localPoint=rotation*p
+            local world=yawRotation*localPoint
+            needed=math.max(needed,city:Surface(x+world.x,z+world.z)-localPoint.y)
+        end
+        return needed
+    end
+    if #wheels==2 then
+        -- 二轮用有界求根，避免胎面切换或路沿边缘让固定步长反复跳变。
+        local lo,hi=-6,6
+        for _=1,18 do
+            local mid=(lo+hi)*.5
+            local difference=support(wheels[2],mid,roll)-support(wheels[1],mid,roll)
+            if difference>0 then hi=mid else lo=mid end
+        end
+        pitch=(lo+hi)*.5
+        return math.max(support(wheels[1],pitch,roll),support(wheels[2],pitch,roll)),pitch,roll
+    end
+    -- 四轮允许刚性车身在不共面路沿上三点支撑；不强行穿地求四轮全贴。
     for _=1,6 do
-        local rotation=Quaternion(pitch,V.RIGHT)*Quaternion(roll,V.FORWARD)
-        for i,w in ipairs(wheels) do
-            local center=yawRotation*(rotation*V(w.x,0,w.z))
-            local ground=city:Surface(x+center.x,z+center.z)
-            local low=math.huge
-            for _,p in ipairs(w.points) do low=math.min(low,(rotation*p).y) end
-            heights[i]=ground-low
-        end
+        for i,w in ipairs(wheels) do heights[i]=support(w,pitch,roll) end
         local rear,front=wheels[1],wheels[#wheels]
-        local rh,fh=heights[1],heights[#wheels]
-        if #wheels==4 then
-            rh=(heights[1]+heights[2])*.5;fh=(heights[3]+heights[4])*.5
-            local left=(heights[1]+heights[3])*.5
-            local right=(heights[2]+heights[4])*.5
-            local track=wheels[2].x-wheels[1].x
-            roll=math.max(-6,math.min(6,roll+math.deg((right-left)/track)))
-        end
+        local rh,fh=(heights[1]+heights[2])*.5,(heights[3]+heights[4])*.5
+        local left=(heights[1]+heights[3])*.5
+        local right=(heights[2]+heights[4])*.5
+        local track=wheels[2].x-wheels[1].x
+        roll=math.max(-6,math.min(6,roll+math.deg((right-left)/track)))
         pitch=math.max(-6,math.min(6,pitch-math.deg((fh-rh)/(front.z-rear.z))))
     end
-    -- 最后按最终角度重新求高度，避免最后一轮角度变化残留胎底穿地。
-    local rotation=Quaternion(pitch,V.RIGHT)*Quaternion(roll,V.FORWARD)
     local height=-math.huge
-    for _,w in ipairs(wheels) do
-        local center=yawRotation*(rotation*V(w.x,0,w.z))
-        local ground=city:Surface(x+center.x,z+center.z)
-        local low=math.huge
-        for _,p in ipairs(w.points) do low=math.min(low,(rotation*p).y) end
-        height=math.max(height,ground-low)
-    end
+    for _,w in ipairs(wheels) do height=math.max(height,support(w,pitch,roll)) end
     return height,pitch,roll
 end
 

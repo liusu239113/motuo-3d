@@ -170,10 +170,11 @@ function Checks.Vehicles(session)
                     local rotation=Quaternion(0,yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
                     local maxGap,minGap=-math.huge,math.huge
                     for _,w in ipairs(Contact.Wheels[id]) do
-                        local center=rotation*Vector3(w.x,0,w.z)
-                        local ground=session.city:Surface(x+center.x,-20+center.z)
                         local low=math.huge
-                        for _,p in ipairs(w.points) do low=math.min(low,y+(rotation*p).y-ground) end
+                        for _,p in ipairs(w.points) do
+                            local world=rotation*p
+                            low=math.min(low,y+world.y-session.city:Surface(x+world.x,-20+world.z))
+                        end
                         minGap,maxGap=math.min(minGap,low),math.max(maxGap,low)
                     end
                     assert(minGap>-.0001 and minGap<.001,id.."胎面不能悬空或穿地")
@@ -185,6 +186,19 @@ function Checks.Vehicles(session)
         if id~="sedan" and id~="suv" and id~="truck" then
             local entry=session.actor.visuals:EnsureVehicle(id)
             local clamped=entry.rider.reachClampedFrames or 0
+            if id=="cruiser_2" then
+                local source=entry.rider.config
+                for _,delta in ipairs({-20,-10,0,10,20}) do
+                    local config={}
+                    for key,value in pairs(source) do config[key]=value end
+                    config.waist,config.spine,config.chest=source.waist+delta,source.spine+delta,source.chest+delta
+                    entry.rider.config=config
+                    entry.rider:PoseRide(0)
+                    local candidate=entry.rider:ReadPose()
+                    print(string.format("[巡航肩臂标定] delta%d 左%.5f 右%.5f",delta,candidate.leftGripError,candidate.rightGripError))
+                end
+                entry.rider.config=source
+            end
             entry.rider:PoseRide(0)
             local pose=entry.rider:ReadPose()
             print(string.format("[逐车骑姿] %s 左手%.5f 右手%.5f 夹取%d",id,pose.leftGripError,pose.rightGripError,(entry.rider.reachClampedFrames or 0)-clamped))

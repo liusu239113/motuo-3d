@@ -1,0 +1,43 @@
+[2026-10-29 06_55_39_043][0] ERROR: Could not initialize audio output
+[2026-10-29 06_55_39_077][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_077][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_077][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_077][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_811][44] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_811][44] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_39_811][44] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 06_55_38_679][0] INFO: DownloadManager initialized
+[2026-10-29 06_55_38_681][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 06_55_38_681][0] INFO: Engine construct finish.
+[2026-10-29 06_55_39_030][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 06_55_39_046][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 06_55_39_047][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 06_55_39_790][44] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 06_55_42_220][172]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 06_55_42_224][172]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 06_55_42_224][172]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 06_55_42_226][172] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 06_55_43_468][198] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 06_55_43_472][198][Script] IsNetworkMode:    false
+[2026-10-29 06_55_43_489][198][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 06_55_43_489][198][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 06_55_43_489][198][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 06_55_43_489][198][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 06_55_43_492][198][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 06_55_43_970][198][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 06_55_44_356][198][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 06_55_44_360][198][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 06_55_44_393][198][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 06_55_44_393][198][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 06_55_44_403][198][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 06_55_44_406][199][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 06_55_44_406][199][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 06_55_44_406][199][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 06_55_46_550][328]INFO__VALIDATE_UPDATE__:false
