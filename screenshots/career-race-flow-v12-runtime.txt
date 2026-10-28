@@ -1,0 +1,564 @@
+[2026-10-28 23_39_45_003][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_45_003][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_45_003][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_45_003][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_44_551][0] INFO: DownloadManager initialized
+[2026-10-28 23_39_44_552][0] INFO: a couple of Subsystems registered finish.
+[2026-10-28 23_39_44_553][0] INFO: Engine construct finish.
+[2026-10-28 23_39_44_575][0] INFO: Engine initialize begin.
+[2026-10-28 23_39_44_575][0] INFO: Rendering pipeline: forward
+[2026-10-28 23_39_44_577][0] INFO: Engine resourcePrefixPath: /resources/runtime/cli/, resource: Res
+[2026-10-28 23_39_44_579][0] INFO: Added resource path /resources/runtime/cli/Res/
+[2026-10-28 23_39_44_579][0] INFO: Now resource dir: 
+[2026-10-28 23_39_44_579][0] INFO: 0 - /resources/runtime/cli/Res/
+[2026-10-28 23_39_44_583][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/CoreData.pak' to cache
+[2026-10-28 23_39_44_583][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/CoreData.pak, 0
+[2026-10-28 23_39_44_585][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/CoreData.pak, 123 entries (122 unique blocks), decompressed 65583 -> 149661 bytes, dict 8561 bytes
+[2026-10-28 23_39_44_585][0] INFO: Added resource package CoreData
+[2026-10-28 23_39_44_585][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Data.pak' to cache
+[2026-10-28 23_39_44_585][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Data.pak, 0
+[2026-10-28 23_39_44_734][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Data.pak, 1372 entries (1285 unique blocks), decompressed 16666575 -> 32267717 bytes, dict 22029 bytes
+[2026-10-28 23_39_44_734][0] INFO: Added resource package Data
+[2026-10-28 23_39_44_734][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Res.pak' to cache
+[2026-10-28 23_39_44_734][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Res.pak, 0
+[2026-10-28 23_39_44_948][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Res.pak, 647 entries (625 unique blocks), decompressed 27317399 -> 73983794 bytes, dict 57726 bytes
+[2026-10-28 23_39_44_948][0] INFO: Added resource package Res
+[2026-10-28 23_39_44_948][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-28 23_39_44_954][0] INFO: computeShaderSupport 1,caps->supported:4,aps->supported & BGFX_CAPS_INDEX32:4096
+[2026-10-28 23_39_44_954][0] INFO: Detected 0 GPUs
+[2026-10-28 23_39_44_954][0] INFO: Selected GPU name: 
+[2026-10-28 23_39_44_954][0] INFO: Renderer Type: Noop
+[2026-10-28 23_39_44_954][0] INFO: CheckFeatureSupport => CpuInstance=1, _R32I=1, _R32U=1, _R32F=1, _RGBA16F=1, _RGBA32F=1, MaxTextureSizeLimit=16384
+[2026-10-28 23_39_44_954][0] INFO: Graphics mode: 2040x1080 (logic=2040x1080, dpr=1) windowed monitor 0
+[2026-10-28 23_39_44_954][0] INFO: Initialized input
+[2026-10-28 23_39_44_954][0] INFO: Initialized user interface
+[2026-10-28 23_39_44_958][0] INFO: Initialized renderer
+[2026-10-28 23_39_44_961][0] INFO: Initialized graphics & audio output.
+[2026-10-28 23_39_44_962][0] INFO: Initialized engine
+[2026-10-28 23_39_44_962][0] INFO: LogUploader: auto-upload disabled (no SLS URL), UploadLogPack still available on demand
+[2026-10-28 23_39_44_964][0] INFO: Device Max Storage Block Binding Range: 16
+[2026-10-28 23_39_44_965][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-28 23_39_44_965][0] INFO: UrhoXRuntime: using local ProjectBuilder manifest: /workspace/dist/latest.json
+[2026-10-28 23_39_44_967][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-28 23_39_44_967][0] INFO: Custom Lua require system installed (module cache active)
+[2026-10-28 23_39_44_976][0] INFO: Lua 5.4: Generational GC enabled.
+[2026-10-28 23_39_44_979][0] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-10-28 23_39_44_976.log
+[2026-10-28 23_39_44_979][0] INFO: LobbyBridge Lua API registered
+[2026-10-28 23_39_44_979][0] INFO: [Validate] Mode enabled: frames=4500, timeout=105s
+[2026-10-28 23_39_44_979][0] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-10-28 23_39_44_979][0] INFO: BootstrapManager: Localization initialized, language=en
+[2026-10-28 23_39_44_980][0] INFO: LoadingUI::Show()
+[2026-10-28 23_39_44_982][0] INFO: BootstrapPipeline: starting with 5 steps, total weight 1.00
+[2026-10-28 23_39_44_982][0] INFO: BootstrapPipeline: executing step [1/5] 'LoadVersion'
+[2026-10-28 23_39_44_982][0] INFO: [Bootstrap/LoadVersion] Starting...
+[2026-10-28 23_39_44_982][0] INFO: [Bootstrap/LoadVersion] Loading local version: /workspace/dist/latest.json
+[2026-10-28 23_39_44_983][0] INFO: [Bootstrap/LoadVersion] Version: 1.0.9, Manifest (client): 66456ee5
+[2026-10-28 23_39_44_984][0] INFO: [Bootstrap/LoadVersion] Completed successfully (2 ms)
+[2026-10-28 23_39_44_984][0] INFO: BootstrapPipeline: step 'LoadVersion' completed successfully
+[2026-10-28 23_39_44_984][1] INFO: BootstrapPipeline: executing step [2/5] 'LoadProjectManifest'
+[2026-10-28 23_39_44_984][1] INFO: [Bootstrap/LoadProjectManifest] Starting...
+[2026-10-28 23_39_44_984][1] INFO: Manifest Lua API registered successfully
+[2026-10-28 23_39_44_985][1] INFO: [Bootstrap/LoadProjectManifest] Loading local manifest: /workspace/dist/1.0.9/manifest-66456ee5.json
+[2026-10-28 23_39_44_991][1] INFO: ManifestData: loaded 341 files, 3 sources, 0 paks, entry=main.lua
+[2026-10-28 23_39_44_991][1] INFO: [Bootstrap/LoadProjectManifest] Added builtin source engine-startup: https://.../src/engine-startup/ (tag=stable, priority=1000000)
+[2026-10-28 23_39_44_991][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source engine-res: https://<engine-res>/ (tag=maker_validate_linux.1016, priority=1000001)
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source urhox-libs: https://<urhox-libs>/ (tag=1.0, priority=1000002)
+[2026-10-28 23_39_44_992][1] INFO: ManifestResolver: loaded game manifest with 341 files, 0 paks
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadProjectManifest] Loaded manifest with 341 files, entry: main.lua
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadProjectManifest] Completed successfully (8 ms)
+[2026-10-28 23_39_44_992][1] INFO: BootstrapPipeline: step 'LoadProjectManifest' completed successfully
+[2026-10-28 23_39_44_992][1] INFO: BootstrapPipeline: executing step [3/5] 'LoadSourceManifests'
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-startup (https://.../src/engine-startup/, stable)
+[2026-10-28 23_39_44_992][1] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/1]: engine-startup
+[2026-10-28 23_39_44_998][1] INFO: [Bootstrap/LoadSourceManifests] Local directory exists but extraction incomplete for engine-startup, marking for re-download
+[2026-10-28 23_39_44_998][1] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://.../src/engine-startup/stable.json
+[2026-10-28 23_39_44_998][1] INFO: HttpManager initialized (Native with libhv HttpClient)
+[2026-10-28 23_39_44_999][1] INFO: Shader::BeginLoad: /Shaders/BLGL/UI.glsl
+[2026-10-28 23_39_44_999][1] INFO: Shader::EndLoad
+[2026-10-28 23_39_45_382][24] INFO: ManifestData: loaded 6 files, 0 sources, 0 paks, entry=engine-startup/main.lua
+[2026-10-28 23_39_45_382][24] INFO: ManifestResolver: loaded source manifest 'engine-startup' with 6 files, 0 paks
+[2026-10-28 23_39_45_382][24] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-startup manifest with 6 files
+[2026-10-28 23_39_45_382][24] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (390 ms)
+[2026-10-28 23_39_45_382][24] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-10-28 23_39_45_383][24] INFO: BootstrapPipeline: executing step [4/5] 'InitializeResource'
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/InitializeResource] Starting...
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/InitializeResource] ManifestResolver registered to DownloadManager
+[2026-10-28 23_39_45_383][24] INFO: Added resource path /home/Maker/update/
+[2026-10-28 23_39_45_383][24] INFO: Now resource dir: 
+[2026-10-28 23_39_45_383][24] INFO: 0 - /home/Maker/update/
+[2026-10-28 23_39_45_383][24] INFO: 1 - /resources/runtime/cli/Res/
+[2026-10-28 23_39_45_383][24] I[2026-10-28 23_39_45_410][24] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_45_410][24] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-28 23_39_45_410][24] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+NFO: Added resource path /workspace/dist/
+[2026-10-28 23_39_45_383][24] INFO: Now resource dir: 
+[2026-10-28 23_39_45_383][24] INFO: 0 - /workspace/dist/
+[2026-10-28 23_39_45_383][24] INFO: 1 - /home/Maker/update/
+[2026-10-28 23_39_45_383][24] INFO: 2 - /resources/runtime/cli/Res/
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/InitializeResource] Resource system initialized
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/InitializeResource] Completed successfully (0 ms)
+[2026-10-28 23_39_45_383][24] INFO: BootstrapPipeline: step 'InitializeResource' completed successfully
+[2026-10-28 23_39_45_383][24] INFO: BootstrapPipeline: executing step [5/5] 'Startup'
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/Startup] Starting...
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/Startup] Found engine-startup manifest with 6 files
+[2026-10-28 23_39_45_383][24] INFO: [Bootstrap/Startup] Downloading 4 startup resources
+[2026-10-28 23_39_45_387][24] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 23_39_45_387][24] INFO: [Bootstrap/Startup] Entry script: engine-startup/main.lua -> .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_39_45_387][24] INFO: Custom Lua require system installed (module cache active)
+[2026-10-28 23_39_45_395][24] INFO: Lua 5.4: Generational GC enabled.
+[2026-10-28 23_39_45_395][24] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-10-28 23_39_45_395.log
+[2026-10-28 23_39_45_395][24] INFO: Manifest Lua API registered successfully
+[2026-10-28 23_39_45_395][24] INFO: [BootstrapLuaAPI] Registered successfully
+[2026-10-28 23_39_45_395][24] INFO: [Bootstrap/Startup] Startup Lua VM created
+[2026-10-28 23_39_45_397][24] INFO: Loaded Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_39_45_397][24] INFO: Executed Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-10-28 23_39_45_397][24] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-10-28 23_39_45_399][24] INFO: Loaded Lua script engine-startup/loading_ui.lua
+[2026-10-28 23_39_45_404][24] INFO: LoadingUI::Hide()
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/Startup] Pipeline reconfigured by Lua script
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/Startup] Completed successfully (22 ms)
+[2026-10-28 23_39_45_405][24] INFO: BootstrapPipeline: step 'Startup' completed successfully
+[2026-10-28 23_39_45_405][24] INFO: BootstrapPipeline: skipping step 'UpdateProjectInfo'
+[2026-10-28 23_39_45_405][24] INFO: BootstrapPipeline: executing step [7/16] 'LoadSourceManifests'
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-res (https://<engine-res>/, maker_validate_linux.1016)
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/LoadSourceManifests] Found source: urhox-libs (https://<urhox-libs>/, 1.0)
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/LoadSourceManifests] Found source: official-res (https://<official-res>/, stable)
+[2026-10-28 23_39_45_405][24] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/3]: official-res
+[2026-10-28 23_39_45_407][24] INFO: [Bootstrap/LoadSourceManifests] Local directory exists but extraction incomplete for official-res, marking for re-download
+[2026-10-28 23_39_45_408][24] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<official-res>/stable.json
+[2026-10-28 23_39_45_408][24] INFO: Shader::BeginLoad: /Shaders/BLGL/NanoVGFill.glsl
+[2026-10-28 23_39_45_408][24] INFO: Shader::EndLoad
+[2026-10-28 23_39_45_647][31] INFO: ManifestData: loaded 38888 files, 1 sources, 3 paks, entry=
+[2026-10-28 23_39_45_820][31] INFO: ManifestResolver: loaded source manifest 'official-res' with 38888 files, 3 paks
+[2026-10-28 23_39_45_820][31] INFO: [Bootstrap/LoadSourceManifests] Loaded official-res manifest with 38888 files
+[2026-10-28 23_39_45_820][31] INFO: [Bootstrap/LoadSourceManifests] Loading source [2/3]: engine-res
+[2026-10-28 23_39_45_826][31] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<engine-res>/maker_validate_linux.1016.json
+[2026-10-28 23_39_45_946][38] INFO: ManifestData: loaded 1177 files, 0 sources, 0 paks, entry=
+[2026-10-28 23_39_45_950][38] INFO: ManifestResolver: loaded source manifest 'engine-res' with 1177 files, 0 paks
+[2026-10-28 23_39_45_950][38] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-res manifest with 1177 files
+[2026-10-28 23_39_45_950][38] INFO: [Bootstrap/LoadSourceManifests] Loading source [3/3]: urhox-libs
+[2026-10-28 23_39_45_954][38] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<urhox-libs>/1.0.json
+[2026-10-28 23_39_46_368][63] INFO: ManifestData: loaded 160 files, 0 sources, 0 paks, entry=
+[2026-10-28 23_39_46_368][63] INFO: ManifestResolver: loaded source manifest 'urhox-libs' with 160 files, 0 paks
+[2026-10-28 23_39_46_368][63] INFO: [Bootstrap/LoadSourceManifests] Loaded urhox-libs manifest with 160 files
+[2026-10-28 23_39_46_369][63] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (964 ms)
+[2026-10-28 23_39_46_369][63] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-10-28 23_39_46_369][63] INFO: BootstrapPipeline: skipping step 'ClearShaderCache'
+[2026-10-28 23_39_46_369][63] INFO: BootstrapPipeline: executing step [9/16] 'DownloadInitialPackage'
+[2026-10-28 23_39_46_369][63] INFO: [Bootstrap/DownloadInitialPackage] Starting...
+[2026-10-28 23_39_46_369][63] INFO: [Bootstrap/DownloadPackage] No packages to download
+[2026-10-28 23_39_46_369][63] INFO: [Bootstrap/DownloadInitialPackage] Completed successfully (0 ms)
+[2026-10-28 23_39_46_369][63] INFO: BootstrapPipeline: step 'DownloadInitialPackage' completed successfully
+[2026-10-28 23_39_46_369][63] INFO: BootstrapPipeline: executing step [10/16] 'PreloadI18nStep'
+[2026-10-28 23_39_46_369][63] INFO: [Bootstrap/PreloadI18nStep] Starting...
+[2026-10-28 23_39_46_373][63]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-28 23_39_46_378][63]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-28 23_39_46_378][63]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-28 23_39_46_382][63] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-28 23_39_46_382][63] INFO: [Bootstrap/PreloadI18nStep] Completed successfully (13 ms)
+[2026-10-28 23_39_46_382][63] INFO: BootstrapPipeline: step 'PreloadI18nStep' completed successfully
+[2026-10-28 23_39_46_382][63] INFO: BootstrapPipeline: executing step [11/16] 'LoadPreloadResources'
+[2026-10-28 23_39_46_382][63] INFO: [Bootstrap/LoadPreloadResources] Starting...
+[2026-10-28 23_39_46_383][63] INFO: DownloadWhilePlayingManager: loaded 15 render blocking exts
+[2026-10-28 23_39_46_383][63] INFO: [Bootstrap/LoadPreloadResources] Loaded RenderBlockingTypes.json
+[2026-10-28 23_39_46_389][63] INFO: ManifestResolver: 预加载 1371 个文件 (manifest 总计 40359)
+[2026-10-28 23_39_46_389][63] INFO: [Bootstrap/LoadPreloadResources] Found 1371 preload files
+[2026-10-28 23_39_47_503][63] INFO: [Bootstrap/LoadPreloadResources] All resources already cached
+[2026-10-28 23_39_47_503][63] INFO: [Bootstrap/LoadPreloadResources] Completed successfully (1121 ms)
+[2026-10-28 23_39_47_503][63] INFO: BootstrapPipeline: step 'LoadPreloadResources' completed successfully
+[2026-10-28 23_39_47_503][63] INFO: BootstrapPipeline: skipping step 'Cleanup'
+[2026-10-28 23_39_47_503][63] INFO: BootstrapPipeline: skipping step 'RecordProjectSize'
+[2026-10-28 23_39_47_503][63] INFO: BootstrapPipeline: skipping step 'CleanupOtherProjects'
+[2026-10-28 23_39_47_503][63] INFO: BootstrapPipeline: executing step [15/16] 'Ready'
+[2026-10-28 23_39_47_503][63] INFO: [Bootstrap/Ready] Starting...
+[2026-10-28 23_39_47_503][63] INFO: [Bootstrap/Ready] No project_id (-game=), project-scoped Lobby requests will be rejected
+[2026-10-28 23_39_47_508][63] INFO: [Bootstrap/Ready] Multiplayer mode: false, max_players: 4
+[2026-10-28 23_39_47_509][64] INFO: [Bootstrap/Ready] Completed successfully (6 ms)
+[2026-10-28 23_39_47_509][64] INFO: BootstrapPipeline: step 'Ready' completed successfully
+[2026-10-28 23_39_47_525][65] INFO: BootstrapPipeline: executing step [16/16] 'FadeOutLoading'
+[2026-10-28 23_39_47_525][65] INFO: [Bootstrap/FadeOutLoading] Starting...
+[2026-10-28 23_39_47_908][88] INFO: [Bootstrap/FadeOutLoading] Completed successfully (383 ms)
+[2026-10-28 23_39_47_908][88] INFO: BootstrapPipeline: step 'FadeOutLoading' completed successfully
+[2026-10-28 23_39_47_924][89] INFO: BootstrapPipeline: completed successfully
+[2026-10-28 23_39_47_925][89] INFO: BootstrapManager: pipeline completed successfully
+[2026-10-28 23_39_47_925][89] INFO: BootstrapManager: using provided scriptFileName: main.lua
+[2026-10-28 23_39_47_925][89] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-28 23_39_47_927][89] INFO: RuntimeRetargeterCache: Loaded 5 body types, 210 animation mappings
+[2026-10-28 23_39_47_928][89] INFO: Loaded Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-10-28 23_39_47_929][89][Script] IsNetworkMode:    false
+[2026-10-28 23_39_47_937][89] INFO: Loaded Lua script urhox-libs/Engine/init.lua
+[2026-10-28 23_39_47_938][89] INFO: Loaded Lua script urhox-libs/Engine/InputExtensions.lua
+[2026-10-28 23_39_47_939][89] INFO: Loaded Lua script urhox-libs/Engine/ResourceCacheExtensions.lua
+[2026-10-28 23_39_47_941][89] INFO: Loaded Lua script urhox-libs/Engine/i18n.lua
+[2026-10-28 23_39_47_941][89] INFO: [i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-28 23_39_47_941][89] INFO: [i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-28 23_39_47_941][89] INFO: [i18n] GetLanguage: resolved='zh_CN'
+[2026-10-28 23_39_47_941][89] INFO: [i18n] SetLanguage: actualLang='zh_CN' explicit=nil
+[2026-10-28 23_39_47_941][89] INFO: [i18n] SetVariantTag: priority=2000, tag=''
+[2026-10-28 23_39_47_941][89] INFO: SetVariantTag: priority=2000, tag=''
+[2026-10-28 23_39_47_946][89] INFO: [i18n] init: lang='zh_CN' translations=true hooks=true
+[2026-10-28 23_39_47_948][89] INFO: Loaded Lua script LuaScripts/Utilities/Previews/InputAdaptor.lua
+[2026-10-28 23_39_47_948][89][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-28 23_39_47_948][89][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-28 23_39_47_948][89][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-28 23_39_47_948][89][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-28 23_39_47_949][89] INFO: Loaded Lua script LuaScripts/Utilities/Previews/Scene.lua
+[2026-10-28 23_39_47_950][89] INFO: Loaded Lua script LuaScripts/Utilities/Previews/SceneGuard.lua
+[2026-10-28 23_39_47_951][89] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UIGuard.lua
+[2026-10-28 23_39_47_951][89] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UserInfo.lua
+[2026-10-28 23_39_47_951][89][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-28 23_39_47_951][89] INFO: Executed Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-10-28 23_39_47_953][89] INFO: Loaded Lua script Validate/cloud_stub.lua
+[2026-10-28 23_39_47_953][89] INFO: Executed Lua script Validate/cloud_stub.lua
+[2026-10-28 23_39_47_953][89] INFO: Loaded Lua script Validate/servercloud_stub.lua
+[2026-10-28 23_39_47_953][89] INFO: Executed Lua script Validate/servercloud_stub.lua
+[2026-10-28 23_39_47_962][89] INFO: Loaded Lua script main.lua
+[2026-10-28 23_39_47_963][89] INFO: Loaded Lua script urhox-libs/UI/init.lua
+[2026-10-28 23_39_47_965][89] INFO: Loaded Lua script urhox-libs/UI/Core/UI.lua
+[2026-10-28 23_39_47_966][89] INFO: Loaded Lua script urhox-libs/UI/Core/Theme.lua
+[2026-10-28 23_39_47_966][89] INFO: Loaded Lua script urhox-libs/UI/Core/ImageCache.lua
+[2026-10-28 23_39_47_967][89] INFO: Loaded Lua script urhox-libs/UI/Core/PointerEvent.lua
+[2026-10-28 23_39_47_968][89] INFO: Loaded Lua script urhox-libs/UI/Core/Input.lua
+[2026-10-28 23_39_47_969][89] INFO: Loaded Lua script urhox-libs/UI/Core/InputAdapter.lua
+[2026-10-28 23_39_47_970][89] INFO: Loaded Lua script urhox-libs/UI/Core/Gesture.lua
+[2026-10-28 23_39_47_971][89] INFO: Loaded Lua script urhox-libs/UI/Core/GestureEvent.lua
+[2026-10-28 23_39_47_975][89] INFO: Loaded Lua script urhox-libs/UI/Core/Widget.lua
+[2026-10-28 23_39_47_976][89] INFO: Loaded Lua script urhox-libs/UI/Core/Style.lua
+[2026-10-28 23_39_47_977][89] INFO: Loaded Lua script urhox-libs/UI/Core/Transition.lua
+[2026-10-28 23_39_47_979][89] INFO: Loaded Lua script urhox-libs/UI/Core/UILoader.lua
+[2026-10-28 23_39_47_979][89] INFO: Loaded Lua script urhox-libs/UI/Core/UISerializer.lua
+[2026-10-28 23_39_47_981][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/init.lua
+[2026-10-28 23_39_47_982][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Context.lua
+[2026-10-28 23_39_47_983][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/ColorPicker.lua
+[2026-10-28 23_39_47_985][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Schema.lua
+[2026-10-28 23_39_47_987][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Selection.lua
+[2026-10-28 23_39_47_988][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Overlay.lua
+[2026-10-28 23_39_47_989][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Report.lua
+[2026-10-28 23_39_47_991][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/QuickTweak.lua
+[2026-10-28 23_39_47_993][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/EditTool.lua
+[2026-10-28 23_39_47_996][89] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Panel.lua
+[2026-10-28 23_39_47_997][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Panel.lua
+[2026-10-28 23_39_47_999][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Label.lua
+[2026-10-28 23_39_48_001][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Button.lua
+[2026-10-28 23_39_48_002][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/TextField.lua
+[2026-10-28 23_39_48_004][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/EditMenu.lua
+[2026-10-28 23_39_48_005][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Checkbox.lua
+[2026-10-28 23_39_48_006][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toggle.lua
+[2026-10-28 23_39_48_007][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Slider.lua
+[2026-10-28 23_39_48_008][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/ProgressBar.lua
+[2026-10-28 23_39_48_009][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/ScrollView.lua
+[2026-10-28 23_39_48_011][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Dropdown.lua
+[2026-10-28 23_39_48_012][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Modal.lua
+[2026-10-28 23_39_48_016][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toast.lua
+[2026-10-28 23_39_48_018][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tabs.lua
+[2026-10-28 23_39_48_019][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tooltip.lua
+[2026-10-28 23_39_48_020][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Badge.lua
+[2026-10-28 23_39_48_021][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Avatar.lua
+[2026-10-28 23_39_48_023][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Card.lua
+[2026-10-28 23_39_48_024][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/List.lua
+[2026-10-28 23_39_48_025][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Divider.lua
+[2026-10-28 23_39_48_026][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Skeleton.lua
+[2026-10-28 23_39_48_028][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Chip.lua
+[2026-10-28 23_39_48_029][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Accordion.lua
+[2026-10-28 23_39_48_031][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Stepper.lua
+[2026-10-28 23_39_48_032][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Rating.lua
+[2026-10-28 23_39_48_033][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Breadcrumb.lua
+[2026-10-28 23_39_48_035][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Pagination.lua
+[2026-10-28 23_39_48_036][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Alert.lua
+[2026-10-28 23_39_48_037][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Timeline.lua
+[2026-10-28 23_39_48_039][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Menu.lua
+[2026-10-28 23_39_48_040][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tree.lua
+[2026-10-28 23_39_48_042][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/DatePicker.lua
+[2026-10-28 23_39_48_044][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/TimePicker.lua
+[2026-10-28 23_39_48_046][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Table.lua
+[2026-10-28 23_39_48_047][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Carousel.lua
+[2026-10-28 23_39_48_048][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Drawer.lua
+[2026-10-28 23_39_48_050][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Popover.lua
+[2026-10-28 23_39_48_051][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Calendar.lua
+[2026-10-28 23_39_48_053][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/FileUpload.lua
+[2026-10-28 23_39_48_054][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/RichText.lua
+[2026-10-28 23_39_48_055][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/SafeAreaView.lua
+[2026-10-28 23_39_48_056][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/SimpleGrid.lua
+[2026-10-28 23_39_48_057][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Spine.lua
+[2026-10-28 23_39_48_058][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Svg.lua
+[2026-10-28 23_39_48_059][89] INFO: Loaded Lua script urhox-libs/Sprite/SpriteSheet.lua
+[2026-10-28 23_39_48_060][89] INFO: Loaded Lua script urhox-libs/UI/Widgets/Sprite.lua
+[2026-10-28 23_39_48_062][89] INFO: Loaded Lua script urhox-libs/Sprite/SpriteAnimator.lua
+[2026-10-28 23_39_48_063][89] INFO: Loaded Lua script urhox-libs/UI/Components/VirtualList.lua
+[2026-10-28 23_39_48_064][89] INFO: Loaded Lua script urhox-libs/UI/Components/DragDropContext.lua
+[2026-10-28 23_39_48_065][89] INFO: Loaded Lua script urhox-libs/UI/Components/ItemSlot.lua
+[2026-10-28 23_39_48_066][89] INFO: Loaded Lua script urhox-libs/UI/Components/InventoryManager.lua
+[2026-10-28 23_39_48_067][89] INFO: Loaded Lua script urhox-libs/UI/Components/SkillTree.lua
+[2026-10-28 23_39_48_068][89] INFO: Loaded Lua script urhox-libs/UI/Components/ChatWindow.lua
+[2026-10-28 23_39_48_069][89] INFO: Loaded Lua script urhox-libs/UI/Components/ItemTooltip.lua
+[2026-10-28 23_39_48_070][89] INFO: Loaded Lua script urhox-libs/Camera/ThirdPersonCamera.lua
+[2026-10-28 23_39_48_081][89] INFO: Loaded Lua script World.lua
+[2026-10-28 23_39_48_087][89] INFO: Loaded Lua script Parts.lua
+[2026-10-28 23_39_48_098][89] INFO: Loaded Lua script Landscape.lua
+[2026-10-28 23_39_48_106][89] INFO: Loaded Lua script ScenicTrees.lua
+[2026-10-28 23_39_48_112][89] INFO: Loaded Lua script ScenicMesh.lua
+[2026-10-28 23_39_48_120][89] INFO: Loaded Lua script Tracks.lua
+[2026-10-28 23_39_48_163][89] INFO: Loaded Lua script TrackFeatures.lua
+[2026-10-28 23_39_48_430][89][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-28 23_39_48_438][89] INFO: Loaded Lua script VehicleAssets.lua
+[2026-10-28 23_39_48_446][89] INFO: Loaded Lua script VehicleFinish.lua
+[2026-10-28 23_39_48_453][89] INFO: Loaded Lua script VehicleWheelRefinement.lua
+[2026-10-28 23_39_48_461][89] INFO: Loaded Lua script TrackDecor.lua
+[2026-10-28 23_39_48_471][89] INFO: Loaded Lua script TrackDetails.lua
+[2026-10-28 23_39_48_483][89] INFO: Loaded Lua script Bike.lua
+[2026-10-28 23_39_48_488][89] INFO: Loaded Lua script RearMirrors.lua
+[2026-10-28 23_39_48_498][89] INFO: Loaded Lua script Rider.lua
+[2026-10-28 23_39_48_505][89] INFO: Loaded Lua script RideEffects.lua
+[2026-10-28 23_39_48_516][89] INFO: Loaded Lua script Simulation.lua
+[2026-10-28 23_39_48_531][89] INFO: Loaded Lua script HUD.lua
+[2026-10-28 23_39_48_538][89] INFO: Loaded Lua script RacingTheme.lua
+[2026-10-28 23_39_48_544][89] INFO: Loaded Lua script Catalog.lua
+[2026-10-28 23_39_48_550][89] INFO: Loaded Lua script Profile.lua
+[2026-10-28 23_39_48_559][89] INFO: Loaded Lua script ControlSettings.lua
+[2026-10-28 23_39_48_567][89] INFO: Loaded Lua script GaragePreview.lua
+[2026-10-28 23_39_48_576][89] INFO: Loaded Lua script MobileControls.lua
+[2026-10-28 23_39_48_581][89] INFO: Loaded Lua script RaceInstruments.lua
+[2026-10-28 23_39_48_589][89] INFO: Loaded Lua script RouteSelect.lua
+[2026-10-28 23_39_48_594][89] INFO: Loaded Lua script RacingDialogs.lua
+[2026-10-28 23_39_48_601][89] INFO: Loaded Lua script ControlEditor.lua
+[2026-10-28 23_39_48_610][89] INFO: Loaded Lua script RideAudio.lua
+[2026-10-28 23_39_48_620][89] INFO: Loaded Lua script RideLoader.lua
+[2026-10-28 23_39_48_634][89] INFO: Loaded Lua script Race.lua
+[2026-10-28 23_39_48_642][89] INFO: Loaded Lua script RaceAI.lua
+[2026-10-28 23_39_48_650][89] INFO: Loaded Lua script RaceVisuals.lua
+[2026-10-28 23_39_48_656][89] INFO: Loaded Lua script RaceAudio.lua
+[2026-10-28 23_39_48_664][89] INFO: Loaded Lua script Career/Session.lua
+[2026-10-28 23_39_48_673][89] INFO: Loaded Lua script Career/Store.lua
+[2026-10-28 23_39_48_676][89] INFO: Loaded Lua script Career/Config.lua
+[2026-10-28 23_39_48_680][89] INFO: Loaded Lua script Career/Delivery.lua
+[2026-10-28 23_39_48_685][89] INFO: Loaded Lua script Career/Progression.lua
+[2026-10-28 23_39_48_692][89] INFO: Loaded Lua script Career/Actor.lua
+[2026-10-28 23_39_48_696][89] INFO: Loaded Lua script Career/ActorVisuals.lua
+[2026-10-28 23_39_48_702][89] INFO: Loaded Lua script Career/Rig.lua
+[2026-10-28 23_39_48_710][89] INFO: Loaded Lua script Career/City.lua
+[2026-10-28 23_39_48_717][89] INFO: Loaded Lua script Career/CityDetails.lua
+[2026-10-28 23_39_48_723][89] INFO: Loaded Lua script Career/View.lua
+[2026-10-28 23_39_48_730][89] INFO: Loaded Lua script Career/MapWidget.lua
+[2026-10-28 23_39_48_732][89] INFO: Executed Lua script main.lua
+[2026-10-28 23_39_48_840][89][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 23_39_48_843][89][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-28 23_39_48_878][89][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-28 23_39_48_878][89][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 23_39_48_889][89] INFO: Loaded Lua script Career/Checks.lua
+[2026-10-28 23_39_48_890][89][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-28 23_39_48_891][89][Script] [流程] loading
+[2026-10-28 23_39_48_891][89][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-28 23_39_48_891][89] INFO: UrhoXRuntime: Game started successfully
+[2026-10-28 23_39_48_892][90][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 23_39_48_892][90][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 23_39_48_892][90][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 23_39_48_892][90][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-28 23_39_49_030][92][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-28 23_39_49_569][120] INFO: Added resource path /home/Maker/ResCache/
+[2026-10-28 23_39_49_569][120] INFO: Now resource dir: 
+[2026-10-28 23_39_49_569][120] INFO: 0 - /home/Maker/ResCache/
+[2026-10-28 23_39_49_569][120] INFO: 1 - /workspace/dist/
+[2026-10-28 23_39_49_569][120] INFO: 2 - /home/Maker/update/
+[2026-10-28 23_39_49_569][120] INFO: 3 - /resources/runtime/cli/Res/
+[2026-10-28 23_39_49_590][120] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processi[2026-10-28 23_40_11_322][1030] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_322][1030] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_322][1030] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_323][1030] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_324][1030] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_324][1030] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_324][1030] ERROR: Failed to compile vertex shader Skybox(RENDER_QUALITY=2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_324][1030] ERROR: Failed to compile pixel shader Skybox(ENVCUBE RENDER_QUALITY=2 REVERSED_Z):
+shader compile skipped (graphics headless)
+ng is not implemented.
+[2026-10-28 23_39_49_590][120] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_39_49_590][120] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_49_590][120] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_49_590][120] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_49_614][121] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_39_49_614][121] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-28 23_39_49_636][122] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_39_49_636][122] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_49_636][122] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_49_661][123] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-28 23_39_49_661][123] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-28 23_39_56_655][225][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-28 23_39_56_656][225][Script] [地图] 重建世界 circuit；路线、交通、仿真和比赛采样一并更新
+[2026-10-28 23_39_56_659][225][Script] [场景] 照片天空与匹配IBL，移动前向渲染／默认流畅档
+[2026-10-28 23_39_56_660][226][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-28 23_39_56_660][226][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-28 23_39_56_661][226][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-28 23_39_56_661][226][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-28 23_39_56_661][226][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-28 23_39_56_661][226][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-28 23_39_56_661][226][Script] [风景] 主线9705.3米，主支路1条，近地形8米采样
+[2026-10-28 23_40_06_213][797][Script] [风景性能] indexed地形191块，127199顶点／704256索引；原非索引需704256顶点，减少81.9%，单一连续混合材质
+[2026-10-28 23_40_08_652][942][Script] [风景森林] circuit high=28/28 near=28 middle=80 far=160 lowTri=7200/50000 chunks=145 lowCalls<=290 highTri<=528584
+[2026-10-28 23_40_10_777][1028][Script] [沿线细节] circuit 17设施 / 1避让 / 171合批 / 29802tri / 192草蕨 / 90岩块 / 0木料 / 0岸边设施；0新增阴影，0逐帧
+[2026-10-28 23_40_10_782][1029][Script] [场景] 静态主线9705米，6个导航目标，2个跳台，0辆交通车
+[2026-10-28 23_40_10_912][1029][Script] [VehicleFinish] sport LOD0 disconnected rubber rejected=131
+[2026-10-28 23_40_10_912][1029][Script] [VehicleFinish] sport LOD0 source=5029 split=5029 (body=4139,metal=238,rubber=593,leather=52,glass=7), lodDistance=0.0000
+[2026-10-28 23_40_10_982][1029][Script] [VehicleFinish] sport LOD1 disconnected rubber rejected=123
+[2026-10-28 23_40_10_983][1029][Script] [VehicleFinish] sport LOD1 source=4274 split=4274 (body=3511,metal=210,rubber=495,leather=51,glass=7), lodDistance=9.5354
+[2026-10-28 23_40_11_069][1029][Script] [VehicleFinish] sport LOD2 disconnected rubber rejected=109
+[2026-10-28 23_40_11_069][1029][Script] [VehicleFinish] sport LOD2 source=3268 split=3268 (body=2723,metal=130,rubber=363,leather=45,glass=7), lodDistance=26.0390
+[2026-10-28 23_40_11_108][1029][Script] [VehicleFinish] sport LOD3 disconnected rubber rejected=87
+[2026-10-28 23_40_11_109][1029][Script] [VehicleFinish] sport LOD3 source=2263 split=2263 (body=1887,metal=80,rubber=262,leather=27,glass=7), lodDistance=71.8823
+[2026-10-28 23_40_11_119][1029][Script] [VehicleFinish] sport ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=5029 tris; source UV/N/T unchanged; opaque glazing
+[2026-10-28 23_40_11_119][1029][Script] [车型] sport bbox 0.463/0.580/0.998 -> 2.15m, yaw 180
+[2026-10-28 23_40_11_126][1029][Script] [骑姿] sport Hip=Vector3(7.46058e-10, 0.95, -0.43) Head=Vector3(0.00733237, 1.26315, -0.00914865) LHand=Vector3(-0.34, 1.027, 0.265) RHand=Vector3(0.34, 1.027, 0.265) LFoot=Vector3(-0.28, 0.39, -0.28) RFoot=Vector3(0.279999, 0.39, -0.28) chest=67.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_11_126][1029][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_11_128][1029][Script] [摩托] 赤焰 · 仿赛：原始车身保留，程序化近景手套/仪表与低频后视摄像头已创建
+[2026-10-28 23_40_11_130][1030][Script] [ThirdPersonCamera] Created with 4 modes, initial mode: normal
+[2026-10-28 23_40_11_154][1030] INFO: Shader::BeginLoad: <engine-res>/assets/BJZhCY_zDf_bWBDmac27XBYK-d9e95f5c.glsl
+[2026-10-28 23_40_11_154][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_159][1030] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-28 23_40_11_159][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_187][1030] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C.glsl
+[2026-10-28 23_40_11_187][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_209][1030] INFO: Shader::BeginLoad: <engine-res>/assets/DYHiabeZkC9TeN8InBKDJdKz-980cf882.glsl
+[2026-10-28 23_40_11_209][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_268][1030] INFO: Shader::BeginLoad: Shaders/BLGL/Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654.glsl
+[2026-10-28 23_40_11_268][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_292][1030] INFO: Shader::BeginLoad: <engine-res>/assets/HdwacTs2OcCEFYmOZVMeZjB1-506e6d33.glsl
+[2026-10-28 23_40_11_292][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_318][1030] INFO: Shader::BeginLoad: <engine-res>/assets/Aui9CaxFTy27pOLFg57zUvZ5-931b1a05.glsl
+[2026-10-28 23_40_11_318][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_319][1030] INFO: Shader::BeginLoad: <engine-res>/assets/C0MrgZ4KRyMtqJBeQgWkhasm-c40ccbf2.glsl
+[2026-10-28 23_40_11_319][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_325][1030] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_326][1030] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_326][1030] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-10-28 23_40_11_326][1030] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+_325][1030] INFO: Shader::BeginLoad: <engine-res>/assets/HRNx6WwGUWaCcYTcVjtHCfXv-13514704.glsl
+[2026-10-28 23_40_11_325][1030] INFO: Shader::EndLoad
+[2026-10-28 23_40_11_327][1031][Script] [音频] 管理器已创建，等待逐项加载与用户解锁
+[2026-10-28 23_40_11_327][1031][Script] [音频] 已加载 1/8：audio/radio_01.ogg
+[2026-10-28 23_40_11_344][1032][Script] [音频] 已加载 2/8：audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-28 23_40_11_360][1033][Script] [音频] 已加载 3/8：audio/sfx/highway_wind_loop.mp3
+[2026-10-28 23_40_11_377][1034][Script] [音频] 已加载 4/8：audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-28 23_40_11_394][1035][Script] [音频] 已加载 5/8：audio/sfx/motorcycle_impact.mp3
+[2026-10-28 23_40_11_410][1036][Script] [音频] 已加载 6/8：audio/sfx/motorcycle_pass.mp3
+[2026-10-28 23_40_11_427][1037][Script] [电台] 已准备曲目：audio/radio_02.ogg
+[2026-10-28 23_40_11_443][1038][Script] [电台] 已准备曲目：audio/night_ride.ogg
+[2026-10-28 23_40_11_460][1039][Script] [竞速音频] 独立六通道准备完成，等待用户输入解锁
+[2026-10-28 23_40_11_460][1039][Script] [加载] 赛道与所选车型全部就绪：circuit / sport
+[2026-10-28 23_40_11_479][1040][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-28 23_40_14_725][1040][Script] [竞速] 9车 / 2圈 / 9705m主线 / 115检查点
+[2026-10-28 23_40_14_737][1040][Script] [车型] sport bbox 0.463/0.580/0.998 -> 2.15m, yaw 180
+[2026-10-28 23_40_14_743][1040][Script] [骑姿] sport Hip=Vector3(7.46058e-10, 0.95, -0.43) Head=Vector3(0.00733237, 1.26315, -0.00914865) LHand=Vector3(-0.34, 1.027, 0.265) RHand=Vector3(0.34, 1.027, 0.265) LFoot=Vector3(-0.28, 0.39, -0.28) RFoot=Vector3(0.279999, 0.39, -0.28) chest=67.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_743][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_749][1040][Script] [车型] sport_2 bbox 0.502/0.764/0.998 -> 2.15m, yaw -90
+[2026-10-28 23_40_14_755][1040][Script] [骑姿] sport_2 Hip=Vector3(7.46058e-10, 1.293, -0.33) Head=Vector3(0.00733237, 1.60615, 0.0908514) LHand=Vector3(-0.47, 1.255, 0.208) RHand=Vector3(0.47, 1.255, 0.208) LFoot=Vector3(-0.319999, 0.62, -0.319999) RFoot=Vector3(0.319999, 0.62, -0.32) chest=67.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_755][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_762][1040][Script] [车型] sport_3 bbox 0.502/0.748/0.998 -> 2.15m, yaw -90
+[2026-10-28 23_40_14_768][1040][Script] [骑姿] sport_3 Hip=Vector3(7.46058e-10, 1.215, -0.3) Head=Vector3(0.00733237, 1.52815, 0.120851) LHand=Vector3(-0.47, 1.209, 0.218) RHand=Vector3(0.47, 1.209, 0.218) LFoot=Vector3(-0.299999, 0.48, -0.27) RFoot=Vector3(0.299999, 0.48, -0.27) chest=67.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_768][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_774][1040][Script] [车型] cruiser bbox 0.758/0.926/1.363 -> 2.45m, yaw 0
+[2026-10-28 23_40_14_780][1040][Script] [骑姿] cruiser Hip=Vector3(7.46058e-10, 0.95, -0.3) Head=Vector3(0.00733238, 1.43165, -0.0562867) LHand=Vector3(-0.5, 1.402, 0.145) RHand=Vector3(0.5, 1.402, 0.145) LFoot=Vector3(-0.309999, 0.46, 0.12) RFoot=Vector3(0.309999, 0.459999, 0.12) chest=37.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_780][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_785][1040][Script] [车型] cruiser_2 bbox 0.580/0.713/0.998 -> 2.45m, yaw -90
+[2026-10-28 23_40_14_791][1040][Script] [骑姿] cruiser_2 Hip=Vector3(-0.09, 1.09, -0.2) Head=Vector3(-0.0821733, 1.60412, 0.0601435) LHand=Vector3(-0.64, 1.597, 0.0730001) RHand=Vector3(0.64, 1.597, 0.073) LFoot=Vector3(-0.309999, 0.4, -0.119999) RFoot=Vector3(0.309999, 0.399999, -0.12) chest=37.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_791][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_797][1040][Script] [车型] cruiser_3 bbox 0.447/0.662/0.998 -> 2.45m, yaw -90
+[2026-10-28 23_40_14_803][1040][Script] [骑姿] cruiser_3 Hip=Vector3(7.46058e-10, 1.165, -0.25) Head=Vector3(0.00733238, 1.64665, -0.0062867) LHand=Vector3(-0.479, 1.558, 0.238) RHand=Vector3(0.479, 1.558, 0.238) LFoot=Vector3(-0.299999, 0.52, -0.12) RFoot=Vector3(0.299999, 0.52, -0.12) chest=37.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_804][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_809][1040][Script] [车型] rally bbox 0.479/0.600/0.998 -> 2.22m, yaw 180
+[2026-10-28 23_40_14_815][1040][Script] [骑姿] rally Hip=Vector3(7.46058e-10, 1.03, -0.25) Head=Vector3(0.0073324, 1.47042, 0.0554972) LHand=Vector3(-0.42, 1.212, 0.315) RHand=Vector3(0.42, 1.212, 0.315) LFoot=Vector3(-0.289999, 0.43, -0.16) RFoot=Vector3(0.289999, 0.43, -0.16) chest=45.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_815][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_821][1040][Script] [车型] rally_2 bbox 0.502/0.646/0.998 -> 2.22m, yaw 180
+[2026-10-28 23_40_14_827][1040][Script] [骑姿] rally_2 Hip=Vector3(7.46058e-10, 1.185, -0.22) Head=Vector3(0.0073324, 1.62542, 0.0854972) LHand=Vector3(-0.488, 1.398, 0.238) RHand=Vector3(0.488, 1.398, 0.238) LFoot=Vector3(-0.269999, 0.52, -0.14) RFoot=Vector3(0.27, 0.519999, -0.14) chest=45.1deg gripError=0.0000/0.0000m
+[2026-10-28 23_40_14_827][1040][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-10-28 23_40_14_832][1040][Script] [车型] police bbox 0.471/0.354/0.998 -> 4.60m, yaw -90
+[2026-10-28 23_40_15_003][1040][Script] [VehicleFinish] cruiser_3 LOD0 disconnected rubber rejected=155
+[2026-10-28 23_40_15_003][1040][Script] [VehicleFinish] cruiser_3 LOD0 source=4906 split=4906 (body=4167,metal=160,rubber=465,leather=110,glass=4), lodDistance=0.0000
+[2026-10-28 23_40_15_111][1040][Script] [VehicleFinish] cruiser_3 LOD1 disconnected rubber rejected=116
+[2026-10-28 23_40_15_111][1040][Script] [VehicleFinish] cruiser_3 LOD1 source=4170 split=4170 (body=3543,metal=137,rubber=390,leather=96,glass=4), lodDistance=9.2349
+[2026-10-28 23_40_15_221][1040][Script] [VehicleFinish] cruiser_3 LOD2 disconnected rubber rejected=78
+[2026-10-28 23_40_15_222][1040][Script] [VehicleFinish] cruiser_3 LOD2 source=3188 split=3188 (body=2704,metal=91,rubber=308,leather=84,glass=1), lodDistance=25.2185
+[2026-10-28 23_40_15_287][1040][Script] [VehicleFinish] cruiser_3 LOD3 disconnected rubber rejected=54
+[2026-10-28 23_40_15_288][1040][Script] [VehicleFinish] cruiser_3 LOD3 source=2207 split=2207 (body=1878,metal=62,rubber=204,leather=63,glass=0), lodDistance=69.6172
+[2026-10-28 23_40_15_306][1040][Script] [VehicleFinish] cruiser_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4906 tris; source UV/N/T unchanged; opaque glazing
+[2026-10-28 23_40_15_436][1040][Script] [VehicleFinish] cruiser_2 LOD0 disconnected rubber rejected=40
+[2026-10-28 23_40_15_436][1040][Script] [VehicleFinish] cruiser_2 LOD0 source=4523 split=4523 (body=3870,metal=112,rubber=430,leather=81,glass=30), lodDistance=0.0000
+[2026-10-28 23_40_15_565][1040][Script] [VehicleFinish] cruiser_2 LOD1 disconnected rubber rejected=39
+[2026-10-28 23_40_15_565][1040][Script] [VehicleFinish] cruiser_2 LOD1 source=3843 split=3843 (body=3282,metal=102,rubber=364,leather=75,glass=20), lodDistance=8.4949
+[2026-10-28 23_40_15_650][1040][Script] [VehicleFinish] cruiser_2 LOD2 disconnected rubber rejected=31
+[2026-10-28 23_40_15_650][1040][Script] [VehicleFinish] cruiser_2 LOD2 source=2938 split=2938 (body=2495,metal=91,rubber=274,leather=62,glass=16), lodDistance=23.1976
+[2026-10-28 23_40_15_709][1040][Script] [VehicleFinish] cruiser_2 LOD3 disconnected rubber rejected=24
+[2026-10-28 23_40_15_709][1040][Script] [VehicleFinish] cr[2026-10-28 23_40_15_776][1040] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+uiser_2 LOD3 source=2035 split=2035 (body=1788,metal=60,rubber=162,leather=25,glass=0), lodDistance=64.0384
+[2026-10-28 23_40_15_726][1040][Script] [VehicleFinish] cruiser_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4523 tris; source UV/N/T unchanged; opaque glazing
+[2026-10-28 23_40_15_747][1040][Script] [竞速表现] 轻量对手、真实骨骼车手、起终门架和路线标记已创建
+[2026-10-28 23_40_15_770][1040][Script] [比赛] 2圈 / 9.705km每圈 / 8名AI / 车手green
+[2026-10-28 23_40_15_770][1040][Script] [车型音频] sport / audio/sfx/race_engine_sport_inline4.mp3 / 复用ENGINE音源
+[2026-10-28 23_40_15_772][1040][Script] [音频] 用户已解锁声音
+[2026-10-28 23_40_15_772][1040][Script] [流程] ride
+[2026-10-28 23_40_37_106][1045][Script] [竞速] 稳定结算 第1/9名，323.90秒，全部顺序检查点及正向终点线已通过
+[2026-10-28 23_40_37_106][1045][Script] [生涯赛道验收] 真实赛道两圈顺序检查点完赛，关闭追逐和交通
+[2026-10-28 23_40_37_112][1045][Script] [界面提示] 生涯赛事 / 生涯赛事结算：第1名，奖金900.00元。职业积分3。
+点击返回生涯继续；未完赛不会发放奖金。
+[2026-10-28 23_40_37_112][1045][Script] [流程] result
+[2026-10-28 23_40_37_121][1046][Script] [音频] 已停止并释放所有驾驶音源
+[2026-10-28 23_40_37_134][1046][Script] [生涯主入口验收通过] 真实加载/职业圈数/合法完赛/自动结算/结果返回/无免费重赛/释放赛道
+[2026-10-28 23_40_37_285][1046] INFO: DownloadManager: all tasks cancelled

@@ -830,7 +830,7 @@ function Start()
             or arg:match("^%-test") or arg:match("checks$") or arg == "-selftest"
             or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
         if arg == "-career" then careerStart = true end
-        if arg == "-careerchecks" then careerCheck, careerStart = true, true; legacyTest = false end
+        if arg == "-careerchecks" or arg=="-careertripchecks" then careerCheck, careerStart = true, true; legacyTest = false end
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
     end
     career_ = CareerSession.New({test=careerCheck, legacy=function()

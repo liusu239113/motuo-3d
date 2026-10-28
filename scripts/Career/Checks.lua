@@ -177,6 +177,43 @@ function Checks.RunLogic()
     end)
     return true
 end
+function Checks.RunDeliveryTrip(session)
+    local files={}
+    local actor=assert(session.actor)
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text) files[path]=text; return true end},function()
+        assert(Store.NewCareer())
+        actor.mounted=false; actor.visuals:SetMounted(false); actor:Teleport(0,-20,0)
+        session.online=true
+        session:Accept()
+        local order=assert(Delivery.GetActive())
+        local function walkTo(x,z)
+            for _=1,1800 do
+                local dx,dz=x-actor.x,z-actor.z
+                if dx*dx+dz*dz<.04 then
+                    actor:Update(.1,{walkX=0,walkY=0},0)
+                    return
+                end
+                local length=math.sqrt(dx*dx+dz*dz)
+                actor:Update(.1,{walkX=dx/length,walkY=dz/length},0)
+                assert(Delivery.Update(.1,0))
+            end
+            error("实际步行路线被阻挡")
+        end
+        local pickup=Config.points[order.pickupId]
+        walkTo(pickup.x,pickup.z)
+        session:Interact()
+        assert(Delivery.GetActive().status=="picked_up")
+        for index=2,#order.route do walkTo(order.route[index].x,order.route[index].z) end
+        session:Interact()
+        assert(not Delivery.GetActive() and Store.Get().cashCents==5500)
+        assert(Store.Save() and Store.Load() and Store.Get().completedOrders==1)
+        print("[首单实走验收通过] 实际步行动力到早餐店/生产交互取餐/沿街171米/门厅交付/到账与读档，无中途瞬移")
+    end)
+    session.online=false
+    session:RestorePosition()
+    session.view:ShowGame(); session:Refresh()
+end
 function Checks.RunWorld(session)
     Checks.RunLogic()
     Checks.RunProgression()
@@ -214,6 +251,7 @@ function Checks.RunWorld(session)
     session.view:ClosePhone()
     session:Refresh()
     for _,arg in ipairs(GetArguments()) do
+        if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then
             if not actor.mounted then assert(actor:ToggleMount()) end
             actor:SyncVisuals(1)

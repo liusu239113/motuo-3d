@@ -67,7 +67,7 @@ function View:Init(actions)
     safe:AddChild(label("空格制动 · Shift快走 · 鼠标右键拖动视角",10,C.muted,
         {position="absolute",bottom=12,left="30%",right="22%",textAlign="center",whiteSpace="normal"}))
     self.game:AddChild(safe)
-    self.phone=full{visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=14}
+    self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=14})
     self.phoneBody=UI.Panel{width=380,maxWidth="90%",height="94%",padding=16,gap=10,borderWidth=2,borderRadius=18,
         borderColor=C.border,backgroundColor={16,22,28,255}}
     self.phoneTitle=label("王二狗的手机",16,C.white,{fontWeight="bold"})
