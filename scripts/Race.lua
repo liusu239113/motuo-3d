@@ -1116,6 +1116,12 @@ function Race.Test()
     local drive = race:BeforeStep(0.02, held)
     check(held.boost == 100 and drive.boost == 1, "输入不被修改且boost受资源授权")
     race:AfterStep(0.02)
+    race.options.professional=true
+    race.player.eliminated=false
+    race.pursuit.active=true
+    race:UpdatePursuit(120)
+    check(not race.pursuit.active and not race.player.eliminated and race.pursuit.state=="closed_course",
+        "职业封闭赛道禁用追逐淘汰，不改变独立追逐规则")
     race:Stop()
     check(not sim.raceMode and race.phase == "idle", "退出释放旧自由驾驶")
     -- Spatial projection tolerances must also survive a narrow hairpin (not just a circle).

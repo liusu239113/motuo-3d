@@ -48,6 +48,7 @@ function Checks.RunProgression()
         for _=1,8 do assert(Store.Rest("bridge")) end
         assert(not Progress.WorkWeek(),"亲送足但活动时间不足不能排班")
         assert(Store.Advance(900,0))
+        assert(Store.Eat())
         local before=Store.Get()
         assert(Progress.WorkWeek())
         local after=Store.Get()
@@ -173,6 +174,15 @@ function Checks.RunWorld(session)
     assert(Store.Get().time==time,"手机未冻结时间")
     session.view:ClosePhone()
     session:Refresh()
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-careerpose=ride" then
+            assert(actor:ToggleMount()); actor:SyncVisuals(1)
+            session.yaw,session.pitch=100,10
+            session.camera:Update(1,actor.node,session.yaw,session.pitch)
+        end
+        local page=arg:match("^%-careerpage=(.+)$")
+        if page then session:OpenPhone(page) end
+    end
     print("[生涯城市验收通过] 全部交互点/路线可达/实际骑行动力/上下车/独立停车/手机暂停")
 end
 return Checks

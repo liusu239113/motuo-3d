@@ -250,6 +250,8 @@ local function ResetRideState()
         end
     end
     world_:ResetTraffic(0)
+    for _,car in ipairs(world_.traffic) do car.node:SetEnabledRecursive(not careerRace_) end
+    if careerRace_ then world_.traffic={}; race_:SetTraffic(world_.traffic) end
     world_:Update(0, sim_.distance, clock_, sim_.x, sim_.z)
     if testTrick_ ~= "" then sim_.speed = 8 end
     accumulator_, resultShown_, lastYaw_, boostFov_ = 0.0, false, sim_.heading, 0.0
