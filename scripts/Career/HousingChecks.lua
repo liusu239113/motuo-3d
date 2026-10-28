@@ -47,6 +47,15 @@ function Checks.Run(session)
             local bx,bz=a.bikeX,a.bikeZ
             assert(session:EnterHousing(home.id))
             assert(Store.Get().cashCents==cash and session.space==home.id and not a.visuals.bikeNode.enabled)
+            assert(not session.sun.enabled and not session.moon.enabled,"室内必须关闭城市日月方向光")
+            session:OpenPhone("map")
+            local map=assert(session.view.phoneContent:FindById("career-phone-map"))
+            local roads=map:GetChildren()[1]
+            local children=roads:GetChildren()
+            local player=children[#children]
+            assert(player.props.left==string.format("%.4f%%",(home.x+180)/360*100)
+                and player.props.top==string.format("%.4f%%",(180-home.z)/360*100),"室内手机地图必须标记城市入口，不能拿房间局部坐标当城市位置")
+            session.view:ClosePhone()
             assert(not session:Allowed("breakfast"),"室内不能用城市坐标远程吃饭")
             session.view.actions.mount(); assert(not a.mounted)
             local bedX,bedZ=Data.Bed(home.id)
@@ -89,11 +98,15 @@ function Checks.Run(session)
         print("[生涯住房验收通过] 三种独立室内/实际步行到床/真实触摸确认/取消零收费/每晚准确扣款/带单拒绝/进出存档失败回滚/室内重载/停车不变/旧v1兼容")
     end)
     session:RestorePosition(); session.view:ClosePhone(); session.view:ShowGame(); session:Refresh()
-    session.city:UpdateLights(22)
-    for _,light in ipairs(session.city.nightLights) do assert(light.enabled) end
-    session.city:UpdateLights(8)
-    for _,light in ipairs(session.city.nightLights) do assert(not light.enabled) end
-    print("[夜间路灯验收通过] 18点后开启实际点光，白天关闭，无点光阴影")
+    session:UpdateEnvironment(22)
+    assert(session.sun.brightness==0 and session.moon.brightness>0,"夜间太阳应熄灭，由朝向地面的月光兜底")
+    for _,light in ipairs(session.city.nightLights) do assert(light.enabled and not light.castShadows) end
+    session.city:SetSpace("hostel"); session.city:SetSpace("city"); session.city:UpdateLights(12)
+    for _,light in ipairs(session.city.nightLights) do assert(not light.enabled,"白天出屋不能因递归启用节点而误开路灯") end
+    session:UpdateEnvironment(12)
+    assert(session.sun.brightness>0 and session.moon.brightness==0,"白天不叠加月光")
+    session:UpdateEnvironment(Store.Get().time)
+    print("[夜间路灯验收通过] 夜间太阳熄灭/月光补足道路/路灯无阴影/白天出屋路灯仍关闭/室内地图显示城市入口")
 end
 function Checks.Shot(session,id)
     local home=assert(Data.Get(id))
