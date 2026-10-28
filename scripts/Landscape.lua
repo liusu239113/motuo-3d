@@ -47,8 +47,10 @@ Landscape.Regions = {
 Landscape.Resources = {
     "uuid://EFSiAWPsKtpGQpTAGBbflyyK", "uuid://B2-Y8QtOc5NdOQVWAmvW1aQ_",
     "uuid://Hg04wSbDi8KsIwqNpUJ0OiwN", "uuid://GMR70cPvbaF6F8SvtDto--G_",
+    "uuid://DdH4-Su6Cppk8qaKI2AiCLs-",
     "Materials/SingleLayerWater.xml", "Techniques/PBR/PBRNoTexture.xml",
     "Techniques/PBR/PBRDiffNormal.xml", "ScenicTerrain.shader", "ScenicWater.shader",
+    "ScenicRoad.shader", "ScenicProps.shader",
     "uuid://FA-0GUs_3oaHzyb-ntH1Nkwf", "uuid://As2_acelV1DosNkDmeMasF4T",
     "uuid://ETwgwdlLT9yb0fm2NxmLlURS", "uuid://DAxRITvZ1vC60um7M6gXY_Va",
     "uuid://HDoGiRhCA1ZwjewmLbRqhTOq",
@@ -64,10 +66,13 @@ Landscape.ResourceTypes = {
     ["uuid://B2-Y8QtOc5NdOQVWAmvW1aQ_"] = "Material",
     ["uuid://Hg04wSbDi8KsIwqNpUJ0OiwN"] = "Material",
     ["uuid://GMR70cPvbaF6F8SvtDto--G_"] = "Material",
+    ["uuid://DdH4-Su6Cppk8qaKI2AiCLs-"] = "Material",
     ["Materials/SingleLayerWater.xml"] = "Material",
     ["Techniques/PBR/PBRNoTexture.xml"] = "Technique",
     ["Techniques/PBR/PBRDiffNormal.xml"] = "Technique",
     ["ScenicTerrain.shader"] = "SurfaceShader",
+    ["ScenicRoad.shader"] = "SurfaceShader",
+    ["ScenicProps.shader"] = "SurfaceShader",
     ["ScenicWater.shader"] = "SurfaceShader",
     ["uuid://E4ehad-5axjv7Ml9zasxNx06"] = "TextureCube",
 }
@@ -663,11 +668,12 @@ function Landscape.CreateMaterials()
         rock = textured("uuid://Hg04wSbDi8KsIwqNpUJ0OiwN", Color(0.67, 0.72, 0.71)),
         road = textured("uuid://GMR70cPvbaF6F8SvtDto--G_", Color(0.28, 0.31, 0.33)),
     }
-    local terrainBase = activeTrack.id=="canyon" and "sand" or "grass"
+    local terrainBase = "grass"
     if activeTrack.id=="canyon" then
         m.sand=textured("uuid://FA-0GUs_3oaHzyb-ntH1Nkwf",Color(0.88,0.74,0.55))
-        m.soil=textured("uuid://B2-Y8QtOc5NdOQVWAmvW1aQ_",Color(0.78,0.59,0.42))
-        m.rock=textured("uuid://Hg04wSbDi8KsIwqNpUJ0OiwN",Color(0.76,0.53,0.37))
+        terrainBase="sand"
+    elseif activeTrack.id=="coast" then
+        m.soil=textured("uuid://FA-0GUs_3oaHzyb-ntH1Nkwf",Color(0.80,0.74,0.60))
     elseif activeTrack.id=="forest" then
         m.road=textured("uuid://B2-Y8QtOc5NdOQVWAmvW1aQ_",Color(0.45,0.40,0.30))
     end
@@ -677,14 +683,55 @@ function Landscape.CreateMaterials()
     assert(terrain:SetSurfaceTexture("grass_color", m[terrainBase]:GetTexture(TU_DIFFUSE)))
     assert(terrain:SetSurfaceTexture("soil_color", m.soil:GetTexture(TU_DIFFUSE)))
     assert(terrain:SetSurfaceTexture("rock_color", m.rock:GetTexture(TU_DIFFUSE)))
-    assert(terrain:SetSurfaceTexture("ground_normal", m.grass:GetTexture(TU_NORMAL)))
+    assert(terrain:SetSurfaceTexture("ground_normal", m[terrainBase]:GetTexture(TU_NORMAL)))
     assert(terrain:SetSurfaceTexture("rock_normal", m.rock:GetTexture(TU_NORMAL)))
+    local palettes={
+        lake={Vector3(.67,.79,.51),Vector3(.72,.63,.48),Vector3(.75,.77,.72),Vector4(0,0,0,0)},
+        alpine={Vector3(.65,.70,.45),Vector3(.71,.66,.53),Vector3(.76,.78,.78),Vector4(0,0,1,0)},
+        coast={Vector3(.73,.76,.46),Vector3(.96,.88,.69),Vector3(.78,.75,.66),Vector4(0,0,0,1)},
+        canyon={Vector3(.96,.75,.49),Vector3(.91,.62,.38),Vector3(.87,.59,.38),Vector4(1,0,0,0)},
+        forest={Vector3(.49,.65,.37),Vector3(.63,.49,.32),Vector3(.66,.70,.60),Vector4(0,1,0,0)},
+        circuit={Vector3(.69,.75,.47),Vector3(.75,.68,.51),Vector3(.75,.75,.70),Vector4(0,0,0,0)},
+    }
+    local palette=assert(palettes[activeTrack.id])
+    terrain:SetShaderParameter("grass_tint",Variant(palette[1]))
+    terrain:SetShaderParameter("earth_tint",Variant(palette[2]))
+    terrain:SetShaderParameter("stone_tint",Variant(palette[3]))
+    terrain:SetShaderParameter("biome",Variant(palette[4]))
     for _, sampler in ipairs({"grass_color", "soil_color", "rock_color", "ground_normal", "rock_normal"}) do
         local texture = assert(terrain:GetSurfaceTexture(sampler), "地形缺少绑定纹理：" .. sampler)
         print(string.format("[风景材质] %s = %s，%dx%d", sampler, texture.name, texture.width, texture.height))
     end
     print("[风景材质] 地形生成Technique = " .. terrain:GetTechnique(0).name)
-    m.terrain = activeTrack.id=="canyon" and m.sand or (activeTrack.id=="alpine" and m.rock or terrain)
+    m.terrain = terrain
+    -- 绑定真实骨料纹理，路面有米级修补、近景细颗粒与粗糙度变化，不再是一张灰色平板。
+    local road=Material:new()
+    assert(road:SetSurfaceShader("ScenicRoad.shader"),"路面SurfaceShader载入失败")
+    assert(road:SetSurfaceTexture("surface_color",m.road:GetTexture(TU_DIFFUSE)))
+    assert(road:SetSurfaceTexture("surface_normal",m.road:GetTexture(TU_NORMAL)))
+    road:SetShaderParameter("road_tint",Variant(activeTrack.id=="forest" and Vector3(.58,.45,.30) or Vector3(.31,.32,.34)))
+    road:SetShaderParameter("dirt_road",Variant(activeTrack.id=="forest" and 1.0 or 0.0))
+    m.road=road
+    -- 道路、设施共用现有颜色／法线贴图；三面投影避免箱体竖面UV拉伸。
+    local function prop(source,tint,roughness,metallic,specular,wood)
+        local material=Material:new()
+        assert(material:SetSurfaceShader("ScenicProps.shader"),"沿线材质载入失败")
+        assert(material:SetSurfaceTexture("surface_color",source:GetTexture(TU_DIFFUSE)))
+        assert(material:SetSurfaceTexture("surface_normal",source:GetTexture(TU_NORMAL)))
+        material:SetShaderParameter("tint",Variant(tint))
+        material:SetShaderParameter("finish",Variant(Vector4(roughness,metallic,specular,wood or 0)))
+        return material
+    end
+    local rockTint=activeTrack.id=="canyon" and Vector3(.87,.60,.39) or Vector3(.76,.77,.72)
+    m.rock=prop(m.rock,rockTint,.94,0,.18,0)
+    local timber=textured("uuid://DdH4-Su6Cppk8qaKI2AiCLs-",Color(1,1,1))
+    m.wood=prop(timber,Vector3(.83,.68,.46),.95,0,.14,1)
+    m.rail=prop(m.soil,Vector3(.72,.75,.74),.66,.65,.32,0)
+    m.red=prop(m.soil,Vector3(.61,.18,.09),.90,0,.18,0)
+    m.white=prop(m.soil,Vector3(1.25,1.26,1.13),.93,0,.17,0)
+    m.dark=prop(m.soil,Vector3(.11,.13,.13),.97,0,.10,0)
+    m.green=prop(m.grass,Vector3(.42,.62,.25),.98,0,.12,0)
+    m.yellow=prop(m.soil,Vector3(1.2,.88,.28),.91,0,.17,0)
     local waterSource = assert(cache:GetResource("Material", "Materials/SingleLayerWater.xml"))
     local water = Material:new()
     assert(water:SetSurfaceShader("ScenicWater.shader"), "水面SurfaceShader载入失败")

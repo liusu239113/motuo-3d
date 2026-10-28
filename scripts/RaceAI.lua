@@ -14,21 +14,19 @@ local function gap(a, b, length) return (a - b + length * 0.5) % length - length
 function AI.Configure(race, r, index)
     local setting = race.options.difficulty or "normal"
     local difficulty = setting == "easy" and -1 or (setting == "hard" and 1 or 0)
-    r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48 + difficulty * 0.06, 0.3, 1)
-    -- 赛道等级决定整组AI的强度：第一关明显放水，后段逐级提高。
-    local level = clamp(tonumber(race.options.aiLevel) or 0.72, 0.4, 1.0)
+    local level = clamp(tonumber(race.options.aiLevel) or 0.60, 0.4, 0.94)
     r.aiLevel = level
-    -- 常规上限按0.72+等级×0.26+技术×0.05计算，叠加明确的难度修正，总上限0.96。
-    -- 这只是限速，不是实际可达极速；真实传动、气阻、弯速与失误仍会降低平均速度。
-    local topFactor = 0.72 + level * 0.26
-    r.speedFactor = clamp(topFactor + r.skill * 0.05 + difficulty * 0.03, 0.6, 0.96)
-    r.acceleration = race.sim.vehicle.acceleration * (0.58 + level * 0.26 + r.skill * 0.10 + difficulty * 0.04)
-    -- 每个AI有独立失误节奏：偶发弯心判断偏差、短暂收油与失误后重新找线。
-    -- 失误只降低自身表现，不给碰撞免疫、不改检查点规则、不瞬移。
+    r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48
+        + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.95)
+    -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
+    r.speedFactor = clamp(0.66 + level * 0.26 + r.skill * 0.05 + difficulty * 0.025, 0.6, 0.96)
+    local efficiency = clamp(0.54 + level * 0.32 + r.skill * 0.10 + difficulty * 0.035, 0.65, 0.97)
+    r.acceleration = race.sim.vehicle.acceleration * efficiency
+    -- 高级图仍有真实断油、走宽和恢复窗口，不能用满级技术消除失误。
     r.mistakeTimer = 6 + race:Random() * 10
-    r.mistakeGrace = 7 + r.skill * 7
-    r.reactionTime = 0.30 + (1 - r.skill) * 0.38
-    r.mistakeDuration, r.recoveryTimer, r.mistakeSeverity = 0, 0, 0
+    r.mistakeGrace = 6 + level * 4 + r.skill * 4
+    r.reactionTime = 0.26 + (1 - r.skill) * 0.28 + (1 - level) * 0.28 - difficulty * 0.03
+    r.mistakeDuration, r.recoveryTimer, r.mistakeSeverity, r.mistakes = 0, 0, 0, 0
     r.mistakeLane, r.mistakeBias = r.lane, 0
     r.paceTarget, r.paceTimer, r.nitroCooldown = 0, 0, 0
     -- 每辆车只持有独立的传动状态；使用玩家选定车型，不按外观偷偷换更强引擎。
@@ -37,6 +35,8 @@ function AI.Configure(race, r, index)
         drive.vehicle, drive.vehicleId, drive.raceMode = race.sim.vehicle, race.sim.vehicleId, true
         drive.rpm = race.sim.vehicle.idle
         r.driveSim = drive
+        -- 预演使用独立变速箱，绝不推进实际挡位/RPM/换挡冷却。
+        r.nitroPreview = {driveSim = Simulation.New(race.map)}
     end
     r.preferredLane = (index % 3 - 1) * 2.6
     r.laneHold, r.blockedTime, r.trafficHits, r.avoidances, r.passes = 0, 0, 0, 0, 0
@@ -60,9 +60,9 @@ function AI.Build(race)
     race.aiProfile, race.aiProfileStep = profile, race.length / count
 end
 
-function AI.CurveSpeed(race, r)
-    -- 与玩家同为最高车速加25%上限；实际增速仍须经传动、换挡与气阻，不能跳到新上限。
-    local top = race.sim.vehicle.maxSpeed * (r.speedFactor + (r.boostTimer > 0 and 0.25 or 0))
+function AI.CurveSpeed(race, r, boosting)
+    -- 预演可请求喷射包络，不需要先扣氮或篡改实际boostTimer。
+    local top = race.sim.vehicle.maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
     local level = r.aiLevel or 0.72
     local budget = 12 + level * 6 + r.skill * 2
     local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
@@ -172,6 +172,53 @@ local function eachObstacle(race, r, visit)
     end
 end
 
+-- 喷射安全区（路线空间，米）：
+--   当前lane ------ wantedLane（含车宽/车距）
+--   o ===== 2.5秒实际可达行程 ===== | 反应距离 | 刹车到下一弯
+-- 预演完整脉冲，沿途查制动包络；不是把整段路都按理论boost极速判死。
+-- 急弯(半径<83m)、路肩、走宽/恢复、贴车/对向会车都不能发动。
+function AI.NitroSafe(race, r)
+    if r.speed < 8 or abs(r.lane) > race.roadHalfWidth - 0.65
+        or abs(r.wantedLane - r.lane) > 0.6 or (r.hitTimer or 0) > 0 then return false end
+    local clear = true
+    local duration = 2.5
+    local reach = r.speed * duration + 0.5 * race.sim.vehicle.acceleration * 2.25 * duration^2
+    eachObstacle(race, r, function(o)
+        local d = gap(o.s, r.s, race.length)
+        local relativeEnd = d + o.speed * duration - reach
+        local margin = o.halfWidth + 0.30 + 0.65
+        local low, high = min(r.lane, r.wantedLane) - margin, max(r.lane, r.wantedLane) + margin
+        local crossing = o.lane >= low and o.lane <= high
+        if o.destination then crossing = crossing
+            or (min(o.lane, o.destination) <= high and max(o.lane, o.destination) >= low) end
+        if crossing and min(d, relativeEnd) < o.halfLength + 8
+            and max(d, relativeEnd) > -o.halfLength - 5 then clear = false end
+    end)
+    if not clear then return false end
+    local preview = assert(r.nitroPreview)
+    local live, drive = assert(r.driveSim), assert(preview.driveSim)
+    drive.vehicle, drive.raceMode = race.sim.vehicle, true
+    drive.gear, drive.rpm = live.gear, live.rpm
+    drive.shiftTimer, drive.clutchEngagement = live.shiftTimer, live.clutchEngagement
+    preview.speed, preview.s, preview.lane = r.speed, r.s, r.lane
+    preview.speedFactor, preview.acceleration = r.speedFactor, r.acceleration
+    preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
+    preview.boostTimer, preview.mistakeDuration, preview.recoveryTimer = duration, 0, 0
+    local startSpeed = r.speed
+    -- 100ms保守预演，留1m/s制动余量；实际驾驶仍由20ms玩家Powertrain推进。
+    for _ = 1, 25 do
+        local sample = race.aiProfile[math.floor((preview.s % race.length) / race.aiProfileStep) + 1]
+        local target = AI.CurveSpeed(race, preview, true)
+        local boostCap = race.sim.vehicle.maxSpeed * (r.speedFactor + 0.25)
+        if sample.curvature > 0.012 or target < min(boostCap, preview.speed + 1) - 1e-6 then return false end
+        AI.Drive(race, preview, target, 0.1)
+        local scale = max(0.45, abs(1 - (sample.turn or 0) * r.lane))
+        preview.s = preview.s + preview.speed * 0.1 / sqrt(1 + (sample.slope or 0)^2) / scale
+    end
+    -- 必须有实际增速收益，饱和极速/红线/临近制动点不浪费氮。
+    return preview.speed > startSpeed + 2
+end
+
 local function laneScore(race, r, candidate, horizon)
     local score = abs(candidate - r.preferredLane) * 0.18 + abs(candidate - r.lane) * 0.22
     local laneTime = abs(candidate - r.lane) / (2.5 + r.skill) + 0.32
@@ -259,26 +306,17 @@ function AI.Plan(race, r, dt)
     -- 无油门或名次相关的橡皮筋；失误实质降低目标速度并断油，恢复期间也不能立即满动力。
     r.rubberBand = 0
     if r.mistakeDuration > 0 then target = min(target, r.mistakeSpeed) end
-    local level = r.aiLevel or 0.72
+    local level = r.aiLevel or 0.60
     r.nitroCooldown = max(0, r.nitroCooldown - dt)
-    local straight = true
-    local boostTop = race.sim.vehicle.maxSpeed * (r.speedFactor + 0.25)
-    local start = math.floor((r.s % race.length) / race.aiProfileStep)
-    local boostHorizon = max(90, boostTop * (2.5 + r.reactionTime))
-    for k = 0, math.ceil(boostHorizon / race.aiProfileStep) do
-        local sample = race.aiProfile[(start + k) % #race.aiProfile + 1]
-        if sample.curvature * boostTop * boostTop > (12 + level * 6 + r.skill * 2) * 0.7 then
-            straight = false; break
-        end
-    end
-    if not hazard and straight and r.mistakeDuration <= 0 and r.recoveryTimer <= 0
-        and r.nitroCooldown <= 0 and r.nitro >= 55 and r.boostTimer <= 0
-        and r.speed > 24 and level >= 0.72 and target > r.speed + 2
-        and target > race.sim.vehicle.maxSpeed * 0.85 and race:Random() < dt * (0.08 + level * 0.16) then
-        if race:Boost(r) then
-            r.nitroCooldown = 9 + race:Random() * 9
+    -- 不抽“每帧中奖”随机数：在人的决策节奏上择机，低档/入门车也能出弯加速。
+    if not hazard and r.mistakeDuration <= 0 and r.recoveryTimer <= 0
+        and r.nitroCooldown <= 0 and r.nitro >= 45 and r.boostTimer <= 0
+        and target >= r.speed - 0.2 then
+        r.nitroCooldown = r.reactionTime -- 不安全时也限频，避免每20ms重跑完整预演。
+        if AI.NitroSafe(race, r) and race:Boost(r) then
+            r.nitroCooldown = 16 + (1 - level) * 10 + (1 - r.skill) * 2
             r.paceTarget = AI.CurveSpeed(race, r)
-            target = min(r.paceTarget, target + race.sim.vehicle.maxSpeed * 0.25)
+            target = r.paceTarget -- 已完成安全预演；真正增速仍只来自Drive/Powertrain。
         end
     end
     r.targetSpeed = target

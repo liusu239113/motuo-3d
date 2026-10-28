@@ -92,10 +92,13 @@ local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
 local function ApplyQuality()
     renderer.dynamicInstancing = true
     renderer:SetShadowMapSize(highQuality_ and 2048 or 1024)
-    renderer.textureAnisotropy = highQuality_ and 8 or 2
+    renderer.textureFilterMode = FILTER_ANISOTROPIC
+    renderer.textureAnisotropy = highQuality_ and 8 or 4
     if sunlight_ then
-        sunlight_.shadowCascade = highQuality_ and CascadeParameters(18, 65, 150, 0, 0.8)
-            or CascadeParameters(14, 45, 90, 0, 0.8)
+        -- 手机仅支持两级CSM，第二级须覆盖近路树和设施，而不是把预算写进被忽略的第三级。
+        sunlight_.shadowCascade = highQuality_ and CascadeParameters(22, 120, 0, 0, 0.8)
+            or CascadeParameters(18, 72, 0, 0, 0.8)
+        sunlight_.shadowBias = BiasParameters(0.0003, 0.6)
     end
     if world_ then world_:SetQuality(highQuality_) end
     if bike_ then bike_:SetQuality(highQuality_) end
@@ -402,23 +405,35 @@ function CreateScene()
     assert(group:LoadXML(cache:GetResource("XMLFile", "LightGroup/Daytime.xml"):GetRoot()), "日光预设载入失败")
     zone_ = group:GetComponent("Zone", true)
     zone_.boundingBox = BoundingBox(-8000, 8000)
-    zone_.fogColor = Color(0.68, 0.76, 0.82)
-    zone_.depthFogStart, zone_.depthFogEnd = 600, 2400
-    zone_.vignetteEnabled, zone_.vignetteIntensity = true, 0.16
+    -- 每图独立的自然日光与远景雾；保留真实天空IBL，不用均匀补光抹平地形。
+    local atmospheres={
+        lake={fog=Color(.67,.75,.78),start=290,finish=1800,sun=Color(1,.94,.82),power=2.25,ambient=.36,dir=Vector3(.52,-.69,.38)},
+        alpine={fog=Color(.69,.76,.82),start=340,finish=2100,sun=Color(1,.96,.89),power=2.35,ambient=.34,dir=Vector3(.60,-.64,.34)},
+        coast={fog=Color(.68,.77,.80),start=360,finish=2000,sun=Color(1,.94,.82),power=2.45,ambient=.38,dir=Vector3(.40,-.72,.48)},
+        canyon={fog=Color(.76,.69,.58),start=300,finish=1850,sun=Color(1,.89,.73),power=2.40,ambient=.32,dir=Vector3(.56,-.62,.44)},
+        forest={fog=Color(.64,.72,.70),start=190,finish=1450,sun=Color(1,.95,.83),power=2.00,ambient=.32,dir=Vector3(.48,-.69,.38)},
+        circuit={fog=Color(.69,.76,.80),start=380,finish=2000,sun=Color(1,.96,.88),power=2.30,ambient=.37,dir=Vector3(.44,-.75,.35)},
+    }
+    local atmosphere=assert(atmospheres[Landscape.activeId])
+    zone_.fogColor = atmosphere.fog
+    zone_.depthFogStart, zone_.depthFogEnd = atmosphere.start, atmosphere.finish
+    zone_.depthFogEnable = true
+    zone_.depthFogDensity = .75
+    zone_.vignetteEnabled, zone_.vignetteIntensity = true, 0.12
     zone_.autoExposureEnabled = false
     zone_.tonemapMode = TONEMAP_MODE_ACES
-    zone_.bloomThreshold, zone_.bloomWeight = 1.4, 0.08
+    zone_.bloomThreshold, zone_.bloomWeight = 1.6, 0.045
     sunlight_ = group:GetComponent("Light", true)
-    sunlight_.node.direction, sunlight_.color = Vector3(0.42, -0.85, 0.36), Color(1, 0.96, 0.90)
-    sunlight_.brightness, sunlight_.castShadows = 1.6, true
+    sunlight_.node.direction, sunlight_.color = atmosphere.dir, atmosphere.sun
+    sunlight_.brightness, sunlight_.castShadows = atmosphere.power, true
     local skyMaterial = Material:new()
     skyMaterial:SetTechnique(0, cache:GetResource("Technique", "Techniques/DiffSkybox.xml"))
     skyMaterial:SetTexture(TU_DIFFUSE, cache:GetResource("TextureCube", "uuid://E4ehad-5axjv7Ml9zasxNx06"))
     local skybox = scene_:CreateChild("照片全景天空"):CreateComponent("Skybox")
     skybox:SetModel(cache:GetResource("Model", "Models/Box.mdl"))
     skybox:SetMaterial(skyMaterial)
-    zone_.ambientSource, zone_.ambientIntensity = AMBIENT_SKYBOX, 0.48
-    zone_.envTextureSpecIntensity = 0.12
+    zone_.ambientSource, zone_.ambientIntensity = AMBIENT_SKYBOX, atmosphere.ambient
+    zone_.envTextureSpecIntensity = 0.10
     renderer.hdrRendering = true
     ApplyQuality()
     print("[场景] 照片天空与匹配IBL，移动前向渲染／默认流畅档")

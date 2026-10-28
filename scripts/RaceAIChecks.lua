@@ -2,6 +2,8 @@
 local AI = require("RaceAI")
 local Race = require("Race")
 local Sim = require("Simulation")
+local Tracks = require("Tracks")
+local Catalog = require("Catalog")
 local Checks = {}
 local DT = 0.02
 local function flatMap()
@@ -42,6 +44,122 @@ local function tick(race, r)
     AI.Update(race, r, DT)
     r.boostTimer = math.max(0, r.boostTimer - DT)
     if r.boostTimer < 1e-8 then r.boostTimer = 0 end
+end
+
+-- 使用Tracks的实际2.4m样本；插值/法线/三角形高程与Landscape.TrafficPose一致。
+-- 不require Landscape（它需要引擎对象），不读Profile或任何玩家存档。
+local function trackMap(track)
+    local samples, length = track.samples, track.length
+    local function edge(p, lane)
+        return {x = p.x + p.rx * lane, y = p.y, z = p.z + p.rz * lane}
+    end
+    local function triangle(x, z, a, b, c)
+        local den = (b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z)
+        if math.abs(den) < 1e-10 then return nil end
+        local u = ((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den
+        local v = ((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den
+        if u >= -1e-6 and v >= -1e-6 and u+v <= 1.000001 then return a.y*u+b.y*v+c.y*(1-u-v) end
+        return nil
+    end
+    local function pose(s, lane)
+        local wrapped = s % length
+        local index = math.min(#samples-1, math.floor(wrapped/length*(#samples-1))+1)
+        local a,b = samples[index],samples[index+1]
+        local t = (wrapped-a.s)/(b.s-a.s)
+        local x = a.x+(b.x-a.x)*t+(a.rx+(b.rx-a.rx)*t)*lane
+        local z = a.z+(b.z-a.z)*t+(a.rz+(b.rz-a.rz)*t)*lane
+        local p,q,r,u = edge(a,-track.width*.5),edge(b,-track.width*.5),
+            edge(a,track.width*.5),edge(b,track.width*.5)
+        local y = triangle(x,z,p,q,r) or triangle(x,z,r,q,u) or (a.y+(b.y-a.y)*t)
+        return {x=x,y=y,z=z}, math.deg(math.atan(b.x-a.x,b.z-a.z)),
+            -math.deg(math.atan((b.y-a.y)/math.max(.001,b.s-a.s)))
+    end
+    return {RouteLength=length,Goals={},Roads={{width=track.width*.5,shoulder=track.shoulder}},
+        RoadPoint=function(s) return pose(s,0) end, TrafficPose=pose,
+        -- Sim初始化只在起点查询；AI的正式位置始终通过TrafficPose精确取路带。
+        Height=function() return samples[1].y,true end, NearestRoad=function() return 0,0 end}
+end
+
+local function trackFixture(track, vehicleId, seed, index, difficulty)
+    local map = trackMap(track)
+    local sim = Sim.New(map)
+    assert(sim:SetVehicle(vehicleId))
+    local race = Race.New(map, sim, {seed=seed,aiLevel=track.aiLevel,laps=9,
+        difficulty=difficulty or "normal",quiet=true})
+    race:Start()
+    local r = race.racers[index or 1]
+    assert(not r.isPlayer)
+    -- 单车计时剖面隔离交通/追捕，只移除其它参赛者，不替换真实门线/动力/资源。
+    race.racers,race.runners,race.phase = {r},{r},"racing"
+    return race,r
+end
+
+-- 六图×九款目录实值车；600秒覆盖多圈、再生、冷却和数十次失误。
+-- 每步双实例重放（玩家表现刻意相反），不能用“同种子首帧”冒充确定性。
+function Checks.RealTracks(seconds)
+    local duration = seconds or 600
+    local rows = {}
+    for _, trackId in ipairs({"circuit","lake","coast","alpine","forest","canyon"}) do
+        local track = assert(Tracks.Get(trackId))
+        for _, vehicleId in ipairs(Catalog.AvailableIds()) do
+            local race,r = trackFixture(track,vehicleId,4817,1)
+            local replay,b = trackFixture(track,vehicleId,4817,1)
+            race.player.speed,race.player.rank,race.player.s = 0,9,-500
+            replay.player.speed,replay.player.rank,replay.player.s = 120,1,500
+            local boosts, active, powered, sumSpeed, shifts = 0,0,0,0,0
+            local straightStarts, gentleStarts, lastBoost, lastMistake = 0,0,-100,0
+            local minCurvature,maxCurvature = math.huge,0
+            for _, p in ipairs(race.aiProfile) do
+                minCurvature,maxCurvature = math.min(minCurvature,p.curvature),math.max(maxCurvature,p.curvature)
+            end
+            for _ = 1, math.floor(duration/DT+.5) do
+                local oldNitro,oldTimer,oldS,gear = r.nitro,r.boostTimer,r.s,r.driveSim.gear
+                tick(race,r); tick(replay,b)
+                assert(r.s==b.s and r.speed==b.speed and r.lane==b.lane and r.nitro==b.nitro
+                    and r.boostTimer==b.boostTimer and r.mistakes==b.mistakes and race.rng==replay.rng,
+                    "真实图逐步重放/玩家表现独立性失败")
+                assert(not r.finished and not r.eliminated and r.s>=oldS and r.rubberBand==0,
+                    "长时域测试不得冻结、回收或橡皮筋")
+                assert(r.speed<=race.sim.vehicle.maxSpeed*1.25+1e-8,"同车125%绝对上界")
+                assert(r.nitro>=0 and r.nitro<=100,"氮资源界限")
+                sumSpeed = sumSpeed+r.speed
+                if r.driveSim.gear~=gear then shifts=shifts+1 end
+                if r.boostTimer>0 then active=active+DT end
+                if r.driveSim.raceBoost>0 then powered=powered+DT end
+                if r.nitro<oldNitro-1 then
+                    boosts=boosts+1
+                    assert(oldTimer==0 and math.abs(r.nitro-(math.min(100,oldNitro+5*DT)-45))<1e-7,
+                        "真实图发动必须扣45而不是测试伪造喷射")
+                    assert(math.abs(r.boostTimer-(2.5-DT))<1e-8 and race.elapsed-lastBoost>=16,
+                        "真实图喷射不得续时或无冷却连发")
+                    local p = race.aiProfile[math.floor((oldS%race.length)/race.aiProfileStep)+1]
+                    assert(p.curvature<=.012 and r.mistakeDuration<=0 and r.recoveryTimer<=0,
+                        "急弯/失误/恢复时禁喷")
+                    if p.curvature<.001 then straightStarts=straightStarts+1 else gentleStarts=gentleStarts+1 end
+                    assert(race.events[#race.events].kind=="boost" and race.events[#race.events].racerId==r.id,
+                        "每次真实喷射必须发出带AI身份的boost事件")
+                    lastBoost=race.elapsed
+                elseif oldTimer>0 then
+                    assert(r.nitro==oldNitro and math.abs(r.boostTimer-math.max(0,oldTimer-DT))<1e-7,
+                        "活动脉冲不得额外再生或延长")
+                end
+                if r.mistakes>lastMistake then
+                    assert(r.driveSim.raceBoost==0,"失误必须中断喷射动力而不是补油")
+                    lastMistake=r.mistakes
+                end
+            end
+            local row = {track=trackId,vehicle=vehicleId,seconds=duration,boosts=boosts,
+                averageKmh=sumSpeed/(duration/DT)*3.6,mistakes=r.mistakes,shifts=shifts,
+                activeSeconds=active,poweredSeconds=powered,straightStarts=straightStarts,gentleStarts=gentleStarts,
+                laps=r.s/race.length,minCurvature=minCurvature,maxCurvature=maxCurvature}
+            rows[#rows+1]=row
+            print(string.format("[RealTracks] %s %-10s %ds boosts=%d straight=%d gentle=%d avg=%.2fkm/h mistakes=%d shifts=%d powered=%.2fs laps=%.2f curvature=%.6f..%.6f",
+                trackId,vehicleId,duration,boosts,straightStarts,gentleStarts,row.averageKmh,r.mistakes,shifts,powered,row.laps,minCurvature,maxCurvature))
+            assert(boosts>=2 and powered>2.5 and r.mistakes>=2 and shifts>=2,
+                trackId.."/"..vehicleId.."真实图必须自然喷射、换挡并保留失误")
+        end
+    end
+    return rows
 end
 
 function Checks.Run()

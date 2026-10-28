@@ -12,6 +12,23 @@ local V=Vector3
 ---@field boxes integer
 ---@field nodes integer
 ---@field occupied table[]
+---@field triangles integer
+---@field byMaterial table<string,integer>
+---@field perChunk table<number,integer>
+---@field budgetSkipped integer
+---@field plants integer
+---@field rocks integer
+---@field logs integer
+---@field shoreSites integer
+
+-- 手写顶点仅用于多形状静态合批：不为每块石/每片草建立Model、Node或临时几何。
+-- 192m一块，非索引顶点上限9600/块；全图最多90000三角形（含双面叶）。
+local TRI_LIMIT, CHUNK_LIMIT = 90000, 3200
+
+local function noise(a,b)
+    local n=math.sin(a*127.1+b*311.7)*43758.5453
+    return n-math.floor(n)
+end
 
 local function basis(yaw)
     local angle=math.rad(yaw)
@@ -26,11 +43,99 @@ local function batch(ctx,material,s)
     local key=math.floor(s/192)..":"..material
     if not ctx.batches[key] then
         local g=ctx.L.Geometry(ctx.root,"沿线合批_"..key,assert(ctx.m[material]))
-        g.drawDistance=material=="rock" and 580 or 360
+        g.drawDistance=material=="rock" and 480 or (material=="green" and 185 or 330)
+        g.castShadows=false
+        g.shadowDistance=0
         ctx.batches[key]=g
         ctx.nodes=ctx.nodes+1
     end
     return ctx.batches[key]
+end
+
+---@param ctx DetailContext
+---@param s number
+---@param count integer
+local function room(ctx,s,count)
+    local chunk=math.floor(s/192)
+    if ctx.triangles+count>TRI_LIMIT or (ctx.perChunk[chunk] or 0)+count>CHUNK_LIMIT then
+        ctx.budgetSkipped=ctx.budgetSkipped+1
+        return false
+    end
+    return true
+end
+
+-- 同一面共享切平面投影；不再用XZ投影竖壁（旧路径UV退化、法线贴图发黑）。
+---@param ctx DetailContext
+---@param material string
+---@param s number
+---@param a Vector3
+---@param b Vector3
+---@param c Vector3
+---@param ua? Vector2
+---@param ub? Vector2
+---@param uc? Vector2
+local function triangle(ctx,material,s,a,b,c,ua,ub,uc)
+    local cross=(b-a):CrossProduct(c-a)
+    if cross:LengthSquared()<1e-12 then return end
+    local n=cross:Normalized()
+    local ax,ay,az=math.abs(n.x),math.abs(n.y),math.abs(n.z)
+    local function uv(p)
+        if ay>=ax and ay>=az then return Vector2(p.x/2,p.z/2) end
+        if ax>=az then return Vector2(p.z/2,p.y/2) end
+        return Vector2(p.x/2,p.y/2)
+    end
+    local g=batch(ctx,material,s)
+    ctx.L.Vertex(g,a,n,ua or uv(a));ctx.L.Vertex(g,b,n,ub or uv(b));ctx.L.Vertex(g,c,n,uc or uv(c))
+    local chunk=math.floor(s/192)
+    ctx.triangles=ctx.triangles+1
+    ctx.perChunk[chunk]=(ctx.perChunk[chunk] or 0)+1
+    ctx.byMaterial[material]=(ctx.byMaterial[material] or 0)+1
+end
+
+---@param ctx DetailContext
+---@param material string
+---@param s number
+---@param a Vector3
+---@param b Vector3
+---@param c Vector3
+---@param d Vector3
+local function face(ctx,material,s,a,b,c,d)
+    -- 连续局部UV避免非共面薄片两半使用不同的主轴。
+    local u=(b-a):Length()/2
+    local v=(c-a):Length()/2
+    triangle(ctx,material,s,a,b,c,Vector2(0,0),Vector2(u,0),Vector2(0,v))
+    triangle(ctx,material,s,c,b,d,Vector2(0,v),Vector2(u,0),Vector2(u,v))
+end
+
+---@param ctx DetailContext
+---@param material string
+---@param s number
+---@param a Vector3
+---@param b Vector3
+---@param radius number
+---@param topRadius? number
+---@param segments? integer
+local function cylinder(ctx,material,s,a,b,radius,topRadius,segments)
+    local n=segments or 7
+    if not room(ctx,s,n*4) then return end
+    local axis=(b-a):Normalized()
+    local ref=math.abs(axis.y)>.9 and V(1,0,0) or V(0,1,0)
+    local r=axis:CrossProduct(ref):Normalized()
+    local f=r:CrossProduct(axis)
+    for i=0,n-1 do
+        local t0,t1=i/n*math.pi*2,(i+1)/n*math.pi*2
+        local u=r*math.cos(t0)+f*math.sin(t0)
+        local v=r*math.cos(t1)+f*math.sin(t1)
+        local p,q=a+u*radius,a+v*radius
+        local j,k=b+u*(topRadius or radius),b+v*(topRadius or radius)
+        -- 绕轴外向，树皮U沿圆周/V沿长轴，端面使用平面投影。
+        local len=(b-a):Length()/2
+        local u0,u1=i/n*radius*math.pi,(i+1)/n*radius*math.pi
+        triangle(ctx,material,s,p,j,q,Vector2(u0,0),Vector2(u0,len),Vector2(u1,0))
+        triangle(ctx,material,s,q,j,k,Vector2(u1,0),Vector2(u0,len),Vector2(u1,len))
+        triangle(ctx,material,s,a,p,q)
+        triangle(ctx,material,s,b,k,j)
+    end
 end
 
 ---@param ctx DetailContext
@@ -42,38 +147,14 @@ end
 ---@param height number
 ---@param depth number
 local function box(ctx,material,s,p,r,width,height,depth)
-    local g=batch(ctx,material,s)
+    if not room(ctx,s,12) then return end
     local f=V(-r.z,0,r.x)
     local x,z=r*(width*.5),f*(depth*.5)
     local y=V(0,height,0)
     local a,b,c,d=p-x-z,p-x+z,p+x-z,p+x+z
-    -- 每面按法线主轴选择投影平面，统一四米重复尺度；竖直侧壁不能只用世界XZ。
-    -- 共用同一四边形法线与投影，两个三角形在对角线处保持相同UV与切线方向。
-    ---@param q Vector3
-    ---@param t Vector3
-    ---@param u Vector3
-    ---@param v Vector3
-    local function quad(q,t,u,v)
-        local normal=(u-q):CrossProduct(t-q):Normalized()
-        local ax,ay,az=math.abs(normal.x),math.abs(normal.y),math.abs(normal.z)
-        ---@param point Vector3
-        local function vertex(point)
-            local uv=Vector2(point.x/4,point.z/4)
-            if ax>=ay and ax>=az then
-                uv=Vector2(point.z/4,point.y/4)
-            elseif az>=ay then
-                uv=Vector2(point.x/4,point.y/4)
-            end
-            g:DefineVertex(point)
-            g:DefineNormal(normal)
-            g:DefineTexCoord(uv)
-        end
-        vertex(q);vertex(u);vertex(t)
-        vertex(u);vertex(v);vertex(t)
-    end
-    quad(a,b,c,d);quad(a+y,c+y,b+y,d+y)
-    quad(a,a+y,b,b+y);quad(c,d,c+y,d+y)
-    quad(a,c,a+y,c+y);quad(b,b+y,d,d+y)
+    face(ctx,material,s,a,c,b,d);face(ctx,material,s,a+y,b+y,c+y,d+y)
+    face(ctx,material,s,a,a+y,b,b+y);face(ctx,material,s,c,d,c+y,d+y)
+    face(ctx,material,s,a,c,a+y,c+y);face(ctx,material,s,b,b+y,d,d+y)
     ctx.boxes=ctx.boxes+1
 end
 
@@ -100,13 +181,39 @@ function Details.Site(L,s,offset,width,depth)
         for iz=-1,1 do
             local q=center+r*(ix*width*.5)+f*(iz*depth*.5)
             local y,onRoad=L.Height(q.x,q.z)
-            if onRoad or L.WaterDepth(q.x,q.z)>.01 or (L.activeId=="coast" and q.x<-325 and y<.3) then return nil end
+            if onRoad or L.WaterDepth(q.x,q.z)>.01 then return nil end
+            -- Height的第二返回只表示沥青，不包括碎石路肩/支路肩。
+            if L.RoadHeight and L.RoadHeight(q.x,q.z)~=nil then return nil end
+            if L.RampAt and L.RampAt(q.x,q.z) then return nil end
             local terrain=L.TerrainHeight(q.x,q.z)
+            if L.activeId=="coast" and terrain<(L.WaterLevel or 0)+.3 then return nil end
+            for _,bay in ipairs(L.Laybys or {}) do
+                if (q.x-bay.x)^2+(q.z-bay.z)^2<22^2 then return nil end
+            end
             low,high=math.min(low,terrain),math.max(high,terrain)
         end
     end
     if high-low>math.max(2.8,math.min(width,depth)*.27) then return nil end
     return V(center.x,high+.1,center.z),r,f,low,high
+end
+
+-- 预留由Decor已放置的设施/既有模型，构建结束清空，不跨图残留。
+local reservations={}
+function Details.BeginReservations() reservations={} end
+---@param p Vector3
+---@param radius number
+function Details.Reserve(p,radius)
+    reservations[#reservations+1]={x=p.x,z=p.z,radius=radius}
+end
+
+---@param ctx DetailContext
+---@param p Vector3
+---@param radius number
+local function clearOfFacilities(ctx,p,radius)
+    for _,other in ipairs(ctx.occupied) do
+        if (p.x-other.x)^2+(p.z-other.z)^2<(radius+other.radius+1.5)^2 then return false end
+    end
+    return true
 end
 
 ---@param ctx DetailContext
@@ -134,6 +241,123 @@ local function site(ctx,s,side,width,depth)
     return nil
 end
 
+-- 岩层：地表下埋裙边 -> 不规则宽肩 -> 偏移窄顶。每块42tri，没有方盒假石。
+-- 每个底环点独立采TerrainHeight，坡面不悬空；层理UV沿真实面投影。
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param width number
+---@param height number
+---@param depth number
+---@param seed number
+---@param material? string
+local function stone(ctx,s,p,r,width,height,depth,seed,material)
+    if not room(ctx,s,42) then return end
+    local f=V(-r.z,0,r.x)
+    local rings={}
+    for tier=1,3 do
+        local ring={}
+        for i=1,7 do
+            local angle=(i-1)/7*math.pi*2
+            local jitter=.77+noise(seed+i,3)*.3
+            local taper=tier==1 and 1 or (tier==2 and .89 or .52)
+            local shift=tier==3 and .16 or 0
+            local q=p+r*((math.cos(angle)*jitter*taper+shift)*width*.5)
+                +f*(math.sin(angle)*jitter*taper*depth*.5)
+            local ground=ctx.L.TerrainHeight(q.x,q.z)
+            local y=tier==1 and ground-.2 or p.y+height*(tier==2 and .38 or (.84+noise(seed+i,5)*.16))
+            ring[i]=V(q.x,y,q.z)
+        end
+        rings[tier]=ring
+    end
+    local mat=material or "rock"
+    for tier=1,2 do
+        for i=1,7 do
+            local j=i%7+1
+            face(ctx,mat,s,rings[tier][i],rings[tier+1][i],rings[tier][j],rings[tier+1][j])
+        end
+    end
+    local top=p+r*(width*.07)+V(0,height*.94,0)
+    local bottom=V(p.x,ctx.L.TerrainHeight(p.x,p.z)-.22,p.z)
+    for i=1,7 do
+        local j=i%7+1
+        triangle(ctx,mat,s,top,rings[3][j],rings[3][i])
+        triangle(ctx,mat,s,bottom,rings[1][i],rings[1][j])
+    end
+    ctx.rocks=ctx.rocks+1
+end
+
+-- 有限顶点的弯曲尖叶，双面显式反法线，不改共享材质cullMode。
+---@param ctx DetailContext
+---@param s number
+---@param base Vector3
+---@param direction Vector3
+---@param height number
+---@param width number
+local function blade(ctx,s,base,direction,height,width)
+    local right=V(-direction.z,0,direction.x)*width
+    local bend=base+direction*(height*.27)+V(0,height*.58,0)
+    local tip=base+direction*(height*.7)+V(0,height,0)
+    local a,b=base-right,base+right
+    local c,d=bend-right*.62,bend+right*.62
+    face(ctx,"green",s,a,c,b,d);face(ctx,"green",s,b,d,a,c)
+    triangle(ctx,"green",s,c,tip,d);triangle(ctx,"green",s,d,tip,c)
+end
+
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param seed number
+---@param fern boolean
+local function plant(ctx,s,p,seed,fern)
+    -- 蕨5枚弓形羽叶×3对小羽片；草/低灌丛5片折叶，不用矩形牌或矩形灌木。
+    local cost=fern and 90 or 30
+    if not room(ctx,s,cost) then return end
+    for k=1,5 do
+        local angle=k*2.39996+noise(seed,7)*math.pi*2
+        local dir=V(math.cos(angle),0,math.sin(angle))
+        local height=(fern and .55 or .28)+noise(seed+k,9)*(fern and .35 or .45)
+        if not fern then
+            blade(ctx,s,p,dir,height,.045+noise(seed+k,8)*.035)
+        else
+            local across=V(-dir.z,0,dir.x)
+            for segment=1,3 do
+                local t=segment/4
+                local center=p+dir*(t*.85)+V(0,math.sin(t*math.pi*.85)*height,0)
+                local reach=(1-t)*.33
+                for side=-1,1,2 do
+                    local tip=center+across*(side*reach)+dir*.16+V(0,-.025,0)
+                    local a,b=center-dir*.055,center+dir*.075
+                    triangle(ctx,"green",s,a,tip,b);triangle(ctx,"green",s,b,tip,a)
+                end
+            end
+            blade(ctx,s,p,dir,height,.018)
+        end
+    end
+    ctx.plants=ctx.plants+1
+end
+
+---@param ctx DetailContext
+---@param s number
+---@param p Vector3
+---@param r Vector3
+---@param f Vector3
+---@param width number
+---@param depth number
+---@param rise number
+---@param material string
+local function roof(ctx,s,p,r,f,width,depth,rise,material)
+    if not room(ctx,s,102) then return end
+    local a,b=p-r*(width*.5)-f*(depth*.5),p+r*(width*.5)-f*(depth*.5)
+    local c,d=a+f*depth,b+f*depth
+    local front,back=p-f*(depth*.5)+V(0,rise,0),p+f*(depth*.5)+V(0,rise,0)
+    face(ctx,material,s,a,c,front,back);face(ctx,material,s,front,back,b,d)
+    triangle(ctx,"wood",s,a,front,b);triangle(ctx,"wood",s,c,d,back)
+    cylinder(ctx,"wood",s,a,b,.09,.09,6);cylinder(ctx,"wood",s,c,d,.09,.09,6)
+    cylinder(ctx,"wood",s,a,c,.08,.08,6);cylinder(ctx,"wood",s,b,d,.08,.08,6)
+end
+
 ---@param ctx DetailContext
 ---@param s number
 ---@param p Vector3
@@ -155,10 +379,10 @@ end
 local function shelter(ctx,s,p,r,f,low,kind)
     foundation(ctx,s,p,r,9,12,low)
     box(ctx,"wood",s,p+f*1.5,r,7,3.1,7)
-    box(ctx,kind=="rescue" and "red" or "dark",s,p+V(0,3.1,0)+f*1.2,r,8.4,.3,9.5)
+    roof(ctx,s,p+V(0,3.1,0)+f*1.2,r,f,8.4,9.5,1.45,kind=="rescue" and "red" or "dark")
     for side=-1,1,2 do
         box(ctx,"glass",s,p+r*(side*2)+f*(-2.03)+V(0,1.3,0),r,1.7,1.2,.05)
-        box(ctx,"wood",s,p+r*(side*3.35)-f*4.3,r,.18,3.1,.18)
+        cylinder(ctx,"wood",s,p+r*(side*3.35)-f*4.3,p+r*(side*3.35)-f*4.3+V(0,3.1,0),.1,.085,7)
     end
     box(ctx,"dark",s,p-f*2.04,r,1.15,2.3,.06)
     box(ctx,"white",s,p+f*4.4+V(0,1.6,0),r,5,.55,.08)
@@ -221,7 +445,7 @@ end
 local function paddock(ctx,s,p,r,f,low)
     foundation(ctx,s,p,r,13,25,low)
     box(ctx,"white",s,p+r*2,r,7,4,21)
-    box(ctx,"red",s,p+r*2+V(0,4,0),r,8,.3,22)
+    roof(ctx,s,p+r*2+V(0,4,0),r,f,8,22,1.2,"red")
     for z=-7,7,7 do
         box(ctx,"dark",s,p-r*1.52+f*z,r,.06,3.1,5.3)
         box(ctx,"yellow",s,p-r*1.56+f*z+V(0,3.35,0),r,.05,.4,2.1)
@@ -241,7 +465,9 @@ local function forestYard(ctx,s,p,r,f,low)
         for col=0,3 do
             local q=p+r*(5.5+row*.5)+f*(col*1.25-3)
             local ground=ctx.L.TerrainHeight(q.x,q.z)
-            box(ctx,"wood",s,V(q.x,ground-.08,q.z),r,.5,.4,1.05)
+            local a=V(q.x,ground+.23,q.z)-f*.53
+            cylinder(ctx,"wood",s,a,a+f*1.06,.24,.20,8)
+            ctx.logs=ctx.logs+1
         end
     end
 end
