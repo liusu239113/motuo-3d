@@ -391,6 +391,18 @@ function Checks.RunWorld(session)
             session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})
             session.view.overlay:SetVisible(false)
         end
+        local walkPhase=arg:match("^%-careerwalk=([%.%d]+)$")
+        if walkPhase then
+            actor.mounted=false; actor.speed=0; actor.visuals:SetMounted(false); actor:SyncVisuals(0)
+            actor.visuals.walker:PoseWalk(tonumber(walkPhase) or 0,1)
+            session:Refresh()
+            session.yaw,session.pitch=135,8
+            session.camera:SetModeConfig("normal",{distance=3.1,offset=Vector3(0,1.0,0),fov=48})
+            session.camera:SetMode("normal")
+            session.camera:Update(1,actor.node,session.yaw,session.pitch)
+            session.view:ShowDialog("步态实拍","确定性左右交替帧",{})
+            session.view.overlay:SetVisible(false)
+        end
         if arg=="-careernight" then require("Career.HousingChecks").NightShot(session) end
         local home=arg:match("^%-careerhousing=(.+)$")
         if home then require("Career.HousingChecks").Shot(session,home) end

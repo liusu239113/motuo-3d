@@ -165,6 +165,8 @@ function View:BuildPhone(state,offer,active)
     local function text(t,size,color) content:AddChild(label(t,size,color,{whiteSpace="normal"})) end
     local function button(t,fn,primary,id) content:AddChild(btn(t,fn,primary,{id=id})) end
     local page=self.phonePage
+    content:SetStyle{padding=page=="apps" and 0 or 9,borderRadius=10,
+        backgroundColor=page=="apps" and {0,0,0,0} or {8,19,27,238}}
     if page~="apps" then button("← 应用首页",function() a.phone("apps") end,false) end
     self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
