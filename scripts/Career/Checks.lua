@@ -105,6 +105,34 @@ function Checks.RunProgression()
         print("[生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离")
     end)
 end
+function Checks.PrepareRace()
+    assert(Store.NewCareer())
+    grant(5000000,"test:race-capital")
+    assert(Progress.BuyMotorcycle("sport"))
+    assert(Progress.Train())
+    assert(Progress.CompleteTraining(true))
+    assert(Progress.EnterSeries(1))
+    return Store.Get().career.pending
+end
+-- 对已载入的真实赛道使用连续合法过线步长，不直接设置finished或赠送结果。
+function Checks.DriveRace(race,sim)
+    assert(race.laps==2 and race.options.professional and #race.traffic==0)
+    for _=1,151 do
+        race:BeforeStep(.02,{})
+        race:AfterStep(.02)
+    end
+    local s=race.player.s
+    for _=1,math.ceil((race.length*2+80)/1.2) do
+        if race.phase=="finished" then break end
+        race:BeforeStep(.02,{})
+        local pose,yaw=race:Pose(s+1.2,1.55)
+        s=s+1.2
+        sim.x,sim.y,sim.z,sim.yaw,sim.heading,sim.speed=pose.x,pose.y,pose.z,yaw,yaw,60
+        race:AfterStep(.02)
+    end
+    assert(race.player.finished and race.player.completedLaps==2 and not race.pursuit.active)
+    print("[生涯赛道验收] 真实赛道两圈顺序检查点完赛，关闭追逐和交通")
+end
 function Checks.RunLogic()
     local files={}
     local failWrite=false

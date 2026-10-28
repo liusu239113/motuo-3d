@@ -22,6 +22,7 @@ local CareerSession = require("Career.Session")
 local career_ = nil
 local careerMode_ = false
 local careerRace_ = false
+local careerRaceCheck_,careerRaceCheckStage_,careerRaceCheckFrames_=false,0,0
 local CareerProgress = require("Career.Progression")
 local CareerStore = require("Career.Store")
 
@@ -830,6 +831,7 @@ function Start()
             or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
         if arg == "-career" then careerStart = true end
         if arg == "-careerchecks" then careerCheck, careerStart = true, true; legacyTest = false end
+        if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
     end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
         careerMode_,careerRace_=false,false
@@ -846,7 +848,9 @@ function Start()
     end})
     -- 旧竞速页面提供返回入口，UI根只切换，不重复初始化字体或事件。
     hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=ReturnToCareer})
-    if legacyTest then
+    if careerRaceCheck_ then
+        career_.options.race(require("Career.Checks").PrepareRace())
+    elseif legacyTest then
         UI.SetRoot(hud_.root)
     else
         careerMode_=true; hud_.root:SetVisible(false); UI.SetRoot(career_.view.root)
@@ -964,7 +968,7 @@ function HandleUpdate(eventType, eventData)
             local ok, message = coroutine.resume(preparation_)
             if not ok then LoadingError(tostring(message)); preparation_ = nil end
         elseif loadPhase_ == "ready" then
-            if autoTest_ or selfTest_ or raceTest_ or trackTest_ or testShot_ ~= "" then FinishRidePreparation()
+            if autoTest_ or selfTest_ or raceTest_ or trackTest_ or careerRaceCheck_ or testShot_ ~= "" then FinishRidePreparation()
             else
                 loadPhase_ = "await-enter"
                 hud_:SetLoading(assert(Tracks.Get(loadedTrack_)).name .. "已准备好", "点击出发，在真实触摸中启用声音。", 1, "全部资源可用 · 双手握稳")
@@ -974,6 +978,25 @@ function HandleUpdate(eventType, eventData)
         return
     end
     hud_:UpdateLayout()
+    if careerRaceCheck_ and ready_ and race_ then
+        if careerRaceCheckStage_==0 and screen_=="ride" then
+            careerRaceCheckFrames_=careerRaceCheckFrames_+1
+            if careerRaceCheckFrames_>=5 then
+                assert(selectedLaps_==2 and #world_.traffic==0)
+                require("Career.Checks").DriveRace(race_,sim_)
+                careerRaceCheckStage_=1
+            end
+        elseif careerRaceCheckStage_==1 and screen_=="result" then
+            local p=CareerStore.Get()
+            assert(p.career and not p.career.pending and p.career.points>0)
+            local cash=p.cashCents
+            RestartRide()
+            assert(careerMode_ and not careerRace_ and not scene_ and not ready_)
+            assert(CareerStore.Get().cashCents==cash)
+            print("[生涯主入口验收通过] 真实加载/职业圈数/合法完赛/自动结算/结果返回/无免费重赛/释放赛道")
+            engine:Exit(); return
+        end
+    end
     if hud_:IsModalOpen() then
         if input:GetKeyPress(KEY_ESCAPE) then hud_:CloseModal() end
         -- 模态期间键盘与触摸一致冻结，不允许Enter确认底层页面或W继续驾驶。
