@@ -1,0 +1,33 @@
+{
+  "$schema": "../schemas/project.schema.json",
+  "project_id": "m_bief",
+  "author": {
+    "id": "655765888"
+  },
+  "entry": "main.lua",
+  "version": "1.0.7",
+  "taptap_publish": {
+    "title": "MMS 山湖自由骑行",
+    "description": "在山湖公路间自由骑行，可选仿赛、拉力与巡航三种摩托，体验压弯、翘头与腾跃特技。",
+    "category": "racing",
+    "screen_orientation": "landscape",
+    "collection_type": "racing",
+    "trial_note": "",
+    "app_platforms": "1,2",
+    "app_id": 1005342,
+    "miniapp_id": "tapmcyodqe1xif6vtw",
+    "developer_id": 403350
+  },
+  "assets": {
+    "icon": "",
+    "screenshots": [],
+    "promotional_image": ""
+  },
+  "test_qrcode": {
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_c4mf_1793146372120.png",
+    "generated_at": "2026-10-28T00:12:52.215Z"
+  },
+  "metadata": {
+    "updated_at": "2026-10-28T00:12:52.215Z"
+  }
+}

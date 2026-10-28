@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<material>
+	<technique name="Techniques/DiffNormal.xml" quality="0" loddistance="0" />
+	<texture unit="diffuse" name="uuid://G1NXmccqgfTCXWcXMk_eYUD9" />
+	<texture unit="normal" name="uuid://GIYG4e1xAKGr9PPpL5Vv81GC" />
+	<parameter name="MatDiffColor" value="0.8 0.8 0.8 1" />
+	<parameter name="MatSpecColor" value="0.2 0.2 0.2 25" />
+</material>
