@@ -7,8 +7,8 @@
   "entry": "main.lua",
   "version": "1.0.9",
   "taptap_publish": {
-    "title": "MMS 山湖自由骑行",
-    "description": "在山湖公路间自由骑行，可选仿赛、拉力与巡航三种摩托，体验压弯、翘头与腾跃特技。",
+    "title": "公路狂飙：从外卖骑手到职业车手",
+    "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
     "category": "racing",
     "screen_orientation": "landscape",
     "collection_type": "racing",

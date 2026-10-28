@@ -31,6 +31,13 @@ function Session:Init(options)
     self.actor=nil
     ---@type CareerCity?
     self.city=nil
+    ---@type Zone?
+    self.zone=nil
+    ---@type Light?
+    self.sun=nil
+    ---@type ProceduralSky?
+    self.sky=nil
+    self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
     ---@type RideLoader?
@@ -117,6 +124,16 @@ function Session:BuildWorld()
     local light=lg:GetComponent("Light",true)
     light.castShadows=true; light.shadowCascade=CascadeParameters(18,80,0,0,.8)
     light.shadowBias=BiasParameters(.0003,.6)
+    self.zone,self.sun=zone,light
+    self.sky=self.scene:CreateChild("南城昼夜天空"):CreateComponent("ProceduralSky")
+    self.sky.sunLight=light
+    self.sky.skyCurve=.2
+    local capture=lg:CreateComponent("SkyLightCapture")
+    capture.resolution=64; capture.minCaptureInterval=2
+    zone.envTextureDiffIntensity=1; zone.envTextureSpecIntensity=1
+    renderer.hdrRendering=true
+    self.environmentHour=-1
+    self:UpdateEnvironment(Store.Get().time)
     self.view:ShowLoading("建设南城老街","道路、住宅、写字楼和生活地点。",.3)
     coroutine.yield()
     self.city=City.New(self.scene)
@@ -139,6 +156,24 @@ function Session:BuildWorld()
         require("Career.Checks").RunWorld(self)
     end
     print("[生涯] 场景与主流程已接通")
+end
+function Session:UpdateEnvironment(hour)
+    if not self.sky or not self.sun or not self.zone then return end
+    local step=math.floor(hour*12)/12
+    if step==self.environmentHour then return end
+    self.environmentHour=step
+    local a=(step-6)/12*math.pi
+    local height=math.sin(a)
+    local day=math.max(0,math.min(1,(height+.08)/.4))
+    local dusk=math.exp(-((height-.02)/.16)^2)
+    self.sun.node.direction=Vector3(-math.cos(a),-height,.35)
+    self.sun.color=Color(1,.55,.3):Lerp(Color(1,.94,.84),day)
+    self.sun.brightness=.18+2.82*day
+    local horizon=Color(.16,.21,.32):Lerp(Color(.66,.77,.9),day):Lerp(Color(.92,.57,.35),dusk*.7)
+    self.sky.skyTopColor=Color(.08,.12,.24):Lerp(Color(.25,.47,.8),day)
+    self.sky.skyHorizonColor=horizon; self.sky.groundHorizonColor=horizon
+    self.sky.groundBottomColor=Color(.1,.11,.15):Lerp(Color(.35,.33,.28),day)
+    self.zone.fogColor=horizon
 end
 function Session:Intro()
     self.view:ShowDialog("第一章 · 兜里还剩50块","王二狗，工作没了，房租也续不起。\n表哥把一串旧钥匙塞进你手里：\n“这辆战损9号以前追对象留下的。车还能跑，外卖箱给你装好了。先吃上饭，再想别的。”\n今晚能睡的地方，是桥洞和公园长椅。",{
@@ -260,9 +295,11 @@ function Session:RestorePosition()
     if not self.actor then return end
     local p=Store.Get().position
     local a=self.actor
-    a.bikeX,a.bikeZ,a.bikeYaw=p.bikeX,p.bikeZ,p.bikeYaw
+    a.bikeX,a.bikeZ=self.city:FindFree(p.bikeX,p.bikeZ,1.2)
+    a.bikeYaw=p.bikeYaw
     a.mounted=p.mounted; a.visuals:SetMounted(p.mounted)
-    a:Teleport(p.x,p.z,p.yaw); self.yaw=p.yaw
+    local x,z=self.city:FindFree(p.x,p.z,p.mounted and 1.2 or .32)
+    a:Teleport(x,z,p.yaw); self.yaw=p.yaw
 end
 function Session:SaveCloud()
     self:SavePosition()
@@ -324,6 +361,11 @@ function Session:Update(dt)
     local x,z=self.actor.x,self.actor.z
     local controls=self.view:GetInput()
     local state=Store.Get()
+    self:UpdateEnvironment(state.time)
+    local need=math.min(state.hunger,state.energy)
+    controls.speedFactor=need<15 and .45 or need<30 and .7 or 1
+    if need<30 then controls.run=false end
+    if state.time>=23 then controls.speedFactor=math.min(controls.speedFactor,.7) end
     if self.actor.mounted and state.battery<=0 then controls.throttle=0; controls.brake=true end
     self.actor:Update(dt,controls,self.yaw)
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
@@ -350,7 +392,7 @@ function Session:DisposeWorld()
     renderer:SetNumViewports(0)
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.scene then self.scene:Dispose(); self.scene=nil end
-    self.city,self.camera=nil,nil
+    self.city,self.camera,self.zone,self.sun,self.sky=nil,nil,nil,nil,nil
 end
 function Session:Dispose()
     if self.disposed then return end

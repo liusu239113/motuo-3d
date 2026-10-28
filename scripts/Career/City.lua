@@ -6,7 +6,20 @@ local Config = require("Career.Config")
 ---@class CareerCity
 local City = {}
 City.__index = City
+local architecture={
+    {root="model/e799bc6c-0cef-5148-978f-9a41183cc268/",stem="c531d52ef7284ea8ae32f415bfe4b98e",material="c531d52ef7284ea8ae32f415bfe4b98e_00_tripo_material_55e20983-baca-4902-adac-b025ebed4e62.xml"},
+    {root="model/62f2b98b-631d-5438-94ed-5ed78d3984b0/",stem="94b007f45c784751825b3e1b8e1e624a",material="94b007f45c784751825b3e1b8e1e624a_00_tripo_material_4516bc36-b2c8-41bf-8f41-8eed1211e086.xml"},
+    {root="model/ea4b7cae-42e1-5651-8edf-6ccadbbd2046/",stem="863a459ef93647c88fe260263a9b2a1d",material="863a459ef93647c88fe260263a9b2a1d_00_tripo_material_6416e276-d70d-40dd-8b35-835c0187af3e.xml"},
+}
 City.Resources, City.ResourceTypes = {}, {}
+for _,asset in ipairs(architecture) do
+    for path,kind in pairs({[asset.root.."Meshes/"..asset.stem..".mdl"]="Model",
+        [asset.root.."Materials/"..asset.material]="Material",
+        [asset.root.."Textures/"..asset.stem.."_00_D.jpg"]="Texture2D",
+        [asset.root.."Textures/"..asset.stem.."_00_N.jpg"]="Texture2D"}) do
+        City.Resources[#City.Resources+1]=path; City.ResourceTypes[path]=kind
+    end
+end
 for _, path in ipairs(Landscape.Resources) do
     City.Resources[#City.Resources + 1] = path
     City.ResourceTypes[path] = Landscape.ResourceTypes[path]
@@ -87,7 +100,7 @@ end
 -- 碰撞设计（俯视，米）：建筑实体AABB；移动圆r经AABB各边外扩r检测。
 --   道路 -> 人行道 -> 门前交互圆(2m) -> [建筑实体]
 -- 不把门前圆放进墙体；短步沿X/Z分轴滑移，最大步长0.1m，避免薄墙穿越。
--- 出生/上下车的零位移也检查穿入；贴边允许，向内禁止，边界±180减去半径。
+-- 读档使用FindFree恢复到邻近空位；普通移动只沿切向滑移，边界±180减半径。
 function City:Obstacle(x,z,w,depth)
     self.obstacles[#self.obstacles+1] = {x1=x-w/2,x2=x+w/2,z1=z-depth/2,z2=z+depth/2}
 end
@@ -124,14 +137,44 @@ function City:Building(x,z,w,depth,floors,style,name,yaw)
     self.buildings=self.buildings+1
 end
 
+function City:DetailedBuilding(index,x,z,w,depth,height,yaw,name)
+    local asset=architecture[index]
+    local model=cache:GetResource("Model",asset.root.."Meshes/"..asset.stem..".mdl")
+    local bounds=model.boundingBox
+    -- 模型只在预留地块内等比缩放，按旋转后的精确包围盒生成碰撞。
+    local scale=math.min(w/bounds.size.x,depth/bounds.size.z,height/bounds.size.y)
+    local root=self.root:CreateChild(name)
+    root.position=Vector3(x,.085,z); root.rotation=Quaternion(0,yaw,0)
+    local body=root:CreateChild("写实建筑")
+    body:SetScale(scale)
+    body.position=Vector3(-bounds.center.x*scale,-bounds.min.y*scale,-bounds.center.z*scale)
+    local draw=body:CreateComponent("StaticModel")
+    draw.model=model
+    local mat=cache:GetResource("Material",asset.root.."Materials/"..asset.material):Clone()
+    mat:SetTexture(TU_DIFFUSE,cache:GetResource("Texture2D",asset.root.."Textures/"..asset.stem.."_00_D.jpg"))
+    mat:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",asset.root.."Textures/"..asset.stem.."_00_N.jpg"))
+    mat:SetShaderParameter("Metallic",Variant(0)); mat:SetShaderParameter("Roughness",Variant(.88))
+    draw.material=mat; draw.castShadows=true; draw.drawDistance=400; draw.shadowDistance=85
+    local angle=math.rad(yaw)
+    local sx,sz=bounds.size.x*scale,bounds.size.z*scale
+    self:Obstacle(x,z,math.abs(math.cos(angle))*sx+math.abs(math.sin(angle))*sz,
+        math.abs(math.sin(angle))*sx+math.abs(math.cos(angle))*sz)
+    self.buildings=self.buildings+1
+end
+
 function City:BuildBlocks()
     -- 商业沿街和住宅留出连续步行通道；不以随机撒楼挤占导航折线。
     for i,x in ipairs({-140,-117,-70,-43,25,53,133,151}) do
-        self:Building(x,22,18,20,2+(i%3),i%2==0 and "plaster" or "brick",
-            ({"街角面馆","日用百货","城南书店","老街五金","社区便利","修车铺","洗衣店","晨光餐馆"})[i],0)
+        if i==3 or i==4 or i==5 or i==6 then
+            self:DetailedBuilding(i%2==0 and 2 or 1,x,24,19,23,18,0,"沿街商住楼"..i)
+        else
+            self:Building(x,22,18,20,2+(i%3),i%2==0 and "plaster" or "brick",
+                ({"街角面馆","日用百货","城南书店","老街五金","社区便利","修车铺","洗衣店","晨光餐馆"})[i],0)
+        end
     end
     for i,x in ipairs({-142,-121,-72,-46,32,60,134,153}) do
-        self:Building(x,139,17,22,3+(i%3),"plaster","南城公寓 "..i,180)
+        if i%2==0 then self:DetailedBuilding(3,x,139,18,23,20,180,"旧城公寓组"..i)
+        else self:Building(x,139,17,22,3+(i%3),"plaster","南城公寓 "..i,180) end
     end
     for i,z in ipairs({-135,-104,-43,48,77,130}) do
         self:Building(-139,z,20,22,3+(i%2),"plaster","老街居民楼 "..i,90)
@@ -197,6 +240,20 @@ function City:IsFree(x,z,radius)
         if x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then return false end
     end
     return true
+end
+
+function City:FindFree(x,z,radius)
+    local limit=180-radius
+    local px,pz=math.max(-limit,math.min(limit,x)),math.max(-limit,math.min(limit,z))
+    if self:IsFree(px,pz,radius) then return px,pz end
+    for distance=1,50 do
+        for step=1,24 do
+            local angle=step*math.pi/12
+            local nx,nz=px+math.sin(angle)*distance,pz+math.cos(angle)*distance
+            if self:IsFree(nx,nz,radius) then return nx,nz end
+        end
+    end
+    return 0,-20
 end
 
 function City:Move(x,z,dx,dz,radius)

@@ -10,6 +10,7 @@ local V = Vector3
 ---@field walkX? number 相机右向为正
 ---@field walkY? number 相机前向为正
 ---@field run? boolean
+---@field speedFactor? number 低饱腹/精力的安全限速系数
 
 ---@class CareerActorCity
 ---@field Move fun(self: CareerActorCity, x: number, z: number, dx: number, dz: number, radius: number): number, number
@@ -87,7 +88,7 @@ end
 --        O -> ->   tangency slides; inward displacement is blocked
 --        |<-r->|
 --  walker: circle r=.32; vehicle: conservative circle r=1.20, enclosing
---  the inspected sport debug proxy (length2.15m,width.997m; corner radius1.185).
+--  the 1.90m scooter and its rear-mounted delivery box.
 --  No Bullet movement in parallel: ALL XZ displacement passes through City.Move.
 --  Segment <=.18m and time <=1/60s, including parking exits; dt<=.25s avoids
 --  catching up huge paused/stalled frames. Edges clamp at +/- (180-radius).
@@ -178,7 +179,7 @@ function Actor:WalkStep(dt, controls, cameraYaw)
     local angle = math.rad(cameraYaw)
     local vx = (right * math.cos(angle) + forward * math.sin(angle)) / magnitude
     local vz = (forward * math.cos(angle) - right * math.sin(angle)) / magnitude
-    local desiredSpeed = (controls.run and RUN_SPEED or WALK_SPEED) * strength
+    local desiredSpeed = (controls.run and RUN_SPEED or WALK_SPEED) * strength * clamp(controls.speedFactor or 1,.4,1)
     local nextX, nextZ, blocked = self:Move(self.x, self.z,
         vx * desiredSpeed * dt, vz * desiredSpeed * dt, WALK_RADIUS)
     local movedX, movedZ = nextX - self.x, nextZ - self.z
@@ -202,7 +203,7 @@ function Actor:RideStep(dt, controls)
     if controls.brake then
         self.speed = approach(self.speed, 0, 7.5 * dt)
     elseif throttle > 0 then
-        self.speed = approach(self.speed, Actor.MAX_SPEED * throttle,
+        self.speed = approach(self.speed, Actor.MAX_SPEED * throttle * clamp(controls.speedFactor or 1,.4,1),
             (self.speed < 0 and 5.5 or 2.8) * dt)
     elseif throttle < 0 then
         self.speed = approach(self.speed, REVERSE_SPEED * throttle,

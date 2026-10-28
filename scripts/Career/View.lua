@@ -244,7 +244,10 @@ function View:Update(state,actor,target,active,offer,dt)
     self.status:SetText(string.format("王二狗  %s  第%d天 %02d:%02d\n饱腹 %.0f · 精力 %.0f · 电量 %.0f%%",money(state.cashCents),state.day,
         math.floor(state.time),math.floor(state.time*60)%60,state.hunger,state.energy,state.battery))
     self.objective:SetText(target and (target.name..string.format(" · %.0f米",target.distance)) or "打开右下角手机 → 外卖骑手 → 上线听单")
-    self.hint:SetText(target and target.hint or "先活下去，再跑出自己的路。")
+    local need=math.min(state.hunger,state.energy)
+    self.hint:SetText(need<30 and "饥饿或疲劳已降低速度：去早餐店用餐，或去住处休息。"
+        or state.time>=23 and "深夜已停止派新单，请完成配送后休息。"
+        or target and target.hint or "先活下去，再跑出自己的路。")
     self.speed:SetText(actor.mounted and string.format("9号电动车  %.0f km/h",math.abs(actor.speed)*3.6) or "步行 · 车辆停在原处")
     self.map:SetTelemetry(actor,target,active)
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))

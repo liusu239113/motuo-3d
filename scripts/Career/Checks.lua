@@ -177,8 +177,10 @@ function Checks.RunWorld(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careerpose=ride" then
             assert(actor:ToggleMount()); actor:SyncVisuals(1)
-            session.yaw,session.pitch=100,10
+            session.yaw,session.pitch=90,10
             session.camera:Update(1,actor.node,session.yaw,session.pitch)
+            session.view:ShowDialog("骑姿实拍","侧面检查手、坐垫、脚踏与配送箱",{})
+            session.view.overlay:SetVisible(false)
         end
         local page=arg:match("^%-careerpage=(.+)$")
         if page then session:OpenPhone(page) end
