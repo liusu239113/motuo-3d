@@ -191,7 +191,14 @@ function View:BuildPhone(state,offer,active)
         else text("上线后接收本地城市配送订单。",12,C.muted) end
     elseif page=="map" then
         local map=Map.New("career-phone-map"); map.root:SetStyle{width="100%",height=220}
-        content:AddChild(map.root); map:SetTelemetry(self.lastActor or state.position,self.lastTarget,active)
+        content:AddChild(map.root)
+        if state.currentSpace and state.currentSpace~="city" then
+            local pos=state.position
+            map:SetTelemetry({x=pos.cityX,z=pos.cityZ,yaw=pos.cityYaw},nil,active)
+            text("你正在室内，地图标记为进入住处的位置。请先走到房门旁出门，再按城市导航前往目的地。",11,C.amber)
+        else
+            map:SetTelemetry(self.lastActor or state.position,self.lastTarget,active)
+        end
         for _,point in ipairs(Config.pointList) do
             local id=point.id; button(point.label,function() a.setWaypoint(id); a.closePhone() end,false)
         end
