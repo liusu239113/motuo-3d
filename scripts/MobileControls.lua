@@ -68,31 +68,39 @@ function Controls:SetFeel(sensitivity, dead)
     deadzone = math.max(0.01, math.min(0.34, tonumber(dead) or 0.12))
 end
 
--- 应用一个已保存方案：按键按屏幕百分比绝对定位，位置与设置面板里拖动的一致。
+-- 编辑和驾驶共享同一组实际尺寸，不再靠视觉 transform 缩放命中区。
+function Controls:ButtonSize(key, scheme)
+    local sizes = {
+        steering = {self.steeringWidth, 96}, gas = {self.compact and 82 or 92, self.compact and 94 or 106},
+        brake = {self.compact and 72 or 76, self.compact and 86 or 90},
+        nitro = {self.compact and 74 or 80, self.compact and 78 or 84},
+    }
+    local size = sizes[key] or {self.compact and 62 or 68, self.compact and 64 or 70}
+    local scale = scheme.scale[key] or 1
+    return size[1] * scale, size[2] * scale
+end
+
+---@param editor table?
+function Controls:SetEditor(editor)
+    self:Reset()
+    self.editor = editor
+end
+
+-- 位置始终表示安全区内按钮中心的比例；编辑直接操作这些实战控件。
 ---@param scheme ControlScheme
----@param width number 逻辑屏宽（UI 像素）
----@param height number 逻辑屏高
+---@param width number
+---@param height number
 function Controls:ApplyScheme(scheme, width, height)
-    if not scheme then return end
     self.scheme = scheme
-    local w, h = tonumber(width) or 1024, tonumber(height) or 576
-    local function place(widget, key, naturalW, naturalH)
-        if not widget then return end
-        local p = scheme.pos and scheme.pos[key] or nil
-        if not p then return end
-        local scale = scheme.scale[key] or 1
-        local bx, by = naturalW * scale, naturalH * scale
-        -- 让按钮中心落在方案坐标上，同时夹在屏幕内，避免拖到边缘后被裁掉。
-        local x = math.max(0, math.min(w - bx, p[1] * w - bx * 0.5 + (scheme.offsetX[key] or 0)))
-        local y = math.max(0, math.min(h - by, p[2] * h - by * 0.5 + (scheme.offsetY[key] or 0)))
-        widget:SetStyle({left = math.floor(x), top = math.floor(y), scale = scale, transformOrigin = "top-left"})
-    end
-    place(self.widgets.steering, "steering", self.steeringWidth, 96)
-    place(self.widgets.gas, "gas", self.compact and 82 or 92, self.compact and 94 or 106)
-    place(self.widgets.brake, "brake", self.compact and 72 or 76, self.compact and 86 or 90)
-    place(self.widgets.nitro, "nitro", self.compact and 74 or 80, self.compact and 78 or 84)
-    for _, key in ipairs({"wheelie", "burnout", "spin180", "spin360"}) do
-        place(self.widgets[key], key, self.compact and 62 or 68, self.compact and 64 or 70)
+    local w, h = math.max(1, width), math.max(1, height)
+    for key, p in pairs(scheme.pos) do
+        local widget = self.widgets[key]
+        if widget then
+            local bx, by = self:ButtonSize(key, scheme)
+            local x = math.max(0, math.min(w - bx, p[1] * w - bx * 0.5 + (scheme.offsetX[key] or 0)))
+            local y = math.max(0, math.min(h - by, p[2] * h - by * 0.5 + (scheme.offsetY[key] or 0)))
+            widget:SetStyle({left = x, top = y, width = bx, height = by, scale = 1, transformOrigin = "top-left"})
+        end
     end
     self:SetFeel(scheme.steeringSensitivity, scheme.steeringDeadzone)
     self:Refresh()
@@ -260,15 +268,21 @@ function Controls:CreateSteering()
         pointerEvents = "box-only",
         onPointerDown = function(event, widget)
             if not event:IsTouch() and not event:IsPrimaryButton() then return end
+            if self.editor then self.editor.down("steering", event, widget); return end
             local rect = widget:GetAbsoluteLayout()
             self:Press("steer", event.pointerId, event.x - rect.x, rect.w)
         end,
         onPointerMove = function(event, widget)
+            if self.editor then self.editor.move(event); return end
             local rect = widget:GetAbsoluteLayout()
             self:Move(event.pointerId, event.x - rect.x, rect.w)
         end,
-        onPointerUp = function(event) self:Release(event.pointerId) end,
-        onPointerCancel = function(event) self:Release(event.pointerId, true) end,
+        onPointerUp = function(event)
+            if self.editor then self.editor.up(event, false) else self:Release(event.pointerId) end
+        end,
+        onPointerCancel = function(event)
+            if self.editor then self.editor.up(event, true) else self:Release(event.pointerId, true) end
+        end,
         children = {
             UI.Panel {position = "absolute", left = 20, right = 20, top = 48, height = 1,
                 backgroundColor = {196, 202, 206, 70}, pointerEvents = "none"},
@@ -307,11 +321,17 @@ function Controls:CreateHold(key, text, width, height)
     local hold = UI.Panel {id = key, width = width or 76, height = height or 80, padding = 0,
         borderRadius = 8, backgroundColor = {9, 17, 24, 210}, borderWidth = 1,
         borderColor = {149, 174, 189, 140}, pointerEvents = "box-only",
-        onPointerDown = function(event)
-            if event:IsTouch() or event:IsPrimaryButton() then self:Press(key, event.pointerId, 0, 1) end
+        onPointerDown = function(event, widget)
+            if not event:IsTouch() and not event:IsPrimaryButton() then return end
+            if self.editor then self.editor.down(key, event, widget) else self:Press(key, event.pointerId, 0, 1) end
         end,
-        onPointerUp = function(event) self:Release(event.pointerId) end,
-        onPointerCancel = function(event) self:Release(event.pointerId, true) end,
+        onPointerMove = function(event) if self.editor then self.editor.move(event) end end,
+        onPointerUp = function(event)
+            if self.editor then self.editor.up(event, false) else self:Release(event.pointerId) end
+        end,
+        onPointerCancel = function(event)
+            if self.editor then self.editor.up(event, true) else self:Release(event.pointerId, true) end
+        end,
         children = {graphic, caption, detail}}
     self.widgets[key], self.captions[key], self.details[key] = hold, caption, detail
     self.visualPressed[key], self.visualKeys[key] = nil, nil

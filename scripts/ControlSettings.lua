@@ -61,9 +61,10 @@ local function parseScheme(text, index)
         elseif key == "steeringSensitivity" or key == "steeringDeadzone" or key == "nitroSensitivity" then
             scheme[key] = tonumber(value) or scheme[key]
         else
-            local slot, kind = key:match("^([%w]+)_(ox|oy|sc|px|py)$")
+            -- Lua pattern 不支持正则的 a|b；分别解析后缀，旧写法使所有按键位置都读不回来。
+            local slot, kind = (key or ""):match("^([%w]+)_([%a]+)$")
             local number = tonumber(value)
-            if slot then
+            if slot and scheme.pos[slot] and number and number == number and math.abs(number) < math.huge then
                 if kind == "ox" then scheme.offsetX[slot] = number or 0
                 elseif kind == "oy" then scheme.offsetY[slot] = number or 0
                 elseif kind == "sc" then scheme.scale[slot] = clamp(number or 1, 0.7, 1.3)
@@ -151,14 +152,27 @@ function Settings.ActiveIndex()
     return activeIndex
 end
 
+local function cloneScheme(source, name)
+    local copy = defaults(name or source.name)
+    copy.steeringSensitivity, copy.steeringDeadzone, copy.nitroSensitivity =
+        source.steeringSensitivity, source.steeringDeadzone, source.nitroSensitivity
+    for _, slot in ipairs(Settings.Keys) do
+        copy.pos[slot] = {source.pos[slot][1], source.pos[slot][2]}
+        copy.offsetX[slot], copy.offsetY[slot], copy.scale[slot] = source.offsetX[slot], source.offsetY[slot], source.scale[slot]
+    end
+    return copy
+end
+
 ---@param index integer
----@return boolean
+---@return boolean, string?
 function Settings.SetActive(index)
     load()
-    if not schemes[index] then return false end
+    if not schemes[index] then return false, "方案不存在" end
+    local previous = activeIndex
     activeIndex = index
-    Settings.Save()
-    return true
+    local ok, err = Settings.Save()
+    if not ok then activeIndex = previous end
+    return ok, err
 end
 
 ---@param name string
@@ -166,10 +180,12 @@ end
 function Settings.AddScheme(name)
     load()
     if #schemes >= 6 then return false, "最多保存6套方案" end
-    local scheme = defaults(name ~= "" and name or ("方案 " .. (#schemes + 1)))
+    local previous = activeIndex
+    local scheme = cloneScheme(schemes[activeIndex], name ~= "" and name or ("方案 " .. (#schemes + 1)))
     schemes[#schemes + 1] = scheme
     activeIndex = #schemes
-    Settings.Save()
+    local ok, err = Settings.Save()
+    if not ok then table.remove(schemes); activeIndex = previous; return false, err or "保存失败" end
     return true, scheme.name
 end
 
@@ -177,9 +193,11 @@ end
 function Settings.DeleteScheme()
     load()
     if #schemes <= 1 then return false, "至少保留一套方案" end
+    local previous, removed = activeIndex, schemes[activeIndex]
     table.remove(schemes, activeIndex)
     activeIndex = math.max(1, activeIndex - 1)
-    Settings.Save()
+    local ok, err = Settings.Save()
+    if not ok then table.insert(schemes, previous, removed); activeIndex = previous; return false, err or "保存失败" end
     return true, "已删除"
 end
 

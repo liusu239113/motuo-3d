@@ -127,7 +127,8 @@ local function SetScreen(screen)
 end
 
 local function CockpitActive()
-    return firstPerson_ and (screen_ == "ride" or screen_ == "pause" or screen_ == "result")
+    return firstPerson_ and (screen_ == "ride" or screen_ == "pause" or screen_ == "result"
+        or (screen_ == "settings" and hud_ and hud_.settingsReturn == "pause"))
 end
 
 local function SetCamera()
@@ -273,6 +274,9 @@ local function ConfirmVehicle(id)
     local entry = Catalog.Get(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
+    local track = assert(Tracks.Get(selectedTrack_))
+    selectedLaps_ = track.laps
+    hud_:SelectLaps(selectedLaps_, false)
     if sound_ then sound_:Unlock() end
     if raceAudio_ then raceAudio_:Unlock() end
     SetScreen("loading")
@@ -556,6 +560,8 @@ function Start()
         selectTrack = function(id)
             if screen_ == "loading" or not Tracks.Get(id) then return end
             selectedTrack_ = id
+            selectedLaps_ = assert(Tracks.Get(id)).laps
+            hud_:SelectLaps(selectedLaps_, false)
             print("[地图] 初选 " .. id .. "，确认出发后重建，不提前替换当前世界")
         end,
         buyVehicle = function(id)
@@ -601,6 +607,13 @@ function Start()
             end
         end,
         quality = ToggleQuality,
+        settings = function(open)
+            if open then
+                if screen_ == "ride" then SetScreen("pause") end
+                SetScreen("settings")
+            else SetScreen(hud_.settingsReturn or "menu") end
+            SetCamera()
+        end,
         retry = RetryLoading}, touch_)
     local autoStart, challenge = false, false
     for _, arg in ipairs(GetArguments()) do
@@ -793,6 +806,11 @@ function HandleUpdate(eventType, eventData)
         end
         return
     end
+    hud_:UpdateLayout()
+    if screen_ == "settings" then
+        if input:GetKeyPress(KEY_ESCAPE) or input:GetKeyPress(KEY_P) then hud_:CloseSettings() end
+        return
+    end
     if input:GetKeyPress(KEY_RETURN) and screen_ == "menu" then StartRide(true); return end
     if not ready_ then return end
     if selfTest_ and screen_ == "ride" then
@@ -903,14 +921,12 @@ function HandleUpdate(eventType, eventData)
                 print(string.format("[奖励] 第%d名 · %s · +%d金币，余额 %d", place,
                     track and track.name or selectedTrack_, reward, Profile.Coins()))
                 -- 第1名通关即解锁该赛道指向的下一站。
-                if place == 1 and track and track.requires and track.requires ~= "default" then
-                    local nextTrack = nil
+                if place == 1 then
                     for _, item in ipairs(Tracks.List()) do
-                        if item.requires == selectedTrack_ and not Profile.TrackUnlocked(item.id) then nextTrack = item; break end
-                    end
-                    if nextTrack then
-                        Profile.UnlockTrack(nextTrack.id, 0)
-                        print("[解锁] 夺冠解锁下一赛道：" .. nextTrack.name)
+                        if item.requires == selectedTrack_ and not Profile.TrackUnlocked(item.id) then
+                            Profile.UnlockTrack(item.id, 0)
+                            print("[解锁] 夺冠解锁下一赛道：" .. item.name)
+                        end
                     end
                 end
                 hud_:RefreshOwnership()

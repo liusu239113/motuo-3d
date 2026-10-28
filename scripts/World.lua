@@ -146,6 +146,7 @@ function World:BuildBridge()
     if Landscape.activeId~="lake" then return end
     local m = self.mats
     local bridge = Landscape.Bridge
+    local railOffset = Landscape.Roads[1].shoulder + 1.1
     local root = self.root:CreateChild("白水河谷曲线高架桥")
     local rail = Landscape.Geometry(root, "连续桥梁栏杆", m.rail)
     local deck = Landscape.Geometry(root, "桥梁侧腹梁", m.rock)
@@ -154,8 +155,8 @@ function World:BuildBridge()
         local b, yawB = Landscape.RoadPoint(s + 2)
         local ra, rb = math.rad(yawA), math.rad(yawB)
         for side = -1, 1, 2 do
-            local pa = a + V(math.cos(ra), 0, -math.sin(ra)) * (side * 6.28)
-            local pb = b + V(math.cos(rb), 0, -math.sin(rb)) * (side * 6.28)
+            local pa = a + V(math.cos(ra), 0, -math.sin(ra)) * (side * railOffset)
+            local pb = b + V(math.cos(rb), 0, -math.sin(rb)) * (side * railOffset)
             for _, y in ipairs({0.56, 1.02}) do
                 Landscape.Triangle(rail, pa + V(0, y, 0), pb + V(0, y, 0), pa + V(0, y + 0.13, 0))
                 Landscape.Triangle(rail, pa + V(0, y + 0.13, 0), pb + V(0, y, 0), pb + V(0, y + 0.13, 0))
@@ -173,7 +174,7 @@ function World:BuildBridge()
         local p, yaw = Landscape.RoadPoint(s)
         local a = math.rad(yaw)
         for side = -1, 1, 2 do
-            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * 6.28)
+            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * railOffset)
             P.Add(root, "桥栏立柱", "Box", m.rail, q + V(0, 0.56, 0), V(0.12, 1.12, 0.16), Quaternion(0, yaw, 0), false)
         end
     end
@@ -182,7 +183,7 @@ function World:BuildBridge()
         local ground = Landscape.TerrainHeight(p.x, p.z)
         local height = math.max(2, p.y - ground - 0.3)
         P.Add(root, "河谷桥墩", "Box", m.rock, V(p.x, p.y - height * 0.5 - 0.3, p.z), V(2.2, height, 3.2), Quaternion(0, yaw, 0), false)
-        P.Add(root, "桥墩盖梁", "Box", m.rock, p - V(0, 0.48, 0), V(12.4, 0.7, 2.2), Quaternion(0, yaw, 0), false)
+        P.Add(root, "桥墩盖梁", "Box", m.rock, p - V(0, 0.48, 0), V(railOffset * 2, 0.7, 2.2), Quaternion(0, yaw, 0), false)
     end
 end
 
@@ -268,7 +269,7 @@ function World:BuildRoadFurniture()
         local p, yaw = Landscape.RoadPoint(s)
         local a = math.rad(yaw)
         for side = -1, 1, 2 do
-            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * 7.4)
+            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * (Landscape.Roads[1].shoulder + 0.6))
             local y = Landscape.TerrainHeight(q.x, q.z)
             P.Add(self.root, "沿线里程桩", "Box", m.white, V(q.x, y + 0.47, q.z), V(0.12, 0.94, 0.18), Quaternion(0, yaw, 0), false)
             P.Add(self.root, "桩顶反光面", "Box", m.dark, V(q.x, y + 0.77, q.z), V(0.13, 0.14, 0.19), Quaternion(0, yaw, 0), false)

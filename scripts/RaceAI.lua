@@ -1,5 +1,6 @@
--- Deterministic road-space racing driver. Uses the real Landscape ribbon and live traffic,
--- never traffic recycling, a player-throttle multiplier or forward recovery teleports.
+-- 确定性的道路空间车手；动力复用玩家的自动变速箱，路线与失误只影响自身表现。
+-- 不依赖玩家名次、油门或距离，不回收车手，不前向瞬移。
+local Simulation = require("Simulation")
 local AI = {}
 local abs, min, max, sqrt = math.abs, math.min, math.max, math.sqrt
 local RAD, DEG = math.pi / 180, 180 / math.pi
@@ -23,8 +24,19 @@ function AI.Configure(race, r, index)
     r.acceleration = race.sim.vehicle.acceleration * (0.58 + level * 0.26 + r.skill * 0.10 + difficulty * 0.04)
     -- 每个AI有独立失误节奏：偶发弯心判断偏差、短暂收油与失误后重新找线。
     -- 失误只降低自身表现，不给碰撞免疫、不改检查点规则、不瞬移。
-    r.mistakeTimer = 8 + race:Random() * 22
-    r.mistakeGrace = 6 + race:Random() * 10
+    r.mistakeTimer = 6 + race:Random() * 10
+    r.mistakeGrace = 7 + r.skill * 7
+    r.reactionTime = 0.30 + (1 - r.skill) * 0.38
+    r.mistakeDuration, r.recoveryTimer, r.mistakeSeverity = 0, 0, 0
+    r.mistakeLane, r.mistakeBias = r.lane, 0
+    r.paceTarget, r.paceTimer, r.nitroCooldown = 0, 0, 0
+    -- 每辆车只持有独立的传动状态；使用玩家选定车型，不按外观偷偷换更强引擎。
+    if not r.isPlayer then
+        local drive = Simulation.New(race.map)
+        drive.vehicle, drive.vehicleId, drive.raceMode = race.sim.vehicle, race.sim.vehicleId, true
+        drive.rpm = race.sim.vehicle.idle
+        r.driveSim = drive
+    end
     r.preferredLane = (index % 3 - 1) * 2.6
     r.laneHold, r.blockedTime, r.trafficHits, r.avoidances, r.passes = 0, 0, 0, 0, 0
     r.targetSpeed, r.distanceDriven = 0, 0
@@ -41,30 +53,85 @@ function AI.Build(race)
         local s = (i - 1) * race.length / count
         local a, b, c = race:Pose(s - 4, 0), race:Pose(s, 0), race:Pose(s + 4, 0)
         local u, v = math.atan(b.x - a.x, b.z - a.z), math.atan(c.x - b.x, c.z - b.z)
-        profile[i] = {curvature = abs(angle(v * DEG, u * DEG)) * RAD / 4,
-            slope = (c.y - a.y) / 8}
+        local turn = angle(v * DEG, u * DEG) * RAD / 4
+        profile[i] = {curvature = abs(turn), turn = turn, slope = (c.y - a.y) / 8}
     end
     race.aiProfile, race.aiProfileStep = profile, race.length / count
 end
 
 function AI.CurveSpeed(race, r)
-    local top = race.sim.vehicle.maxSpeed * r.speedFactor * (r.boostTimer > 0 and 1.20 or 1)
-    -- 过弯预算同样按赛道等级缩放：第一关明显低于玩家辅助上限(20)，
-    -- 玩家可以在弯心稳定贴住甚至超过；终点关卡才接近玩家水平。
+    -- 与玩家同为最高车速加25%上限；实际增速仍须经传动、换挡与气阻，不能跳到新上限。
+    local top = race.sim.vehicle.maxSpeed * (r.speedFactor + (r.boostTimer > 0 and 0.25 or 0))
     local level = r.aiLevel or 0.72
     local budget = 12 + level * 6 + r.skill * 2
     local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
-    local horizon = max(70, r.speed * r.speed / (2 * braking) + r.speed * 0.5)
-    local profile = race.aiProfile
-    local step = race.aiProfileStep
+    -- 反应距离先从可用制动距离扣除；入弯前收油，不等到弯心突然锁速。
+    local reaction = r.speed * r.reactionTime + 5
+    local horizon = max(75, r.speed * r.speed / (2 * braking) + reaction + 15)
+    local profile, step = race.aiProfile, race.aiProfileStep
     local start = math.floor((r.s % race.length) / step)
     for k = 0, math.ceil(horizon / step) do
         local sample = profile[(start + k) % #profile + 1]
-        local d = max(0, k * step - step)
+        local d = max(0, k * step - step - reaction)
         local safe = sqrt(budget / max(0.0001, sample.curvature))
         top = min(top, sqrt(safe * safe + 2 * braking * d))
     end
     return max(8, top)
+end
+
+-- 收油失误与恢复分开：先真实减速，再缓慢重新接油；高水平也有可利用的失误窗口。
+function AI.Mistake(race, r, dt)
+    local wasMistaking = r.mistakeDuration > 0
+    r.mistakeDuration = max(0, r.mistakeDuration - dt)
+    if wasMistaking and r.mistakeDuration <= 0 then
+        r.recoveryTimer = 1.0 + (1 - r.skill) * 0.9
+        r.paceTimer, r.decisionTimer = 0, 0
+    else r.recoveryTimer = max(0, r.recoveryTimer - dt) end
+    r.mistakeTimer = r.mistakeTimer - dt
+    if r.mistakeTimer <= 0 and r.mistakeDuration <= 0 and r.recoveryTimer <= 0 then
+        r.mistakeSeverity = 0.18 + (1 - r.skill) * 0.14
+        r.mistakeSpeed = r.speed * (1 - r.mistakeSeverity)
+        r.mistakeDuration = 1.35 + (1 - r.skill) * 1.2
+        r.mistakeTimer = r.mistakeDuration + r.mistakeGrace + race:Random() * 7
+        r.mistakes = (r.mistakes or 0) + 1
+        local index = math.floor((r.s % race.length) / race.aiProfileStep) + 1
+        local turn = race.aiProfile[index].turn or 0
+        local side = abs(turn) > 0.001 and (turn > 0 and -1 or 1) or (race:Random() < 0.5 and -1 or 1)
+        r.mistakeBias = side * (1.1 + race:Random() * 0.7)
+        r.mistakeLane = clamp(r.lane + r.mistakeBias, -race.roadHalfWidth + 0.7, race.roadHalfWidth - 0.7)
+        r.paceTimer, r.decisionTimer = 0, 0
+        race:Emit("ai-mistake", r.id)
+    end
+end
+
+-- 只复用玩家的动力入口，不跑第二套世界/碰撞/导航，更不会改动玩家的传动状态。
+function AI.Drive(race, r, target, dt)
+    local drive = assert(r.driveSim)
+    drive.vehicle, drive.speed = race.sim.vehicle, r.speed
+    local mistake = r.mistakeDuration > 0
+    local recovery = r.recoveryTimer > 0
+    local slowing = r.speed > target + 0.2
+    local throttle = slowing and 0 or (mistake and 0 or (recovery and 0.42 or 1))
+    -- 刹车、走宽与恢复时不能靠喷射自动补回0.9油门，剩余喷射时间照常消耗。
+    local boosted = r.boostTimer > 0 and not slowing and not mistake and not recovery
+    local power = drive:Powertrain(dt, {throttle = throttle, boost = boosted and 1 or 0})
+    local efficiency = clamp(r.acceleration / race.sim.vehicle.acceleration, 0, 1)
+    local onRoad = abs(r.lane) <= race.roadHalfWidth
+    local traction = onRoad and 1 or race.sim.vehicle.offroad
+    local drag = 0.20 + r.speed * r.speed * 0.00115
+        + (onRoad and 0 or 4.6 * (1 - race.sim.vehicle.offroad * 0.55))
+    local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
+    local index = math.floor((r.s % race.length) / race.aiProfileStep) + 1
+    local slope = race.aiProfile[index].slope or 0
+    local acceleration = power * efficiency * traction - drag - engineBrake
+        - 9.81 * slope / sqrt(1 + slope * slope)
+    local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
+    if slowing then acceleration = min(acceleration, -min(braking, (r.speed - target) * 2 + 1)) end
+    local cap = race.sim.vehicle.maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
+        * (onRoad and 1 or 0.44 + race.sim.vehicle.offroad * 0.52)
+    if r.speed > cap then acceleration = min(acceleration, -3.5 - (r.speed - cap) * 0.45) end
+    r.speed = clamp(r.speed + acceleration * dt, 0, max(r.speed, min(target, cap)))
+    r.driveAcceleration = acceleration
 end
 
 function AI.Snapshot(race)
@@ -134,7 +201,14 @@ end
 function AI.Plan(race, r, dt)
     r.laneHold = max(0, r.laneHold - dt)
     r.decisionTimer = r.decisionTimer - dt
-    local target = AI.CurveSpeed(race, r)
+    r.paceTimer = r.paceTimer - dt
+    -- 正常加油/找线按人的反应节奏采样；紧急避障与前方制动包络始终保留安全优先权。
+    local safeTarget = AI.CurveSpeed(race, r)
+    if r.paceTimer <= 0 then
+        r.paceTimer = r.reactionTime
+        r.paceTarget = safeTarget
+    end
+    local target = min(r.paceTarget, safeTarget)
     local hazard, nearest = false, math.huge
     local horizon = max(75, r.speed * 2.8)
     eachObstacle(race, r, function(o)
@@ -145,8 +219,8 @@ function AI.Plan(race, r, dt)
             if r.speed > o.speed + 0.5 or d < 12 then hazard = true end
         end
     end)
-    if r.decisionTimer <= 0 or (hazard and r.laneHold <= 0) then
-        r.decisionTimer = 0.16 + (1 - r.skill) * 0.16
+    if r.decisionTimer <= 0 then
+        r.decisionTimer = r.reactionTime
         local bound = max(2, race.roadHalfWidth - 0.65)
         local shoulder = min(race.corridor - 0.35,
             race.map.Roads and race.map.Roads[1] and (race.map.Roads[1].shoulder or bound) - 0.5 or bound)
@@ -159,6 +233,11 @@ function AI.Plan(race, r, dt)
                 + (abs(candidate) > bound + 0.1 and 5 or 0)
             if r.laneHold > 0 and abs(candidate - r.wantedLane) > 0.2 then score = score + 14 end
             if score < bestScore - 0.05 then best, bestScore = candidate, score end
+        end
+        if r.mistakeDuration > 0 and not hazard
+            and laneScore(race, r, r.mistakeLane, horizon) < 100 then
+            -- 目标相对失误起点固定；有并行车辆时优先避让，不故意往邻车身上撞。
+            best = r.mistakeLane
         end
         if abs(best - r.wantedLane) > 0.25 then
             if hazard then r.avoidances = r.avoidances + 1 end
@@ -176,20 +255,31 @@ function AI.Plan(race, r, dt)
             target = min(target, follow)
         end
     end)
-    -- 无油门相关的橡皮筋。全套统一上限与轮胎预算；失误由自身节奏产生。
+    -- 无油门或名次相关的橡皮筋；失误实质降低目标速度并断油，恢复期间也不能立即满动力。
     r.rubberBand = 0
-    if r.mistakeDuration > 0 then target = target * 0.88 end
-    -- 氮气不再"储量一到55就喷"：只有高等级AI、且确实在长直道时才用，
-    -- 并有随机冷却，避免玩家追不上连续喷射。
+    if r.mistakeDuration > 0 then target = min(target, r.mistakeSpeed) end
     local level = r.aiLevel or 0.72
-    r.nitroCooldown = max(0, (r.nitroCooldown or 0) - dt)
-    if not hazard and r.nitroCooldown <= 0 and r.nitro >= 55 and r.boostTimer <= 0
+    r.nitroCooldown = max(0, r.nitroCooldown - dt)
+    local straight = true
+    local boostTop = race.sim.vehicle.maxSpeed * (r.speedFactor + 0.25)
+    local start = math.floor((r.s % race.length) / race.aiProfileStep)
+    local boostHorizon = max(90, boostTop * (2.5 + r.reactionTime))
+    for k = 0, math.ceil(boostHorizon / race.aiProfileStep) do
+        local sample = race.aiProfile[(start + k) % #race.aiProfile + 1]
+        if sample.curvature * boostTop * boostTop > (12 + level * 6 + r.skill * 2) * 0.7 then
+            straight = false; break
+        end
+    end
+    if not hazard and straight and r.mistakeDuration <= 0 and r.recoveryTimer <= 0
+        and r.nitroCooldown <= 0 and r.nitro >= 55 and r.boostTimer <= 0
         and r.speed > 24 and level >= 0.72 and target > r.speed + 2
         and target > race.sim.vehicle.maxSpeed * 0.85 and race:Random() < dt * (0.08 + level * 0.16) then
-        race:Boost(r)
-        r.nitroCooldown = 6 + race:Random() * 10
+        if race:Boost(r) then
+            r.nitroCooldown = 9 + race:Random() * 9
+            r.paceTarget = AI.CurveSpeed(race, r)
+            target = min(r.paceTarget, target + race.sim.vehicle.maxSpeed * 0.25)
+        end
     end
-    if r.boostTimer > 0 and not hazard then target = min(target, race.sim.vehicle.maxSpeed * 1.25) end
     r.targetSpeed = target
     r.blockedTime = target < 3 and r.blockedTime + dt or 0
     return target
@@ -227,28 +317,18 @@ end
 function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
-    r.mistakeDuration = max(0, r.mistakeDuration - dt)
-    -- 独立失误节奏：到点后短暂收油并偏一线路，结束再找回来。
-    -- 不瞬移、不免疫、不改变检查点与碰撞判定。
-    r.mistakeTimer = r.mistakeTimer - dt
-    if r.mistakeTimer <= 0 and r.mistakeDuration <= 0 then
-        r.mistakeDuration = 0.5 + (1 - r.skill) * 1.1
-        r.mistakeTimer = r.mistakeGrace + race:Random() * (10 + r.skill * 14)
-        r.mistakes = (r.mistakes or 0) + 1
-        -- 失误瞬间定一次偏线方向，持续期间按固定速率偏移，不会逐帧累积乱撞。
-        r.mistakeBias = (r.skill < 0.6 and 1 or -1) * (0.5 + race:Random() * 0.7)
-    end
+    AI.Mistake(race, r, dt)
     local target = AI.Plan(race, r, dt)
-    if r.mistakeDuration > 0 and r.mistakeBias then
-        -- 失误只压低自身速度并让线路走宽一点，随后由plan重新找线。
-        r.wantedLane = clamp(r.wantedLane + r.mistakeBias * dt * 1.6, -3.2, 3.2)
-        target = target * 0.92
-    end
-    local acceleration = r.acceleration * (r.boostTimer > 0 and 1.9 or 1)
-    r.speed = approach(r.speed, target, dt * (r.speed > target and race.sim.vehicle.braking * 0.8 or acceleration))
+    AI.Drive(race, r, target, dt)
     local oldLane, oldS = r.lane, r.s
-    r.lane = approach(r.lane, r.wantedLane, dt * (2.5 + r.skill))
-    r.s = r.s + r.speed * dt
+    r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
+    -- 走宽、换线和上坡都消耗实际行程，不把更长的外线仍当中心线免费前进。
+    local sample = race.aiProfile[math.floor((r.s % race.length) / race.aiProfileStep) + 1]
+    local lateralSpeed = (r.lane - oldLane) / max(dt, 0.00001)
+    local pathScale = max(0.45, abs(1 - (sample.turn or 0) * (r.lane + oldLane) * 0.5))
+    local forwardSpeed = sqrt(max(0, r.speed * r.speed - lateralSpeed * lateralSpeed))
+        / sqrt(1 + (sample.slope or 0)^2) / pathScale
+    r.s = r.s + forwardSpeed * dt
     race:Place(r)
     local traveled = sqrt((r.x - r.lastX)^2 + (r.z - r.lastZ)^2)
     r.distanceDriven = r.distanceDriven + traveled

@@ -1,8 +1,7 @@
--- Race infrastructure is sparse shared geometry, never a heavy imported model per road segment.
--- Decorative barriers sit outside the driveable shoulder. Existing simulation has no wall collisions;
--- these are visual race-safety boundaries, not a second inconsistent collision/AI system.
+-- 赛道设施共用材质与分块网格，护栏位于路肩外，不另建一套车辆碰撞系统。
 local Decor = {}
 local P = require("Parts")
+local Details = require("TrackDetails")
 local V = Vector3
 local HOUSE="uuid://D6f5ARUOv2X7EEmXLSrx1AM9"
 local HOUSE_MATS={"uuid://Bu1-aXStY3WMbN0SDgV_0J8L","uuid://HntT6UQGaB9sTTQOuRq_XVBm",
@@ -15,18 +14,24 @@ for _,path in ipairs(HOUSE_MATS) do Decor.Resources[#Decor.Resources+1]=path;Dec
 ---@param L table
 ---@param s number
 ---@param offset number
----@return Node
+---@return Node?
 local function station(root,L,s,offset)
     local p,yaw=L.RoadPoint(s)
     local a=math.rad(yaw)
     local x,z=p.x+math.cos(a)*offset,p.z-math.sin(a)*offset
+    local y=L.TerrainHeight(x,z)
+    if L.activeId~="lake" then
+        local safe=Details.Site(L,s,offset,10,12)
+        if not safe then return nil end
+        x,y,z=safe.x,safe.y,safe.z
+    end
     local n=root:CreateChild("赛道设施")
-    n.position=V(x,L.TerrainHeight(x,z),z)
+    n.position=V(x,y,z)
     n.rotation=Quaternion(0,yaw,0)
     return n
 end
 
--- Shared boxes are appended to one geometry per material per 120m chunk (posts/rail are batched).
+-- 桩与横梁按材质合批，每144米一块，保留引擎空间剔除能力。
 ---@param g CustomGeometry
 ---@param L table
 ---@param p Vector3
@@ -65,19 +70,29 @@ local function infrastructure(root,L,m,tick)
                 local offset=road.shoulder+(circuit and 4 or 1.1)
                 local pa,pb=a+r*(side*offset),b+rb*(side*offset)
                 local guarded=circuit or (not forest and (turn>1.6 or L.activeId=="alpine" or (L.activeId=="coast" and side==-1)))
-                -- Open marshal gaps every 144m; no fixtures project into asphalt or escape shoulder.
-                if guarded and s-lo>7 then
+                -- 每144米留出赛事救援间隙，所有桩脚采样真实地形并向下埋入。
+                local ay=L.TerrainHeight(pa.x,pa.z)
+                local by=L.TerrainHeight(pb.x,pb.z)
+                local dry=L.WaterDepth(pa.x,pa.z)<=.01 and L.WaterDepth(pb.x,pb.z)<=.01
+                local _,onA=L.Height(pa.x,pa.z)
+                local _,onB=L.Height(pb.x,pb.z)
+                local railA,railB=V(pa.x,ay,pa.z),V(pb.x,by,pb.z)
+                if guarded and s-lo>7 and dry and not onA and not onB then
                     for _,h in ipairs({.53,.82}) do
-                        local aa,bb=pa+V(0,h,0),pb+V(0,h,0)
+                        local aa,bb=railA+V(0,h,0),railB+V(0,h,0)
                         L.Triangle(rail,aa,bb,aa+V(0,.18,0));L.Triangle(rail,aa+V(0,.18,0),bb,bb+V(0,.18,0))
                         L.Triangle(rail,aa+V(0,.18,0),bb,aa);L.Triangle(rail,bb+V(0,.18,0),bb,aa+V(0,.18,0))
                     end
-                    box(rail,L,pa-V(0,.25,0),r,.12,1.25,.14)
+                    box(rail,L,railA-V(0,.18,0),r,.12,1.25,.14)
                 end
                 if math.floor(s/6)%4==0 then
                     local q=a+r*(side*(road.shoulder+.6))
                     local y=L.TerrainHeight(q.x,q.z)
-                    box(reflect,L,V(q.x,y,q.z),r,.14,.9,.18)
+                    local _,onRoad=L.Height(q.x,q.z)
+                    if not onRoad and L.WaterDepth(q.x,q.z)<=.01 then
+                        box(reflect,L,V(q.x,y-.08,q.z),r,.14,.9,.18)
+                        box(rail,L,V(q.x,y+.58,q.z),r,.15,.14,.19)
+                    end
                 end
             end
         end

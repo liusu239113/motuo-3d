@@ -252,19 +252,18 @@ function Sim:Impact(reason, damage)
 end
 
 -- 路肩外侧真实阻挡：此前护栏只是装饰，车会直接穿过去。
--- 设计：俯视图，主路沥青半宽 W，路肩 S，护栏在 S+1.1 米处（赛道装饰同位置）。
---        |<-- W -->|<-- S -->|  外侧硬边
---   ====沥青====|=路肩/草=|  ||护栏||
--- 越界超过硬边即视为撞栏：回推到硬边内侧、按撞击给一次性减速与短冷却，绝不穿过去。
+-- 设计：主路沥青半宽 W，路肩外边界 S（已经包含 W），护栏位于 S+1.1 米。
+--   ====沥青====|=净路肩=|  ||护栏||
+-- 练习、支路及腾空不使用主路隐形墙；比赛越界仅在地面回推，绝不把腾空车辆拽回地面。
 local BARRIER_MARGIN = 1.1
 ---@param world table?
 function Sim:Barrier(dt, world)
     local map = self:Map(world)
     local road = map.Roads and map.Roads[1]
-    if not road or not map.RoadPoint then return false end
+    if not road or not map.RoadPoint or not self.raceMode or self.airborne then return false end
     local halfWidth = road.width or 4.8
     local shoulder = road.shoulder or halfWidth
-    local limit = halfWidth + shoulder + BARRIER_MARGIN
+    local limit = math.max(halfWidth, shoulder) + (map.activeId == "circuit" and 4 or BARRIER_MARGIN)
     local _, lateral = map.NearestRoad(self.x, self.z)
     local excess = math.abs(lateral) - limit
     if excess <= 0 then self.barrierHold = 0; return false end

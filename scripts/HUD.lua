@@ -16,7 +16,9 @@ local function trackList()
     return type(tracks.List) == "table" and tracks.List or {}
 end
 
----@class HUD
+---@class HUD : ControlEditor
+---@field settingsReturn string
+---@field OpenSettings fun(self:HUD)
 local HUD = {}
 HUD.__index = HUD
 local AMBER, WHITE = {224, 164, 75, 255}, {233, 234, 235, 255}
@@ -307,219 +309,8 @@ function HUD:BuildMenu()
     }}))
 end
 
--- 设置页：直接在一块与驾驶画面同比例的舞台上摆出所有按钮，
--- 手指按住就能拖动，松手即保存；另有灵敏度滑杆与多套方案。
-function HUD:BuildSettings()
-    self.settingsSlot = "steering"
-    self.settingsSchemeLabel = label("", 11, AMBER)
-    self.settingsHint = label("这就是你的按键布局：按住任意按钮直接拖到顺手的位置，松手立即保存。", 9, MUTED)
-    self.settingsSchemeButtons = {}
-    local schemeRow = UI.Row {padding = 0, gap = 5, flexWrap = "wrap"}
-    self.settingsSchemeRow = schemeRow
-
-    -- 拖动舞台：固定为一块可拖拽画布，子按钮用 left/top 绝对定位，
-    -- 与驾驶页的绝对定位层语义完全一致。
-    self.settingsStage = UI.Panel {width = "100%", flexGrow = 1, flexBasis = 0,
-        minHeight = 180, padding = 0, borderRadius = 6, borderWidth = 1, borderColor = BORDER,
-        backgroundColor = {10, 14, 19, 235}, onPointerMove = function(event, widget)
-            self:DragSettingButton(event, widget)
-        end, onPointerUp = function(event)
-            self:EndDragSettingButton(event)
-        end, onPointerCancel = function(event)
-            self:EndDragSettingButton(event, true)
-        end}
-    self.settingsStageHint = label("按键摆放区", 9, {120, 132, 142, 255},
-        {position = "absolute", left = 10, top = 6, pointerEvents = "none"})
-    self.settingsStage:AddChild(self.settingsStageHint)
-
-    -- 每个按钮一块可拖拽代理，显示真实图标与名称。
-    self.settingsProxy = {}
-    for _, key in ipairs(ControlSettings.Keys) do
-        local slot = key
-        local image = MobileControls.Images and MobileControls.Images[key]
-        local props = {position = "absolute", left = 0, top = 0, width = 78, height = 62, padding = 0, borderRadius = 7,
-            borderWidth = 1, borderColor = BORDER, backgroundColor = {14, 22, 30, 235},
-            pointerEvents = "box-only",
-            onPointerDown = function(event, widget)
-                self:BeginDragSettingButton(slot, event, widget)
-            end}
-        local proxy
-        if image then
-            proxy = UI.Panel(props)
-            proxy:AddChild(UI.Panel {position = "absolute", left = 6, right = 6, top = 5, bottom = 20,
-                padding = 0, backgroundImage = image, backgroundFit = "contain", pointerEvents = "none"})
-        else
-            proxy = UI.Panel(props)
-            proxy:AddChild(UI.Panel {position = "absolute", left = 6, right = 6, top = 5, bottom = 20,
-                padding = 0, borderRadius = 5, backgroundColor = {46, 62, 76, 255}, pointerEvents = "none"})
-        end
-        proxy:AddChild(label(ControlSettings.Labels[key] or key, 9, WHITE,
-            {position = "absolute", left = 2, right = 2, bottom = 3, height = 16, textAlign = "center"}))
-        self.settingsStage:AddChild(proxy)
-        self.settingsProxy[key] = proxy
-    end
-
-    local schemeControls = UI.Row {padding = 0, gap = 6, flexWrap = "wrap", children = {
-        button("新建方案", function()
-            local ok, name = ControlSettings.AddScheme("")
-            if ok then self.settingsSchemeLabel:SetText("已保存新方案：" .. name) end
-            self:RefreshSettings()
-        end, false, 100),
-        button("删除当前", function()
-            ControlSettings.DeleteScheme(); self:RefreshSettings()
-        end, false, 100),
-        button("全部归位", function()
-            ControlSettings.ResetLayout(); self:RefreshSettings(); self:ApplySettings()
-        end, false, 100)}}
-    self.settingsSchemeRow = schemeRow
-    self.settingsSensitivity = UI.Slider {width = 150, min = 50, max = 160, value = 100,
-        onChange = function(_, value) ControlSettings.SetSlider("steeringSensitivity", value / 100); self:ApplySettings() end}
-    self.settingsDeadzone = UI.Slider {width = 150, min = 2, max = 30, value = 12,
-        onChange = function(_, value) ControlSettings.SetSlider("steeringDeadzone", value / 100); self:ApplySettings() end}
-    self.settings = UI.Panel(fill({visible = false, padding = 14, gap = 7, children = {
-        UI.Row {width = "100%", padding = 0, justifyContent = "space-between", alignItems = "center", children = {
-            label("操作设置", 22, WHITE, {fontWeight = "bold"}),
-            button("返回", function() self:SetScreen("menu") end, false, 84)}},
-        UI.Row {padding = 0, gap = 8, alignItems = "center", flexWrap = "wrap", children = {
-            self.settingsSchemeLabel, button("保存方案", function()
-                ControlSettings.Save(); self.settingsSchemeLabel:SetText("已保存：" .. ControlSettings.Current().name)
-            end, true, 96)}},
-        UI.ScrollView {width = "100%", height = 40, padding = 0, scrollX = true,
-            children = {UI.Row {padding = 0, gap = 5, children = {schemeRow, schemeControls}}}},
-        self.settingsHint,
-        self.settingsStage,
-        UI.Row {width = "100%", padding = 0, gap = 16, flexWrap = "wrap", alignItems = "flex-end", children = {
-            UI.Column {padding = 0, gap = 2, children = {label("转向灵敏度", 8, MUTED), self.settingsSensitivity}},
-            UI.Column {padding = 0, gap = 2, children = {label("转向死区", 8, MUTED), self.settingsDeadzone}}}}}}))
-    self.settings.name = "settingsRoot"
-end
-
-function HUD:OpenSettings()
-    self:SetScreen("settings")
-    self:RefreshSettings()
-    -- 键盘/手柄也能用左列微调，先应用一次确保真实按键与面板一致。
-    self:ApplySettings()
-end
-
-function HUD:SetSettingsSlot(slot)
-    self.settingsSlot = slot
-    self:RefreshSettings()
-end
-
--- 把保存的百分比位置换成舞台内像素，供拖拽代理显示。
-function HUD:LayoutSettingsProxies(force)
-    if not self.settingsStage then return end
-    local l = self.settingsStage:GetAbsoluteLayout()
-    -- Yoga 首帧可能返回 nan；此时退回按面板可用高度估算，保证按钮不会全堆左上角。
-    if not (l.w == l.w) or not (l.h == l.h) or l.w < 40 or l.h < 40 then
-        local vw, vh = UI.GetViewportSize()
-        l = {x = 0, y = 0, w = vw or 1024, h = math.max(160, (vh or 576) - 250)}
-    end
-    -- 只在舞台尺寸真的变化或强制刷新时重排，避免每帧触发 Yoga 重算。
-    if not force and self.proxyStageW == l.w and self.proxyStageH == l.h then return end
-    self.proxyStageW, self.proxyStageH = l.w, l.h
-    self.proxyStageX, self.proxyStageY = l.x or 0, l.y or 0
-    local scheme = ControlSettings.Current()
-    for _, key in ipairs(ControlSettings.Keys) do
-        local proxy = self.settingsProxy[key]
-        if proxy then
-            local pos = scheme.pos and scheme.pos[key] or nil
-            local px = pos and pos[1] or 0.5
-            local py = pos and pos[2] or 0.5
-            local w, h = 78, 62
-            proxy:SetStyle({left = math.floor((l.w - w) * math.max(0, math.min(1, px))),
-                top = math.floor((l.h - h) * math.max(0, math.min(1, py))),
-                borderColor = key == self.settingsSlot and AMBER or BORDER})
-        end
-    end
-end
-
-function HUD:BeginDragSettingButton(slot, event, widget)
-    self.settingsSlot = slot
-    self.dragSlot = slot
-    self.dragPointer = event.pointerId
-    local rect = self.settingsStage:GetAbsoluteLayout()
-    local proxyRect = widget:GetAbsoluteLayout()
-    self.dragOffsetX = (event.x or 0) - proxyRect.x
-    self.dragOffsetY = (event.y or 0) - proxyRect.y
-    self.dragRectX, self.dragRectY = rect.x, rect.y
-    self.dragRectW, self.dragRectH = rect.w, rect.h
-    self:RefreshSettings()
-end
-
-function HUD:DragSettingButton(event, widget)
-    if not self.dragSlot or event.pointerId ~= self.dragPointer then return end
-    local proxy = self.settingsProxy[self.dragSlot]
-    if not proxy then return end
-    local w, h = 78, 62
-    local localX = (event.x or 0) - self.dragRectX - self.dragOffsetX
-    local localY = (event.y or 0) - self.dragRectY - self.dragOffsetY
-    local maxX, maxY = math.max(1, self.dragRectW - w), math.max(1, self.dragRectH - h)
-    localX = math.max(0, math.min(maxX, localX))
-    localY = math.max(0, math.min(maxY, localY))
-    proxy:SetStyle({left = math.floor(localX), top = math.floor(localY)})
-    -- 记录为 0..1 的相对位置，换屏幕尺寸仍保持大致相同的摆放关系。
-    self.dragPreviewX, self.dragPreviewY = localX / maxX, localY / maxY
-end
-
-function HUD:EndDragSettingButton(event, cancelled)
-    if not self.dragSlot or (event and event.pointerId ~= self.dragPointer) then return end
-    if not cancelled and self.dragPreviewX then
-        ControlSettings.SetPosition(self.dragSlot, self.dragPreviewX, self.dragPreviewY)
-        ControlSettings.Save()
-        self:ApplySettings()
-    end
-    self.dragSlot, self.dragPointer = nil, nil
-    self.dragPreviewX, self.dragPreviewY = nil, nil
-    self:RefreshSettings()
-end
-
-function HUD:RefreshSettings()
-    if not self.settings then return end
-    local scheme = ControlSettings.Current()
-    local index = ControlSettings.ActiveIndex()
-    self.settingsSchemeLabel:SetText(string.format("当前方案：%s（第%d套 / 共%d套）",
-        scheme.name or "方案", index, #ControlSettings.All()))
-    for schemeId, b in pairs(self.settingsSchemeButtons) do
-        b:SetStyle({borderColor = schemeId == index and AMBER or BORDER})
-    end
-    for _, child in ipairs(self.settingsSchemeRow:GetChildren()) do child:SetVisible(false) end
-    local all = ControlSettings.All()
-    for i = 1, #all do
-        local idx = i
-        local b = self.settingsSchemeButtons[i]
-        if not b then
-            b = button("方案 " .. i, function()
-                ControlSettings.SetActive(idx)
-                self:RefreshSettings(); self:ApplySettings()
-            end, false, 92)
-            b:SetHeight(28)
-            self.settingsSchemeButtons[i] = b
-            self.settingsSchemeRow:AddChild(b)
-        end
-        b:SetVisible(true)
-        b:SetText(all[i].name or ("方案 " .. i))
-        b:SetStyle({borderColor = idx == index and AMBER or BORDER})
-    end
-    self:LayoutSettingsProxies()
-end
-
--- 把当前方案应用到实际控件；驾驶页立即生效，无需重开。
-function HUD:ApplySettings()
-    if self.controls.ApplyScheme then
-        -- 按键父容器是驾驶层（已在安全区内），以它的实际尺寸换算百分比，
-        -- 这样刘海/安全区不会让按键偏移到奇怪的位置。
-        local l = self.controlLayer and self.controlLayer:GetAbsoluteLayout() or nil
-        local w, h = 0, 0
-        if l and l.w > 60 and l.h > 60 then w, h = l.w, l.h end
-        if w <= 0 or h <= 0 then
-            local vw, vh = UI.GetViewportSize()
-            w, h = vw, vh
-        end
-        self.controls:ApplyScheme(ControlSettings.Current(), w, h)
-    end
-    self:LayoutSettingsProxies()
-end
+-- 操作编辑器独立成模块，直接复用驾驶按键。
+require("ControlEditor").Install(HUD)
 
 function HUD:BuildGarage()
     local cards = UI.Column {width = "100%", gap = 5, padding = 0}
@@ -708,7 +499,8 @@ function HUD:BuildPauseAndResult()
                         label("已暂停", 23), button("继续竞速 →", a.pause, true, 140)}},
                     UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
                         UI.Column {width = "100%", padding = 0, gap = 10, children = {
-                            UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton}},
+                            UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton,
+                                button("按键布局 / 灵敏度", function() self:OpenSettings() end, false, 168)}},
                             UI.Row {padding = 0, gap = 10, children = {self.score, self.health}},
                             self.radioTitle,
                             UI.Row {padding = 0, gap = 7, children = {button("上一首", a.previousTrack, false, 90), self.radioToggle, button("下一首", a.nextTrack, false, 90)}}, help()}}}},
@@ -802,6 +594,8 @@ function HUD:SelectRider(id, notify)
 end
 -- 购买成功后刷新配色与金币
 function HUD:RefreshOwnership()
+    self.trackCount = 0
+    self:RefreshTrackCards()
     self.coinLabel:SetText("金币 " .. tostring(Profile.Coins()))
     for colorId, swatch in pairs(self.riderButtons) do
         local selectable = Profile.OwnsRider(colorId)
@@ -836,19 +630,26 @@ function HUD:SetScreen(screen)
     self.screen = screen
     if oldScreen == "garage" and screen ~= "garage" then self.preview:Dispose() end
     self.menu:SetVisible(screen == "menu"); self.garage:SetVisible(screen == "garage"); self.trackSelection:SetVisible(screen == "tracks")
-    self.game:SetVisible(screen == "ride" or screen == "pause" or screen == "result")
+    local editing = screen == "settings"
+    if oldScreen == "settings" and not editing then
+        if self.dragSlot then self:EndDragSettingButton(nil, true) end
+        self.controls:SetEditor(nil)
+    end
+    self.game:SetVisible(screen == "ride" or screen == "pause" or screen == "result" or editing)
     self.pause:SetVisible(screen == "pause"); self.result:SetVisible(screen == "result"); self.loading:SetVisible(screen == "loading")
-    if self.settings then self.settings:SetVisible(screen == "settings") end
-    self.pageBackdrop:SetVisible(screen == "menu" or screen == "garage" or screen == "loading" or screen == "settings" or screen == "tracks")
+    if self.settings then self.settings:SetVisible(editing) end
+    self.pageBackdrop:SetVisible(screen == "menu" or screen == "garage" or screen == "loading" or screen == "tracks"
+        or (editing and self.settingsReturn == "menu"))
     self.keyartBackdrop:SetVisible(screen ~= "garage"); self.garageBackdrop:SetVisible(screen == "garage")
     self.cockpit:SetVisible(false); self.enterRide:SetVisible(false)
     local riding = screen == "ride"
-    self.controlLayer:SetVisible(riding)
-    if riding then self.pendingControlLayout = true end
-    self.rightTop:SetVisible(riding); self.recoverPanel:SetVisible(riding)
-    self.instrumentPanel:SetVisible(riding and not self.firstPerson)
+    self.controlLayer:SetVisible(riding or editing)
+    if riding or editing then self.pendingControlLayout = true end
+    self.rightTop:SetVisible(riding or editing); self.recoverPanel:SetVisible(riding or editing)
+    self.rightTop:SetStyle({pointerEvents = editing and "none" or "box-none"})
+    self.recoverPanel:SetStyle({pointerEvents = editing and "none" or "box-none"})
+    self.instrumentPanel:SetVisible((riding or editing) and not self.firstPerson)
     self.controls:SetEnabled(riding and not self.portraitActive)
-    if screen == "settings" then self.proxyStageW, self.proxyStageH = nil, nil end
     if screen == "garage" and not self.portraitActive then
         local item = Catalog.Get(self.selectedVehicle)
         self.preview:Select(self.selectedVehicle, item and item.available)
@@ -884,6 +685,7 @@ function HUD:LayoutResponsive()
         return
     end
     self.layoutWidth, self.layoutHeight = w, h
+    self.pendingControlLayout = true
     local compact = w < 920 or h < 470
     self.controls:SetCompact(compact)
     self.menu:SetStyle({padding = compact and 18 or 30})
@@ -982,12 +784,11 @@ end
 -- Existing main update signature remains valid. Preview animation runs through its Widget Update,
 -- including before the driving scene exists; leaving garage disposes all render targets immediately.
 function HUD:Update(dt, sim, firstPerson)
-    if self.screen == "settings" then self:LayoutSettingsProxies() end
     self.firstPerson = firstPerson == true
     self.controls:UpdateFeedback(dt)
     self.redline = (sim.vehicle and sim.vehicle.redline) or 12500
     self.instrumentPanel:SetTelemetry((sim.speed or 0) * 3.6, sim.gear or 0, sim.rpm or 1200, (sim.vehicle and sim.vehicle.redline) or 12500)
-    self.instrumentPanel:SetVisible(self.screen == "ride" and (not self.firstPerson or not self.cockpit:IsVisible()) and not self.portraitActive)
+    self.instrumentPanel:SetVisible((self.screen == "ride" or self.screen == "settings") and (not self.firstPerson or not self.cockpit:IsVisible()) and not self.portraitActive)
     self:LayoutResponsive()
     self.timer = self.timer + dt
     if self.timer < 0.1 then return end

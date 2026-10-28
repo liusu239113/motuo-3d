@@ -98,6 +98,16 @@ local RaceAI = require("RaceAI")
 ---@field trafficContacts table
 ---@field nextTrafficContacts table
 ---@field lastObstacle boolean
+---@field aiLevel number 赛道等级，与玩家实时表现无关
+---@field reactionTime number 正常决策间隔，单位秒
+---@field paceTarget number 反应节奏锁存的目标速度
+---@field paceTimer number 距离下次动力决策的时间
+---@field nitroCooldown number 独立喷射冷却
+---@field mistakeSeverity number 失误时的目标降速比例
+---@field mistakeSpeed number 失误起点锁存的目标速度
+---@field mistakeLane number 失误期间固定的走宽目标
+---@field driveSim RideSimulation? 只用于独立传动状态，不更新第二套世界
+---@field driveAcceleration number 实际纵向加速度，单位米每平方秒
 
 ---@class RaceGate:ScenicRacePoint
 ---@field s number
@@ -235,7 +245,7 @@ function Race:Init(map, sim, options)
     self.traffic, self.aiObstacles = options.traffic or {}, {}
     self.nitroActive, self.nitroRemaining, self.nitroCooldown, self.nitroReason = false, 0, 0, "等待发车"
     self.length, self.startS = map.RouteLength, 0
-    self.laps = clamp(math.floor(tonumber(options.laps) or 2), 1, 3)
+    self.laps = clamp(math.floor(tonumber(options.laps) or 2), 1, 9)
     self.roadHalfWidth = map.Roads and map.Roads[1] and (map.Roads[1].width or 4.8) or 4.8
     self.corridor = self.roadHalfWidth + 0.8
     -- 可行驶路肩比检查点原判定宽；开宽一点就永久漏站，会把里程和复位锚点一起卡死。
@@ -327,7 +337,7 @@ end
 
 ---@param laps number?
 function Race:Start(laps)
-    if laps then self.laps = clamp(math.floor(laps), 1, 3) end
+    if laps then self.laps = clamp(math.floor(laps), 1, 9) end
     self.sim.raceMode = true
     self.sim:Reset(false)
     self.phase, self.elapsed, self.countdown = "countdown", 0, 3

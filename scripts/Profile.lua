@@ -25,7 +25,7 @@ local function defaults()
         coins = 0,
         owned = {[Profile.FREE_VEHICLE] = true},
         ownedRiders = {[Profile.FREE_RIDER] = true},
-        unlockedTracks = {[Profile.FREE_TRACK] = true},
+        unlockedTracks = {[Profile.FREE_TRACK] = true, lake = true},
     }
 end
 
