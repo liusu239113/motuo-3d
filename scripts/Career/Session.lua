@@ -68,7 +68,7 @@ function Session:Init(options)
             end)
             self.view:Notice(message); self:RefreshPhone()
         end,
-        mount=function() if self.actor then local _,message=self.actor:ToggleMount(); self.view:Notice(message); self:SavePosition() end end,
+        mount=function() if self.actor then local _,message=self.actor:ToggleMount(); self.view:ResetInput(); self.view:Notice(message); self:SavePosition(); self:Refresh() end end,
         interact=function() self:Interact() end,
         setWaypoint=function(id) self.waypoint=id; self:Refresh() end,
         eat=function() self:Service("breakfast",function() return Store.Eat() end) end,
@@ -211,7 +211,7 @@ function Session:Target()
     if not point then return nil end
     return {name=point.label,x=point.x,z=point.z,pointId=point.id,kind=point.kind,
         distance=Config.DistanceTo(id,self.actor.x,self.actor.z),
-        hint=order and (order.status=="accepted" and "停车下车，靠近店门按E取餐" or "停车下车，靠近门厅按E交付") or "到点后停车下车，按E交互"}
+        hint=order and (order.status=="accepted" and "停车下车，靠近店门点击取餐" or "停车下车，靠近门厅点击送达") or "到点后停车下车，点击交互"}
 end
 function Session:Refresh()
     if not self.actor then return end
@@ -270,7 +270,7 @@ function Session:Interact()
         local d=Config.DistanceTo(p.id,self.actor.x,self.actor.z)
         if d<dist then nearest,dist=p.id,d end
     end
-    if dist>2 then self.view:Notice("靠近商家、门厅、充电点或住处，再按E"); return end
+    if dist>2 then self.view:Notice("靠近商家、门厅、充电点或住处，再点击交互"); return end
     if nearest=="breakfast" then self:OpenPhone("life")
     elseif nearest=="bridge" or nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
@@ -359,6 +359,8 @@ function Session:Update(dt)
         return
     end
     if not self.running or not self.actor then return end
+    self.view:LayoutControls()
+    self.view.controls:UpdateFeedback(dt)
     if input:GetKeyPress(KEY_ESCAPE) then
         if self.view.phonePage~="" then self.view:ClosePhone()
         elseif not self.view:IsBlocking() then self:Pause() end
@@ -378,10 +380,14 @@ function Session:Update(dt)
     if input:GetKeyPress(KEY_P) then self:Pause(); return end
     if input:GetKeyPress(KEY_F) then self.view.actions.mount(); return end
     if input:GetKeyPress(KEY_E) then self:Interact(); return end
-    if input:GetMouseButtonDown(MOUSEB_RIGHT) then
+    local lookX,lookY,looking=self.view:ConsumeLook()
+    if looking or lookX~=0 or lookY~=0 then
+        self.yaw=self.yaw+lookX*.22
+        self.pitch=math.max(-15,math.min(65,self.pitch+lookY*.18))
+    elseif input:GetMouseButtonDown(MOUSEB_RIGHT) then
         self.yaw=self.yaw+input.mouseMoveX*.18
         self.pitch=math.max(-15,math.min(65,self.pitch+input.mouseMoveY*.15))
-    elseif self.actor.mounted then
+    elseif self.actor.mounted or math.abs(self.view.controls.steer)>.001 or self.view.controls.gas or self.view.controls.brake then
         self.yaw=self.yaw+((self.actor.yaw-self.yaw+180)%360-180)*math.min(1,dt*2.5)
     end
     if self.options.test then return end
@@ -414,6 +420,7 @@ function Session:LeaveForLegacy()
 end
 function Session:DisposeWorld()
     self.running,self.loading=false,false
+    self.view.controls:SetEnabled(false); self.view:ResetInput()
     if self.loader then self.loader:Cancel(); self.loader=nil end
     self.building=nil
     renderer:SetNumViewports(0)

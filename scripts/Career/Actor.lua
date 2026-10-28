@@ -11,6 +11,8 @@ local V = Vector3
 ---@field walkY? number 相机前向为正
 ---@field run? boolean
 ---@field speedFactor? number 低饱腹/精力的安全限速系数
+---@field touchSteer? number 复用赛车转向条的步行转身输入
+---@field touchWalk? boolean 触屏步行沿人物朝向，电脑兼容输入仍沿相机朝向
 
 ---@class CareerActorCity
 ---@field Move fun(self: CareerActorCity, x: number, z: number, dx: number, dz: number, radius: number): number, number
@@ -171,12 +173,14 @@ function Actor:WalkStep(dt, controls, cameraYaw)
     local right = axis(controls.walkX ~= nil and controls.walkX or controls.steer)
     local forward = axis(controls.walkY ~= nil and controls.walkY or controls.throttle)
     local magnitude = math.sqrt(right * right + forward * forward)
+    local touch=controls.touchWalk==true
+    if touch then self.yaw=wrapYaw(self.yaw+axis(controls.touchSteer)*120*dt) end
     if magnitude <= 0.08 then
         self.speed, self.steer = 0, 0
         return
     end
     local strength = math.min(1, magnitude)
-    local angle = math.rad(cameraYaw)
+    local angle = math.rad(touch and self.yaw or cameraYaw)
     local vx = (right * math.cos(angle) + forward * math.sin(angle)) / magnitude
     local vz = (forward * math.cos(angle) - right * math.sin(angle)) / magnitude
     local desiredSpeed = (controls.run and RUN_SPEED or WALK_SPEED) * strength * clamp(controls.speedFactor or 1,.4,1)
@@ -186,7 +190,9 @@ function Actor:WalkStep(dt, controls, cameraYaw)
     self.speed = math.sqrt(movedX * movedX + movedZ * movedZ) / dt
     self.x, self.z, self.steer = nextX, nextZ, 0
     local wantedYaw = math.deg(math.atan(vx, vz))
-    self.yaw = wrapYaw(self.yaw + wrapYaw(wantedYaw - self.yaw) * math.min(1, dt * 16))
+    if not touch then
+        self.yaw = wrapYaw(self.yaw + wrapYaw(wantedYaw - self.yaw) * math.min(1, dt * 16))
+    end
     if blocked then self:LogCollision() end
     if not self.walkLogged then
         self.walkLogged = true

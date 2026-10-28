@@ -238,6 +238,81 @@ function Checks.RunDeliveryTrip(session)
     session:RestorePosition()
     session.view:ShowGame(); session:Refresh()
 end
+-- 通过UI真实分发触摸事件，不直接调用控件回调；全过程沿用Session的隔离档。
+function Checks.RunMobile(session)
+    local UI=require("urhox-libs/UI")
+    local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
+    local Settings=require("ControlSettings")
+    local view,actor=session.view,assert(session.actor)
+    local c=view.controls
+    view:ClosePhone(); view:ShowGame()
+    actor.mounted=false; actor.visuals:SetMounted(false)
+    actor.bikeX,actor.bikeZ,actor.bikeYaw=1.5,-20,0
+    actor:Teleport(0,-20,0)
+    session:Refresh(); UI.Layout(); view:LayoutControls(); UI.Layout()
+    assert(c.scheme==Settings.Current(),"生涯必须读取赛车的当前操作方案")
+    assert(not c.widgets.nitro and not c.widgets.wheelie,"配送不应堆放赛车特技按钮")
+    local function send(kind,id,x,y)
+        local scale=UI.GetScale()
+        local e=PointerEvent.new(kind,{pointerId=id,pointerType="touch",isPrimary=id==760001,
+            x=x*scale,y=y*scale,button=PointerEvent.Button.Left})
+        UI.HandlePointerEvent(e)
+        return e
+    end
+    local function down(widget,id,fx)
+        local r=widget:GetAbsoluteLayout()
+        local x,y=r.x+r.w*(fx or .5),r.y+r.h*.5
+        assert(send("PointerDown",id,x,y).target==widget,"触屏未命中实际组件："..tostring(widget.props.id))
+        return x,y
+    end
+    local function up(id,x,y) send("PointerUp",id,x,y) end
+    local gx,gy=down(c.widgets.gas,760002)
+    local sx,sy=down(c.widgets.steering,760001,.9)
+    assert(c.gas and c.steer>.5,"转向与前进必须支持不同手指同时持有")
+    actor:Update(.2,view:GetInput(),0)
+    assert(actor.speed>0 and actor.yaw>0,"触控前进和转向未驱动实际步行")
+    up(760002,gx,gy)
+    assert(not c.gas and c.steer>.5,"松右手不应取消左手转向")
+    up(760001,sx,sy)
+    actor:Update(.1,view:GetInput(),0)
+    assert(actor.speed==0 and c.steer==0,"松手必须停步并回正")
+    actor:Teleport(0,-20,0); session:Refresh()
+    local mx,my=down(view.mountButton,760003); up(760003,mx,my)
+    assert(actor.mounted and view.mountedControls,"点击上车必须同步切换赛车踏板语义")
+    gx,gy=down(c.widgets.gas,760002)
+    for _=1,30 do actor:Update(.05,view:GetInput(),0) end
+    up(760002,gx,gy)
+    assert(actor.speed>1 and actor.speed<=35/3.6,"复用油门必须驱动电动车而非赛车极速")
+    local bx,by=down(c.widgets.brake,760004)
+    for _=1,30 do actor:Update(.05,view:GetInput(),0) end
+    up(760004,bx,by)
+    assert(actor.speed==0,"真实触屏刹车未停稳")
+    mx,my=down(view.mountButton,760003); up(760003,mx,my)
+    assert(not actor.mounted and not view.mountedControls)
+    local parkedX,parkedZ=actor.bikeX,actor.bikeZ
+    bx,by=down(c.widgets.brake,760004)
+    actor:Update(.2,view:GetInput(),0); up(760004,bx,by)
+    assert(actor.speed>0 and actor.bikeX==parkedX and actor.bikeZ==parkedZ,"步行后退不得移动停车")
+    actor:Update(.1,view:GetInput(),0)
+    gx,gy=down(c.widgets.gas,760002)
+    local phone=assert(view.root:FindById("career-phone"))
+    local px,py=down(phone,760003); up(760003,px,py)
+    assert(view.phonePage=="apps" and not c.enabled and not c.gas and c.steer==0,"手机必须清空并禁用持有输入")
+    up(760002,gx,gy); view:ClosePhone()
+    assert(c.enabled and not c.gas,"关手机不能恢复旧油门")
+    local lx,ly=down(view.lookArea,760005,.5)
+    send("PointerMove",760005,lx+24,ly+12)
+    local dx,dy=view:ConsumeLook()
+    assert(dx==24 and dy==12,"空白画面拖动必须驱动触屏视角")
+    send("PointerCancel",760005,lx+24,ly+12)
+    assert(view.lookPointer==-1)
+    gx,gy=down(c.widgets.gas,760002)
+    send("PointerCancel",760002,gx,gy)
+    assert(not c.gas and c.throttle==0,"取消触摸不能留下卡油门")
+    session:Pause(); assert(not c.enabled and not c.gas)
+    view:ShowGame(); session:RestorePosition(); session:Refresh()
+    print("[生涯触屏验收通过] 复用赛车组件与操作方案/真实UI多指/步行转向前进后退/上下车/油门刹车/手机暂停清输入/拖屏视角/取消触摸")
+end
 function Checks.RunWorld(session)
     Checks.RunLogic()
     Checks.RunProgression()
@@ -275,6 +350,7 @@ function Checks.RunWorld(session)
     assert(Store.Get().time==time,"手机未冻结时间")
     session.view:ClosePhone()
     session:Refresh()
+    Checks.RunMobile(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
         if arg=="-careerpose=ride" then

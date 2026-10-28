@@ -4,6 +4,8 @@ local Theme = require("RacingTheme")
 local Config = require("Career.Config")
 local Map = require("Career.MapWidget")
 local Progress = require("Career.Progression")
+local MobileControls = require("MobileControls")
+local ControlSettings = require("ControlSettings")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -26,7 +28,12 @@ function View:Init(actions)
     self.actions=actions
     self.phonePage=""
     self.blocked=false
-    self.input={left=false,right=false,forward=false,back=false,brake=false}
+    -- 与原竞速共用组件、图片、多指归属和玩家操作方案；实例分开，避免覆盖旧HUD的控件引用。
+    self.controls=MobileControls.New()
+    self.controlWidth,self.controlHeight=0,0
+    self.mountedControls=false
+    self.lookPointer=-1
+    self.lookX,self.lookY,self.lookDeltaX,self.lookDeltaY=0,0,0,0
     self.root=UI.Panel{width="100%",height="100%",padding=0,pointerEvents="box-none"}
     self.home=full{backgroundGradient=Theme.Gradient({25,34,40,255},{7,11,15,255}),padding=32,gap=12}
     self.home:AddChild(Theme.Kicker("ROAD TO THE GRID  /  从生活驶向赛场"))
@@ -47,29 +54,37 @@ function View:Init(actions)
         children={self.status,self.objective,self.hint,self.map.root}})
     self.speed=label("步行",14,C.white)
     safe:AddChild(UI.Panel{position="absolute",right=12,top=12,width=155,gap=8,padding=8,backgroundColor={10,16,21,210},
-        children={self.speed,btn("暂停 / P",actions.pause,false)}})
-    local movement=UI.Panel{position="absolute",bottom=14,left=12,width=190,height=130,padding=0,pointerEvents="box-none"}
-    local function held(text,key,x,y)
-        return btn(text,function() end,false,{position="absolute",left=x,top=y,width=56,height=52,padding=0,
-            onPointerDown=function() self.input[key]=true end,
-            onPointerUp=function() self.input[key]=false end,
-            onPointerCancel=function() self.input[key]=false end})
+        children={self.speed,btn("暂停",actions.pause,false)}})
+    -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
+    self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
+        onPointerDown=function(event)
+            if self:IsBlocking() or self.lookPointer~=-1 or (not event:IsTouch() and not event:IsPrimaryButton()) then return end
+            self.lookPointer=event.pointerId; self.lookX,self.lookY=event.x,event.y
+        end,
+        onPointerMove=function(event)
+            if self.lookPointer~=event.pointerId then return end
+            self.lookDeltaX=self.lookDeltaX+event.x-self.lookX
+            self.lookDeltaY=self.lookDeltaY+event.y-self.lookY
+            self.lookX,self.lookY=event.x,event.y
+        end,
+        onPointerUp=function(event) if self.lookPointer==event.pointerId then self.lookPointer=-1 end end,
+        onPointerCancel=function(event) if self.lookPointer==event.pointerId then self.lookPointer=-1; self.lookDeltaX,self.lookDeltaY=0,0 end end})
+    self.game:AddChild(self.lookArea)
+    self.controlLayer=UI.Panel(Theme.Full{pointerEvents="box-none"})
+    for _,widget in ipairs({self.controls:CreateSteering(),self.controls:CreatePedal("brake"),self.controls:CreatePedal("gas")}) do
+        widget:SetStyle{position="absolute",left=0,top=0}
+        self.controlLayer:AddChild(widget)
     end
-    movement:AddChild(held("前 / W","forward",60,0))
-    movement:AddChild(held("左 / A","left",0,60))
-    movement:AddChild(held("后 / S","back",60,60))
-    movement:AddChild(held("右 / D","right",120,60))
-    safe:AddChild(movement)
-    safe:AddChild(UI.Panel{position="absolute",right=12,bottom=14,width=150,gap=8,padding=0,children={
-        btn("手机 / Tab",function() actions.phone("apps") end,true,{id="career-phone"}),
-        btn("交互 / E",actions.interact,false,{id="career-interact"}),
-        btn("上 / 下车 F",actions.mount,false,{id="career-mount"})}})
-    safe:AddChild(label("空格制动 · Shift快走 · 鼠标右键拖动视角",10,C.muted,
-        {position="absolute",bottom=12,left="30%",right="22%",textAlign="center",whiteSpace="normal"}))
-    safe:AddChild(btn("刹车",function() end,false,{position="absolute",bottom=70,right=174,width=64,height=52,padding=0,
-        onPointerDown=function() self.input.brake=true end,
-        onPointerUp=function() self.input.brake=false end,
-        onPointerCancel=function() self.input.brake=false end}))
+    safe:AddChild(self.controlLayer)
+    self.mountButton=btn("上车",actions.mount,false,{id="career-mount",width=72,height=46,padding=0})
+    self.interactButton=btn("交互",actions.interact,false,{id="career-interact",width=82,height=46,padding=0})
+    self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=8,padding=0,pointerEvents="box-none",children={
+        self.mountButton,self.interactButton,
+        btn("手机",function() actions.phone("apps") end,true,{id="career-phone",width=64,height=46,padding=0})}}
+    safe:AddChild(self.actionTray)
+    self.controlHint=label("左右滑动转向 · 按住前进 · 松手停步 · 滑动画面看四周",10,C.muted,
+        {position="absolute",bottom=12,left="28%",right="24%",textAlign="center",whiteSpace="normal",pointerEvents="none"})
+    safe:AddChild(self.controlHint)
     self.game:AddChild(safe)
     self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=14})
     self.phoneBody=UI.Panel{width=380,maxWidth="90%",height="94%",padding=16,gap=10,borderWidth=2,borderRadius=18,
@@ -91,7 +106,7 @@ function View:Init(actions)
 end
 function View:ShowHome(hasSave,message)
     self.home:SetVisible(true); self.game:SetVisible(false); self.phone:SetVisible(false); self.overlay:SetVisible(false)
-    self.phonePage=""; self.blocked=true
+    self.phonePage=""; self.blocked=true; self.controls:SetEnabled(false)
     self.homeActions:ClearChildren()
     self.homeActions:AddChild(btn(hasSave and "继续王二狗的生涯" or "开始生涯 · 身上只有50元",function() self.actions.startCareer(false) end,true,{id="career-start"}))
     if hasSave then self.homeActions:AddChild(btn("重新开始生涯",function() self.actions.startCareer(true) end,false)) end
@@ -100,13 +115,13 @@ function View:ShowHome(hasSave,message)
 end
 function View:ShowGame()
     self.home:SetVisible(false); self.game:SetVisible(true); self.overlay:SetVisible(false)
-    self.blocked=false
+    self.blocked=false; self.controls:SetEnabled(self.phonePage=="")
 end
 function View:ShowLoading(title,detail,fraction)
     self:ShowDialog(title,detail..string.format("\n已完成 %.0f%%",fraction*100),{})
 end
 function View:ShowDialog(title,text,buttons)
-    self:ResetInput()
+    self:ResetInput(); self.controls:SetEnabled(false)
     self.blocked=true; self.overlay:SetVisible(true)
     self.dialogBody:ClearChildren()
     self.dialogBody:AddChild(label(title,21,C.amber,{fontWeight="bold",whiteSpace="normal"}))
@@ -114,6 +129,7 @@ function View:ShowDialog(title,text,buttons)
     for _,item in ipairs(buttons) do
         self.dialogBody:AddChild(btn(item.text,function()
             self.overlay:SetVisible(false); self.blocked=false
+            self.controls:SetEnabled(self.game:IsVisible() and self.phonePage=="")
             if item.onClick then item.onClick() end
         end,item.primary))
     end
@@ -125,9 +141,10 @@ end
 function View:IsBlocking() return self.blocked or self.phonePage~="" end
 function View:ClosePhone()
     self.phone:SetVisible(false); self.phonePage=""; self:ResetInput()
+    self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
 function View:OpenPhone(page,state,offer,active)
-    self:ResetInput(); self.phonePage=page or "apps"; self.phone:SetVisible(true)
+    self:ResetInput(); self.controls:SetEnabled(false); self.phonePage=page or "apps"; self.phone:SetVisible(true)
     self:BuildPhone(state,offer,active)
 end
 function View:BuildPhone(state,offer,active)
@@ -248,6 +265,9 @@ function View:BuildPhone(state,offer,active)
 end
 function View:Update(state,actor,target,active,offer,dt)
     self.lastActor,self.lastTarget=actor,target
+    self:SetControlMode(actor.mounted)
+    self:LayoutControls()
+    self.interactButton:SetText(active and (active.status=="accepted" and "取餐" or "送达") or "交互")
     self.status:SetText(string.format("王二狗  %s  第%d天 %02d:%02d\n饱腹 %.0f · 精力 %.0f · 电量 %.0f%%",money(state.cashCents),state.day,
         math.floor(state.time),math.floor(state.time*60)%60,state.hunger,state.energy,state.battery))
     self.objective:SetText(target and (target.name..string.format(" · %.0f米",target.distance)) or "打开右下角手机 → 外卖骑手 → 上线听单")
@@ -260,12 +280,44 @@ function View:Update(state,actor,target,active,offer,dt)
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))
     if self.noticeTime==0 then self.notice:SetText("") end
 end
+function View:LayoutControls()
+    local area=self.controlLayer:GetAbsoluteLayout()
+    if area.w<=60 or area.h<=60 then return end
+    if area.w~=self.controlWidth or area.h~=self.controlHeight then
+        self.controlWidth,self.controlHeight=area.w,area.h
+        self.controls:SetCompact(area.w<920 or area.h<470)
+        self.controls:ApplyScheme(ControlSettings.Current(),area.w,area.h)
+    end
+end
+function View:SetControlMode(mounted)
+    if self.controlModeReady and self.mountedControls==mounted then return end
+    self.controlModeReady=true; self.mountedControls=mounted
+    self:ResetInput()
+    self.controls:SetActionState("gas",{label=mounted and "油门" or "前进",detail=mounted and "按住加速" or "按住行走"})
+    self.controls:SetActionState("brake",{label=mounted and "刹车" or "后退",detail=mounted and "按住制动" or "按住退步"})
+    self.mountButton:SetText(mounted and "下车" or "上车")
+    self.controlHint:SetText(mounted and "左右滑动转向 · 右侧油门 / 刹车 · 停稳后下车取送"
+        or "左右滑动转向 · 按住前进 · 松手停步 · 滑动画面看四周")
+end
+function View:ConsumeLook()
+    local x,y=self.lookDeltaX,self.lookDeltaY
+    self.lookDeltaX,self.lookDeltaY=0,0
+    return x,y,self.lookPointer~=-1
+end
 function View:GetInput()
     local function down(key) return input:GetKeyDown(key) end
-    local x=((down(KEY_D) or down(KEY_RIGHT) or self.input.right) and 1 or 0)-((down(KEY_A) or down(KEY_LEFT) or self.input.left) and 1 or 0)
-    local y=((down(KEY_W) or down(KEY_UP) or self.input.forward) and 1 or 0)-((down(KEY_S) or down(KEY_DOWN) or self.input.back) and 1 or 0)
-    return {steer=x,throttle=y,walkX=x,walkY=y,run=down(KEY_SHIFT),brake=down(KEY_SPACE) or self.input.brake}
+    local x=((down(KEY_D) or down(KEY_RIGHT)) and 1 or 0)-((down(KEY_A) or down(KEY_LEFT)) and 1 or 0)
+    local y=((down(KEY_W) or down(KEY_UP)) and 1 or 0)-((down(KEY_S) or down(KEY_DOWN)) and 1 or 0)
+    local c=self.controls
+    local walking=(c.gas and 1 or 0)-(c.brake and 1 or 0)
+    return {steer=math.max(-1,math.min(1,x+c.steer)),throttle=math.max(-1,math.min(1,y+c.throttle)),
+        walkX=x,walkY=math.max(-1,math.min(1,y+walking)),touchSteer=c.steer,
+        touchWalk=c.gas or c.brake or math.abs(c.steer)>.001,
+        run=down(KEY_SHIFT),brake=down(KEY_SPACE) or c.brake}
 end
-function View:ResetInput() for key in pairs(self.input) do self.input[key]=false end end
-function View:Dispose() self:ResetInput(); self.root:Destroy() end
+function View:ResetInput()
+    self.controls:Reset()
+    self.lookPointer=-1; self.lookDeltaX,self.lookDeltaY=0,0
+end
+function View:Dispose() self.controls:SetEnabled(false); self:ResetInput(); self.root:Destroy() end
 return View
