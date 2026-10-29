@@ -1,0 +1,249 @@
+[2026-10-29 18_37_03_384][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_384][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_384][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_384][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_755][22] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_755][22] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_03_755][22] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 18_37_02_933][0] INFO: DownloadManager initialized
+[2026-10-29 18_37_02_935][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 18_37_02_935][0] INFO: Engine construct finish.
+[2026-10-29 18_37_03_297][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 18_37_03_315][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 18_37_03_317][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 18_37_03_733][22] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 18_37_04_660][60]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 18_37_04_664][60]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 18_37_04_664][60]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 18_37_04_667][60] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 18_37_06_169][86] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 18_37_06_174][86][Script] IsNetworkMode:    false
+[2026-10-29 18_37_06_192][86][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 18_37_06_192][86][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 18_37_06_192][86][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 18_37_06_192][86][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 18_37_06_195][86][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 18_37_06_747][86][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 18_37_07_386][86][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 18_37_07_390][86][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 18_37_07_424][86][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 18_37_07_424][86][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 18_37_07_436][86][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_37_07_519][86][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 18_37_07_519][86][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 18_37_07_520][87][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 18_37_10_147][126] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_37_10_147][126] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_37_10_147][126] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_10_147][126] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_10_147][126] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_10_177][127] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_37_10_177][127] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 18_37_10_211][128] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_37_10_211][128] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_10_211][128] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_10_238][129] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_37_10_238][129] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_37_15_417][188][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 18_37_15_417][188][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 18_37_15_417][188][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 18_37_15_417][188][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 18_37_15_417][188][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 18_37_15_418][188][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 18_37_15_418][188][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 18_37_16_098][188][Script] [老街街面] 门面2 / 0..1UV图层2 / 合批29 / 实体碰撞17 / 排水细节6；路面/导航未改
+[2026-10-29 18_37_16_109][188][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_16_248][188][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_16_252][188][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_16_363][188][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_16_366][188][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_16_473][188][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_16_477][188][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_16_623][188][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_16_627][188][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_16_749][188][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_16_753][188][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_16_890][188][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_16_894][188][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_17_012][188][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_17_017][188][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_17_181][188][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_17_183][188][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-29 18_37_17_222][188][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 18_37_17_224][188][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 18_37_17_227][188][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 18_37_17_227][188][Script] [生涯城市] 33栋建筑 / 508批次 / 147870三角面 / 48招牌 / 65碰撞区域
+[2026-10-29 18_37_17_236][189][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 18_37_17_661][189][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 18_37_17_662][189][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 18_37_18_047][189][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 18_37_18_052][189][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 18_37_18_056][189][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 steps audio/sfx/career_step_single.wav
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-29 18_37_18_056][189][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-29 18_37_18_061][189][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 18_37_18_066][189][Script] [WorldStream] 加载 -1:-1 / 2楼 / 722面 / 14批
+[2026-10-29 18_37_18_067][189][Script] [WorldStream] 加载 0:-1 / 0楼 / 80面 / 7批
+[2026-10-29 18_37_18_069][189][Script] [WorldStream] 加载 -1:0 / 0楼 / 160面 / 7批
+[2026-10-29 18_37_18_071][189][Script] [WorldStream] 加载 0:0 / 0楼 / 140面 / 7批
+[2026-10-29 18_37_18_080][189][Script] [WorldStream] 加载 -1:-2 / 5楼 / 1456面 / 15批
+[2026-10-29 18_37_18_089][189][Script] [WorldStream] 加载 0:-2 / 6楼 / 1646面 / 14批
+[2026-10-29 18_37_18_181][189][Script] [WorldStream] 加载 -2:-1 / 6楼 / 2348面 / 14批
+[2026-10-29 18_37_18_195][189][Script] [WorldStream] 加载 1:-1 / 7楼 / 2674面 / 14批
+[2026-10-29 18_37_18_206][189][Script] [WorldStream] 加载 -2:0 / 6楼 / 2132面 / 14批
+[2026-10-29 18_37_18_223][189][Script] [WorldStream] 加载 1:0 / 10楼 / 3500面 / 14批
+[2026-10-29 18_37_18_233][189][Script] [WorldStream] 加载 -1:1 / 4楼 / 1686面 / 14批
+[2026-10-29 18_37_18_242][189][Script] [WorldStream] 加载 0:1 / 5楼 / 1702面 / 14批
+[2026-10-29 18_37_18_262][189][Script] [WorldStream] 加载 -2:-2 / 6楼 / 2094面 / 15批
+[2026-10-29 18_37_18_275][189][Script] [WorldStream] 加载 1:-2 / 9楼 / 2558面 / 15批
+[2026-10-29 18_37_18_287][189][Script] [WorldStream] 加载 -2:1 / 6楼 / 2256面 / 14批
+[2026-10-29 18_37_18_301][189][Script] [WorldStream] 加载 1:1 / 7楼 / 2718面 / 14批
+[2026-10-29 18_37_18_310][189][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-29 18_37_18_328][189][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-29 18_37_18_343][189][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-29 18_37_18_368][189][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-29 18_37_18_389][189][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-29 18_37_18_406][189][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-29 18_37_18_421][189][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-29 18_37_18_434][189][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-29 18_37_18_435][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_18_556][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_18_560][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_18_692][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_18_695][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_18_806][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_18_809][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_18_968][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_18_971][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_19_087][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_19_091][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_19_224][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_19_227][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_19_390][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_19_393][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_19_509][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_19_511][189][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_37_19_512][189][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_37_19_512][189][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_37_19_515][189][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_37_19_518][189][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_37_19_519][189][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_37_19_530][189][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_37_19_535][189][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_37_19_535][189][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_37_19_536][189][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_37_19_540][189][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_37_19_540][189][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_37_19_541][189][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_37_19_541][189][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_37_19_542][189][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_37_19_542][189][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_37_19_547][189][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_37_19_547][189][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_37_19_548][189][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_37_19_552][189][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_37_19_553][189][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-29 18_37_19_553][189][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 18_37_19_564][189][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_37_19_572][189][Script] [街头交谈] station / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_576][189][Script] [街头交谈] station / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_579][189][Script] [街头交谈] station / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_582][189][Script] [街头交谈] station / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_586][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_586][189][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 18_37_19_587][189][Script] [生涯提示] 请靠近正在交谈的人（3米内）
+[2026-10-29 18_37_19_587][189][Script] [生涯提示] 请停稳下车再交谈
+[2026-10-29 18_37_19_587][189][Script] [生涯提示] 请停稳下车再交谈
+[2026-10-29 18_37_19_587][189][Script] [生涯提示] 请先回到地面
+[2026-10-29 18_37_19_588][189][Script] [生涯提示] 请先回到地面
+[2026-10-29 18_37_19_591][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_593][189][Script] [生涯提示] 请靠近正在交谈的人（3米内）
+[2026-10-29 18_37_19_596][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_597][189][Script] [生涯提示] 请先前往老街早餐店（2米内）
+[2026-10-29 18_37_19_599][189][Script] [CareerMap] Navigation unavailable: no unobstructed road access
+[2026-10-29 18_37_19_601][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_602][189][Script] [生涯提示] 用餐支出12.00元，耗时15游戏分钟
+[2026-10-29 18_37_19_603][189][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 18_37_19_605][189][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 18_37_19_605][189][Script] [生涯提示] 已取餐，请送往旧宅门厅
+[2026-10-29 18_37_19_612][189][Script] [生涯提示] 这份餐已经取好了，请按导航送到顾客处；补给可在手机中选择
+[2026-10-29 18_37_19_615][189][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 18_37_19_615][189][Script] [生涯提示] 交付成功，配送费5.00元已入账
+[2026-10-29 18_37_19_626][189][Script] [CareerMap] Navigation unavailable: no unobstructed road access
+[2026-10-29 18_37_19_629][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_632][189][Script] [生涯手机] 构建页面 apps
+[2026-10-29 18_37_19_636][189][Script] [街头交谈] breakfast_owner / breakfast / 现场重检 / 不自动收费
+[2026-10-29 18_37_19_639][189][Script] [生涯手机] 构建页面 apps
+[2026-10-29 18_37_19_642][189][Script] [生涯手机] 构建页面 apps
+[2026-10-29 18_37_19_648][189][Script] [街头交互验收通过] 真PointerDown/Up；交谈/离开/订单零收费；远距骑行桥上拒绝；按钮二次校验；原POI用餐单事务；真实早餐交接/重复拒奖/配送一次到账；旧树Destroy与手机弹窗互斥；内存禁云
+[2026-10-29 18_37_19_686][189][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_37_19_687][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_19_801][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_19_805][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_19_927][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_19_931][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_20_049][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_20_053][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_20_172][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_20_175][189]WARNINGNext log has been[2026-10-29 18_37_20_734][189] ERROR: Execute Lua function failed: [string "Career/Session"]:539: [string "Career/StreetLifeChecks"]:293: [string "Career/Store"]:775: [string "Career/StreetLifeChecks"]:108: 生产行人线路仍有原障碍 path#7 blockedSamples=38；不得把baseline阻挡冒称新线路可通
+stack traceback:
+	[C]: in function 'error'
+	[string "Career/Session"]:539: in method 'Update'
+	[string "main"]:959: in function 'HandleUpdate'
+ output too many times and will not be output again.
+[2026-10-29 18_37_20_175][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_37_20_306][189]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 18_37_20_306][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_37_20_310][189]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 18_37_20_310][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_37_20_440][189]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 18_37_20_440][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_37_20_687][189][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-29 18_37_20_687][189][Script] [原第3线路证据] sample=(23.4000,-8.7000) / legacy obstacle#40 AABB[x=23.6750..24.3250,z=-9.3250..-8.6750]
+[2026-10-29 18_37_20_692][189][Script] [街坊路线对照] path#1 samples=221 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_698][189][Script] [街坊路线对照] path#2 samples=281 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_704][189][Script] [街坊路线对照] path#3 samples=281 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_710][189][Script] [街坊路线对照] path#4 samples=276 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_715][189][Script] [街坊路线对照] path#5 samples=286 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_721][189][Script] [街坊路线对照] path#6 samples=271 baselineBlocked=0 新增阻挡=0 / 逐样本StaticFree一致
+[2026-10-29 18_37_20_721][189][Script] [街坊路线baseline] path#7 (-108.70,25.00)->(-108.70,60.00) 首个原有阻挡sample=(-108.7000,25.0000) r=.32 / legacy obstacle#2 AABB[x=-126.1500..-107.8500,z=11.8500..32.1500]
+[2026-10-29 18_37_20_727][189][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-29 18_37_20_727][189][Script] [WorldStream] 卸载 1:-2
+[2026-10-29 18_37_20_727][189][Script] [WorldStream] 卸载 0:-2
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 -2:-2
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 -1:-2
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 -1:1
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 0:1
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 -1:2
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 -2:1
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 1:-1
+[2026-10-29 18_37_20_728][189][Script] [WorldStream] 卸载 0:-1
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 2:0
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 1:0
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 -1:-1
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 -3:0
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 1:1
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 -2:-1
+[2026-10-29 18_37_20_729][189][Script] [WorldStream] 卸载 -2:0
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 -1:-3
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 2:-1
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 -1:0
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 -3:-1
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 0:-3
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 0:2
+[2026-10-29 18_37_20_730][189][Script] [WorldStream] 卸载 0:0
+[2026-10-29 18_37_20_734][189][Script] [生涯错误] [string "Career/StreetLifeChecks"]:293: [string "Career/Store"]:775: [string "Career/StreetLifeChecks"]:108: 生产行人线路仍有原障碍 path#7 blockedSamples=38；不得把baseline阻挡冒称新线路可通
+[2026-10-29 18_37_21_671][246]INFO__VALIDATE_UPDATE__:false

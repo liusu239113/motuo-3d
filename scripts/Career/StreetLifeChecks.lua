@@ -87,9 +87,26 @@ local function compareProbe(city,baseline,sources,x,z,radius,mode,label)
         label,x,z,radius,tostring(currentFree),tostring(baselineFree),obstacleHits(city,x,z,radius,sources),obstacleHits(baseline,x,z,radius,{})))
     return baselineFree
 end
+local function verticalClearance(city,path,radius,label)
+    assert(path[1]==path[3],"垂直线路精确扫掠要求X恒定")
+    local x,z1,z2=path[1],math.min(path[2],path[4]),math.max(path[2],path[4])
+    -- 全连续线段与每个外扩AABB精确检测，不以.2m采样漏掉薄障碍。
+    for index,o in ipairs(city.obstacles) do
+        assert(not(x>o.x1-radius and x<o.x2+radius and z2>o.z1-radius and z1<o.z2+radius),
+            string.format("%s连续扫掠撞障碍#%d x=%.4f z=%.4f..%.4f r=%.3f / AABB[%.4f..%.4f,%.4f..%.4f]",
+                label,index,x,z1,z2,radius,o.x1,o.x2,o.z1,o.z2))
+    end
+    print(string.format("[街坊垂直线路精确扫掠] %s x=%.2f z=%.2f..%.2f r=%.2f 全段无障碍",label,x,z1,z2,radius))
+end
 local function reachable(contacts,city,baseline,sources,paths)
     -- 直接读取生产Pedestrians.people.path，不维护易漂移的第二份路径配置。
     assert(#paths==8,"生产老街行人应有8条路径")
+    -- 第7条旧百货实体右边缘-107.85，人物中心-106.8扣r=.32还余.73m。
+    -- 第8条保持x91.3/z20..65；先精确检验两条生产静态全集，之后再逐样本baseline对照。
+    assert(paths[7][1]==-106.8 and paths[7][3]==-106.8 and paths[7][2]==25 and paths[7][4]==60,"第7线路修复坐标漂移")
+    assert(paths[8][1]==91.3 and paths[8][3]==91.3 and paths[8][2]==20 and paths[8][4]==65,"第8线路不应被改")
+    verticalClearance(city,paths[7],.32,"path#7")
+    verticalClearance(city,paths[8],.32,"path#8")
     for pathIndex,path in ipairs(paths) do
         local count=math.ceil(math.sqrt((path[3]-path[1])^2+(path[4]-path[2])^2)/.2)
         local legacyBlocked=0

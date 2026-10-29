@@ -11,6 +11,7 @@ local V = Vector3
 local PREFIX = "street_"
 local BREAKFAST = "image/career_breakfast_shopfront_albedo_20261029100357.png"
 local REPAIR = "image/career_local_shopfront_albedo_20261029100354.png"
+local SIGN = "image/career_breakfast_sign_albedo.png"
 local BRICK = "uuid://DXjwQX_lcF60zC4F9y9yAyG_"
 local METAL = "uuid://Cis1sX30rhdTXVgC4QEwquGW"
 local FABRIC = "uuid://FsRPCfK_BAj7uc2vemxZwSA8"
@@ -57,12 +58,12 @@ local FABRIC = "uuid://FsRPCfK_BAj7uc2vemxZwSA8"
 local Dressing = {}
 Dressing.__index = Dressing
 Dressing.Resources = {
-    BREAKFAST, REPAIR, BRICK, METAL, FABRIC,
+    BREAKFAST, REPAIR, SIGN, BRICK, METAL, FABRIC,
     "Techniques/PBR/PBRDiff.xml", "Techniques/PBR/PBRDiffNormal.xml",
     "Techniques/PBR/PBRNoTexture.xml", "Models/Cylinder.mdl", "Models/Torus.mdl",
 }
 Dressing.ResourceTypes = {
-    [BREAKFAST]="Texture2D", [REPAIR]="Texture2D",
+    [BREAKFAST]="Texture2D", [REPAIR]="Texture2D", [SIGN]="Texture2D",
     [BRICK]="Material", [METAL]="Material", [FABRIC]="Material",
     ["Techniques/PBR/PBRDiff.xml"]="Technique",
     ["Techniques/PBR/PBRDiffNormal.xml"]="Technique",
@@ -132,6 +133,7 @@ function Dressing:Init(city)
     -- Acquire all art before building: missing required artwork is a hard failure.
     self:Artwork("breakfastArt",BREAKFAST)
     self:Artwork("repairArt",REPAIR)
+    self:Artwork("breakfastSign",SIGN)
     self:Breakfast()
     self:Charging()
     self:Bridge()
@@ -172,7 +174,7 @@ end
 
 function Dressing:Artwork(key,path)
     local texture = assert(cache:GetResource("Texture2D",path),"StreetDressing: missing shopfront "..path)
-    assert(texture.width>=512 and texture.height>=512,"StreetDressing: artwork unavailable/placeholder "..path)
+    assert(texture.width>=512 and texture.height>=256,"StreetDressing: artwork unavailable/placeholder "..path)
     self.textures[#self.textures+1] = texture -- Borrowed cache resources: hold, never Dispose shared textures.
     local material = Material:new()
     material:SetTechnique(0,assert(cache:GetResource("Technique","Techniques/PBR/PBRDiff.xml")))
@@ -260,7 +262,7 @@ function Dressing:Face(id,key,path,x,y,z,w,h,yaw)
     geometry:SetMaterial(material)
     geometry.castShadows, geometry.drawDistance = false,135
     self.faces[#self.faces+1] = {id=id,path=path,geometry=geometry,material=material,width=w,height=h,uv="0..1, once"}
-    self.counters.shopfronts = self.counters.shopfronts+1
+    self.counters.shopfronts = self.counters.shopfronts+(id=="breakfast_sign" and 0 or 1)
 end
 
 -- The existing north face is z=-12.5 (yaw 180). No old shell/window is moved.
@@ -289,7 +291,7 @@ function Dressing:Breakfast()
     self:Box("red",-25,3.28,-12.20,12.5,.85,.34)
     self:Box("steel",-25,3.72,-12.18,12.65,.055,.40)
     self:Box("red",-25,3.24,-12.021,11.95,.62,.012)
-    self:Sign("老 街 早 餐",-25,3.26,-11.94,180,.46,Color(.98,.89,.65))
+    self:Face("breakfast_sign","breakfastSign",SIGN,-25,3.26,-11.94,11.95,.70,180)
     self:Box("teal",-16.45,3.28,-12.20,5.15,.85,.34)
     self:Sign("老 街 修 配",-16.45,3.28,-12.015,180,.32)
     self:Sign("补胎  ·  配件  ·  便民维修",-16.45,2.76,-12.014,180,.13)
@@ -523,7 +525,7 @@ function Dressing:Validate()
         end
         if face.material:GetTexture(TU_DIFFUSE).name~=face.path then errors[#errors+1] = "artwork binding: "..face.id end
     end
-    if #self.faces~=2 then errors[#errors+1] = "expected two complete storefront faces" end
+    if #self.faces~=3 then errors[#errors+1] = "expected two storefront faces and one readable shop sign" end
     warnings[#warnings+1] = "Solid legacy shell retained: displayed interior is albedo + shallow physical frame, not enterable geometry"
     warnings[#warnings+1] = "No runtime/screenshot validation performed by this module's implementation task"
     return {ok=#errors==0,errors=errors,warnings=warnings,volumes=self.volumes,faces=self.faces,
