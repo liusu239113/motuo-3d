@@ -426,7 +426,7 @@ function People:Sync(orders,actor)
         return
     end
     self.pending=false
-    -- 先保留不变目标，释放消失商家；只有Respond标记过的顾客才可短暂保留。
+    -- 先保留不变目标；完成交接并由Respond标记的人物可短暂留场，其他消失目标释放。
     for _,p in ipairs(self.people) do
         local target=wanted[p.pointId]
         if not target or target.source~="pool" then
@@ -509,7 +509,7 @@ function People:Get(pointId)
     return self.byPoint[pointId]
 end
 ---@param pointId string
----@param pickup boolean true=成功取餐回应；false=成功送达回应+最多6s保留
+---@param pickup boolean true=成功取餐回应；false=成功送达回应；最后一份交接后最多6s保留
 ---@return boolean handled 只有可见池人物才即时提交IK；contact由主线程转发
 function People:Respond(pointId,pickup)
     if self.disposed or self.city.space~="city" or type(pickup)~="boolean" then return false end
