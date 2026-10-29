@@ -385,20 +385,22 @@ function Session:UpdateEnvironment(hour)
     if self.city then self.city:UpdateLights(hour) end
     if not self.sky or not self.sun or not self.zone then return end
     local step=math.floor(hour*12)/12
-    if step==self.environmentHour then return end
-    self.environmentHour=step
+    local cloudy=self.weatherCloudiness or 0
+    if step==self.environmentHour and cloudy==self.environmentCloudiness then return end
+    self.environmentHour,self.environmentCloudiness=step,cloudy
     local a=(step-6)/12*math.pi
     local height=math.sin(a)
     local day=math.max(0,math.min(1,(height+.08)/.4))
     local dusk=math.exp(-((height-.02)/.16)^2)
     self.sun.node.direction=Vector3(-math.cos(a),-height,.35)
-    self.sun.color=Color(1,.55,.3):Lerp(Color(1,.94,.84),day)
-    self.sun.brightness=3*day
+    self.sun.color=Color(1,.55,.3):Lerp(Color(1,.94,.84),day):Lerp(Color(.78,.82,.86),cloudy*.42)
+    self.sun.brightness=3*day*(1-.68*cloudy)
     if self.moon then self.moon.brightness=.65*(1-day) end
     local horizon=Color(.16,.21,.32):Lerp(Color(.66,.77,.9),day):Lerp(Color(.92,.57,.35),dusk*.7)
-    self.sky.skyTopColor=Color(.08,.12,.24):Lerp(Color(.25,.47,.8),day)
+    horizon=horizon:Lerp(Color(.48,.53,.58),cloudy*.72)
+    self.sky.skyTopColor=Color(.08,.12,.24):Lerp(Color(.25,.47,.8),day):Lerp(Color(.37,.42,.49),cloudy*.78)
     self.sky.skyHorizonColor=horizon; self.sky.groundHorizonColor=horizon
-    self.sky.groundBottomColor=Color(.1,.11,.15):Lerp(Color(.35,.33,.28),day)
+    self.sky.groundBottomColor=Color(.1,.11,.15):Lerp(Color(.35,.33,.28),day):Lerp(Color(.31,.32,.32),cloudy*.65)
     self.zone.fogColor=horizon
 end
 function Session:Intro()
@@ -415,6 +417,11 @@ end
 ---@return CareerSessionState
 function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
+    -- 生涯天气按游戏日稳定轮换：晴朗、多云、阴天；读档/暂停后不会随机跳变。
+    local weatherCycle={{label="晴朗",cloudiness=0},{label="多云",cloudiness=.46},{label="阴天",cloudiness=.82}}
+    local weather=weatherCycle[(state.day-1)%#weatherCycle+1]
+    state.weatherLabel,state.weatherCloudiness=weather.label,weather.cloudiness
+    self.weatherCloudiness=weather.cloudiness
     state.musicEnabled=self.audio and self.audio.musicEnabled
     state.effectsEnabled=self.audio and self.audio.effectsEnabled
     state.trafficHint=self.traffic and self.actor and self.space=="city" and self.traffic:Hint(self.actor.x,self.actor.z,self.actor.yaw) or nil
