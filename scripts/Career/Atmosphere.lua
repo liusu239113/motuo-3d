@@ -242,7 +242,7 @@ function A:Init(scene,sky,sun,moon,zone)
 end
 
 --- 返回与Sample同源的天气；仅管理传入的室外光照和自己创建的云层。
---- indoor=true或sky.enabledEffective=false时隐藏云，不反向打开住房关闭的天空/日月。
+--- indoor=true或sky.enabledEffective=false时隐藏云和日月；只有住房恢复天空后才启用室外光。
 --- 即使暂停也可重复Apply（保持同一day/hour）；传cameraPosition以避免远离原点后丢云。
 ---@param day? number
 ---@param hour? number
@@ -260,14 +260,18 @@ function A:Apply(day,hour,cameraPosition,indoor)
     if cameraPosition then self.root.worldPosition=cameraPosition end
     local visible=not indoor and self.sky.enabledEffective
     self.root.enabled=visible
-    -- 不修改sun/moon.enabled；住房可继续通过enabled=false停用它们。
+    -- 移动前向渲染不能保留零亮度太阳占用主光；室内仍由住房禁用的天空统一授权。
     local sun,moon=s.sunDirection,s.moonDirection
+    self.sun.enabled=visible and s.sunBrightness>.001
     self.sun.node.direction=Vector3(-sun.x,-sun.y,-sun.z)
     self.sun.color=color(s.sunColor); self.sun.brightness=s.sunBrightness
     if self.moon then
+        self.moon.enabled=visible and s.moonBrightness>.001
         self.moon.node.direction=Vector3(-moon.x,-moon.y,-moon.z)
-        self.moon.color=Color(.54,.66,1); self.moon.brightness=s.moonBrightness
+        self.moon.color=Color(.68,.76,1); self.moon.brightness=s.moonBrightness
     end
+    self.zone.tonemapMode=TONEMAP_MODE_ACES
+    self.zone.vignetteEnabled=false
     self.sky.sunLight=self.sun
     self.sky.skyTopColor=color(s.topColor)
     self.sky.skyHorizonColor=color(s.horizonColor); self.sky.groundHorizonColor=color(s.horizonColor)
