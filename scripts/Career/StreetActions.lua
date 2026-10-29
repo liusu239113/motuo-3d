@@ -85,9 +85,16 @@ function Actions:TalkTo(id)
 end
 function Actions:DeliveryResponse(pointId,pickup)
     if not self.city or not self.actor then return end
+    if self.deliveryPeople then
+        self.deliveryPeople:Update(0,self.actor,false)
+        self.deliveryPeople:Respond(pointId,pickup)
+    end
     if pointId=="breakfast" then
         self.city.contacts:Respond("breakfast_owner","handover")
         self.view:Say("早餐店老板",pickup and "单号对上了。热餐拿好，袋口我给你扎紧了。" or "辛苦了，路上慢点。")
+    elseif pointId=="dealer" then
+        self.city.contacts:Respond("mechanic","handover")
+        self.view:Say("车行师傅",pickup and "这一份核对好了，路上慢点。" or "午饭送到了，谢了！车先停稳，歇口气再走。")
     elseif pickup then
         self.view:Say(Config.points[pointId].label,"餐已经核对好了，拿稳再走。")
     else

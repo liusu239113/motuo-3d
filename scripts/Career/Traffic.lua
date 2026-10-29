@@ -95,6 +95,12 @@ function Traffic:Blockers()
     for id,p in pairs(a.parking) do
         if id~=a.vehicleId then list[#list+1]={x=p.x,z=p.z,radius=require("Career.VehicleData").Radii[id]} end
     end
+    local people=self.city.deliveryPeople
+    if people then
+        for _,person in ipairs(people.people) do
+            if person.active or person.hold>0 then list[#list+1]={x=person.x,z=person.z,radius=.4} end
+        end
+    end
     return list
 end
 function Traffic:ApplyContact(car)

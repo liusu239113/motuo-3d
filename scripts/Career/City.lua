@@ -11,6 +11,7 @@ local Stream = require("Career.WorldStream")
 local StreetDressing = require("Career.StreetDressing")
 ---@class CareerCity
 ---@field contacts CareerContacts
+---@field deliveryPeople? CareerDeliveryPeople
 ---@field streetDressing CareerStreetDressing
 ---@field stream CareerWorldStream
 ---@field FindFree fun(self:CareerCity,x:number,z:number,radius:number,mode?:string,height?:number):number,number
@@ -344,8 +345,9 @@ end
 
 function City:IsFree(x,z,radius,mode,height)
     if not self:StaticFree(x,z,radius,mode,height) then return false end
-    if self.space~="city" or not self.traffic or (mode=="walk" and (height or 0)>1) then return true end
-    return self.traffic:IsFree(x,z,radius)
+    if self.space~="city" or (mode=="walk" and (height or 0)>1) then return true end
+    if self.deliveryPeople and not self.deliveryPeople:IsFree(x,z,radius,mode,height) then return false end
+    return not self.traffic or self.traffic:IsFree(x,z,radius)
 end
 function City:StaticFree(x,z,radius,mode,height)
     if self.space~="city" then return self.interior:IsFree(x,z,radius) end

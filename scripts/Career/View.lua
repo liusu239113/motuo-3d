@@ -147,7 +147,7 @@ function View:Init(actions)
     self.conversation=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,padding=18,
         justifyContent="flex-end",alignItems="center",backgroundColor={0,0,0,25}})
     self.conversationBody=UI.Panel{id="career-conversation",width=620,maxWidth="92%",maxHeight="88%",
-        padding=16,gap=9,backgroundColor={10,16,21,238},borderColor=C.border,borderWidth=1}
+        padding=12,gap=6,backgroundColor={10,16,21,238},borderColor=C.border,borderWidth=1}
     self.conversation:AddChild(self.conversationBody)
     self.root:AddChild(self.conversation)
     self.speech=UI.Panel{id="career-street-speech",position="absolute",bottom="20%",left="24%",right="24%",
@@ -168,12 +168,15 @@ function View:ShowConversation(name,text,choices)
     self.speech:SetVisible(false); self.speechTime=0
     destroyChildren(self.conversationBody)
     self.conversationBody:AddChild(label("现场交谈 · "..name,17,C.amber,{id="career-conversation-name",fontWeight="bold"}))
-    self.conversationBody:AddChild(label(text,14,C.white,{id="career-conversation-line",whiteSpace="normal",maxLines=4}))
+    self.conversationBody:AddChild(label(text,13,C.white,{id="career-conversation-line",whiteSpace="normal",maxLines=4}))
+    local options=UI.Row{id="career-conversation-options",width="100%",flexWrap="wrap",gap=6,padding=0}
+    self.conversationBody:AddChild(options)
     for _,choice in ipairs(choices) do
-        self.conversationBody:AddChild(btn(choice.text,function()
+        options:AddChild(btn(choice.text,function()
             self:CloseConversation()
             if choice.onClick then choice.onClick() end
-        end,choice.primary,{id="career-conversation-"..choice.id,height=44,padding=5,fontSize=12}))
+        end,choice.primary,{id="career-conversation-"..choice.id,width="48%",flexGrow=1,flexShrink=1,
+            height=44,padding=5,fontSize=12}))
     end
     self.conversation:SetVisible(true)
 end
