@@ -9,7 +9,19 @@ local V = Vector3
 ---@field stats table
 ---@field ix number
 ---@field iz number
+---@class CareerStreamCandidate
+---@field ix number
+---@field iz number
+---@field distance number
 ---@class CareerWorldStream
+---@field Ensure fun(self:CareerWorldStream,x:number,z:number,radius?:number):table
+---@field Update fun(self:CareerWorldStream,x:number,z:number)
+---@field SetVisible fun(self:CareerWorldStream,visible:boolean)
+---@field Dispose fun(self:CareerWorldStream)
+---@field plan CareerStreamCandidate[]
+---@field planX number
+---@field planZ number
+---@field planBuilds number
 ---@field root Node
 ---@field mats table<string, Material>
 ---@field chunks table<string, CareerWorldChunk>
@@ -63,6 +75,8 @@ function Stream:Init(city)
     self.visible,self.disposed=true,false
     self.loaded,self.unloaded,self.failed=0,0,0
     self.x,self.z=0,0
+    self.planX,self.planZ=math.huge,math.huge
+    self.plan,self.planBuilds={},0
     for _,a in ipairs(architecture) do
         local model=cache:GetResource("Model",a.root.."Meshes/"..a.stem..".mdl")
         local source=cache:GetResource("Material",a.root.."Materials/"..a.material)
@@ -461,7 +475,12 @@ function Stream:Unload(k)
     self.unloaded=self.unloaded+1
     print("[WorldStream] 卸载 "..k)
 end
+---@param x number
+---@param z number
+---@param radius number
+---@return CareerStreamCandidate[]
 local function wanted(x,z,radius)
+    ---@type CareerStreamCandidate[]
     local list={}
     for ix=math.floor((x-radius)/256),math.floor((x+radius)/256) do
         for iz=math.floor((z-radius)/256),math.floor((z+radius)/256) do
@@ -476,6 +495,17 @@ local function wanted(x,z,radius)
         return a.distance<b.distance
     end)
     return list
+end
+-- 32m格内复用候选表；多取半格对角线覆盖量，再按实时距离过滤，边界不漏块。
+-- 静止和低速骑行不再每帧构造/排序几十个table，仍严格按550m半径加载。
+function Stream:Candidates(x,z)
+    local gx,gz=math.floor(x/32),math.floor(z/32)
+    if gx~=self.planX or gz~=self.planZ then
+        self.planX,self.planZ=gx,gz
+        self.plan=wanted(gx*32+16,gz*32+16,550+math.sqrt(2)*16)
+        self.planBuilds=self.planBuilds+1
+    end
+    return self.plan
 end
 ---@param x number
 ---@param z number
@@ -492,8 +522,10 @@ function Stream:Update(x,z)
     end
     if farKey~="" then self:Unload(farKey);return end
     if count>=Stream.MAX_ACTIVE then return end
-    for _,c in ipairs(wanted(x,z,550)) do
-        if not self.chunks[key(c.ix,c.iz)] then self:Load(c.ix,c.iz);return end
+    for _,c in ipairs(self:Candidates(x,z)) do
+        if cellDistance(c.ix,c.iz,x,z)<=550 and not self.chunks[key(c.ix,c.iz)] then
+            self:Load(c.ix,c.iz);return
+        end
     end
 end
 ---@param x number
@@ -521,7 +553,7 @@ function Stream:Stats()
     local result={active=0,loaded=self.loaded,unloaded=self.unloaded,failed=self.failed,
         batches=0,triangles=0,buildings=0,models=0,obstacles=0,signs=0,trees=0,markingQuads=0,
         cellSize=256,viewDistance=450,loadDistance=550,unloadDistance=850,maxActive=Stream.MAX_ACTIVE,
-        visible=self.visible,disposed=self.disposed,pending=0}
+        visible=self.visible,disposed=self.disposed,pending=0,planBuilds=self.planBuilds,candidates=#self.plan}
     for _,c in pairs(self.chunks) do
         result.active=result.active+1
         for _,field in ipairs({"batches","triangles","buildings","models","obstacles","signs","trees","markingQuads"}) do
@@ -529,7 +561,12 @@ function Stream:Stats()
         end
     end
     if not self.disposed then
-        for _,c in ipairs(wanted(self.x,self.z,550)) do if not self.chunks[key(c.ix,c.iz)] then result.pending=result.pending+1 end end
+        for _,c in ipairs(self:Candidates(self.x,self.z)) do
+            if cellDistance(c.ix,c.iz,self.x,self.z)<=550 and not self.chunks[key(c.ix,c.iz)] then
+                result.pending=result.pending+1
+            end
+        end
+        result.planBuilds,result.candidates=self.planBuilds,#self.plan
     end
     result.cells=result.active
     return result
@@ -541,6 +578,7 @@ function Stream:Dispose()
     for _,k in ipairs(keys) do self:Unload(k) end
     self.root:Dispose()
     for _,a in ipairs(self.models) do if a.material then a.material:Dispose() end end
+    self.plan={}
     self.models={};self.disposed=true;self.visible=false
 end
 return Stream

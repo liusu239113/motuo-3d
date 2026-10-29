@@ -43,7 +43,10 @@ local Housing = require("Career.HousingData")
 for _,home in ipairs(Housing.List) do
     if home.width then Config.pointList[#Config.pointList+1]={id=home.point,label=home.name.."入口",kind="housing",x=home.x,z=home.z} end
 end
-for _, point in ipairs(World.Points) do Config.pointList[#Config.pointList+1]=point end
+for _, point in ipairs(World.Points) do
+    local cityPoint=point --[[@as CareerPoint]]
+    Config.pointList[#Config.pointList+1]=cityPoint
+end
 ---@type table<string, CareerPoint>
 Config.points = {}
 for _, point in ipairs(Config.pointList) do

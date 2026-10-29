@@ -79,8 +79,10 @@ function Actions:LeaveHousing()
     if not ok then self.view:Notice(message); return false end
     self:ApplySpace("city")
     local x,z=self.city:FindFree(pos.x,pos.z,.32)
+    assert(z,"城市入口缺少Z坐标")
     self.actor:Teleport(x,z,pos.yaw); self.yaw=pos.yaw
-    self.city.stream:Ensure(x,z,550)
+    local stream=self.city.stream --[[@as CareerWorldStream]]
+    stream:Ensure(x,z,550)
     self.view:ClosePhone(); self.view:ResetInput(); self:Refresh(); self.view:Notice(message)
     print("[生涯住房] 出门，停车坐标未改变")
     return true

@@ -21,6 +21,31 @@ local function btn(text,click,primary,props)
 end
 local function full(props) return UI.Panel(Theme.Full(props)) end
 local function money(cents) return string.format("¥ %.2f",cents/100) end
+---@param parent Widget
+local function destroyChildren(parent)
+    -- ClearChildren 只脱离父节点；地图切区/切页必须释放旧 Yoga 子树。
+    for i=parent:GetNumChildren(),1,-1 do
+        local child=parent:GetChildAt(i)
+        if child then child:Destroy() end
+    end
+end
+local function mapPosition(state,actor)
+    local pos=state.position
+    if state.currentSpace and state.currentSpace~="city" then
+        return {x=pos.cityX or 0,z=pos.cityZ or -20,yaw=pos.cityYaw or 0}
+    end
+    return actor or pos
+end
+local function mapDistricts()
+    local districts={World.District(0,0)} -- 老街不是 World.Districts 的外区条目。
+    for _,district in ipairs(World.Districts) do districts[#districts+1]=district end
+    districts[#districts+1]=World.District(World.LIMIT-1,World.LIMIT-1)
+    return districts
+end
+local function mapDistance(distance)
+    return distance>=1000 and string.format("%.1f公里",distance/1000) or string.format("%.0f米",distance)
+end
+local MAP_PAGE_SIZE=6
 
 ---@class CareerView
 ---@field phoneContent ScrollView
@@ -44,6 +69,10 @@ function View:Init(actions)
         end
     end
     self.phonePage=""
+    -- 只属于本次手机会话，不写入 Store/云档；切页保留，收起后重新定位。
+    self.mapDistrictId=""
+    self.mapPointPage=1
+    self.mapPickerOpen=false
     self.blocked=false
     -- 与原竞速共用组件、图片、多指归属和玩家操作方案；实例分开，避免覆盖旧HUD的控件引用。
     self.controls=MobileControls.New()
@@ -117,9 +146,10 @@ function View:Init(actions)
     self.root:AddChild(self.overlay); self.root:AddChild(self.notice)
 end
 function View:ShowHome(hasSave,message)
+    self:ClosePhone()
     self.home:SetVisible(true); self.game:SetVisible(false); self.phone:SetVisible(false); self.overlay:SetVisible(false)
     self.phonePage=""; self.blocked=true; self.controls:SetEnabled(false)
-    self.homeActions:ClearChildren()
+    destroyChildren(self.homeActions)
     self.homeActions:AddChild(btn(hasSave and "继续王二狗的生涯" or "开始生涯 · 身上只有50元",function() self.actions.startCareer(false) end,true,{id="career-start"}))
     if hasSave then self.homeActions:AddChild(btn("重新开始生涯",function() self.actions.startCareer(true) end,false)) end
     self.homeActions:AddChild(btn("独立竞速 / 旧存档",self.actions.legacy,false))
@@ -136,7 +166,7 @@ end
 function View:ShowDialog(title,text,buttons)
     self:ResetInput(); self.controls:SetEnabled(false)
     self.blocked=true; self.overlay:SetVisible(true)
-    self.dialogBody:ClearChildren()
+    destroyChildren(self.dialogBody)
     self.dialogBody:AddChild(label(title,21,C.amber,{fontWeight="bold",whiteSpace="normal"}))
     self.dialogBody:AddChild(label(text,13,C.white,{whiteSpace="normal",maxLines=14}))
     for _,item in ipairs(buttons) do
@@ -154,18 +184,125 @@ end
 function View:IsBlocking() return self.blocked or self.phonePage~="" end
 function View:ClosePhone()
     self.phone:SetVisible(false); self.phonePage=""; self:ResetInput()
+    destroyChildren(self.phoneContent)
+    self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
     self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
 function View:OpenPhone(page,state,offer,active)
+    if self.phonePage=="" then
+        self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
+    end
+    if self.phonePage~=(page or "apps") then self.phoneContent:ScrollToTop() end
     self:ResetInput(); self.controls:SetEnabled(false); self.phonePage=page or "apps"; self.phone:SetVisible(true)
     self:BuildPhone(state,offer,active)
 end
+-- 地图主体只在切页时创建；切区/分页只重建小型地点树，概览与区域选择器不重建。
+function View:BuildMapPhone(content,state,active)
+    local pos=mapPosition(state,self.lastActor)
+    local current=World.District(pos.x,pos.z)
+    local districts=mapDistricts()
+    local selected=current
+    for _,district in ipairs(districts) do
+        if district.id==self.mapDistrictId then selected=district; break end
+    end
+    self.mapDistrictId=selected.id
+    content:AddChild(label("当前区 · "..current.label,12,C.cyan,{id="career-map-current",whiteSpace="normal"}))
+    if state.currentSpace and state.currentSpace~="city" then
+        content:AddChild(label("室内 · 按城市入口定位与计距；请先到房门旁出门，再沿城市导航前往。",11,C.amber,
+            {id="career-map-indoor",whiteSpace="normal"}))
+    end
+    local chooser=btn("",function() end,false,{id="career-map-region-toggle",height=44,padding=4})
+    content:AddChild(chooser)
+    -- 有界折叠按钮组避免 Dropdown 浮层在窄手机屏上越界；每次仅创建14个真实区域按钮。
+    local picker=UI.Panel{id="career-map-regions",width="100%",padding=0,gap=4,visible=self.mapPickerOpen}
+    content:AddChild(picker)
+    local points=UI.Panel{id="career-map-points",width="100%",padding=0,gap=7}
+    content:AddChild(points)
+    local function updateChooser()
+        chooser:SetText((self.mapPickerOpen and "收起区域 · " or "选择区域 · ")..selected.label
+            ..(selected.id==current.id and "（当前区）" or ""))
+        picker:SetVisible(self.mapPickerOpen)
+    end
+    local function refreshPoints()
+        destroyChildren(points)
+        ---@type CareerPoint[]
+        local matches={}
+        for _,point in ipairs(Config.pointList) do
+            if selected.id=="greenbelt" or World.District(point.x,point.z).id==selected.id then
+                matches[#matches+1]=point
+            end
+        end
+        table.sort(matches,function(left,right)
+            local a=(left.x-pos.x)^2+(left.z-pos.z)^2
+            local b=(right.x-pos.x)^2+(right.z-pos.z)^2
+            return a==b and left.id<right.id or a<b
+        end)
+        if selected.id=="greenbelt" then
+            while #matches>4 do table.remove(matches) end
+        end
+        local pages=math.max(1,math.ceil(#matches/MAP_PAGE_SIZE))
+        self.mapPointPage=math.max(1,math.min(self.mapPointPage,pages))
+        points:AddChild(label(selected.label.." · "..#matches.."处"..(selected.id==current.id and " · 当前区" or ""),13,C.amber,
+            {id="career-map-selected",whiteSpace="normal"}))
+        points:AddChild(label(selected.id=="greenbelt"
+            and "绿带无固定服务点：以下为距你最近的4处真实地点，按所属区标注。"
+            or "按距你远近排列；距离为直线参考，不是道路里程。",10,C.muted,
+            {id="career-map-distance-note",whiteSpace="normal"}))
+        if selected.id=="greenbelt" then
+            points:AddChild(label("跨区距离按你当前城市位置计算（室内按入口）；不代表绿带内有店。",10,C.muted,{whiteSpace="normal"}))
+        end
+        local first=(self.mapPointPage-1)*MAP_PAGE_SIZE+1
+        for index=first,math.min(#matches,first+MAP_PAGE_SIZE-1) do
+            local point=assert(matches[index])
+            local id=point.id
+            local district=World.District(point.x,point.z)
+            local distance=math.sqrt((point.x-pos.x)^2+(point.z-pos.z)^2)
+            local row=btn("",function() self.actions.setWaypoint(id); self.actions.closePhone() end,false,
+                {id="career-map-poi-"..id,height=60,padding=5,gap=2,justifyContent="center",alignItems="stretch"})
+            row:AddChild(label(point.label,11,C.white,{whiteSpace="normal",maxLines=2}))
+            row:AddChild(label((district.id~=current.id and "跨区 · "..district.label.." · " or "本区 · ")
+                .."直线 "..mapDistance(distance),10,C.muted,{id="career-map-distance-"..id,whiteSpace="normal"}))
+            points:AddChild(row)
+        end
+        if pages>1 then
+            points:AddChild(label(string.format("地点 %d/%d 页 · 每页最多%d处",self.mapPointPage,pages,MAP_PAGE_SIZE),10,C.muted,
+                {id="career-map-pagination"}))
+            local nav=UI.Row{width="100%",gap=5,padding=0}
+            local function turn(delta)
+                self.mapPointPage=self.mapPointPage+delta
+                refreshPoints()
+            end
+            nav:AddChild(btn("上一页",function() turn(-1) end,false,{id="career-map-prev",width="48%",height=44,
+                disabled=self.mapPointPage==1,padding=0}))
+            nav:AddChild(btn("下一页",function() turn(1) end,false,{id="career-map-next",width="48%",height=44,
+                disabled=self.mapPointPage==pages,padding=0}))
+            points:AddChild(nav)
+        end
+    end
+    chooser.props.onClick=function()
+        self.mapPickerOpen=not self.mapPickerOpen
+        updateChooser()
+    end
+    for _,district in ipairs(districts) do
+        local choice=district
+        picker:AddChild(btn(choice.label..(choice.id==current.id and " · 当前区" or ""),function()
+            selected=choice; self.mapDistrictId=choice.id; self.mapPointPage=1; self.mapPickerOpen=false
+            updateChooser(); refreshPoints(); self.phoneContent:ScrollToTop()
+        end,false,{id="career-map-region-"..choice.id,height=44,padding=2,fontSize=11}))
+    end
+    updateChooser(); refreshPoints()
+    content:AddChild(label("全城概览 · 30公里跨度",12,C.amber,{id="career-map-overview-title"}))
+    local map=Map.New("career-phone-map",true)
+    map.root:SetStyle{width="100%",height=220}
+    content:AddChild(map.root)
+    local target=self.lastTarget
+    if state.currentSpace and state.currentSpace~="city" then target=nil end
+    map:SetTelemetry(pos,target,active)
+    content:AddChild(label("全城道路连通，亲自骑行探索；主屏小地图跟随当前位置。",11,C.muted,{whiteSpace="normal"}))
+end
 function View:BuildPhone(state,offer,active)
     print("[生涯手机] 构建页面 "..self.phonePage)
-    for i=self.phoneContent:GetNumChildren(),1,-1 do
-        local child=self.phoneContent:GetChildAt(i)
-        if child then child:Destroy() end
-    end
+    destroyChildren(self.phoneContent)
     local content=UI.Panel{width="100%",padding=0,gap=11}
     self.phoneContent:AddChild(content)
     local a=self.actions
@@ -206,23 +343,7 @@ function View:BuildPhone(state,offer,active)
             button("抢单 / 接单",a.accept,true,"career-accept")
         else text("上线后接收本地城市配送订单。",12,C.muted) end
     elseif page=="map" then
-        local map=Map.New("career-phone-map",true); map.root:SetStyle{width="100%",height=220}
-        content:AddChild(map.root)
-        if state.currentSpace and state.currentSpace~="city" then
-            local pos=state.position
-            map:SetTelemetry({x=pos.cityX,z=pos.cityZ,yaw=pos.cityYaw},nil,active)
-            text("你正在室内，地图标记为进入住处的位置。请先走到房门旁出门，再按城市导航前往目的地。",11,C.amber)
-        else
-            map:SetTelemetry(self.lastActor or state.position,self.lastTarget,active)
-        end
-        text("全城30公里跨度 · 路线连通，各区需要亲自骑行探索。",12,C.amber)
-        text("主屏小地图跟随当前位置；本页为全城概览。外区只派附近商家的订单。",11,C.muted)
-        for _,district in ipairs(World.Districts) do
-            text(district.label,14,C.cyan)
-        end
-        for _,point in ipairs(Config.pointList) do
-            local id=point.id; button(point.label,function() a.setWaypoint(id); a.closePhone() end,false)
-        end
+        self:BuildMapPhone(content,state,active)
     elseif page=="wallet" then
         text(money(state.cashCents),28,C.amber)
         text("生活现金 · 不与独立竞速金币兑换",11,C.muted)

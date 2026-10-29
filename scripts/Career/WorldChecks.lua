@@ -320,10 +320,29 @@ function Checks.Stream(session,far,nearDistrict)
         assert(first.loaded-first.unloaded==first.active,"流式加载/卸载计数不平衡")
         assert(stream.root:GetNumChildren(false)==first.cells,"流式块根节点与Stats数量不一致")
         assert(first.batches>0 and first.triangles>0,"未生成真实流式几何")
+        -- 32m候选格的四角/负坐标仍覆盖实时550m圆，缓存不得漏掉边缘块。
+        local gridX,gridZ=math.floor(d.x/32)*32,math.floor(d.z/32)*32
+        for _,offset in ipairs({{.01,.01},{31.99,.01},{.01,31.99},{31.99,31.99}}) do
+            local px,pz=gridX+offset[1],gridZ+offset[2]
+            local found={}
+            for _,c in ipairs(stream:Candidates(px,pz)) do found[c.ix..":"..c.iz]=true end
+            for ix=math.floor((px-550)/256),math.floor((px+550)/256) do
+                for iz=math.floor((pz-550)/256),math.floor((pz+550)/256) do
+                    local dx=math.max(ix*256-px,0,px-(ix+1)*256)
+                    local dz=math.max(iz*256-pz,0,pz-(iz+1)*256)
+                    if dx*dx+dz*dz<=550^2 then
+                        assert(found[ix..":"..iz],"候选缓存遗漏550m边缘块")
+                    end
+                end
+            end
+        end
+        first=stream:Stats()
         -- 同一位置重复Ensure/Update必须不增长，避免为测试重复建两轮城市。
+        local planBuilds=first.planBuilds
         stream:Ensure(d.x,d.z,550)
-        for _=1,3 do stream:Update(d.x,d.z) end
+        for _=1,300 do stream:Update(d.x,d.z) end
         local second=stream:Stats()
+        assert(second.planBuilds==planBuilds,"静止300帧不应重复分配排序流式候选表")
         for _,field in ipairs({"cells","active","batches","triangles","buildings","models","obstacles","signs","trees","loaded","unloaded"}) do
             assert(type(first[field])=="number","WorldStream.Stats 缺少 "..field)
             near(first[field],second[field],.5,"重复预热Stats增长："..field)

@@ -9,6 +9,8 @@ local Signals = require("Career.TrafficSignals")
 local World = require("Career.WorldData")
 local Stream = require("Career.WorldStream")
 ---@class CareerCity
+---@field stream CareerWorldStream
+---@field FindFree fun(self:CareerCity,x:number,z:number,radius:number,mode?:string,height?:number):number,number
 ---@field SetSpace fun(self:CareerCity,id:string)
 ---@field UpdateLights fun(self:CareerCity,hour:number)
 ---@field WalkSurface fun(self:CareerCity,x:number,z:number,height?:number):number
@@ -345,6 +347,12 @@ function City:StaticFree(x,z,radius,mode,height)
     return true
 end
 
+---@param x number
+---@param z number
+---@param radius number
+---@param mode? string
+---@param height? number
+---@return number,number
 function City:FindFree(x,z,radius,mode,height)
     if self.space~="city" then return self.interior:FindFree(x,z,radius) end
     local limit=World.LIMIT-radius

@@ -237,14 +237,21 @@ function Session:BuildWorld()
     if Store.Get().phase=="opening" then self:Intro() end
     if self.options.test then
         local contact,worldShot=false,""
-        local storyChecks=false
+        local storyChecks,optimizeChecks=false,false
         for _,arg in ipairs(GetArguments()) do
+            if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
             if arg=="-careercontact" then contact=true end
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if storyChecks then
+        if optimizeChecks then
+            self.view:ClosePhone(); self.view:ShowGame()
+            require("Career.WorldChecks").Run(self)
+            require("Career.MapPhoneChecks").Run(self)
+            require("Career.OuterSignalChecks").Run(self)
+            print("[本轮优化验收通过] 流式缓存/分区地图/外区信号")
+        elseif storyChecks then
             self.view:ClosePhone(); self.view:ShowGame()
             require("Career.TeamChecks").Run()
             require("Career.EngagementChecks").Run()
@@ -441,8 +448,12 @@ function Session:RestorePosition()
     self.cityX,self.cityZ,self.cityYaw=p.cityX or p.x,p.cityZ or p.z,p.cityYaw or p.yaw
     self:ApplySpace(p.space or "city")
     local x,z=self.city:FindFree(p.x,p.z,p.mounted and a:VehicleRadius() or .32,p.mounted and "vehicle" or "walk",p.groundHeight)
+    assert(z,"存档恢复缺少Z坐标")
     a:Teleport(x,z,p.yaw,p.groundHeight); self.yaw=p.yaw
-    if self.space=="city" then self.city.stream:Ensure(x,z,550) end
+    if self.space=="city" then
+        local stream=self.city.stream --[[@as CareerWorldStream]]
+        stream:Ensure(x,z,550)
+    end
 end
 function Session:SaveCloud()
     self:SavePosition()

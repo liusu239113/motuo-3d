@@ -100,12 +100,14 @@ function Checks.Run(session)
     assert(session.options.test==true and type(session.restoreTestStorage)=="function",
         "OuterChecks requires Session.New({test=true}) memory storage; never run on a real save")
     local actor,city,traffic,camera=assert(session.actor),assert(session.city),assert(session.traffic),assert(session.camera)
-    local outer=assert(traffic.outer,"outer traffic not installed")
+    local outer=assert(traffic.outer,"outer traffic not installed") --[[@as CareerOuterTraffic]]
     assert(not traffic.disposed and not outer.disposed,"traffic already disposed")
     local started=os.clock()
     local originalStore=Store.Get()
     local originalActor=shallow(actor)
     local originalOuter=shallow(outer)
+    local signals=outer.signals --[[@as OuterSignalSystem]]
+    local signalTime=signals.time
     -- Release removes array entries, so retain independent array snapshots.
     for _,field in ipairs({"cars","people","carPool","peoplePool","lanes"}) do originalOuter[field]=shallow(outer[field]) end
     local cars,people=capture(outer.carPool),capture(outer.peoplePool)
@@ -244,6 +246,7 @@ function Checks.Run(session)
         traffic.time,traffic.nearOld,traffic.pedestrians.poseTime=previous.time,previous.nearOld,previous.poseTime
         city.signals:Update(previous.time)
         traffic.root:SetEnabledRecursive(previous.root); outer.root:SetEnabledRecursive(previous.outerRoot)
+        signals:Update(signalTime,actor.x,actor.z,originalOuter.active and previous.space=="city")
         -- Parent recursive visibility can enable idle slots: restore per-slot visibility last.
         restoreItems(cars); restoreItems(people)
         session.online,session.yaw,session.pitch=previous.online,previous.yaw,previous.pitch

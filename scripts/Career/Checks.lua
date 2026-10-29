@@ -384,6 +384,8 @@ function Checks.RunWorld(session)
     require("Career.MediaChecks").Run(session)
     require("Career.TrafficChecks").Run(session)
     require("Career.OuterChecks").Run(session)
+    require("Career.OuterSignalChecks").Run(session)
+    require("Career.MapPhoneChecks").Run(session)
     session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end

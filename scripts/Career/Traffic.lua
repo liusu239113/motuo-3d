@@ -188,6 +188,9 @@ function Traffic:Update(dt)
     self.outer:Update(duration,blockers)
 end
 function Traffic:Hint(x,z,yaw)
+    local outer=self.outer --[[@as CareerOuterTraffic]]
+    local outerHint=outer and outer:Hint(x,z,yaw)
+    if outerHint then return outerHint end
     local axis=math.abs(math.cos(math.rad(yaw)))>=.7 and "ns" or "ew"
     local best=math.huge
     for _,j in ipairs(Routes.Junctions) do

@@ -1,6 +1,7 @@
 -- 外区旁观交通：共享WorldData道路，固定6车/4人槽位，不建立全城实体或通用寻路。
 -- 基于现有TrafficRoutes连续环线和Pedestrians距离驱动步态；老街数组不参与此池。
 local World=require("Career.WorldData")
+local Signals=require("Career.OuterSignals")
 local Assets=require("VehicleAssets")
 local Contact=require("Career.VehicleContact")
 local Pedestrians=require("Career.Pedestrians")
@@ -39,6 +40,26 @@ local Rig=require("Career.Rig")
 ---@field travelled number
 ---@field path number[]
 ---@field length number
+---@class CareerOuterTraffic
+---@field signals OuterSignalSystem
+---@field time number
+---@field root Node
+---@field cars OuterTrafficCar[]
+---@field people OuterTrafficPerson[]
+---@field carPool OuterTrafficCar[]
+---@field peoplePool OuterTrafficPerson[]
+---@field lanes table[]
+---@field disposed boolean
+---@field active boolean
+---@field steps number
+---@field poseTime number
+---@field recycled number
+---@field Hint fun(self:CareerOuterTraffic,x:number,z:number,yaw:number):string?
+---@field Separate fun(self:CareerOuterTraffic,car:table):boolean
+---@field IsFree fun(self:CareerOuterTraffic,x:number,z:number,r:number):boolean
+---@field Update fun(self:CareerOuterTraffic,dt:number,blockers:table[])
+---@field Stats fun(self:CareerOuterTraffic):table
+---@field Dispose fun(self:CareerOuterTraffic)
 local Outer={}
 Outer.__index=Outer
 Outer.CAR_BUDGET,Outer.PEOPLE_BUDGET=6,4
@@ -52,7 +73,8 @@ Outer.CAR_RANGE,Outer.PEOPLE_RANGE=260,145
 -- OBB用沿车长的一串外包圆覆盖整个矩形查询City.StaticFree（含World静态域），
 -- 与玩家/停车/行人用圆-OBB，与所有车辆用4轴SAT；位移子步<=.10m。
 -- 擦边、长货车车角、路端掉头均提交前检测；失败留在原位，不穿墙/推玩家。
--- 路口无实体灯：东西向优先、已入场车先清空，最终SAT兜底，不虚构红绿灯。
+-- 仅12区中心路口有真实实体信号；其它路口保留东西向优先、已入场先清空。
+-- 信号停车按异向有效半宽+5.6m的既有白线与车头计算，最终SAT兜底。
 local function distance2(x,z,p) return (x-p.x)^2+(z-p.z)^2 end
 local function localPoint(car,x,z)
     local a=math.rad(car.yaw)
@@ -101,6 +123,7 @@ function Outer.StaticFree(city,car)
     return true
 end
 
+---@return CareerOuterTraffic
 function Outer.New(owner)
     local self=setmetatable({},Outer)
     self:Init(owner)
@@ -122,6 +145,8 @@ function Outer:Init(owner)
     self.time,self.scanTime,self.poseTime=0,0,0
     self.scanX,self.scanZ=math.huge,math.huge
     self.active,self.disposed=false,false
+    ---@type OuterSignalSystem
+    self.signals=Signals.New(self)
     self.spawned,self.recycled,self.contactSolves,self.rejected,self.steps=0,0,0,0,0
     -- 接地显式使用共享WorldData，不依赖已stream的道路/建筑实体或老街surface缓存。
     self.ground={Surface=function(_,x,z) return World.Surface(x,z,"vehicle",0) end} --[[@as CareerCity]]
@@ -350,7 +375,7 @@ function Outer:Fill(blockers)
 end
 
 function Outer:Gap(car,blockers)
-    local gap=math.huge
+    local gap=self.signals:Gap(car,self.cars)
     for _,other in ipairs(self.cars) do
         if other~=car then
             local u,v=localPoint(car,other.x,other.z)
@@ -368,7 +393,7 @@ function Outer:Gap(car,blockers)
                 local oa,of=localPoint(other,cx,cz)
                 local stop=other.route.width/2+2+car.length/2
                 local occupied=math.abs(other.x-cx)<other.length/2+car.route.width/2+1 and math.abs(other.z-cz)<other.length/2+car.route.width/2+1
-                if math.abs(across)<car.route.width/2 and math.abs(oa)<other.route.width/2 and forward>=stop-.02
+                if not Signals.Find(cx,cz) and math.abs(across)<car.route.width/2 and math.abs(oa)<other.route.width/2 and forward>=stop-.02
                     and (occupied or (car.route.axis=="ns" and of>0 and of<35)) then
                     gap=math.min(gap,math.max(0,forward-stop))
                 end
@@ -382,7 +407,10 @@ function Outer:Gap(car,blockers)
     return math.max(0,gap)
 end
 function Outer:Step(dt,blockers)
+    if self.disposed or dt<=0 or dt~=dt or dt==math.huge then return end
     self.steps=self.steps+1
+    self.time=self.time+dt
+    self.signals:SetTime(self.time)
     for _,car in ipairs(self.cars) do
         local gap=self:Gap(car,blockers)
         local target=math.min(car.cruise,math.sqrt(gap*5))
@@ -393,7 +421,8 @@ function Outer:Step(dt,blockers)
         if (s>straight-14 and s<straight+arc) or s>2*straight+arc-14 then target=math.min(target,2.2) end
         local speed=car.speed<target and math.min(target,car.speed+1.8*dt) or math.max(target,car.speed-3.8*dt)
         local travel=math.min((car.speed+speed)*.5*dt,gap)
-        car.speed=speed
+        -- 最后一次位移被停止线截断时同步归零，下一帧不保留虚假的爬行速度。
+        car.speed=travel>=gap-Signals.EPSILON and 0 or speed
         local count=math.max(1,math.ceil(travel/.1))
         for _=1,count do
             local old=car.s
@@ -435,12 +464,13 @@ function Outer:Walk(dt,blockers)
     end
 end
 function Outer:Update(dt,blockers)
-    if self.disposed or self.city.space~="city" or not self.owner.active or dt<=0 or dt~=dt then return end
+    if self.disposed or self.city.space~="city" or not self.owner.active or dt<=0 or dt~=dt or dt==math.huge then return end
     self.active=not oldArea(self.actor.x,self.actor.z)
     -- City:SetSpace会递归启用子节点，故每次恢复只让inUse槽位可见。
     visible(self.root,self.active)
     for _,car in ipairs(self.carPool) do visible(car.node,car.inUse and self.active) end
     for _,p in ipairs(self.peoplePool) do visible(p.node,p.inUse and self.active) end
+    self.signals:Update(self.time,self.actor.x,self.actor.z,self.active)
     if not self.active then
         for i=#self.cars,1,-1 do self:ReleaseCar(i) end
         for i=#self.people,1,-1 do self:ReleasePerson(i) end
@@ -448,8 +478,8 @@ function Outer:Update(dt,blockers)
     end
     local viewport=renderer:GetViewport(0)
     self.camera=viewport and viewport:GetCamera() or nil
-    self.time=self.time+dt
-    self.scanTime=self.scanTime+dt
+    local duration=math.min(dt,.25)
+    self.scanTime=self.scanTime+duration
     for i=#self.cars,1,-1 do
         local c=self.cars[i]
         if distance2(c.x,c.z,self.actor)>Outer.CAR_RANGE^2 then self:ReleaseCar(i) end
@@ -461,21 +491,26 @@ function Outer:Update(dt,blockers)
     if self.scanTime>=1 or (self.actor.x-self.scanX)^2+(self.actor.z-self.scanZ)^2>64^2 then
         self.scanTime=0; self:Scan(); self:Fill(blockers)
     end
-    local duration=math.min(dt,.25)
     local count=math.max(1,math.ceil(duration*60))
     for _=1,count do self:Step(duration/count,blockers) end
     for _,car in ipairs(self.cars) do self:ApplyContact(car) end
     self:Walk(duration,blockers)
 end
+function Outer:Hint(x,z,yaw)
+    if self.disposed then return nil end
+    return self.signals:Hint(x,z,yaw)
+end
 function Outer:Stats()
     return {cars=#self.cars,people=#self.people,carBudget=Outer.CAR_BUDGET,peopleBudget=Outer.PEOPLE_BUDGET,
         pooledCars=#self.carPool,pooledPeople=#self.peoplePool,lanes=#self.lanes,active=self.active,disposed=self.disposed,
         time=self.time,spawned=self.spawned,recycled=self.recycled,rejected=self.rejected,contactSolves=self.contactSolves,
-        steps=self.steps,legacyFrozen=not self.owner.nearOld,signalized=false}
+        steps=self.steps,legacyFrozen=not self.owner.nearOld,signalized=true,
+        signalJunctions=#Signals.Junctions,signals=self.signals:Stats(),signalCoverage="district-centres-only"}
 end
 function Outer:Dispose()
     if self.disposed then return end
     self.disposed=true; self.active=false
+    self.signals:Dispose()
     for _,p in ipairs(self.peoplePool) do p.rig:Dispose() end
     self.root:Dispose()
     self.cars,self.people,self.carPool,self.peoplePool,self.lanes={},{},{},{},{}
