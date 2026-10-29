@@ -6,6 +6,11 @@ local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
 ---@class CareerRig : Rider
 ---@field soleVertices table<string, table[]>
 ---@field ground CareerCity?
+---@field feet table<string, Vector3>
+---@field soleOffsets table<string, number>
+---@field walkPhase number
+---@field walkWeight number
+---@field walkRun number
 local Rig={}
 Rig.__index=Rig
 setmetatable(Rig,{__index=Rider})
@@ -87,6 +92,10 @@ function Rig:InitCareer(parent,asset)
             end
         end
     end
+    -- 绑定态真实鞋底到踝点的距离，IK先给出接近正确的目标，再用蒙皮鞋底校正。
+    self.soleOffsets={}
+    for name,foot in pairs(self.feet) do self.soleOffsets[name]=foot.y-self:SoleHeight(name) end
+    self.walkPhase,self.walkWeight,self.walkRun=0,0,0
     -- 只缓存鞋部顶点，不在每帧读回整个人物VB；矩阵按骨名在本次求值内复用。
     print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
 end
@@ -124,69 +133,114 @@ function Rig:PoseRide(steer)
     self.mesh.position=self.config.hip-self:GetBonePosition("Hip")
     self:ApplyPose(steer)
 end
-function Rig.CycleLength(weight,run)
-    return 4*(.30+.08*math.max(0,math.min(1,run or 0)))*math.max(.01,weight)
+local function unit(value) return math.max(0,math.min(1,value or 0)) end
+
+-- 一整圈为同一只脚两次落地。支撑占比从走路双支撑(.56)变为跑步腾空(.44)。
+-- 步幅/支撑时间/距离驱动必须使用同一组数据；跑步不是把走路简单加速。
+function Rig.Gait(weight,run)
+    local w,r=unit(weight),unit(run)
+    return (.30+.10*r)*w,.56-.12*r,(.075+.25*r)*w
 end
+function Rig.CycleLength(weight,run)
+    local stride,duty=Rig.Gait(math.max(.01,unit(weight)),run)
+    return 2*stride/duty
+end
+
+---@param phase number 弧度，左脚落地=0，右脚落地=pi
+---@param weight number 慢走到正常步幅[0,1]
+---@param run? number 正常走到跑步[0,1]
+---@param side number 左=-1，右=1
+---@return number, number, boolean, number, number
+function Rig.FootCycle(phase,weight,run,side)
+    local stride,duty,height=Rig.Gait(weight,run)
+    local t=(phase/(2*math.pi)+(side==1 and .5 or 0))%1
+    if t<duty then
+        local u=t/duty
+        -- heel strike -> flat plant -> toe off；脚底仍由真实蒙皮最低点校正。
+        local pitch=(-10*math.max(0,1-u*5)+18*math.max(0,(u-.72)/.28))*unit(weight)
+        return stride*(1-2*u),0,true,t,pitch
+    end
+    local u=(t-duty)/(1-duty)
+    local smooth=u*u*(3-2*u)
+    local lift=math.sin(u*math.pi)*height
+    -- 跑步收小腿、抬膝前送；先收脚再伸腿落地，左右半周期交替。
+    local pitch=(18*(1-u)-10*u+12*math.sin(u*math.pi))*unit(weight)
+    return stride*(-1+2*smooth),lift,false,t,pitch
+end
+
 function Rig:PoseWalk(phase,weight,run)
     self:Reset()
-    local w=math.max(0,math.min(1,weight))
-    local r=math.max(0,math.min(1,run or 0))
-    -- 慢走、常速和慢跑共用实际距离驱动；步幅和循环长度必须同源。
-    -- 支撑脚向后匀速，摆动脚前送；左右脚分别查询地面，跨路沿时不整人抬起。
-    local stride=(.30+.08*r)*w
+    local w,r=unit(weight),unit(run)
+    self.walkPhase,self.walkWeight,self.walkRun=phase,w,r
+    local stride=Rig.Gait(w,r)
+    local beat=math.sin(phase*2)
     self.mesh.position=self.standOffset
+    -- Pelvis与Waist为兄弟。骨盆顺着前送腿转，胸肩反向抵消，头保持看前方。
+    local pelvisYaw=math.cos(phase)*5*w
+    local chestYaw=-math.cos(phase)*(5+5*r)*w
+    self:SetBodyRotation("Pelvis",0,pelvisYaw,beat*1.2*w)
     ---@type Vector3[]
     local targets={}
-    local soleTargets={}
-    local drop=.025*w
+    local soles,pitches={},{}
+    local drop=.025*w+.025*r*w
     local hipZ=self:GetBonePosition("Hip").z
     for i,chain in ipairs(self.legs) do
-        local t=((phase/(2*math.pi))+(chain.side==1 and .5 or 0))%1
-        local z,lift
-        if t<.5 then
-            z=stride*(1-4*t); lift=0
-        else
-            local u=(t-.5)*2
-            local smooth=u*u*(3-2*u)
-            z=stride*(-1+2*smooth);lift=math.sin(u*math.pi)*(.09+.07*r)*w
-        end
+        local z,lift,_,_,pitch=Rig.FootCycle(phase,w,r,chain.side)
         local foot=self.feet[chain.tip]
-        -- 脚踝绑定点偏在髋后，行走以髋为跨步中心，避免每次后蹬都被迫蹲身。
-        local target=foot+V(0,lift,z+(hipZ-foot.z)*w)
+        local centerZ=foot.z+(hipZ-foot.z)*w
+        local target=V(foot.x,self.soleOffsets[chain.tip]+lift,centerZ+z)
         local groundDelta=0
         if self.ground then
             local world=self.parent.worldTransform*target
             local ground=self.ground --[[@as CareerCity]]
             groundDelta=ground:WalkSurface(world.x,world.z,self.parent.worldPosition.y)-self.parent.worldPosition.y
         end
-        local grounded=target+V(0,groundDelta,0)
-        targets[i]=grounded
-        soleTargets[i]=lift+groundDelta
+        targets[i]=target+V(0,groundDelta,0)
+        soles[i],pitches[i]=lift+groundDelta,pitch
         local root=self:GetBonePosition(chain.upper)
-        local dx,dz=grounded.x-root.x,grounded.z-root.z
-        local reach=(chain.lengthA+chain.lengthB)*.985
+        -- 以整段支撑最远处算髋高，不在每一步末端临时蹲下，不拉伸/平移腿骨。
+        -- 留1.5cm给鞋底蒙皮及脚踝转动；不同身高/路沿两脚分别计算可达范围。
+        local dx=foot.x-root.x
+        local dz=math.abs(centerZ-root.z)+stride
+        local reach=(chain.lengthA+chain.lengthB)*.975
         local vertical=math.sqrt(math.max(.01,reach*reach-dx*dx-dz*dz))
-        drop=math.max(drop,root.y-grounded.y-vertical)
+        drop=math.max(drop,root.y-(self.soleOffsets[chain.tip]+groundDelta-.015)-vertical)
     end
-    self.mesh.position=self.standOffset-V(0,drop,0)
-    self:SetBodyRotation("Waist",(4+7*r)*w,math.sin(phase)*2*w)
-    self:SetBodyRotation("Spine01",(3+3*r)*w,-math.sin(phase)*3*w)
-    self:SetBodyRotation("Spine02",2*w,-math.sin(phase)*4*w)
+    local bob=(1-math.cos(phase*2))*(.004+.009*r)*w
+    self.mesh.position=self.standOffset-V(0,drop+bob,0)
+    self:SetBodyRotation("Waist",(3+8*r)*w,chestYaw*.35,beat*.7*w)
+    self:SetBodyRotation("Spine01",(3+10*r)*w,chestYaw*.7,-beat*1.2*w)
+    self:SetBodyRotation("Spine02",(2+10*r)*w,chestYaw,-beat*1.8*w)
+    self:SetBodyRotation("NeckTwist01",(1+4*r)*w,chestYaw*.35)
+    self:SetBodyRotation("NeckTwist02",w,chestYaw*.15)
+    self:SetBodyRotation("Head",0,chestYaw*.1)
     for i,chain in ipairs(self.legs) do
-        self:SolveChain(chain,targets[i],V(chain.side*.08,0,1),false)
-        self:SetBodyRotation(chain.tip,0)
-        local correction=soleTargets[i]-self:SoleHeight(chain.tip)
-        if math.abs(correction)>.0001 then
-            self:SolveChain(chain,targets[i]+V(0,correction,0),V(chain.side*.08,0,1),false)
-            self:SetBodyRotation(chain.tip,0)
+        local target=targets[i]
+        local hint=V(chain.side*.055,0,1)
+        self:SolveChain(chain,target,hint,false)
+        self:SetBodyRotation(chain.tip,pitches[i])
+        -- 最多两次小校正；按真实鞋底而非脚踝，摆动脚净空也同样正确。
+        for _=1,2 do
+            local correction=soles[i]-self:SoleHeight(chain.tip)
+            if math.abs(correction)<.0001 then break end
+            local corrected=target+V(0,correction,0)
+            target=corrected
+            self:SolveChain(chain,target,hint,false)
+            self:SetBodyRotation(chain.tip,pitches[i])
         end
     end
     for _,chain in ipairs(self.arms) do
         local root=self:GetBonePosition(chain.upper)
-        local swing=math.cos(phase)*chain.side*(.24+.05*r)*w
-        local reach=(chain.lengthA+chain.lengthB)*(.95-.14*r*w)
-        local target=root+V(chain.side*.035,-math.sqrt(math.max(.01,reach*reach-swing*swing)),swing+.025)
-        self:SolveChain(chain,target,V(chain.side*.12,-.1,-1),false)
+        -- 肩摆与同侧腿反相。用实测上/下臂长构造屈肘目标，跑步肘角约80~100度；
+        -- 不是把手拉近肩膀后任由IK选反折方向。肘hint始终在肩腕连线后外侧。
+        local swing=chain.side*math.cos(phase-.12)*(22+17*r)*w
+        local flex=18+(68+10*math.sin(phase)*chain.side)*r*w+6*w
+        local rotation=Quaternion(8*(1-w)-swing,V.RIGHT)
+        local upper=rotation*V(chain.side*.045,-chain.lengthA,0):Normalized()*chain.lengthA
+        local lower=rotation*(Quaternion(-flex,V.RIGHT)*V(0,-chain.lengthB,0))
+        local target=root+upper+lower
+        self:SolveChain(chain,target,V(chain.side*.18,-.08,-1),false)
+        -- 手腕沿小臂，不把手指硬锁世界前向；twist保留绑定旋转。
     end
 end
 function Rig:SetVisible(visible) self.visible=visible; self.node:SetEnabledRecursive(visible) end

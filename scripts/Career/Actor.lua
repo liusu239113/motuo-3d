@@ -123,6 +123,7 @@ function Actor:Init(scene, city)
     self.reverseHold=0
     ---@type number
     self.walkHeight=0
+    self.walkDistance=0
     self.collisionLogged, self.walkLogged, self.rideLogged = false, false, false
     self.node = scene:CreateChild("CareerActorFollowTarget")
     self.node:SetVar("CareerAssetStatus", Variant(Actor.ProxyLabel))
@@ -188,6 +189,7 @@ function Actor:Update(dt, controls, cameraYaw)
     local frameTime = math.min(dt, 0.25)
     local count = math.max(1, math.ceil(frameTime / MAX_TIME_STEP))
     local step = frameTime / count
+    self.walkDistance=0
     for _ = 1, count do
         if self.mounted then
             self:RideStep(step, controls)
@@ -219,7 +221,9 @@ function Actor:WalkStep(dt, controls, cameraYaw)
     local nextX, nextZ, blocked = self:Move(self.x, self.z,
         vx * desiredSpeed * dt, vz * desiredSpeed * dt, WALK_RADIUS)
     local movedX, movedZ = nextX - self.x, nextZ - self.z
-    self.speed = math.sqrt(movedX * movedX + movedZ * movedZ) / dt
+    local distance=math.sqrt(movedX*movedX+movedZ*movedZ)
+    self.walkDistance=self.walkDistance+distance
+    self.speed = distance / dt
     self.x, self.z, self.steer = nextX, nextZ, 0
     local wantedYaw = math.deg(math.atan(vx, vz))
     if not touch then
@@ -297,7 +301,7 @@ function Actor:SyncVisuals(dt)
     self.node.position = self:GetPosition()
     self.node.rotation = Quaternion(0, self.yaw, 0)
     self.visuals:Update(dt, self.speed, self.steer, self.bikeX,
-        self.city:Surface(self.bikeX, self.bikeZ), self.bikeZ, self.bikeYaw)
+        self.city:Surface(self.bikeX, self.bikeZ), self.bikeZ, self.bikeYaw,dt>0 and self.walkDistance or 0)
 end
 
 ---@return boolean, string
@@ -372,6 +376,8 @@ function Actor:Teleport(x, z, yaw, height)
     self.x, self.z = self:Move(clamp(x, -MAP_LIMIT + radius, MAP_LIMIT - radius),
         clamp(z, -MAP_LIMIT + radius, MAP_LIMIT - radius), 0, 0, radius)
     self.yaw, self.speed, self.steer = wrapYaw(yaw), 0, 0
+    self.walkDistance=0
+    self.visuals:ResetGait()
     if self.mounted then
         self.bikeX, self.bikeZ, self.bikeYaw = self.x, self.z, self.yaw
     end

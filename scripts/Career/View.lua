@@ -49,6 +49,8 @@ local MAP_PAGE_SIZE=6
 
 ---@class CareerView
 ---@field phoneContent ScrollView
+---@field phoneDesktop Panel
+---@field phoneBack Button
 ---@field phoneTitle Label
 ---@field phoneClock Label
 local View = {}
@@ -134,9 +136,18 @@ function View:Init(actions)
         {position="absolute",bottom=12,left="28%",right="24%",textAlign="center",whiteSpace="normal",pointerEvents="none"})
     safe:AddChild(self.controlHint)
     self.game:AddChild(safe)
-    self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",padding=12})
+    self.phone=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,backgroundColor={3,6,9,150},alignItems="flex-end",justifyContent="center",
+        paddingLeft=12,paddingRight=12,paddingTop=8,paddingBottom=8})
+    -- 百分比宽高容器先获得SafeAreaView内容尺寸；无需更改UI.Scale.DEFAULT。
+    self.phoneArea=UI.Panel{width="100%",height="100%",padding=0,alignItems="flex-end",justifyContent="center",pointerEvents="box-none"}
     self.phoneBody=Phone.Create(self,actions)
-    self.phone:AddChild(self.phoneBody)
+    self.phoneArea:AddChild(self.phoneBody)
+    self.phone:AddChild(self.phoneArea)
+    self.phoneWidth,self.phoneHeight=0,0
+    self.phoneArea.Update=function(area)
+        local bounds=area:GetLayout()
+        Phone.Layout(self,bounds.w,bounds.h)
+    end
     self.overlay=full{visible=false,backgroundColor={3,6,9,225},justifyContent="center",alignItems="center",padding=22}
     self.dialogBody=UI.Panel{width=520,maxWidth="100%",maxHeight="100%",padding=22,gap=14,
         backgroundColor=C.dark,borderColor=C.border,borderWidth=1}
@@ -233,6 +244,8 @@ function View:IsBlocking() return self.blocked or self.phonePage~="" end
 function View:ClosePhone()
     self.phone:SetVisible(false); self.phonePage=""; self:ResetInput()
     destroyChildren(self.phoneContent)
+    destroyChildren(self.phoneDesktop)
+    self.phoneContent:ScrollToTop()
     self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
     self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
@@ -353,27 +366,38 @@ end
 function View:BuildPhone(state,offer,active)
     print("[生涯手机] 构建页面 "..self.phonePage)
     destroyChildren(self.phoneContent)
-    local content=UI.Panel{width="100%",padding=0,gap=11}
-    self.phoneContent:AddChild(content)
+    destroyChildren(self.phoneDesktop)
+    local page=self.phonePage
+    local desktop=page=="apps"
+    self.phoneDesktop:SetVisible(desktop)
+    self.phoneContent:SetVisible(not desktop)
+    self.phoneBack:SetVisible(not desktop)
+    local content=UI.Panel{width="100%",padding=0,gap=desktop and 4 or 11}
+    if desktop then
+        content:SetStyle{height="100%",minHeight=0}
+        self.phoneDesktop:AddChild(content)
+    else self.phoneContent:AddChild(content) end
     local a=self.actions
     local function text(t,size,color) content:AddChild(label(t,size,color,{whiteSpace="normal"})) end
-    local function button(t,fn,primary,id) content:AddChild(btn(t,fn,primary,{id=id})) end
-    local page=self.phonePage
-    content:SetStyle{padding=page=="apps" and 0 or 9,borderRadius=10,
-        backgroundColor=page=="apps" and {0,0,0,0} or {8,19,27,238}}
-    if page~="apps" then button("← 应用首页",function() a.phone("apps") end,false) end
+    local function button(t,fn,primary,id) content:AddChild(btn(t,fn,primary,{id=id,minHeight=44})) end
+    content:SetStyle{padding=desktop and 0 or 9,borderRadius=10,
+        backgroundColor=desktop and {0,0,0,0} or {8,19,27,238}}
     self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
-        Phone.Desktop(content,state,a)
+        Phone.Desktop(content,state,a,self.phoneHeight)
     elseif page=="delivery" then
         local pos=self.lastActor or state.position
         text(World.District(pos.x,pos.z).label.."站 · "..(state.online and "正在听单" or "尚未上线"),14,C.amber)
         text("配送费2.50～10.00元，接单时报价锁定。绕路不会多拿钱；长途单预留更多时间，来不及当日完成则不派发。",11,C.muted)
         button(state.online and "停止听单" or "上线听单",function() a.online(not state.online) end,not state.online,"career-online")
         if active then
+            text(active.status=="accepted" and "1 / 2 · 待取餐（先到店）" or "2 / 2 · 配送中（送到顾客）",14,
+                active.status=="accepted" and C.amber or C.cyan)
             text(active.title,18)
-            text((active.status=="accepted" and "前往取餐：" or "前往送达：")..Config.points[active.status=="accepted" and active.pickupId or active.dropoffId].label,13)
+            text((active.status=="accepted" and "取餐点：" or "送达点：")..Config.points[active.status=="accepted" and active.pickupId or active.dropoffId].label,13)
+            text(active.status=="accepted" and "到取餐点停稳、下车后取餐；取餐完成才开始送达阶段。"
+                or "已取餐，请前往送达点；停稳下车后交付。",12,C.muted)
             text("报酬 "..money(active.feeCents)..string.format(" · 剩余 %.0f 游戏分钟",math.max(0,active.remainingHours*60)),12,C.amber)
             if Progress.Capacity(state)>#state.activeOrders and state.online and offer then
                 text("可叠加配送："..offer.title.." · "..money(offer.feeCents),12,C.amber)

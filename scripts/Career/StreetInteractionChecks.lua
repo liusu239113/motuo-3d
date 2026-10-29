@@ -82,7 +82,7 @@ local function branchCounts(view)
         minimapRoads=#tree(view.map.roads),minimapPoints=#tree(view.map.points),
         minimapRoute=#tree(view.map.route),minimapOrderRoute=#tree(view.map.orderRoute),
         dialogBody=#tree(view.dialogBody),conversationBody=#tree(view.conversationBody),
-        phoneContent=#tree(view.phoneContent),home=#tree(view.home)}
+        phoneContent=#tree(view.phoneContent),phoneDesktop=#tree(view.phoneDesktop),home=#tree(view.home)}
 end
 ---@param before table<string,number>
 ---@param after table<string,number>
@@ -362,7 +362,8 @@ function Checks.Run(session)
         freed(stale)
         assert(view.phone:IsVisible() and not view.conversation:IsVisible() and not view.overlay:IsVisible()
             and not view.blocked and view:IsBlocking())
-        phoneTree=descendants(view.phoneContent)
+        phoneTree=descendants(view.phoneDesktop)
+        assert(#phoneTree>6 and view.phoneDesktop:IsVisible() and not view.phoneContent:IsVisible(),"desktop must contain six apps outside ScrollView")
         talk("breakfast_owner"); freed(phoneTree)
         stale=descendants(view.conversationBody)
         view:ShowDialog("隔离回归确认","仅检查生产弹窗生命周期，不执行事务。",{{text="继续街头回归"}})
@@ -371,7 +372,7 @@ function Checks.Run(session)
         tapDialog(view,"继续街头回归"); idle(view)
         -- Phone confirmation intentionally RETAINS its page for cancel/return, but
         -- only the modal may be visible and interactive until it is dismissed.
-        session:OpenPhone("apps"); phoneTree=descendants(view.phoneContent)
+        session:OpenPhone("apps"); phoneTree=descendants(view.phoneDesktop)
         view:ShowDialog("隔离回归确认","手机转弹窗必须隐藏手机且保留返回页。",{{text="继续街头回归"}})
         assert(not view.phone:IsVisible() and view.overlay:IsVisible() and view.blocked)
         for _,widget in ipairs(phoneTree) do assert(widget.node~=nil,"confirmation must preserve return page") end

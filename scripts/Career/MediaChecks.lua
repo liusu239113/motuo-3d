@@ -5,7 +5,7 @@ local Checks={}
 local function tap(widget)
     UI.Layout()
     local r=widget:GetAbsoluteLayout()
-    assert(r.w>0 and r.h>0,"手机组件必须有可点击布局")
+    assert(r.w>=44 and r.h>=44,"手机组件必须有至少44逻辑像素触摸目标")
     local scale=UI.GetScale()
     local function event(kind)
         return PointerEvent.new(kind,{pointerId=790001,pointerType="touch",isPrimary=true,
@@ -37,9 +37,12 @@ function Checks.Run(session)
     sound:Update(.1,actor,false,false,{}, {id="sound-check-offer"})
     assert(sound.orderCount==orders+1,"同一新订单只提示一次")
     actor.speed,actor.mounted,actor.vehicleId=snapshot.speed,snapshot.mounted,snapshot.vehicle
-    session:OpenPhone("apps"); UI.Layout()
+    session:OpenPhone("apps"); UI.Layout(); view.phoneArea:Update(0); UI.Layout()
+    assert(view.phoneDesktop:IsVisible() and not view.phoneContent:IsVisible(),"应用首页不能藏在纵向滚动区")
     for _,app in ipairs(require("Career.Phone").Apps) do
         local icon=assert(view.root:FindById("career-app-"..app[1]))
+        local bounds,area=icon:GetAbsoluteLayout(),view.phoneDesktop:GetAbsoluteLayout()
+        assert(bounds.y>=area.y and bounds.y+bounds.h<=area.y+area.h+1,"底部应用必须一屏完整显示")
         tap(icon)
         assert(view.phonePage==app[1],"应用未打开："..app[1])
         session:OpenPhone("apps"); UI.Layout()

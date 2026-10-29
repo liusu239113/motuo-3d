@@ -17,7 +17,7 @@ local boxMaterial=BOX.."Materials/8c4f0f26f9ee4d3eac2eec49a497852f_00_tripo_mate
 local Visuals={}
 Visuals.__index=Visuals
 Visuals.ProxyLabel="战损9号 · 独立外卖箱"
-Visuals.AnimationLabel="王二狗 · 骨骼IK骑姿与步行"
+Visuals.AnimationLabel="王二狗 · 骨骼IK骑姿与慢走/步行/跑步"
 Visuals.Resources={scooterModel,scooterMaterial,boxModel,boxMaterial,Rig.ModelPath,Rig.MaterialPath,Rig.DiffusePath,Rig.NormalPath,"Techniques/DiffNormal.xml"}
 Visuals.ResourceTypes={[scooterModel]="Model",[scooterMaterial]="Material",[boxModel]="Model",[boxMaterial]="Material",
     [Rig.ModelPath]="Model",[Rig.MaterialPath]="Material",[Rig.DiffusePath]="Texture2D",[Rig.NormalPath]="Texture2D",["Techniques/DiffNormal.xml"]="Technique"}
@@ -123,12 +123,40 @@ function Visuals:UpdateParking(parking,city)
         entry.node.rotation=Quaternion(0,park.yaw,0)*Quaternion(pitch,V.RIGHT)*Quaternion(roll,V.FORWARD)
     end
 end
+function Visuals:ResetGait()
+    self.phase,self.gaitWeight,self.runWeight,self.stopTime=0,0,0,0
+    self.walker:PoseWalk(0,0,0)
+end
 function Visuals:SetMounted(mounted)
+    if self.mounted~=mounted then self:ResetGait() end
     self.mounted=mounted
     self.walkNode:SetEnabledRecursive(not mounted); self.mountedRider:SetVisible(mounted and self.cityVisible)
     if not mounted then self.lean=0; self.bikeVisual.rotation=Quaternion.IDENTITY; self.bikeVisual.position=V.ZERO end
 end
-function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
+-- 纯步态入口，回归可直接驱动；不处理输入/相机/存档/车辆。
+-- distance是Actor子步累计的真实移动距离（撞墙=0），省略时兼容既有速度驱动。
+function Visuals:UpdateGait(dt,speed,distance)
+    local velocity=math.abs(speed)
+    local target=math.sqrt(math.min(1,velocity/1.8))
+    local run=math.max(0,math.min(1,(velocity-1.8)/1.6))
+    local stopped=velocity<.025
+    self.stopTime=stopped and (self.stopTime or 0)+dt or 0
+    local blend=1-math.exp(-dt*(stopped and 24 or 16))
+    self.gaitWeight=self.gaitWeight+((stopped and 0 or target)-self.gaitWeight)*blend
+    self.runWeight=self.runWeight+((stopped and 0 or run)-self.runWeight)*blend
+    -- 松手后不再推进步态，也不等一秒才复位；约.28秒内精确回到同一个站姿。
+    if stopped and ((self.stopTime or 0)>=.28 or self.gaitWeight<.001) then
+        self.phase,self.gaitWeight,self.runWeight=0,0,0
+    else
+        local travel=distance or velocity*dt
+        if travel>.000001 then
+            local cycle=Rig.CycleLength(self.gaitWeight,self.runWeight)
+            self.phase=(self.phase+travel*math.pi*2/cycle)%(math.pi*2)
+        end
+    end
+    self.walker:PoseWalk(self.phase,self.gaitWeight,self.runWeight)
+end
+function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw,distance)
     if self.disposed then return end
     if self.mounted then
         local target=steer*math.min(1,math.abs(speed)/(35/3.6))*10
@@ -143,16 +171,7 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw)
     if self.mounted then
         self.mountedRider:PoseRide(0)
     else
-        -- 轻推摇杆同时降低步频；不能只缩步幅，否则低速仍像原地碎步。
-        local target=math.sqrt(math.min(1,math.abs(speed)/1.8))
-        local run=math.max(0,math.min(1,(math.abs(speed)-1.8)/1.6))
-        local blend=1-math.exp(-dt*14)
-        self.gaitWeight=self.gaitWeight+(target-self.gaitWeight)*blend
-        self.runWeight=self.runWeight+(run-self.runWeight)*blend
-        if target==0 and self.gaitWeight<.001 then self.gaitWeight=0;self.runWeight=0 end
-        local cycle=Rig.CycleLength(self.gaitWeight,self.runWeight)
-        if math.abs(speed)>.001 then self.phase=(self.phase+math.abs(speed)*dt*math.pi*2/cycle)%(math.pi*2) end
-        self.walker:PoseWalk(self.phase,self.gaitWeight,self.runWeight)
+        self:UpdateGait(dt,speed,distance)
     end
 end
 function Visuals:Dispose()

@@ -6,6 +6,7 @@ local Assets=require("VehicleAssets")
 local Contact=require("Career.VehicleContact")
 local Pedestrians=require("Career.Pedestrians")
 local Rig=require("Career.Rig")
+local Walk=require("Career.LocalWalk")
 ---@class OuterTrafficCar
 ---@field id string
 ---@field node Node
@@ -267,6 +268,7 @@ end
 function Outer:ReleasePerson(index)
     local p=table.remove(self.people,index)
     visible(p.node,false); p.inUse=false
+    Walk.Reset(p)
     self.recycled=self.recycled+1
 end
 ---@param id string
@@ -352,17 +354,16 @@ function Outer:Fill(blockers)
                     local start,finish=Outer.SidewalkPath(route,at)
                     local x,z=point(route,offset,at)
                     if start and finish and distance2(x,z,self.actor)<125^2 and self:Hidden(x,z,1.5,45) and self:PersonFree(x,z,nil,blockers) then
-                        -- 整段地表/静态碰撞先检查；玩家/车辆等动态障碍只令行人让停。
-                        local clear=true
-                        for sample=start,finish,2 do
-                            local sx,sz=point(route,offset,sample)
-                            if not self.city:StaticFree(sx,sz,.36,"walk",0) then clear=false; break end
-                        end
+                        -- Entire static segment, including tiny poles between samples.
+                        -- Dynamic occupancy is checked at spawn and swept by bounded LocalWalk.
+                        local ax,az=point(route,offset,start)
+                        local bx,bz=point(route,offset,finish)
+                        local clear=self.city:StaticSegmentFree(ax,az,bx,bz,.36,"walk",0)
                         local p=clear and self:AcquirePerson() or nil
                         if p then
-                            local ax,az=point(route,offset,start)
-                            local bx,bz=point(route,offset,finish)
                             p.path={ax,az,bx,bz}; p.length=finish-start; p.s=at-start
+                            p.minOffset,p.maxOffset=-(route.sidewalk/2-.55),route.sidewalk/2-.55
+                            Walk.Reset(p)
                             p.direction=slot%2==0 and 1 or -1
                             p.x,p.z,p.gaitWeight,p.turn=x,z,0,0
                             p.yaw=math.deg(math.atan((bx-ax)*p.direction,(bz-az)*p.direction))
@@ -444,22 +445,25 @@ function Outer:Step(dt,blockers)
     end
 end
 function Outer:Walk(dt,blockers)
+    if self.disposed or self.city.space~="city" or not self.owner.active or dt<=0 or dt~=dt or dt==math.huge then return end
+    dt=math.min(dt,.25)
     self.poseTime=self.poseTime+dt
     local poseReady=self.poseTime>=1/20
     if poseReady then self.poseTime=self.poseTime%(1/20) end
+    local groups={self.people,self.owner.pedestrians.people}
+    local cars={self.cars,self.owner.cars}
     for _,p in ipairs(self.people) do
-        local candidate=math.max(0,math.min(p.length,p.s+p.direction*p.speed*dt))
-        local f=candidate/p.length
-        local x,z=p.path[1]+(p.path[3]-p.path[1])*f,p.path[2]+(p.path[4]-p.path[2])*f
         local moved=0
         if p.turn>0 then
             p.turn=math.max(0,p.turn-dt)
             local target=math.deg(math.atan((p.path[3]-p.path[1])*p.direction,(p.path[4]-p.path[2])*p.direction))
             local difference=(target-p.yaw+180)%360-180
             p.yaw=p.yaw+math.max(-120*dt,math.min(120*dt,difference))
-        elseif self:PersonFree(x,z,p,blockers) then
-            moved=math.abs(candidate-p.s); p.s=candidate; p.x,p.z=x,z
-            if candidate==0 or candidate==p.length then p.direction=-p.direction; p.turn=1.6 end
+        else
+            moved=Walk.Advance(self.city,p,dt,blockers,groups,cars)
+            if #p.localWalk.points==0 and (p.s<=.00001 or p.s>=p.length-.00001) then
+                p.direction=p.s<=.00001 and 1 or -1; p.turn=1.6
+            end
         end
         p.travelled=p.travelled+moved
         local target=moved>.0001 and .8 or 0

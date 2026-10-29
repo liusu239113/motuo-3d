@@ -34,25 +34,117 @@ function Checks.SkinBounds(rig)
     end
     return bounds,feet
 end
+-- 只操作已有Rig/Visuals并原样恢复；可单独从早期-careercontact调用，不访问档案/云。
+function Checks.Motion(session)
+    local Rig=require("Career.Rig")
+    local visuals=session.actor.visuals
+    ---@type CareerRig
+    local rig=visuals.walker
+    local ground=rig.ground
+    local phase,weight,run=rig.walkPhase,rig.walkWeight,rig.walkRun
+    local vp,vw,vr,stop=visuals.phase,visuals.gaitWeight,visuals.runWeight,visuals.stopTime
+    local report={poses=0,maxLengthError=0,maxSoleError=0,flight=0,maxRunLift=0,maxWalkLift=0}
+    local clamped=rig.reachClampedFrames or 0
+    local ok,err=pcall(function()
+        rig.ground=nil
+        for _,w in ipairs({0,.1,.25,.5,1}) do
+            for _,r in ipairs({0,.5,1}) do
+                for i=0,63 do
+                    local p=i*math.pi/32
+                    rig:PoseWalk(p,w,r)
+                    for _,chains in ipairs({rig.legs,rig.arms}) do
+                        for _,chain in ipairs(chains) do
+                            local a,b,c=rig:GetBonePosition(chain.upper),rig:GetBonePosition(chain.lower),rig:GetBonePosition(chain.tip)
+                            local lengthError=math.max(math.abs((b-a):Length()-chain.lengthA),math.abs((c-b):Length()-chain.lengthB))
+                            report.maxLengthError=math.max(report.maxLengthError,lengthError)
+                            assert(lengthError<.00002,"步态实际骨长不可改变: "..chain.tip)
+                            local direction=(c-a):Normalized()
+                            local hint=chain.tip:find("Hand") and Vector3(chain.side*.18,-.08,-1) or Vector3(chain.side*.055,0,1)
+                            local pole=hint-direction*hint:DotProduct(direction)
+                            assert((b-a):DotProduct(pole)>0,"肘/膝不可反折: "..chain.tip)
+                            if r==1 and w==1 and chain.tip:find("Hand") then
+                                local dot=(b-a):Normalized():DotProduct((c-b):Normalized())
+                                local flex=math.deg(math.acos(math.max(-1,math.min(1,dot))))
+                                assert(flex>65 and flex<115,"跑步必须明显屈肘，不能只是缩手距")
+                            end
+                        end
+                    end
+                    for _,name in ipairs(rig.boneNames) do
+                        local bone=rig.model:GetSkeleton():GetBone(name)
+                        assert((bone.node.position-rig.bind[name].position):Length()<.000001,"不许移动骨骼抵消IK")
+                        assert((bone.node.scale-rig.bind[name].scale):Length()<.000001,"不许缩放腿或手臂")
+                    end
+                    local airborne=true
+                    for _,chain in ipairs(rig.legs) do
+                        local _,lift,stance=Rig.FootCycle(p,w,r,chain.side)
+                        local sole=rig:SoleHeight(chain.tip)
+                        local error=math.abs(sole-lift)
+                        report.maxSoleError=math.max(report.maxSoleError,error)
+                        assert(error<.006,"真实鞋底应匹配支撑/摆动目标，不以脚踝冒充鞋底")
+                        if stance then
+                            airborne=false
+                            assert(math.abs(sole)<.006,"支撑脚真实鞋底必须接地")
+                        elseif lift>.02 then assert(sole>.014,"摆动脚必须有真实鞋底净空") end
+                        if w==1 and r==0 then report.maxWalkLift=math.max(report.maxWalkLift,sole) end
+                        if w==1 and r==1 then report.maxRunLift=math.max(report.maxRunLift,sole) end
+                    end
+                    if w==1 and r==1 and airborne then
+                        report.flight=report.flight+1
+                        assert(math.min(rig:SoleHeight("L_Foot"),rig:SoleHeight("R_Foot"))>0,"跑步腾空期两鞋底均应离地")
+                    end
+                    report.poses=report.poses+1
+                end
+            end
+        end
+        assert((rig.reachClampedFrames or 0)==clamped,"慢走到跑步都不可依赖超伸夹取")
+        assert(report.flight>0 and report.maxRunLift>report.maxWalkLift+.18,"跑步必须有腾空及明显更高抬脚，不只是加步频")
+        -- 支撑中段的真实踝点后移与前进距离相抵，正常腿长不靠scale作弊。
+        local lastFrequency=0
+        for _,speed in ipairs({.18,.6,1.8,3.4}) do
+            local w=math.sqrt(math.min(1,speed/1.8))
+            local r=math.max(0,math.min(1,(speed-1.8)/1.6))
+            local cycle=Rig.CycleLength(w,r)
+            local frequency=speed/cycle
+            assert(frequency>lastFrequency,"慢走到跑步步幅与步频须匹配真实速度")
+            lastFrequency=frequency
+            rig:PoseWalk(.3,w,r)
+            local a=rig:GetBonePosition("L_Foot")
+            rig:PoseWalk(.38,w,r)
+            local b=rig:GetBonePosition("L_Foot")
+            assert(math.abs(b.z-a.z+cycle*.08/(2*math.pi))<.001,"支撑脚后移应抵消真实前进距离")
+        end
+        for _,speed in ipairs({.18,.6,1.8,3.4}) do
+            visuals:ResetGait()
+            for _=1,60 do visuals:UpdateGait(1/60,speed,speed/60) end
+            local running=visuals.runWeight
+            if speed==3.4 then assert(running>.99,"真实跑速应进入完整跑步姿态") end
+            local frozen=visuals.phase
+            visuals:UpdateGait(1/60,0,0)
+            assert(visuals.phase==frozen,"松手后不应继续踏步")
+            for _=1,17 do visuals:UpdateGait(1/60,0,0) end
+            assert(visuals.gaitWeight==0 and visuals.runWeight==0 and visuals.phase==0,"松手.3秒内应精确回站姿")
+            local reference=rig:GetBonePosition("L_Hand")
+            rig:PoseWalk(0,0,0)
+            assert((reference-rig:GetBonePosition("L_Hand")):Length()<.00001,"停止必须恢复同一自然站姿")
+        end
+    end)
+    rig.ground=ground
+    visuals.phase,visuals.gaitWeight,visuals.runWeight,visuals.stopTime=vp,vw,vr,stop
+    rig:PoseWalk(phase,weight,run)
+    assert(ok,tostring(err))
+    print(string.format("[走跑骨骼验收] PASS %d相位，骨长误差%.7fm，真实鞋底误差%.5fm，run腾空%d，抬脚walk/run %.3f/%.3fm；4速起停.3s（CPU，视觉待实拍）",
+        report.poses,report.maxLengthError,report.maxSoleError,report.flight,report.maxWalkLift,report.maxRunLift))
+    return report
+end
 function Checks.Run(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-contactshot" then Checks.Shot(session);return end
         if arg=="-vehiclechecks" then Checks.Vehicles(session);Checks.Shot(session);return end
     end
+    Checks.Motion(session)
     local actor=session.actor
     ---@type CareerRig
     local rig=actor.visuals.walker
-    rig.ground=nil
-    for _,weight in ipairs({0,.1,.25,.5,1}) do
-        for _,run in ipairs({0,.5,1}) do
-            local clamped=rig.reachClampedFrames or 0
-            for i=0,31 do
-                rig:PoseWalk(i*math.pi/16,weight,run)
-                assert(math.abs(math.min(rig:SoleHeight("L_Foot"),rig:SoleHeight("R_Foot")))<.006,"慢走跑步支撑脚必须贴地")
-            end
-            assert((rig.reachClampedFrames or 0)==clamped,"各速度步态不能超伸")
-        end
-    end
     rig.ground=session.city
     actor.mounted=false;actor.visuals:SetMounted(false)
     actor:Teleport(0,-20,0)
@@ -77,7 +169,7 @@ function Checks.Run(session)
     local visuals=actor.visuals
     for _,speed in ipairs({.18,.6,1.8,3.4,0}) do
         for _=1,60 do visuals:Update(1/60,speed,0,0,session.city:Surface(0,-20),-20,0) end
-        if speed==3.4 then assert(visuals.runWeight>.99,"跑步应切换慢跑摆臂") end
+        if speed==3.4 then assert(visuals.runWeight>.99,"跑步应切换完整跑步姿态") end
         if speed==0 then assert(visuals.gaitWeight==0 and visuals.runWeight==0,"停止后必须完全回到站姿") end
     end
     for _,person in ipairs(session.traffic.pedestrians.people) do
@@ -272,6 +364,13 @@ function Checks.Shot(session)
         value=arg:match("^%-contactyaw=([%-%d%.]+)$")
         if value then yaw=tonumber(value) or 110 end
         if arg=="-contactrun" then run=1;weight=1 end
+        local motion=arg:match("^%-contactmotion=([%a]+)$")
+        if motion=="slow" then weight=math.sqrt(.6/1.8);run=0 end
+        if motion=="walk" then weight=1;run=0 end
+        if motion=="run" then weight=1;run=1 end
+        if motion=="stop" or motion=="idle" then weight=0;run=0 end
+        value=arg:match("^%-contactweight=([%.%d]+)$")
+        if value then weight=math.max(0,math.min(1,tonumber(value) or 0)) end
         if arg=="-contactcurb" then curb=true end
         if arg=="-contactride" then mounted=true end
     end

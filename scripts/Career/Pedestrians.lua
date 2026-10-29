@@ -1,5 +1,6 @@
 -- 独立便服路人：使用两套真实骨骼模型，复用骑手库的两段IK，不复制主角外卖服。
 local Rig=require("Career.Rig")
+local Walk=require("Career.LocalWalk")
 ---@class CareerPedestrians
 ---@field Paths number[][]
 local Pedestrians={}
@@ -49,6 +50,8 @@ function Pedestrians.New(root,city)
 end
 function Pedestrians:Init(root,city)
     self.city=city
+    self.root=root
+    self.disposed=false
     self.poseTime=0
     self.people={}
     for i,p in ipairs(paths) do
@@ -58,8 +61,14 @@ function Pedestrians:Init(root,city)
         rig.model.drawDistance=85; rig.model.shadowDistance=30
         local length=math.sqrt((p[3]-p[1])^2+(p[4]-p[2])^2)
         local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,gaitWeight=0,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
+        -- Corridor stays on the original sidewalk, including the off-centre paths 3/7.
+        local low,high=-2.3,2.3
+        if i==3 then low,high=-2.3,1.2 end
+        if i==7 then low,high=-.4,2.3 end
+        person.minOffset,person.maxOffset=low,high
         self.people[#self.people+1]=person
         self:Place(person)
+        Walk.Reset(person)
         rig:PoseWalk(person.phase,0)
     end
 end
@@ -70,30 +79,39 @@ function Pedestrians:Place(p)
     p.node.rotation=Quaternion(0,math.deg(math.atan((p.path[3]-p.path[1])*p.direction,(p.path[4]-p.path[2])*p.direction)),0)
 end
 function Pedestrians:Update(dt,blockers)
+    local traffic=self.city.traffic
+    if self.disposed or self.city.space~="city" or dt<=0 or dt~=dt or dt==math.huge
+        or traffic and (traffic.disposed or not traffic.active or traffic.nearOld==false) then return end
+    dt=math.min(dt,.25)
+    blockers=blockers or {}
     self.poseTime=self.poseTime+dt
     local poseReady=self.poseTime>=1/20
     if poseReady then self.poseTime=self.poseTime%(1/20) end
     local viewer=blockers[1]
+    local outer=traffic and traffic.outer
+    local groups={self.people,outer and outer.people or {}}
+    local cars={traffic and traffic.cars or {},outer and outer.cars or {}}
     for _,p in ipairs(self.people) do
-        local old=p.s
-        local candidate=p.s+p.direction*p.speed*dt
-        if candidate<0 or candidate>p.length then p.direction=-p.direction; candidate=math.max(0,math.min(p.length,candidate)) end
-        local f=candidate/p.length
-        local x,z=p.path[1]+(p.path[3]-p.path[1])*f,p.path[2]+(p.path[4]-p.path[2])*f
-        local free=self.city:StaticFree(x,z,p.radius)
-        for _,b in ipairs(blockers) do if (x-b.x)^2+(z-b.z)^2<(p.radius+b.radius+.45)^2 then free=false end end
-        for _,other in ipairs(self.people) do if other~=p and (x-other.x)^2+(z-other.z)^2<.85^2 then free=false end end
-        if free then p.s=candidate end
-        local moved=math.abs(p.s-old)
+        local moved=Walk.Advance(self.city,p,dt,blockers,groups,cars)
+        if #p.localWalk.points==0 and (p.s<=.00001 or p.s>=p.length-.00001) then
+            p.direction=p.s<=.00001 and 1 or -1
+        end
         local target=moved>.0001 and .8 or 0
         p.gaitWeight=p.gaitWeight+(target-p.gaitWeight)*(1-math.exp(-dt*14))
         if target==0 and p.gaitWeight<.001 then p.gaitWeight=0 end
         p.phase=(p.phase+moved*2*math.pi/Rig.CycleLength(p.gaitWeight,0))%(math.pi*2)
-        self:Place(p)
-        -- 位移与碰撞每帧更新；85m绘制距离之外不做IK，近处骨骼限20Hz。
-        if poseReady and (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2 then
+        p.node.position=Vector3(p.x,self.city:Surface(p.x,p.z),p.z)
+        p.node.rotation=Quaternion(0,p.yaw or 0,0)
+        -- Actual XZ distance drives gait; stop/wait has no phantom stride. No Place() projection off-route.
+        if poseReady and (not viewer or (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2) then
             p.rig:PoseWalk(p.phase,p.gaitWeight)
         end
     end
+end
+function Pedestrians:Dispose()
+    if self.disposed then return end
+    self.disposed=true
+    for _,p in ipairs(self.people) do p.rig:Dispose(); p.node:Dispose() end
+    self.people={}
 end
 return Pedestrians

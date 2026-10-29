@@ -19,10 +19,12 @@ local World = require("Career.WorldData")
 local Engagements = require("Career.Engagements")
 local Team = require("Career.Team")
 local DeliveryPeople = require("Career.DeliveryPeople")
+local DeliveryMarkers = require("Career.DeliveryMarkers")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
 ---@field deliveryPeople? CareerDeliveryPeople
+---@field deliveryMarkers? CareerDeliveryMarkers
 ---@field PositionSnapshot fun(self:CareerSession):CareerPosition
 ---@field ApplySpace fun(self:CareerSession,space:string)
 ---@field ChooseHousing fun(self:CareerSession,id:string)
@@ -88,6 +90,8 @@ function Session:Init(options)
     self.traffic=nil
     ---@type CareerDeliveryPeople?
     self.deliveryPeople=nil
+    ---@type CareerDeliveryMarkers?
+    self.deliveryMarkers=nil
     ---@type CareerSoundscape?
     self.audio=nil
     ---@type RideLoader?
@@ -244,6 +248,7 @@ function Session:BuildWorld()
     self.deliveryPeople=DeliveryPeople.New(self.city)
     self.city.deliveryPeople=self.deliveryPeople
     self.deliveryPeople:Sync(Store.Get().activeOrders,self.actor)
+    self.deliveryMarkers=DeliveryMarkers.New(self.city)
     self.camera=ThirdPersonCamera.Create(self.scene,{
         modes={normal={distance=5.8,offset=Vector3(0,1.35,0),fov=55},ride={distance=6.4,offset=Vector3(0,1.3,0),fov=60},indoor={distance=3.1,offset=Vector3(0,1.2,0),fov=65}},
         transitionSpeed=8,farClip=450})
@@ -258,12 +263,20 @@ function Session:BuildWorld()
     if self.options.test then
         local contact,worldShot,streetShot,handoffShot=false,"","",""
         local storyChecks,optimizeChecks,streetChecks,handoffChecks=false,false,false,false
+        local qualityChecks,beaconShot,phoneShot,motionShot=false,"","",""
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
             if arg=="-careercontact" then contact=true end
             if arg=="-careerstreet" then streetChecks=true end
             if arg=="-careerhandoff" then handoffChecks=true end
+            if arg=="-careerquality" then qualityChecks=true end
+            local motion=arg:match("^%-contactmotion=(.+)$")
+            if motion then motionShot=motion end
+            local beacon=arg:match("^%-careerbeaconshot=(.+)$")
+            if beacon then beaconShot=beacon end
+            local phone=arg:match("^%-careerphoneshot=(.+)$")
+            if phone then phoneShot=phone end
             local handoff=arg:match("^%-careerhandoffshot=(.+)$")
             if handoff then handoffShot=handoff end
             local street=arg:match("^%-careerstreetshot=(.+)$")
@@ -271,7 +284,19 @@ function Session:BuildWorld()
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if handoffChecks then
+        if phoneShot~="" then
+            self.view:ClosePhone();self.view:ShowGame();self:OpenPhone(phoneShot)
+            print("[手机实拍就绪] "..phoneShot.." / 隔离内存 / 真实页面")
+        elseif motionShot~="" then require("Career.ContactChecks").Shot(self)
+        elseif beaconShot~="" then require("Career.DeliveryMarkerChecks").Shot(self,beaconShot)
+        elseif qualityChecks then
+            self.view:ClosePhone();self.view:ShowGame()
+            require("Career.DeliveryMarkerChecks").Run(self)
+            require("Career.NavigationChecks").Run(self)
+            require("Career.MapPhoneChecks").RunLayout(self.view,self:State(),Delivery.GetOffer(),Delivery.GetActive())
+            require("Career.ContactChecks").Run(self)
+            print("[游玩体验专项验收通过] 走跑/光柱/绕障/建筑足迹/手机桌面")
+        elseif handoffChecks then
             self.view:ClosePhone(); self.view:ShowGame()
             require("Career.DeliveryPeopleChecks").Run(self)
         elseif handoffShot~="" then require("Career.DeliveryPeopleChecks").Shot(self,handoffShot)
@@ -388,7 +413,12 @@ function Session:Refresh()
     if self.deliveryPeople then
         self.deliveryPeople:Sync(state.activeOrders,self.actor)
     end
-    self.view:Update(state,self.actor,self:Target(),Delivery.GetActive(),Delivery.GetOffer(),.2)
+    local target=self:Target()
+    if self.deliveryMarkers then
+        self.deliveryMarkers:Sync(state.activeOrders,target)
+        self.deliveryMarkers:Update(0,self.actor,false)
+    end
+    self.view:Update(state,self.actor,target,Delivery.GetActive(),Delivery.GetOffer(),.2)
 end
 function Session:RefreshPhone()
     if self.view.phonePage~="" then self.view:BuildPhone(self:State(),Delivery.GetOffer(),Delivery.GetActive()) end
@@ -590,6 +620,9 @@ function Session:Update(dt)
     if self.deliveryPeople then
         self.deliveryPeople:Update(dt,self.actor,not self.view:IsBlocking() and not self.options.test)
     end
+    if self.deliveryMarkers then
+        self.deliveryMarkers:Update(dt,self.actor,not self.view:IsBlocking() and not self.options.test)
+    end
     self.view:UpdateSpeech(dt)
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
@@ -668,6 +701,7 @@ function Session:DisposeWorld()
     if self.traffic then self.traffic:Dispose(); self.traffic=nil end
     if self.city then self.city.traffic=nil; self.city.deliveryPeople=nil end
     if self.deliveryPeople then self.deliveryPeople:Dispose(); self.deliveryPeople=nil end
+    if self.deliveryMarkers then self.deliveryMarkers:Dispose(); self.deliveryMarkers=nil end
     if self.audio then self.audio:Stop(); self.audio=nil end
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.city then self.city:Dispose(); self.city=nil end

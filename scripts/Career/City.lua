@@ -9,6 +9,7 @@ local Signals = require("Career.TrafficSignals")
 local World = require("Career.WorldData")
 local Stream = require("Career.WorldStream")
 local StreetDressing = require("Career.StreetDressing")
+local Footprints = require("Career.BuildingFootprints")
 ---@class CareerCity
 ---@field contacts CareerContacts
 ---@field deliveryPeople? CareerDeliveryPeople
@@ -55,6 +56,8 @@ end
 function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
+    self.buildingFootprints={}
+    self.disposed=false
     self.space="city"
     ---@type CityTraffic?
     self.traffic=nil
@@ -191,12 +194,22 @@ function City:DetailedBuilding(index,x,z,w,depth,height,yaw,name)
     mat:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",asset.root.."Textures/"..asset.stem.."_00_N.jpg"))
     mat:SetShaderParameter("Metallic",Variant(0)); mat:SetShaderParameter("Roughness",Variant(.88))
     draw.material=mat; draw.castShadows=true; draw.drawDistance=400; draw.shadowDistance=85
-    local angle=math.rad(yaw)
-    local sx,sz=bounds.size.x*scale,bounds.size.z*scale
-    -- 生成建筑的底板边缘不齐；连续混凝土地台承接整段墙脚，底部埋入裸地。
-    self.details:Box("concrete",x,.08,z,sx+.10,.24,sz+.10,yaw)
-    self:Obstacle(x,z,math.abs(math.cos(angle))*sx+math.abs(math.sin(angle))*sz,
-        math.abs(math.sin(angle))*sx+math.abs(math.cos(angle))*sz)
+    -- 俯视：低墙/地基 [实占条带]；高处外挑屋檐不投成地面整块空气墙。
+    -- 每条来自LOD0三角形与地面0..3.2m的裁剪，填满两侧墙之间的楼内。
+    -- 地台与碰撞共用同一条带；保留低层墙脚、5cm可见地基唇，不全局缩障碍。
+    local strips=Footprints.ForModel(model,scale)
+    local records={}
+    for _,rect in ipairs(strips) do
+        local cx,cz=(rect.x1+rect.x2)/2,(rect.z1+rect.z2)/2
+        local a=math.rad(yaw)
+        local wx,wz=x+cx*math.cos(a)+cz*math.sin(a),z-cx*math.sin(a)+cz*math.cos(a)
+        self.details:Box("concrete",wx,.08,wz,rect.x2-rect.x1,.24,rect.z2-rect.z1,yaw)
+        local world=Footprints.WorldRect(rect,x,z,yaw)
+        self.obstacles[#self.obstacles+1]=world
+        records[#records+1]=world
+    end
+    self.buildingFootprints[#self.buildingFootprints+1]={name=name,model=model.name,node=body,draw=draw,
+        bounds=bounds,scale=scale,x=x,z=z,yaw=yaw,strips=strips,obstacles=records}
     self.buildings=self.buildings+1
 end
 
@@ -379,6 +392,35 @@ function City:FindFree(x,z,radius,mode,height)
     return 0,-20
 end
 
+-- Complete swept query: local rectangles use exact slab intersection against the expanded
+-- wall (the same square-radius convention as StaticFree); World/bridge domain uses a
+-- conservative cover of discs, including both endpoints, never sparse point samples.
+function City:StaticSegmentFree(ax,az,bx,bz,radius,mode,height)
+    if not self:StaticFree(ax,az,radius,mode,height) or not self:StaticFree(bx,bz,radius,mode,height) then return false end
+    local dx,dz=bx-ax,bz-az
+    for _,o in ipairs(self.obstacles) do
+        local lo,hi=0,1
+        for _,v in ipairs({{ax,dx,o.x1-radius,o.x2+radius},{az,dz,o.z1-radius,o.z2+radius}}) do
+            if math.abs(v[2])<1e-10 then
+                if v[1]<=v[3] or v[1]>=v[4] then hi=-1; break end
+            else
+                local a,b=(v[3]-v[1])/v[2],(v[4]-v[1])/v[2]
+                lo=math.max(lo,math.min(a,b)); hi=math.min(hi,math.max(a,b))
+            end
+        end
+        if lo<hi and hi>0 and lo<1 then return false end
+    end
+    if self.space=="city" and World.IsOld(ax,az) and World.IsOld(bx,bz) then return true end
+    local length=math.sqrt(dx*dx+dz*dz)
+    local count=math.max(1,math.ceil(length/.2))
+    local cover=length/count/2
+    for i=0,count do
+        local f=i/count
+        if not self:StaticFree(ax+dx*f,az+dz*f,radius+cover,mode,height) then return false end
+    end
+    return true
+end
+
 function City:Move(x,z,dx,dz,radius,mode,height)
     if self.space~="city" then return self.interior:Move(x,z,dx,dz,radius) end
     local count=math.max(1,math.ceil(math.sqrt(dx*dx+dz*dz)/.1))
@@ -393,6 +435,8 @@ end
 function City:GetMarker(id) return self.markers[id] end
 function City:GetStats() return self.stats end
 function City:Dispose()
+    if self.disposed then return end
+    self.disposed=true
     self.stream:Dispose()
     self.contacts:Dispose()
     local dressing=self.streetDressing --[[@as CareerStreetDressing]]

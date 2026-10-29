@@ -6,12 +6,16 @@
 -- Existing solid buildings remain solid: the shop interiors are shallow display layers,
 -- not enterable rooms. Artwork is an orthographic albedo, never a screenshot billboard.
 local Config = require("Career.Config")
+local Pedestrians = require("Career.Pedestrians")
 local Parts = require("Parts")
 local V = Vector3
 local PREFIX = "street_"
 local BREAKFAST = "image/career_breakfast_shopfront_albedo_20261029100357.png"
 local REPAIR = "image/career_local_shopfront_albedo_20261029100354.png"
 local SIGN = "image/career_breakfast_sign_albedo.png"
+local NOODLE = "image/career_noodle_storefront_20261029115605.png"
+local CONVENIENCE = "image/career_convenience_storefront_20261029115547.png"
+local OFFICE = "image/career_office_lobby_front_20261029115544.png"
 local BRICK = "uuid://DXjwQX_lcF60zC4F9y9yAyG_"
 local METAL = "uuid://Cis1sX30rhdTXVgC4QEwquGW"
 local FABRIC = "uuid://FsRPCfK_BAj7uc2vemxZwSA8"
@@ -58,12 +62,13 @@ local FABRIC = "uuid://FsRPCfK_BAj7uc2vemxZwSA8"
 local Dressing = {}
 Dressing.__index = Dressing
 Dressing.Resources = {
-    BREAKFAST, REPAIR, SIGN, BRICK, METAL, FABRIC,
+    BREAKFAST, REPAIR, SIGN, NOODLE, CONVENIENCE, OFFICE, BRICK, METAL, FABRIC,
     "Techniques/PBR/PBRDiff.xml", "Techniques/PBR/PBRDiffNormal.xml",
     "Techniques/PBR/PBRNoTexture.xml", "Models/Cylinder.mdl", "Models/Torus.mdl",
 }
 Dressing.ResourceTypes = {
     [BREAKFAST]="Texture2D", [REPAIR]="Texture2D", [SIGN]="Texture2D",
+    [NOODLE]="Texture2D", [CONVENIENCE]="Texture2D", [OFFICE]="Texture2D",
     [BRICK]="Material", [METAL]="Material", [FABRIC]="Material",
     ["Techniques/PBR/PBRDiff.xml"]="Technique",
     ["Techniques/PBR/PBRDiffNormal.xml"]="Technique",
@@ -108,11 +113,12 @@ function Dressing:Init(city)
     self.routeSnapshot = routeSignature()
     self.surfaceSignature = surfaceSignature(self.details)
     self.disposed = false
-    self.counters = {boxes=0,quads=0,tubes=0,models=0,signs=0,drains=0,shopfronts=0}
+    self.counters = {boxes=0,quads=0,tubes=0,models=0,signs=0,drains=0,shopfronts=0,storeProps=0,canopies=0}
     for _, surface in ipairs(self.details.surfaces) do
         self.surfaceSnapshot[#self.surfaceSnapshot+1] = surface
     end
-    for _, p in ipairs({{-25,-8},{-25,-12},{24,-8},{24,-13},{0,-70},{9,-70},{15,-75}}) do
+    for _, p in ipairs({{-25,-8},{-25,-12},{24,-8},{24,-13},{0,-70},{9,-70},{15,-75},
+        {-70,9},{-70,12},{53,9},{53,12},{-45,44},{-45,47.5}}) do
         self.probes[#self.probes+1] = {x=p[1],z=p[2],y=self.details:Surface(p[1],p[2])}
     end
     -- Namespace batches so teardown can remove ONLY this module's geometry. Borrowed
@@ -134,7 +140,12 @@ function Dressing:Init(city)
     self:Artwork("breakfastArt",BREAKFAST)
     self:Artwork("repairArt",REPAIR)
     self:Artwork("breakfastSign",SIGN)
+    self:Artwork("noodleArt",NOODLE)
+    self:Artwork("convenienceArt",CONVENIENCE)
+    self:Artwork("officeArt",OFFICE)
     self:Breakfast()
+    self:DeliveryFrontages()
+    self:OfficeLobby()
     self:Charging()
     self:Bridge()
     self:Drainage()
@@ -317,23 +328,236 @@ function Dressing:Breakfast()
     end
 end
 
-function Dressing:Awning(x,z,w,depth)
+function Dressing:Awning(x,z,w,depth,direction,rise)
+    local offset = depth*(direction or 1)
+    local y = rise or 0
     local count = math.max(8,math.floor(w/.46))
     local strip = w/count
     for i=1,count do
         local l,r = x-w/2+(i-1)*strip,x-w/2+i*strip
         local mat = i%2==0 and "canvas" or "canvasLight"
         -- Both sides have correct normals; the real sloping cloth is not a flat box.
-        self:Quad(mat,V(l,3.07,z),V(l,2.84,z+depth),V(r,3.07,z),V(r,2.84,z+depth),2)
-        self:Quad(mat,V(r,3.067,z),V(r,2.837,z+depth),V(l,3.067,z),V(l,2.837,z+depth),2)
-        self:Box(mat,(l+r)/2,2.80,z+depth,strip,.14,.035)
+        self:Quad(mat,V(l,y+3.07,z),V(l,y+2.84,z+offset),V(r,y+3.07,z),V(r,y+2.84,z+offset),2)
+        self:Quad(mat,V(r,y+3.067,z),V(r,y+2.837,z+offset),V(l,y+3.067,z),V(l,y+2.837,z+offset),2)
+        self:Box(mat,(l+r)/2,y+2.80,z+offset,strip,.14,.035)
     end
-    self:Tube("steel",V(x-w/2,2.85,z+depth),V(x+w/2,2.85,z+depth),.04)
+    self:Tube("steel",V(x-w/2,y+2.85,z+offset),V(x+w/2,y+2.85,z+offset),.04)
     for _, side in ipairs({-1,1}) do
         local px = x+side*(w/2-.12)
-        self:Tube("steel",V(px,2.76,z-.025),V(px,2.85,z+depth),.035)
+        self:Tube("steel",V(px,y+2.76,z),V(px,y+2.85,z+offset),.035)
     end
-    self:Volume("wall-mounted cloth awning","overhead",x,2.925,z+depth/2,w,.39,depth+.04,false)
+    self:Volume("wall-mounted cloth awning","overhead",x,y+2.925,z+offset/2,w,.39,depth+.04,false)
+    self.counters.canopies = self.counters.canopies+1
+end
+
+-- The three delivery stops now have a recognisable ground-floor frontage, NOT more
+-- random buildings. LOD0 bounds were measured with model-info: at City's 18m height
+-- the two existing shop buildings start around z=16.48 / 17.11. Narrow side returns
+-- connect to them; every wall collider below is exactly its visible masonry Box.
+--
+-- top view, metres (south/front is -Z):
+--     old building z>=16.48          office old shell z>=48
+--       | real side returns |       [ stone return / glass image ] z=47.52
+--       [ facade z=12.30 ]              (POI -45,44) -- route z44 --> x0
+--       NO ground furniture z<12       no step / planter on this route
+--       resident(-72.7,10.9)
+--       (POIs z9)   pedestrian path z8.7, r=.32
+--       full six-metre sidewalk [6,12] / lanes [-6,6]
+-- Edge cases: sill projection stops at12.045, drain is flush; overhead awning is
+-- >3.5m clear with NO XZ collider. No registered ground heights or routes change.
+function Dressing:DeliveryFrontages()
+    for _,shop in ipairs({
+        {id="noodle",x=-70,key="noodleArt",path=NOODLE,wall="brick",frame="wood",back=17.15},
+        {id="convenience",x=53,key="convenienceArt",path=CONVENIENCE,wall="concrete",frame="teal",back=17.70},
+    }) do
+        local x,z = shop.x,12.50
+        self:Solid(shop.id.." visible backing",shop.wall,x,1.80,z,5.30,3.44,.40)
+        self:Face(shop.id,shop.key,shop.path,x,1.80,12.285,5.10,3.40,0)
+        for _,side in ipairs({-1,1}) do
+            self:Solid(shop.id.." recessed wing",shop.wall,x+side*3.55,1.80,12.87,1.90,3.44,.40)
+            local px=x+side*4.39
+            local depth=shop.back-12.30
+            self:Solid(shop.id.." masonry side return",shop.wall,px,1.80,12.30+depth/2,.22,3.44,depth)
+            -- Front piers and stepped window plinths are outside the public walk.
+            self:Box(shop.frame,x+side*2.60,1.80,12.262,.065,3.44,.055)
+            self:Solid(shop.id.." wing plinth","stone",x+side*3.48,.19,12.38,1.60,.22,.60)
+            self:Box("steel",x+side*3.48,.34,12.35,1.63,.055,.56)
+        end
+        -- Cap the narrow addition in real textured materials, not an opaque block
+        -- projecting a fake entire-store collider onto the pedestrian route.
+        self:Box("concrete",x,3.60,(12.30+shop.back)/2,9.12,.16,shop.back-12.20)
+        self:Volume(shop.id.." first-floor lintel","overhead",x,3.60,(12.30+shop.back)/2,
+            9.12,.16,shop.back-12.20,false)
+        -- The art is 3:2, not the requested panorama. Preserve aspect and follow its
+        -- real door/window layout: noodle centre door22%, convenience centre32%.
+        local doorFraction=shop.id=="noodle" and .111 or .162
+        for _,side in ipairs({-1,1}) do
+            self:Box(shop.frame,x+side*5.10*doorFraction,1.46,12.251,.042,2.60,.055)
+            self:Box("steel",x+side*1.61,.98,12.18,1.48,.075,.27)
+        end
+        self:Box(shop.frame,x,3.525,12.25,5.22,.055,.06)
+        self:Box("stone",x,.105,12.29,5.22,.045,.44) -- shallow threshold, no new surface
+        self:Grate(shop.id.." threshold drain",x,12.065,2.05,.075)
+        self:Awning(x,12.37,8.9,1.12,-1,.88)
+        -- Genuine weathered shop fabric + paper/metal wing notices; never repeat the
+        -- breakfast or repair photograph to pretend it is a different business.
+        self:Box("wood",x-3.48,1.70,12.642,1.17,1.70,.035)
+        self:Box("recess",x-3.48,1.70,12.615,1.04,1.56,.020)
+        if shop.id=="noodle" then
+            self:Sign("现 煮 热 面",x-3.48,2.20,12.591,0,.17)
+            self:Sign("牛肉面  鸡蛋面",x-3.48,1.88,12.591,0,.105)
+            self:Sign("堂食  ·  打包",x-3.48,1.57,12.591,0,.12)
+            self:Sign("取餐请核对尾号",x-3.48,1.22,12.591,0,.105)
+            self:NoodleCounter(x+3.48,12.48)
+        else
+            self:Sign("邻 里 便 民",x-3.48,2.20,12.591,0,.17)
+            self:Sign("饮水  ·  日用品",x-3.48,1.88,12.591,0,.11)
+            self:Sign("取货请报尾号",x-3.48,1.55,12.591,0,.11)
+            self:Sign("营业 07:00—23:00",x-3.48,1.23,12.591,0,.09)
+            self:ShopRack(x+3.48,12.48)
+        end
+        -- Wall drainpipes end at actual feet; never put a detached pole in the POI.
+        for _,side in ipairs({-1,1}) do
+            local px=x+side*4.18
+            self:Tube("metal",V(px,.13,12.39),V(px,3.43,12.39),.065)
+            for _,py in ipairs({.55,2.55}) do self:Box("steel",px,py,12.34,.12,.045,.11) end
+        end
+    end
+end
+
+-- Small revolved wares use the SAME material/chunk batches as the facade. Profiles
+-- are in metres, including hollow bowl/cup inner walls. No new asset per bottle.
+function Dressing:Lathe(mat,x,y,z,profile,segments)
+    local count=segments or 12
+    for row=1,#profile-1 do
+        local a,b=profile[row],profile[row+1]
+        for i=1,count do
+            local t0,t1=(i-1)*2*math.pi/count,i*2*math.pi/count
+            local ar,br=math.max(.001,a[1]),math.max(.001,b[1])
+            self:Quad(mat,V(x+br*math.cos(t0),y+b[2],z+br*math.sin(t0)),
+                V(x+br*math.cos(t1),y+b[2],z+br*math.sin(t1)),
+                V(x+ar*math.cos(t0),y+a[2],z+ar*math.sin(t0)),
+                V(x+ar*math.cos(t1),y+a[2],z+ar*math.sin(t1)),2)
+        end
+    end
+    self.counters.storeProps=self.counters.storeProps+1
+end
+
+function Dressing:NoodleCounter(x,z)
+    -- A narrow pickup shelf attached to the wing, with visible legs (not a cube stall).
+    self:Box("wood",x,.96,z,.96,.08,.63)
+    for _,side in ipairs({-1,1}) do self:Box("steel",x+side*.39,.52,z,.045,.84,.52) end
+    self:Volume("noodle side pickup shelf","solid",x,.54,z,.96,.92,.63,true)
+    -- A real-profile stockpot, lid, and nested ceramic serving bowls.
+    self:Lathe("steel",x-.20,1.00,z,{{.12,0},{.14,.02},{.14,.27},{.152,.28},{.152,.30},{.13,.30},{.13,.08}})
+    self:Lathe("steel",x-.20,1.31,z,{{.15,0},{.14,.025},{.06,.045},{.018,.06},{.018,.10},{0,.10}})
+    for _,side in ipairs({-1,1}) do
+        self:Tube("metal",V(x-.20+side*.15,1.20,z),V(x-.20+side*.21,1.20,z),.025)
+    end
+    for i=1,3 do
+        self:Lathe("enamel",x+.24,1.01+(i-1)*.038,z-.04,
+            {{.052,0},{.055,.025},{.105,.11},{.109,.125},{.094,.125},{.043,.035},{0,.035}})
+    end
+    self:Sign("打 包 取 餐",x,1.72,12.222,0,.14)
+end
+
+function Dressing:ShopRack(x,z)
+    -- Folded open crate: four slatted sides plus base, not a solid cuboid of goods.
+    self:Box("wood",x,.20,z,.92,.06,.61)
+    for _,side in ipairs({-1,1}) do
+        for i=1,3 do
+            self:Box("wood",x,.21+i*.085,z+side*.28,.92,.052,.035)
+            self:Box("wood",x+side*.44,.21+i*.085,z,.035,.052,.59)
+        end
+        self:Box("steel",x+side*.44,.38,z-.28,.04,.40,.04)
+        self:Box("steel",x+side*.44,.38,z+.28,.04,.40,.04)
+    end
+    self:Volume("convenience drink crate","solid",x,.36,z,.96,.52,.64,true)
+    for i=1,6 do
+        local bx=x-.30+((i-1)%3)*.30
+        local bz=z-.135+math.floor((i-1)/3)*.27
+        self:Lathe(i%2==0 and "teal" or "enamel",bx,.23,bz,
+            {{.062,0},{.072,.03},{.072,.28},{.038,.34},{.026,.36},{.026,.43},{0,.43}},10)
+        self:Lathe("paper",bx,.34,bz,{{.073,0},{.073,.13}},10)
+    end
+    self:Sign("瓶 装 饮 水",x,1.72,12.222,0,.14)
+    -- Small wall meter cabinet and grille close the retail wing convincingly.
+    self:Box("teal",x,2.44,12.255,.66,.47,.075)
+    for i=1,5 do self:Box("steel",x,2.28+i*.055,12.209,.51,.016,.018) end
+end
+
+function Dressing:OfficeLobby()
+    local x,z=-45,47.78
+    self:Solid("office stone entrance wall","concrete",x,2.03,z,5.90,3.88,.44)
+    self:Face("office","officeArt",OFFICE,x,2.02,47.545,5.70,3.80,0)
+    for _,side in ipairs({-1,1}) do
+        self:Solid("office side stone return","concrete",x+side*4.70,2.03,48.23,3.60,3.88,.44)
+        self:Box("steel",x+side*2.39,1.88,47.517,.045,2.79,.055)
+        self:Box("steel",x+side*.94,1.52,47.516,.038,2.80,.055)
+        self:Solid("office side plinth","stone",x+side*4.65,.22,47.79,3.20,.28,.63)
+        -- Tiled stone joint rhythm belongs to this single lobby, not copied towers.
+        for i=1,4 do self:Box("steel",x+side*4.65,.42+i*.69,47.998,3.18,.012,.018) end
+        self:Planter(x+side*4.90,47.25)
+    end
+    -- Closed glass entry's door handles physically project, aligned to the image.
+    for _,side in ipairs({-1,1}) do
+        self:Tube("steel",V(x+side*.10,1.05,47.475),V(x+side*.10,1.72,47.475),.023)
+    end
+    self:Box("stone",x,.105,47.70,5.75,.045,.70) -- threshold behind the unobstructed route
+    self:Grate("office door drain",x,47.30,5.65,.18)
+    -- Structural slab and soffit: no false ground collider below the canopy.
+    self:Box("metal",x,4.10,46.96,13.35,.18,2.08)
+    self:Box("steel",x,4.01,45.98,13.35,.045,.09)
+    self:Box("lamp",x,3.993,46.62,5.3,.018,.09)
+    self:Volume("office cantilever canopy","overhead",x,4.10,46.96,13.35,.18,2.08,false)
+    self.counters.canopies=self.counters.canopies+1
+    self:Box("teal",x+4.63,1.81,47.978,2.34,2.03,.025)
+    self:Sign("星 桥 大 厦",x+4.63,2.51,47.958,0,.22)
+    self:Sign("1F  门厅 · 物业",x+4.63,2.11,47.958,0,.15)
+    self:Sign("2F  会议接待",x+4.63,1.77,47.958,0,.15)
+    self:Sign("3—6F  办公区",x+4.63,1.44,47.958,0,.15)
+    self:Sign("配送请在门厅交接",x+4.63,1.11,47.958,0,.13)
+    self:Box("wood",x-4.62,1.83,47.98,2.38,1.83,.035)
+    self:Box("paper",x-4.62,1.83,47.955,2.18,1.64,.015)
+    self:Sign("欢 迎 来 访",x-4.62,2.33,47.935,0,.22,Color(.17,.22,.19))
+    self:Sign("请在门厅核对收件人",x-4.62,1.88,47.935,0,.135,Color(.17,.22,.19))
+    self:Sign("雨天小心  ·  保持通道",x-4.62,1.44,47.935,0,.13,Color(.17,.22,.19))
+end
+
+function Dressing:Planter(x,z)
+    local base=self.details:Surface(x,z)
+    self:Lathe("concrete",x,base,z,{{.19,0},{.24,.04},{.26,.52},{.28,.54},{.28,.58},{.24,.58},{.22,.45}},12)
+    self:Lathe("recess",x,base+.49,z,{{.235,0},{0,0}},12)
+    self:Volume("office entrance planter","solid",x,base+.29,z,.56,.58,.56,true)
+    -- Low polygon leaves are individual tapered blades with genuine silhouettes.
+    for i=1,9 do
+        local angle=i*2.39996
+        local dx,dz=math.cos(angle),math.sin(angle)
+        local tip=V(x+dx*.34,base+.96+(i%3)*.14,z+dz*.34)
+        local a=V(x-dz*.045,base+.54,z+dx*.045)
+        local b=V(x+dz*.045,base+.54,z-dx*.045)
+        local shoulder=V(x+dx*.20-dz*.038,base+.84,z+dz*.20+dx*.038)
+        local edge=V(x+dx*.20+dz*.038,base+.84,z+dz*.20-dx*.038)
+        self:Quad("foliage",a,shoulder,b,edge,1)
+        self:Quad("foliage",b,edge,a,shoulder,1)
+        local tipSide=tip+V(dz*.002,0,-dx*.002)
+        self:Quad("foliage",shoulder,tip,edge,tipSide,1)
+        self:Quad("foliage",edge,tipSide,shoulder,tip,1)
+    end
+end
+
+function Dressing:Grate(id,x,z,width,depth)
+    local y=self.details:Surface(x,z)+.002
+    self:Quad("frame",V(x-width/2,y,z-depth/2),V(x-width/2,y,z+depth/2),
+        V(x+width/2,y,z-depth/2),V(x+width/2,y,z+depth/2),2)
+    local count=math.max(4,math.floor(width/.11))
+    for i=1,count do
+        local px=x-width/2+(i-.5)*width/count
+        self:Quad("steel",V(px-.018,y+.001,z-depth/2),V(px-.018,y+.001,z+depth/2),
+            V(px+.018,y+.001,z-depth/2),V(px+.018,y+.001,z+depth/2),2)
+    end
+    self:Volume(id,"flush",x,y,z,width,.004,depth,false)
+    self.counters.drains=self.counters.drains+1
 end
 
 function Dressing:Charging()
@@ -465,6 +689,21 @@ function Dressing:Drainage()
         self:Volume("flush street gully","flush",x,y,z,.92,.004,.42,false)
         self.counters.drains = self.counters.drains+1
     end
+    -- The opposite retail frontage gets the same continuous kerb language, not a
+    -- second blank street. All are flush, including the office approach joint line.
+    for _,x in ipairs({-83,-76,-63,-49,-35,-18,18,37,46,61,73,84}) do
+        self:Grate("north retail kerb gully",x,5.76,.86,.36)
+    end
+    for x=-85,85,1.5 do
+        if math.abs(x)>13 then
+            local y=self.details:Surface(x,6.04)+.002
+            self:Quad("stone",V(x,y,6.01),V(x,y,6.07),V(x+1.40,y,6.01),V(x+1.40,y,6.07),1)
+        end
+    end
+    for x=-48,-8,1.25 do
+        local y=self.details:Surface(x,45.46)+.002
+        self:Quad("stone",V(x,y,45.435),V(x,y,45.485),V(x+1.19,y,45.435),V(x+1.19,y,45.485),1)
+    end
     -- Expansion joints along the existing kerb line, without inventing a raised kerb.
     for _, range in ipairs({{-48,-13},{13,48}}) do
         for x=range[1],range[2],1.5 do
@@ -481,11 +720,27 @@ local function circleGap(v,x,z)
     return math.sqrt((px-x)^2+(pz-z)^2)
 end
 
+local function sweptOverlap(v,ax,az,bx,bz,radius)
+    -- Segment vs radius-expanded AABB (same conservative rule used by City:Move).
+    local low,high=0,1
+    local function slab(a,b,mn,mx)
+        local delta=b-a
+        if math.abs(delta)<.000001 then return a>mn and a<mx end
+        local t1,t2=(mn-a)/delta,(mx-a)/delta
+        low,high=math.max(low,math.min(t1,t2)),math.min(high,math.max(t1,t2))
+        return low<high-.000001
+    end
+    return slab(ax,bx,v.x1-radius,v.x2+radius) and slab(az,bz,v.z1-radius,v.z2+radius)
+end
+
 -- Pure inspection; no runtime runner, filesystem, save profile, or input simulation.
 function Dressing:Validate()
     local errors,warnings = {},{}
     if self.disposed then errors[#errors+1] = "module already disposed" end
     local unchangedRoute = self.routeSnapshot==routeSignature()
+    local routeSegments,pedestrianSegments=0,0
+    for _,order in ipairs(Config.orderTemplates) do routeSegments=routeSegments+math.max(0,#order.route-1) end
+    pedestrianSegments=#Pedestrians.Paths
     if not unchangedRoute then errors[#errors+1] = "navigation coordinates changed" end
     if self.surfaceSignature~=surfaceSignature(self.details) then errors[#errors+1] = "ground rectangles changed" end
     if #self.details.surfaces~=#self.surfaceSnapshot then errors[#errors+1] = "ground registry size changed" end
@@ -510,6 +765,28 @@ function Dressing:Validate()
                     errors[#errors+1] = "2m POI intrusion "..point.id..": "..v.id
                 end
             end
+            for _,order in ipairs(Config.orderTemplates) do
+                for i=2,#order.route do
+                    local a,b=order.route[i-1],order.route[i]
+                    if sweptOverlap(v,a.x,a.z,b.x,b.z,1.5) then
+                        errors[#errors+1]="order approach intrusion "..order.id..": "..v.id
+                        break
+                    end
+                end
+            end
+            for i,path in ipairs(Pedestrians.Paths) do
+                if sweptOverlap(v,path[1],path[2],path[3],path[4],.45) then
+                    errors[#errors+1]="pedestrian path "..i..": "..v.id
+                end
+            end
+            -- These legacy contacts are created AFTER StreetDressing; validate their
+            -- actual fixed envelopes without require(Contacts) circular dependencies.
+            for _,p in ipairs({{-28.6,-10.9},{-9.9,-73.3},{110.5,83.2},{-22,-11.1},
+                {-19.1,-10.9},{-10,-66.5},{-11,-65.4},{-72.7,10.9}}) do
+                if p[1]>v.x1-.45 and p[1]<v.x2+.45 and p[2]>v.z1-.45 and p[2]<v.z2+.45 then
+                    errors[#errors+1]="legacy contact intrusion: "..v.id
+                end
+            end
         end
         if v.exception then warnings[#warnings+1] = v.id.." reuses the old pole; its legacy POI overlap is not fixed here" end
     end
@@ -525,11 +802,25 @@ function Dressing:Validate()
         end
         if face.material:GetTexture(TU_DIFFUSE).name~=face.path then errors[#errors+1] = "artwork binding: "..face.id end
     end
-    if #self.faces~=3 then errors[#errors+1] = "expected two storefront faces and one readable shop sign" end
+    local expectedFaces={breakfast=BREAKFAST,repair=REPAIR,breakfast_sign=SIGN,
+        noodle=NOODLE,convenience=CONVENIENCE,office=OFFICE}
+    if #self.faces~=6 then errors[#errors+1] = "expected five storefront/lobby faces and one breakfast sign" end
+    for _,face in ipairs(self.faces) do
+        if expectedFaces[face.id]~=face.path then errors[#errors+1]="unexpected storefront: "..face.id end
+        expectedFaces[face.id]=nil
+        if face.id=="noodle" or face.id=="convenience" or face.id=="office" then
+            local texture=face.material:GetTexture(TU_DIFFUSE)
+            if math.abs(face.width/face.height-texture.width/texture.height)>.002 then
+                errors[#errors+1]="new storefront aspect distorted: "..face.id
+            end
+        end
+    end
+    for id in pairs(expectedFaces) do errors[#errors+1]="missing storefront: "..id end
     warnings[#warnings+1] = "Solid legacy shell retained: displayed interior is albedo + shallow physical frame, not enterable geometry"
     warnings[#warnings+1] = "No runtime/screenshot validation performed by this module's implementation task"
     return {ok=#errors==0,errors=errors,warnings=warnings,volumes=self.volumes,faces=self.faces,
-        unchangedRoute=unchangedRoute,groundSamples=#self.probes,minimumWalkWidth=6,poiRadius=Config.INTERACTION_RADIUS}
+        unchangedRoute=unchangedRoute,groundSamples=#self.probes,minimumWalkWidth=6,poiRadius=Config.INTERACTION_RADIUS,
+        routeSegments=routeSegments,pedestrianPaths=pedestrianSegments,routeClearance=1.5,pedestrianClearance=.45}
 end
 
 function Dressing:Stats()
@@ -542,6 +833,7 @@ function Dressing:Stats()
         batchTriangles=triangles,artworkTriangles=#self.faces*2,boxes=self.counters.boxes,
         quads=self.counters.quads,models=self.counters.models,tubes=self.counters.tubes,
         signs=self.counters.signs,drains=self.counters.drains,obstacles=#self.collisions,
+        storeProps=self.counters.storeProps,canopies=self.counters.canopies,
         ownedMaterials=#self.owned,borrowedArtworkTextures=#self.textures,perFrameRebuilds=0,
         groundRectanglesAdded=0,navigationChanges=0,disposed=self.disposed}
 end

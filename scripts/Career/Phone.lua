@@ -8,49 +8,72 @@ Phone.Apps={{"delivery","外卖骑手"},{"map","南城地图"},{"wallet","钱包
     {"messages","消息"},{"life","生活"},{"progression","车手生涯"}}
 Phone.Resources={Phone.Frame,Phone.Wallpaper}
 for _,app in ipairs(Phone.Apps) do Phone.Resources[#Phone.Resources+1]="image/career_phone/"..app[1]..".png" end
+
+-- width/height 是外层 SafeAreaView 扣除刘海、胶囊和边距后的可用基准像素。
+-- 短横屏保留足够宽度，而不是继续压缩字号/触摸目标；高度只取可用空间。
+function Phone.Metrics(width,height)
+    local h=math.min(620,height)
+    return {width=math.min(width,324,math.max(260,h*.58)),height=h}
+end
+---@param view CareerView
+function Phone.Layout(view,width,height)
+    if width<=0 or height<=0 then return end
+    local metrics=Phone.Metrics(width,height)
+    if view.phoneWidth==metrics.width and view.phoneHeight==metrics.height then return end
+    view.phoneWidth,view.phoneHeight=metrics.width,metrics.height
+    view.phoneBody:SetStyle{width=metrics.width,height=metrics.height}
+    local summary=view.phoneDesktop:FindById("career-phone-summary")
+    if summary then summary:SetVisible(metrics.height>=330) end
+end
+---@param view CareerView
 function Phone.Create(view,actions)
-    local shell=UI.Panel{width=324,maxWidth="94%",height="100%",maxHeight=690,padding=0,
-        backgroundColor={7,10,13,255},borderRadius=30,overflow="hidden"}
-    local screen=UI.Panel{position="absolute",left="8.5%",right="8.5%",top="7.2%",bottom="6.5%",
-        padding=9,gap=7,backgroundImage=Phone.Wallpaper,backgroundFit="cover",overflow="hidden",borderRadius=12}
-    view.phoneClock=Theme.Label("08:00",10,Theme.Colors.white)
-    screen:AddChild(UI.Row{width="100%",height=20,padding=0,justifyContent="space-between",children={
-        view.phoneClock,Theme.Label("4G  ▂▄▆  86%",9,Theme.Colors.white)}})
-    view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,{fontWeight="bold",flexShrink=1})
-    screen:AddChild(UI.Row{width="100%",padding=0,gap=5,alignItems="center",children={view.phoneTitle,
-        Theme.Button("收起",actions.closePhone,false,48,{height=30,padding=0,marginLeft="auto",fontSize=10})}})
-    view.phoneContent=UI.ScrollView{width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0}
+    local shell=UI.Panel{id="career-phone-body",width=300,maxWidth="100%",height="100%",maxHeight=620,padding=0,
+        flexShrink=1,backgroundColor={7,10,13,255},borderRadius=26,overflow="hidden"}
+    -- 已核对576x1024框图透明开孔：约x50..524、y76..954（四角内收）；内容再留安全余量。
+    -- 与框图一样采用百分比缩放，不能把外壳高度当作屏幕可用高度。
+    local screen=UI.Panel{id="career-phone-screen",position="absolute",left="9.2%",right="9.2%",top="8%",bottom="7.6%",
+        padding=6,gap=6,backgroundImage=Phone.Wallpaper,backgroundFit="cover",overflow="hidden",borderRadius=10}
+    view.phoneClock=Theme.Label("08:00",11,Theme.Colors.white,{height=18})
+    screen:AddChild(UI.Row{id="career-phone-status",width="100%",height=18,padding=0,justifyContent="space-between",children={
+        view.phoneClock,Theme.Label("4G · 86%",11,Theme.Colors.white,{height=18})}})
+    view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,
+        {fontWeight="bold",flexGrow=1,flexShrink=1,minWidth=0,maxLines=1})
+    view.phoneBack=Theme.Button("首页",function() actions.phone("apps") end,false,52,
+        {id="career-phone-back",height=44,minWidth=44,padding=0,fontSize=12,visible=false})
+    screen:AddChild(UI.Row{id="career-phone-toolbar",width="100%",height=44,padding=0,gap=4,alignItems="center",children={
+        view.phoneBack,view.phoneTitle,
+        Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=44,minWidth=44,padding=0,fontSize=12})}})
+    -- 首页不在任何 ScrollView 内。长订单/装备等内页共用一个有界滚动容器。
+    view.phoneDesktop=UI.Panel{id="career-phone-desktop",width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0,overflow="hidden"}
+    view.phoneContent=UI.ScrollView{id="career-phone-content",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
+        padding=0,scrollX=false,scrollY=true,visible=false}
+    screen:AddChild(view.phoneDesktop)
     screen:AddChild(view.phoneContent)
-    screen:AddChild(UI.Row{width="100%",gap=6,padding=0,children={
-        Theme.Button("应用首页",function() actions.phone("apps") end,false,"100%",{height=30,fontSize=10})}})
-    screen:AddChild(UI.Panel{width=75,height=3,alignSelf="center",backgroundColor={230,239,240,210},borderRadius=2})
     shell:AddChild(screen)
-    shell:AddChild(UI.Panel{position="absolute",left=0,top=0,width="100%",height="100%",
+    shell:AddChild(UI.Panel{id="career-phone-frame",position="absolute",left=0,top=0,width="100%",height="100%",
         backgroundImage=Phone.Frame,backgroundFit="fill",pointerEvents="none"})
     return shell
 end
-function Phone.Desktop(content,state,actions)
-    content:AddChild(Theme.Label(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60),34,
-        Theme.Colors.white,{textAlign="center",fontWeight="bold",marginTop=8}))
-    content:AddChild(Theme.Label("第"..state.day.."天 · 南城",11,Theme.Colors.white,{textAlign="center",marginBottom=9}))
-    local grid=UI.Panel{width="100%",gap=7,padding=0}
+function Phone.Desktop(content,state,actions,height)
+    content:AddChild(Theme.Label("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,
+        Theme.Colors.amber,{id="career-phone-summary",width="100%",height=22,textAlign="center",visible=(height or 0)>=330}))
+    local grid=UI.Panel{id="career-app-grid",width="100%",flexGrow=1,flexBasis=0,minHeight=156,gap=8,padding=0,
+        justifyContent="center"}
     for row=1,2 do
-        local line=UI.Row{width="100%",padding=0,gap=7}
+        local line=UI.Row{id="career-app-row-"..row,width="100%",flexGrow=1,flexBasis=0,minHeight=74,maxHeight=98,
+            padding=0,gap=6,alignItems="stretch"}
         for col=1,3 do
             local app=Phone.Apps[(row-1)*3+col]
             local id=app[1]
-            line:AddChild(UI.Panel{id="career-app-"..id,flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=83,padding=0,gap=5,alignItems="center",
+            line:AddChild(UI.Panel{id="career-app-"..id,flexGrow=1,flexShrink=1,flexBasis=0,minWidth=44,minHeight=74,
+                padding=0,gap=4,alignItems="center",justifyContent="center",
                 pointerEvents="box-only",onClick=function() actions.phone(id) end,
-                children={UI.Panel{width=54,height=54,borderRadius=12,backgroundImage="image/career_phone/"..id..".png",
+                children={UI.Panel{width=44,height=44,borderRadius=10,backgroundImage="image/career_phone/"..id..".png",
                     backgroundFit="contain",pointerEvents="none"},
-                    Theme.Label(app[2],10,Theme.Colors.white,{textAlign="center",pointerEvents="none"})}})
+                    Theme.Label(app[2],11,Theme.Colors.white,{width="100%",height=20,textAlign="center",pointerEvents="none"})}})
         end
         grid:AddChild(line)
     end
     content:AddChild(grid)
-    content:AddChild(UI.Panel{width="100%",padding=10,gap=5,borderRadius=12,backgroundColor={6,19,28,175},children={
-        Theme.Label(state.online and "外卖骑手 · 正在听单" or "外卖骑手 · 尚未上线",11,Theme.Colors.amber),
-        Theme.Label(string.format("现金 ¥%.2f · 已完成%d单",state.cashCents/100,state.completedOrders),10,Theme.Colors.white),
-        Theme.Label("停车用手机，收起后继续生活。",9,Theme.Colors.muted)}})
 end
 return Phone

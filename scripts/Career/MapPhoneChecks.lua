@@ -35,11 +35,13 @@ end
 ---@param id string
 ---@return Widget
 local function find(view,id)
-    local widget=assert(view.phoneContent:FindById(id),"缺少地图控件："..id)
+    local widget=assert(view.phoneBody:FindById(id),"缺少手机控件："..id)
     return widget
 end
 ---@param view CareerView
 local function layout(view)
+    UI.Layout()
+    view.phoneArea:Update(0)
     UI.Layout()
     view.phoneContent:Update(0) -- 同步内容尺寸，无惯性推进或游戏 Update。
     local map=view.phoneContent:FindById("career-phone-map")
@@ -53,12 +55,15 @@ local function tap(view,id)
     local widget=find(view,id)
     assert(widget:IsVisible() and not widget.props.disabled,"控件不可点："..id)
     local r=widget:GetAbsoluteLayoutForHitTest()
-    local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
-    assert(area.h>0 and r.h>0 and r.w>0,"触摸必须使用真实布局："..id)
-    -- 将目标滚到可见区，不能用未扣滚动量的 GetAbsoluteLayout 假点屏外按钮。
-    local _,scroll=view.phoneContent:GetScroll()
-    view.phoneContent:SetScroll(0,math.max(0,scroll+r.y+r.h/2-area.y-area.h/2))
-    r=widget:GetAbsoluteLayoutForHitTest()
+    local desktop=view.phonePage=="apps"
+    local area=(desktop and view.phoneDesktop or view.phoneContent):GetAbsoluteLayoutForHitTest()
+    assert(area.h>0 and r.h>=44 and r.w>=44,"触摸必须使用至少44px真实布局："..id)
+    -- 主页禁止通过滚动寻找应用；仅内页允许把目标滚进视口。
+    if not desktop then
+        local _,scroll=view.phoneContent:GetScroll()
+        view.phoneContent:SetScroll(0,math.max(0,scroll+r.y+r.h/2-area.y-area.h/2))
+        r=widget:GetAbsoluteLayoutForHitTest()
+    end
     assert(r.y+r.h/2>area.y and r.y+r.h/2<area.y+area.h,"目标仍被滚动视口裁剪："..id)
     local scale=UI.GetScale()
     local function event(kind)
@@ -305,6 +310,114 @@ function Checks.Run(session)
     if not ok then error(failure,0) end
     if not cleaned then error(cleanupFailure,0) end
     if not refreshed then error(refreshFailure,0) end
+    return true
+end
+-- 可单独验收手机：UI初始化后调用RunLayout(view,state,offer,active)。不建城、不读写档、不执行业务动作。
+-- 用真实Yoga/控件/命中测试，显式尺寸根模拟横屏与安全区；不更改UI.Scale.DEFAULT或graphics模式。
+---@param view CareerView
+function Checks.RunLayout(view,state,offer,active)
+    assert(view.phonePage=="" and not view.blocked and UI.GetRoot()==view.root,"请在非手机/非弹窗的已挂载游戏态验收")
+    local Phone=require("Career.Phone")
+    local root=UI.GetRoot()
+    local phoneAction,closeAction=view.actions.phone,view.actions.closePhone
+    local oldWidth,oldHeight=view.phoneWidth,view.phoneHeight
+    local oldStyle={width=view.phoneBody.props.width,height=view.phoneBody.props.height}
+    local holder=UI.Panel{width=640,height=360,padding=0}
+    view.phoneArea:Remove(); holder:AddChild(view.phoneArea)
+    UI.SetRoot(holder)
+    view.actions.phone=function(page) view:OpenPhone(page,state,offer,active) end
+    view.actions.closePhone=function() view:ClosePhone() end
+    local function inside(child,parent)
+        return child.x>=parent.x-1 and child.y>=parent.y-1
+            and child.x+child.w<=parent.x+parent.w+1 and child.y+child.h<=parent.y+parent.h+1
+    end
+    local function settle(width,height)
+        holder:SetStyle{width=width,height=height}
+        UI.Layout()
+        view.phoneArea:Update(0)
+        UI.Layout()
+        view.phoneContent:Update(0)
+        UI.Layout()
+    end
+    local function touch(widget)
+        local r=widget:GetAbsoluteLayoutForHitTest()
+        assert(r.w>=44 and r.h>=44,"手机触摸目标不得小于44逻辑像素："..tostring(widget.props.id))
+        local scale=UI.GetScale()
+        local down=PointerEvent.new("PointerDown",{pointerId=791202,pointerType="touch",isPrimary=true,
+            x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
+        UI.HandlePointerEvent(down)
+        assert(down.target==widget,"无滚动首页/固定工具栏真实命中错误："..tostring(widget.props.id))
+        UI.HandlePointerEvent(PointerEvent.new("PointerUp",{pointerId=791202,pointerType="touch",isPrimary=true,
+            x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left}))
+    end
+    local ok,failure=pcall(function()
+        -- 后两组额外模拟刘海/胶囊挤占空间；640x360还直接按基准像素验收，比默认密度缩放更紧。
+        for _,size in ipairs({{640,360,0,0},{960,540,0,0},{640,360,24,36},{960,540,32,48}}) do
+            local width,height=size[1],size[2]
+            holder:SetStyle{paddingLeft=size[3],paddingRight=size[3],paddingTop=size[4],paddingBottom=8}
+            view:OpenPhone("apps",state,offer,active)
+            settle(width,height)
+            local body=view.phoneBody:GetAbsoluteLayout()
+            local area=view.phoneArea:GetAbsoluteLayout()
+            assert(inside(body,area),"手机外壳超出实际安全可用区域")
+            local screen=assert(holder:FindById("career-phone-screen")):GetAbsoluteLayout()
+            local aperture={x=body.x+body.w*50/576,y=body.y+body.h*76/1024,
+                w=body.w*476/576,h=body.h*880/1024}
+            assert(inside(screen,aperture),"内容安全区不匹配硬件框图透明开孔")
+            assert(view.phoneDesktop:IsVisible() and not view.phoneContent:IsVisible(),"主页不得使用纵向ScrollView")
+            local old=tree(assert(view.phoneDesktop:GetChildAt(1)))
+            local grid=assert(holder:FindById("career-app-grid"))
+            assert(grid:GetNumChildren()==2,"固定六应用必须是两行三列")
+            for _,app in ipairs(Phone.Apps) do
+                local icon=assert(holder:FindById("career-app-"..app[1]))
+                local r=icon:GetAbsoluteLayoutForHitTest()
+                assert(inside(r,screen) and inside(r,view.phoneDesktop:GetAbsoluteLayout()),"底部软件被裁剪："..app[1])
+                assert(r.w>=44 and r.h>=44,"应用触摸目标过小")
+                local ancestor=icon.parent
+                while ancestor and ancestor~=view.phoneBody do
+                    assert(ancestor._className~="ScrollView","首页应用不得有ScrollView祖先")
+                    ancestor=ancestor.parent
+                end
+                for _,item in ipairs(tree(icon)) do
+                    if item._className=="Label" then
+                        assert(item.props.fontSize>=11 and item:GetAbsoluteLayout().h>=18,"不能靠缩小应用文字解决布局")
+                    end
+                end
+            end
+            for _,app in ipairs(Phone.Apps) do
+                touch(assert(holder:FindById("career-app-"..app[1])))
+                assert(view.phonePage==app[1] and view.phoneContent:IsVisible() and not view.phoneDesktop:IsVisible())
+                freed(old)
+                settle(width,height)
+                assert(view.phoneContent:GetAbsoluteLayout().h>44,"内页滚动视口坍缩")
+                if app[1]=="progression" then
+                    local _,contentHeight=view.phoneContent:GetContentSize()
+                    assert(contentHeight>view.phoneContent:GetAbsoluteLayout().h,"装备/生涯长页仍须可纵向滚动")
+                    view.phoneContent:ScrollToBottom()
+                    local _,scroll=view.phoneContent:GetScroll()
+                    assert(scroll>0,"长内页滚动失效")
+                end
+                local oldPage=tree(assert(view.phoneContent:GetChildAt(1)))
+                local back=assert(holder:FindById("career-phone-back"))
+                assert(inside(back:GetAbsoluteLayout(),screen),"固定返回超出屏幕")
+                touch(back); freed(oldPage)
+                assert(view.phonePage=="apps","内页返回必须回到应用首页")
+                settle(width,height)
+                old=tree(assert(view.phoneDesktop:GetChildAt(1)))
+            end
+            touch(assert(holder:FindById("career-phone-close"))); freed(old)
+            assert(view.phonePage=="" and view.phoneDesktop:GetNumChildren()==0 and view.phoneContent:GetNumChildren()==0,
+                "收起必须Destroy所有页面子树")
+            print(string.format("[手机布局验收通过] %dx%d 安全边距%d/%d；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy",width,height,size[3],size[4]))
+        end
+    end)
+    view:ClosePhone()
+    view.actions.phone,view.actions.closePhone=phoneAction,closeAction
+    view.phoneArea:Remove(); holder:Destroy(); view.phone:AddChild(view.phoneArea)
+    view.phoneBody:SetStyle(oldStyle)
+    view.phoneWidth,view.phoneHeight=oldWidth,oldHeight
+    UI.SetRoot(root); UI.Layout()
+    if not ok then error(failure,0) end
     return true
 end
 return Checks
