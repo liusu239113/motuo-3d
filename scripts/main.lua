@@ -22,6 +22,7 @@ local CareerSession = require("Career.Session")
 local career_ = nil
 local careerMode_ = false
 local careerRace_ = false
+local careerRaceId_ = ""
 local careerRaceCheck_,careerRaceCheckStage_,careerRaceCheckFrames_=false,0,0
 local CareerProgress = require("Career.Progression")
 local CareerStore = require("Career.Store")
@@ -343,7 +344,7 @@ local function SettleCareerResult()
     if pending.training and not race_.player.finished then return true,"训练尚未通过，报名保留，可免费继续练习" end
     local ok,message
     if pending.training then ok,message=CareerProgress.CompleteTraining(race_.player.finished==true)
-    else ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true) end
+    else ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true,careerRaceId_) end
     if ok then sim_.coinsEarned=0 else print("[生涯赛事保存失败] "..message) end
     return ok,message
 end
@@ -838,6 +839,7 @@ function Start()
         hud_:SetCareerRace(false)
         hud_.root:SetVisible(true); UI.SetRoot(hud_.root); MainMenu()
     end, race=function(pending)
+        careerRaceId_=pending.id
         careerMode_,careerRace_=false,true
         hud_:SetCareerRace(true)
         hud_.root:SetVisible(true); UI.SetRoot(hud_.root)

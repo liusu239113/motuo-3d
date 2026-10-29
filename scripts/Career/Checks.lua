@@ -333,16 +333,25 @@ function Checks.RunWorld(session)
     Checks.RunLogic()
     Checks.RunProgression()
     Checks.RunCloudTimeout()
+    require("Career.TeamChecks").Run()
+    require("Career.EngagementChecks").Run()
+    require("Career.WorldChecks").Run(session)
     local city=assert(session.city)
     for _,point in ipairs(Config.pointList) do
         assert(city:IsFree(point.x,point.z,.32),"门前点被建筑堵塞："..point.id)
-        assert(city:GetMarker(point.id),"缺少实体marker")
+        if math.abs(point.x)<=180 and math.abs(point.z)<=180 then
+            assert(city:GetMarker(point.id),"缺少实体marker")
+        end
     end
     for _,template in ipairs(Config.orderTemplates) do
         for i=2,#template.route do
             local a,b=template.route[i-1],template.route[i]
-            local x,z=city:Move(a.x,a.z,b.x-a.x,b.z-a.z,.32)
-            assert(math.abs(x-b.x)+math.abs(z-b.z)<.01,"配送路线穿楼："..template.id)
+            if Config.RouteDistance({a,b})>1000 then
+                assert(require("Career.WorldData").SegmentFree(a,b,.32),"长距离路线穿楼："..template.id)
+            else
+                local x,z=city:Move(a.x,a.z,b.x-a.x,b.z-a.z,.32)
+                assert(math.abs(x-b.x)+math.abs(z-b.z)<.01,"配送路线穿楼："..template.id)
+            end
         end
     end
     local actor=assert(session.actor)
@@ -374,6 +383,7 @@ function Checks.RunWorld(session)
     require("Career.HousingChecks").Run(session)
     require("Career.MediaChecks").Run(session)
     require("Career.TrafficChecks").Run(session)
+    require("Career.OuterChecks").Run(session)
     session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end
@@ -412,6 +422,8 @@ function Checks.RunWorld(session)
         if home then require("Career.HousingChecks").Shot(session,home) end
         local trafficSeconds=arg:match("^%-careertraffic=([%.%d]+)$")
         if trafficSeconds then require("Career.TrafficChecks").Shot(session,tonumber(trafficSeconds) or 0) end
+        local district=arg:match("^%-careerworld=(.+)$")
+        if district then require("Career.WorldChecks").Shot(session,district) end
         local page=arg:match("^%-careerpage=(.+)$")
         if page then
             if page=="delivery" then session.online=true end

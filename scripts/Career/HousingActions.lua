@@ -26,7 +26,7 @@ function Actions:PositionSnapshot()
     local a=assert(self.actor)
     return {x=a.x,z=a.z,yaw=a.yaw,mounted=a.mounted,bikeX=a.bikeX,bikeZ=a.bikeZ,bikeYaw=a.bikeYaw,
         space=self.space,cityX=self.cityX,cityZ=self.cityZ,cityYaw=self.cityYaw,
-        activeVehicle=a.vehicleId,vehicleParking=a:ParkingSnapshot()}
+        activeVehicle=a.vehicleId,vehicleParking=a:ParkingSnapshot(),groundHeight=a.walkHeight}
 end
 function Actions:ApplySpace(space)
     self.space=space
@@ -80,6 +80,7 @@ function Actions:LeaveHousing()
     self:ApplySpace("city")
     local x,z=self.city:FindFree(pos.x,pos.z,.32)
     self.actor:Teleport(x,z,pos.yaw); self.yaw=pos.yaw
+    self.city.stream:Ensure(x,z,550)
     self.view:ClosePhone(); self.view:ResetInput(); self:Refresh(); self.view:Notice(message)
     print("[生涯住房] 出门，停车坐标未改变")
     return true

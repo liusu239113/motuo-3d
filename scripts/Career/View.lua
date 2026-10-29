@@ -9,6 +9,9 @@ local ControlSettings = require("ControlSettings")
 local Housing = require("Career.HousingData")
 local WalkStick = require("Career.WalkStick")
 local Phone = require("Career.Phone")
+local Engagements = require("Career.Engagements")
+local Team = require("Career.Team")
+local World = require("Career.WorldData")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -173,8 +176,9 @@ function View:BuildPhone(state,offer,active)
     if page=="apps" then
         Phone.Desktop(content,state,a)
     elseif page=="delivery" then
-        text("南城老街站 · "..(state.online and "正在听单" or "尚未上线"),14,C.amber)
-        text("配送费2.50～10.00元，接单时报价锁定。绕路不会多拿钱。",11,C.muted)
+        local pos=self.lastActor or state.position
+        text(World.District(pos.x,pos.z).label.."站 · "..(state.online and "正在听单" or "尚未上线"),14,C.amber)
+        text("配送费2.50～10.00元，接单时报价锁定。绕路不会多拿钱；长途单预留更多时间，来不及当日完成则不派发。",11,C.muted)
         button(state.online and "停止听单" or "上线听单",function() a.online(not state.online) end,not state.online,"career-online")
         if active then
             text(active.title,18)
@@ -198,7 +202,7 @@ function View:BuildPhone(state,offer,active)
             button("抢单 / 接单",a.accept,true,"career-accept")
         else text("上线后接收本地城市配送订单。",12,C.muted) end
     elseif page=="map" then
-        local map=Map.New("career-phone-map"); map.root:SetStyle{width="100%",height=220}
+        local map=Map.New("career-phone-map",true); map.root:SetStyle{width="100%",height=220}
         content:AddChild(map.root)
         if state.currentSpace and state.currentSpace~="city" then
             local pos=state.position
@@ -206,6 +210,11 @@ function View:BuildPhone(state,offer,active)
             text("你正在室内，地图标记为进入住处的位置。请先走到房门旁出门，再按城市导航前往目的地。",11,C.amber)
         else
             map:SetTelemetry(self.lastActor or state.position,self.lastTarget,active)
+        end
+        text("全城30公里跨度 · 路线连通，各区需要亲自骑行探索。",12,C.amber)
+        text("主屏小地图跟随当前位置；本页为全城概览。外区只派附近商家的订单。",11,C.muted)
+        for _,district in ipairs(World.Districts) do
+            text(district.label,14,C.cyan)
         end
         for _,point in ipairs(Config.pointList) do
             local id=point.id; button(point.label,function() a.setWaypoint(id); a.closePhone() end,false)
@@ -226,6 +235,36 @@ function View:BuildPhone(state,offer,active)
         text("二狗，车钥匙给你了。那辆9号以前是我追对象时留下的，壳子磕过，电池还能用。后架我给你装了保温箱。",13)
         text("先把饭吃上，晚上桥下或者公园能落脚。送餐别急，停稳下车再拿。等你真攒够五万，咱去车行看看。",13)
         text("王二狗：这回，先把生活跑顺。",13,C.cyan)
+        button("用餐 / 休息 / 充电",function() a.phone("life") end,false)
+        local events=Engagements.State(state)
+        text("街区联系人 · 现场委托",17,C.amber)
+        text("到联系人驻点接受，亲自行动后返回交付；模拟排班不计入委托。",11,C.muted)
+        for _,item in ipairs(events.list) do
+            local id,instanceId=item.id,item.instanceId
+            text(item.npcName.." · "..item.title,14,C.cyan)
+            text(item.description,11,C.muted)
+            text(item.progressText,12,C.white)
+            if item.status=="available" then
+                button("现场接取 · "..item.title,function() a.acceptEngagement(id) end,true,"career-engagement-"..id)
+            elseif item.status=="locked" then text(item.prerequisiteText,10,C.muted)
+            elseif item.status=="ready" then
+                button("返回交付 · 奖励"..money(item.rewardCents),function() a.claimEngagement(instanceId) end,true,"career-claim-"..id)
+            elseif item.status=="claimed" then text("已交付 · 回信已保存",11,C.green) end
+            if item.status~="claimed" then
+                local point=item.nextPointId or item.acceptPointId
+                button("导航到"..Config.points[point].label,function() a.setWaypoint(point); a.closePhone() end,false)
+                if item.status=="active" and point~=item.returnPointId then
+                    button("到场联系 / 确认访问",function() a.visitEngagement(point) end,false)
+                end
+            end
+        end
+        for _,letter in ipairs(events.letters) do
+            text(letter.npcName.." · "..letter.title,14,C.amber)
+            text(letter.text,12,C.white)
+        end
+        local journal=Progress.StoryLog(state)
+        if #journal>0 then text("王二狗的路 · 已读经历",17,C.amber) end
+        for _,story in ipairs(journal) do text(story.title,14,C.cyan); text(story.text,12,C.white) end
     elseif page=="progression" then
         text(Progress.Chapter(state),17,C.amber)
         local level,name=Progress.Level(state)
@@ -270,6 +309,19 @@ function View:BuildPhone(state,offer,active)
         end
         button(string.format("车行摩托补给 · 20元（油量%.0f%%）",state.motorcycleFuel or 100),a.refuel,false)
         button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
+        text("车队与赞助 · 正式合同",16,C.cyan)
+        local contract=Team.Status(state)
+        text(contract.text,12,C.white)
+        if contract.signed then
+            if contract.canClaim then button("到车行领取本轮赞助",a.claimTeam,true,"career-team-claim") end
+        else
+            for _,offer in ipairs(Team.Offers(state)) do
+                local id=offer.id
+                text(offer.name.." / "..offer.sponsor,13,C.amber)
+                text(offer.description,11,C.muted)
+                button("到车行查看并签约",function() a.signTeam(id) end,false,"career-team-sign")
+            end
+        end
         text("职业赛事",16,C.cyan)
         text(string.format("积分 %d · 冠军 %d · %s",state.career and state.career.points or 0,state.career and state.career.wins or 0,state.career and state.career.team or "尚未加入车队"),12)
         for index,series in ipairs(Progress.Series) do

@@ -46,6 +46,7 @@ local Vehicles = require "Career.VehicleData"
 ---@field cityZ? number
 ---@field cityYaw? number
 ---@field activeVehicle? string 缺省借用电动车；不影响参赛车辆
+---@field groundHeight? number 步行桥层高度；旧档缺省地面
 ---@field vehicleParking? table<string, table> 每辆已取出车辆的独立城市停车位
 ---@class CareerProfile
 ---@field version integer
@@ -81,6 +82,8 @@ local Vehicles = require "Career.VehicleData"
 ---@field raceVehicle? string
 ---@field motorcycleFuel? number 摩托共享油量，首次交车缺省100，电动车电量独立
 ---@field career? table
+---@field teamContract? CareerTeamContract
+---@field engagements? table
 ---@class CareerStorage
 ---@field read fun(path: string): string?, string?, boolean? text,error,missing
 ---@field write fun(path: string, text: string): boolean, string?
@@ -199,6 +202,7 @@ local function validate(p)
         or not finite(p.position.bikeX) or not finite(p.position.bikeZ) or not finite(p.position.bikeYaw) then
         return false, "生涯位置字段无效"
     end
+    if p.position.groundHeight~=nil and not range(p.position.groundHeight,0,20) then return false,"步行高度无效" end
     if not Vehicles.ValidPosition(p.position,p.ownedMotorcycles) then return false,"城市车辆未拥有或停车字段无效" end
     if p.motorcycleFuel~=nil and not range(p.motorcycleFuel,0,100) then return false,"摩托燃油无效" end
     if not validSpace(p.position) or ((p.position.space or "city")~="city" and p.position.space~=p.accommodation) then
@@ -234,6 +238,10 @@ local function validate(p)
             end
         end
     end
+    local teamValid,teamMessage=require("Career.Team").Validate(p)
+    if not teamValid then return false,teamMessage end
+    local eventValid,eventMessage=require("Career.Engagements").Validate(p)
+    if not eventValid then return false,eventMessage end
     local capacity=equipment.large_box and 4 or equipment.insulated_box and 2 or 1
     if not array(p.activeOrders) or #p.activeOrders > capacity or not array(p.ledger)
         or #p.ledger == 0 then return false, "订单容量或流水格式无效" end
@@ -380,6 +388,7 @@ function Store.SetPosition(position)
         or not finite(position.bikeX) or not finite(position.bikeZ) or not finite(position.bikeYaw) then
         return false, "位置字段无效"
     end
+    if position.groundHeight~=nil and not range(position.groundHeight,0,20) then return false,"步行高度无效" end
     if not validSpace(position) then return false,"室内位置无效" end
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]

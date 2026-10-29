@@ -19,6 +19,8 @@ local specs={
     {root="model/8e64bae4-5b82-5be6-8c95-b000fb191bdb/",stem="rig-1-99f19e84-13a1-418a-b205-f5728233dcad",suffix="684fb712-5dcb-4fcf-8b05-c8b855c2b5fd",height=1.73,name="羽绒服路人"},
     {root="model/c993b86d-09f2-5573-a033-4568fad5ce67/",stem="rig-1-6e1ff8c0-1bfd-41eb-992e-03838035c444",suffix="2c590ce0-b4bb-4afe-8357-411942174cd6",height=1.79,name="夹克路人"},
 }
+-- 供外区交通/现场联系人复用同两套便服资源；老街8人路径与步态独立保持。
+Pedestrians.Specs=specs
 Pedestrians.Resources,Pedestrians.ResourceTypes={},{}
 for _,s in ipairs(specs) do
     s.model=s.root.."Meshes/"..s.stem..".mdl"

@@ -1,5 +1,6 @@
 -- 城市车辆规则与存档边界；与赛道动力、旧竞速Profile隔离。
 local Data={}
+local LIMIT=require("Career.WorldData").LIMIT
 Data.EBIKE="borrowed_ebike"
 Data.Ids={"sport","cruiser","rally","sport_2","sport_3","cruiser_2","cruiser_3","rally_2","rally_3"}
 Data.Names={borrowed_ebike="9号电动车",sport="赤焰R1000",cruiser="远行V1700",rally="荒野Enduro",
@@ -20,7 +21,7 @@ function Data.ValidPosition(pos,owned)
         for key,park in pairs(parks) do
             if not Data.Known(key) or (key~=Data.EBIKE and not owned[key]) or type(park)~="table"
                 or not finite(park.x) or not finite(park.z) or not finite(park.yaw)
-                or math.abs(park.x)>180 or math.abs(park.z)>180 then return false end
+                or math.abs(park.x)>LIMIT or math.abs(park.z)>LIMIT then return false end
         end
         local active=parks[id]
         if not active or active.x~=pos.bikeX or active.z~=pos.bikeZ or active.yaw~=pos.bikeYaw then return false end

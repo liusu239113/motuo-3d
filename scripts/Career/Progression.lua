@@ -178,8 +178,31 @@ function Progress.NextStory(p)
     }
     for _,story in ipairs(stories) do if story.ready and not p.flags[story.id] then return story end end
 end
+function Progress.StoryLog(p)
+    local titles={
+        {"firstDeliveryStory","第一笔自己挣的钱","五元早餐单不多，却让王二狗靠自己吃上下一顿饭。"},
+        {"riderStory","老街记住了你的名字","十份亲送以后，双单装备开放。每一份餐，都要独立负责。"},
+        {"hostelStory","今夜有一张干净的床",require("Career.HousingData").Get("hostel").story},
+        {"roomStory","一扇能关上的门",require("Career.HousingData").Get("room").story},
+        {"apartmentStory","窗边的阳光",require("Career.HousingData").Get("apartment").story},
+        {"fiveManStory","五万元的钥匙","首辆二手训练摩托46000元；护具课程与生活周转金，一样不能少。"},
+        {"ownBikeStory","人生第一辆摩托","旧9号没有被丢下。城市生活与赛场梦想，从此分别握在两串钥匙上。"},
+        {"licenseStory","从取餐口到发车格","亲自通过封闭训练后，职业资格开放；奖金进入生涯现金，不改变旧竞速金币。"},
+        {"teamStory","南城极速的邀请","九积分是邀请，不是自动入队。到车行明确签约，完成真实赛事目标，再领取赞助。"},
+        {"winnerStory","每一段路都算数","从桥下旧垫子到冠军发车格，王二狗记得每一单、每一晚和每一次重新出发。"},
+    }
+    local log={}
+    for _,entry in ipairs(titles) do
+        if p.flags[entry[1]] then log[#log+1]={id=entry[1],title=entry[2],text=entry[3]} end
+    end
+    return log
+end
 function Progress.MarkStory(id)
-    return Store.Transaction(function(p) p.flags[id]=true; return true end)
+    return Store.Transaction(function(p)
+        local story=Progress.NextStory(p)
+        if not story or story.id~=id then return false,"此剧情尚未触发或已阅读" end
+        p.flags[id]=true; return true,"已记下这一段经历"
+    end)
 end
 function Progress.EnterSeries(index)
     local series=Progress.Series[index]
@@ -198,7 +221,7 @@ function Progress.EnterSeries(index)
         return true,"报名成功，进入"..series.name
     end)
 end
-function Progress.SettleRace(place,finished)
+function Progress.SettleRace(place,finished,expectedRaceId)
     if type(place)~="number" or place%1~=0 or place<1 or place>9 or type(finished)~="boolean" then
         return false,"赛事名次或完赛状态无效"
     end
@@ -206,6 +229,7 @@ function Progress.SettleRace(place,finished)
         extras(p)
         local race=p.career.pending
         if not race then return false,"没有生涯待结算赛事" end
+        if expectedRaceId and expectedRaceId~=race.id then return false,"赛事结果已过期，不能结算另一场报名" end
         if race.training then return false,"训练必须通过训练资格入口结算" end
         local series=Progress.Series[race.series]
         local reward=finished and math.floor(series.reward*math.max(.1,(10-place)/9)) or 0
@@ -213,8 +237,9 @@ function Progress.SettleRace(place,finished)
         if not ok then return false,message end
         if finished then p.career.points=p.career.points+math.max(1,4-math.ceil(place/3)) end
         if finished and place==1 then p.career.wins=p.career.wins+1 end
-        if p.career.points>=9 then p.career.team="南城极速车队" end
-        if race.series==6 and finished and place==1 then p.flags.lifeWinner=true; p.career.team="年度冠军车队" end
+        local tracked,detail=require("Career.Team").OnRace(p,race,place,finished)
+        if not tracked then return false,detail end
+        if race.series==6 and finished and place==1 then p.flags.lifeWinner=true end
         p.career.pending=false; p.day=p.day+1; p.time=8; p.energy=65
         return true,finished and string.format("生涯赛事结算：第%d名，奖金%.2f元。职业积分%d。",place,reward/100,p.career.points)
             or "本场未完赛，不发奖金、不加积分。报名已结清，可重新报名。"

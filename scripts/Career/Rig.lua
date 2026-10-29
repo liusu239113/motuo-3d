@@ -156,7 +156,8 @@ function Rig:PoseWalk(phase,weight,run)
         local groundDelta=0
         if self.ground then
             local world=self.parent.worldTransform*target
-            groundDelta=self.ground:Surface(world.x,world.z)-self.parent.worldPosition.y
+            local ground=self.ground --[[@as CareerCity]]
+            groundDelta=ground:WalkSurface(world.x,world.z,self.parent.worldPosition.y)-self.parent.worldPosition.y
         end
         local grounded=target+V(0,groundDelta,0)
         targets[i]=grounded

@@ -1,5 +1,6 @@
 -- 首日纯逻辑配置；世界坐标单位为米，Y 由 City 决定，不创建节点/事件/UI。
 local Config = {}
+local World = require("Career.WorldData")
 
 Config.SAVE_PATH = "career_profile_v1.json"
 Config.SAVE_VERSION = 1
@@ -42,6 +43,7 @@ local Housing = require("Career.HousingData")
 for _,home in ipairs(Housing.List) do
     if home.width then Config.pointList[#Config.pointList+1]={id=home.point,label=home.name.."入口",kind="housing",x=home.x,z=home.z} end
 end
+for _, point in ipairs(World.Points) do Config.pointList[#Config.pointList+1]=point end
 ---@type table<string, CareerPoint>
 Config.points = {}
 for _, point in ipairs(Config.pointList) do
@@ -81,6 +83,8 @@ Config.orderTemplates[#Config.orderTemplates+1]={id="shop_old",title="旧宅生�
     route={{x=53,z=9},{x=53,z=0},{x=-100,z=0},{x=-100,z=80},{x=-108,z=80}},timeLimitHours=1,tutorial=false}
 Config.orderTemplates[#Config.orderTemplates+1]={id="noodle_dealer",title="车行师傅午餐",pickupId="noodle",dropoffId="dealer",
     route={{x=-70,z=9},{x=-70,z=0},{x=100,z=0},{x=100,z=80},{x=108,z=80}},timeLimitHours=1,tutorial=false}
+
+for _,template in ipairs(World.Orders) do Config.orderTemplates[#Config.orderTemplates+1]=template end
 
 ---@param route CareerRoutePoint[]
 ---@return number

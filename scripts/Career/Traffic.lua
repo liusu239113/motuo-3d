@@ -3,6 +3,7 @@ local Routes=require("Career.TrafficRoutes")
 local Assets=require("VehicleAssets")
 local Pedestrians=require("Career.Pedestrians")
 local Contact=require("Career.VehicleContact")
+local OuterTraffic=require("Career.OuterTraffic")
 ---@class CityTraffic
 ---@field cars table[]
 ---@field IsFree fun(self:CityTraffic,x:number,z:number,r:number):boolean
@@ -59,9 +60,10 @@ function Traffic:Init(city,actor)
     self.city,self.actor=city,actor
     self.root=city.root:CreateChild("老街动态交通")
     -- 室内读档时，后创建的交通节点也必须继承城市层隐藏状态。
-    self.root.enabled=city.space=="city"
+    self.root:SetEnabledRecursive(city.space=="city")
     self.cars={}
     self.time,self.active,self.disposed=0,true,false
+    self.nearOld=math.abs(actor.x)<=OuterTraffic.OLD_MARGIN and math.abs(actor.z)<=OuterTraffic.OLD_MARGIN
     self.pedestrians=Pedestrians.New(self.root,city)
     local blockers=self:Blockers()
     for ri,route in ipairs(Routes.List) do
@@ -81,6 +83,9 @@ function Traffic:Init(city,actor)
             self.cars[#self.cars+1]=car
         end
     end
+    -- 外区池是city.root的同级子树，不加入老街self.cars/self.pedestrians。
+    self.outer=OuterTraffic.New(self)
+    self.root:SetEnabledRecursive(city.space=="city")
     print(string.format("[老街交通] %d辆贴图车辆 / %d位独立便服行人 / 6个实体信号路口；不改玩家存档",#self.cars,#self.pedestrians.people))
 end
 function Traffic:Blockers()
@@ -104,6 +109,8 @@ function Traffic:Place(car)
     self:ApplyContact(car)
 end
 function Traffic:CanPlace(car,blockers)
+    if self.city.space=="city" and not OuterTraffic.StaticFree(self.city,car) then return false end
+    if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
     for _,b in ipairs(blockers) do if not Traffic.CircleFree(car,b.x,b.z,b.radius) then return false end end
     for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius) then return false end end
@@ -113,7 +120,7 @@ function Traffic:IsFree(x,z,r)
     if not self.active or self.city.space~="city" then return true end
     for _,car in ipairs(self.cars) do if not Traffic.CircleFree(car,x,z,r) then return false end end
     for _,p in ipairs(self.pedestrians.people) do if (x-p.x)^2+(z-p.z)^2<(r+p.radius)^2 then return false end end
-    return true
+    return not self.outer or self.outer:IsFree(x,z,r)
 end
 function Traffic:CrossingBusy(car)
     for _,j in ipairs(Routes.Junctions) do
@@ -162,15 +169,23 @@ function Traffic:Step(dt,blockers)
     end
 end
 function Traffic:Update(dt)
-    if not self.active or self.disposed or self.city.space~="city" or dt<=0 then return end
+    if not self.active or self.disposed or self.city.space~="city" or dt<=0 or dt~=dt then return end
     local duration=math.min(dt,.25)
-    local count=math.max(1,math.ceil(duration*60))
     local blockers=self:Blockers()
-    for _=1,count do self:Step(duration/count,blockers) end
-    -- 碰撞只依赖XZ/偏航；渲染接地只处理最终已提交位姿，静止不重复求解。
-    for _,car in ipairs(self.cars) do self:ApplyContact(car) end
-    -- 骨骼每个外层帧仅求解一次；车辆仍保留60Hz碰撞子步。
-    self.pedestrians:Update(duration,blockers)
+    -- 老街保留15车/8人结构，离开±220m后时钟、位移、步态和胎面均冻结。
+    -- 无追帧；重返后从原位继续。450m外不会继续大量采样老街轮胎。
+    self.nearOld=math.abs(self.actor.x)<=OuterTraffic.OLD_MARGIN and math.abs(self.actor.z)<=OuterTraffic.OLD_MARGIN
+    -- 仅冻结远景，不在220m边界突然隐去：全部老街实体离开450m视距后才递归隐藏。
+    local dx,dz=math.max(0,math.abs(self.actor.x)-180),math.max(0,math.abs(self.actor.z)-180)
+    local showOld=dx*dx+dz*dz<=450^2
+    if self.root:IsEnabled()~=showOld then self.root:SetEnabledRecursive(showOld) end
+    if self.nearOld then
+        local count=math.max(1,math.ceil(duration*60))
+        for _=1,count do self:Step(duration/count,blockers) end
+        for _,car in ipairs(self.cars) do self:ApplyContact(car) end
+        self.pedestrians:Update(duration,blockers)
+    end
+    self.outer:Update(duration,blockers)
 end
 function Traffic:Hint(x,z,yaw)
     local axis=math.abs(math.cos(math.rad(yaw)))>=.7 and "ns" or "ew"
@@ -187,6 +202,7 @@ end
 function Traffic:Dispose()
     if self.disposed then return end
     self.disposed=true; self.active=false
+    self.outer:Dispose()
     for _,p in ipairs(self.pedestrians.people) do p.rig:Dispose() end
     self.root:Dispose()
 end

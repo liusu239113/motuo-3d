@@ -6,9 +6,12 @@ local Config = require("Career.Config")
 local Housing = require("Career.HousingData")
 local Interior = require("Career.Interior")
 local Signals = require("Career.TrafficSignals")
+local World = require("Career.WorldData")
+local Stream = require("Career.WorldStream")
 ---@class CareerCity
 ---@field SetSpace fun(self:CareerCity,id:string)
 ---@field UpdateLights fun(self:CareerCity,hour:number)
+---@field WalkSurface fun(self:CareerCity,x:number,z:number,height?:number):number
 local City = {}
 City.__index = City
 local architecture={
@@ -67,9 +70,12 @@ function City:Init(scene)
     self:BuildRoads()
     self:BuildBlocks()
     self:BuildPlaces()
+    self.contacts=require("Career.Contacts").New(self)
     self.signals=Signals.New(self.root,self.details)
     self.stats = self.details:Finish()
+    World.SetLegacy(self.obstacles,self.details.surfaces)
     self.interior=Interior.New(scene,self.mats)
+    self.stream=Stream.New(self)
     self.stats.buildings, self.stats.obstacles = self.buildings, #self.obstacles
     print(string.format("[生涯城市] %d栋建筑 / %d批次 / %.0f三角面 / %d招牌 / %d碰撞区域",
         self.buildings, self.stats.batches, self.stats.triangles, self.stats.signs, #self.obstacles))
@@ -117,7 +123,7 @@ end
 -- 碰撞设计（俯视，米）：建筑实体AABB；移动圆r经AABB各边外扩r检测。
 --   道路 -> 人行道 -> 门前交互圆(2m) -> [建筑实体]
 -- 不把门前圆放进墙体；短步沿X/Z分轴滑移，最大步长0.1m，避免薄墙穿越。
--- 读档使用FindFree恢复到邻近空位；普通移动只沿切向滑移，边界±180减半径。
+-- 读档使用FindFree恢复到邻近空位；普通移动只沿切向滑移，世界边界由World.LIMIT统一。
 function City:Obstacle(x,z,w,depth)
     self.obstacles[#self.obstacles+1] = {x1=x-w/2,x2=x+w/2,z1=z-depth/2,z2=z+depth/2}
 end
@@ -258,10 +264,12 @@ function City:BuildPlaces()
     d:Box("lamp",24,1.2,-9.35,.43,.36,.035)
     self:Obstacle(24,-9,.65,.65)
     for _,point in ipairs(Config.pointList) do
-        local marker=self.root:CreateChild("CareerMarker_"..point.id)
-        marker.position=Vector3(point.x,.085,point.z)
-        self.markers[point.id]=marker
-        d:Ground(point.kind=="rest" and "paint" or "yellow",point.x,point.z,1.5,1.5,.083)
+        if math.abs(point.x)<=180 and math.abs(point.z)<=180 then
+            local marker=self.root:CreateChild("CareerMarker_"..point.id)
+            marker.position=Vector3(point.x,.085,point.z)
+            self.markers[point.id]=marker
+            d:Ground(point.kind=="rest" and "paint" or "yellow",point.x,point.z,1.5,1.5,.083)
+        end
     end
 end
 
@@ -284,11 +292,21 @@ function City:SetSpace(id)
     self.space=id
     self.lightsOn=nil
     self.root:SetEnabledRecursive(id=="city")
+    self.stream:SetVisible(id=="city")
     self.interior:SetSpace(id)
 end
 function City:Surface(x,z)
     if self.space~="city" then return .085 end
-    return self.details:Surface(x,z)
+    if World.IsOld(x,z) then return self.details:Surface(x,z) end
+    return math.max(self.details:Surface(x,z),World.Surface(x,z,"vehicle",0))
+end
+function City:WalkSurface(x,z,height)
+    if self.space~="city" then return .085 end
+    if World.IsOld(x,z) then return self.details:Surface(x,z) end
+    return math.max(self.details:Surface(x,z),World.Surface(x,z,"walk",height or 0))
+end
+function City:UpdateStreaming(x,z)
+    if self.space=="city" then self.stream:Update(x,z) end
 end
 
 -- 侧视接触设计（米）： rear<0 --- 车根0 --- front>0。
@@ -313,47 +331,47 @@ function City:VehicleSurface(x,z,yaw,front,rear)
     return y,pitch
 end
 
-function City:IsFree(x,z,radius)
-    if not self:StaticFree(x,z,radius) then return false end
-    if self.space~="city" or not self.traffic then return true end
+function City:IsFree(x,z,radius,mode,height)
+    if not self:StaticFree(x,z,radius,mode,height) then return false end
+    if self.space~="city" or not self.traffic or (mode=="walk" and (height or 0)>1) then return true end
     return self.traffic:IsFree(x,z,radius)
 end
-function City:StaticFree(x,z,radius)
+function City:StaticFree(x,z,radius,mode,height)
     if self.space~="city" then return self.interior:IsFree(x,z,radius) end
-    if math.abs(x)>180-radius or math.abs(z)>180-radius then return false end
+    if not World.IsOld(x,z) and not World.IsFree(x,z,radius,mode or "vehicle",height or 0) then return false end
     for _,o in ipairs(self.obstacles) do
         if x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then return false end
     end
     return true
 end
 
-function City:FindFree(x,z,radius)
+function City:FindFree(x,z,radius,mode,height)
     if self.space~="city" then return self.interior:FindFree(x,z,radius) end
-    local limit=180-radius
+    local limit=World.LIMIT-radius
     local px,pz=math.max(-limit,math.min(limit,x)),math.max(-limit,math.min(limit,z))
-    if self:IsFree(px,pz,radius) then return px,pz end
+    if self:IsFree(px,pz,radius,mode,height) then return px,pz end
     for distance=1,50 do
         for step=1,24 do
             local angle=step*math.pi/12
             local nx,nz=px+math.sin(angle)*distance,pz+math.cos(angle)*distance
-            if self:IsFree(nx,nz,radius) then return nx,nz end
+            if self:IsFree(nx,nz,radius,mode,height) then return nx,nz end
         end
     end
     return 0,-20
 end
 
-function City:Move(x,z,dx,dz,radius)
+function City:Move(x,z,dx,dz,radius,mode,height)
     if self.space~="city" then return self.interior:Move(x,z,dx,dz,radius) end
     local count=math.max(1,math.ceil(math.sqrt(dx*dx+dz*dz)/.1))
     local sx,sz=dx/count,dz/count
     for _=1,count do
-        if self:IsFree(x+sx,z,radius) then x=x+sx end
-        if self:IsFree(x,z+sz,radius) then z=z+sz end
+        if self:IsFree(x+sx,z,radius,mode,height) then x=x+sx end
+        if self:IsFree(x,z+sz,radius,mode,height) then z=z+sz end
     end
     return x,z
 end
 
 function City:GetMarker(id) return self.markers[id] end
 function City:GetStats() return self.stats end
-function City:Dispose() self.root:Dispose() end
+function City:Dispose() self.stream:Dispose(); self.contacts:Dispose(); self.root:Dispose() end
 return City

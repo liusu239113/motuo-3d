@@ -21,9 +21,21 @@ local function offerFor(p)
     if #p.activeOrders >= Progress.Capacity(p) or p.time >= 23 then return nil end
     local template = Config.orderTemplates[1]
     if p.flags.tutorialCompleted then
-        -- 单机确定性订单供给，并非真人抢单；不需要随机数/系统时钟。
-        local index = 2 + ((p.nextOrderSequence - 2) % (#Config.orderTemplates - 1))
-        template = Config.orderTemplates[index]
+        -- 只派当前位置附近商家的单，远区需亲自前往；不把新骑手强派到十公里外。
+        local candidates={}
+        local pos=p.position
+        local x,z=pos.cityX or pos.x,pos.cityZ or pos.z
+        if (pos.space or "city")=="city" then x,z=pos.x,pos.z end
+        local district=require("Career.WorldData").District(x,z).id
+        for index=2,#Config.orderTemplates do
+            local item=Config.orderTemplates[index]
+            local pickup=Config.points[item.pickupId]
+            if require("Career.WorldData").District(pickup.x,pickup.z).id==district
+                and item.timeLimitHours<=24-p.time
+                and (pickup.x-x)^2+(pickup.z-z)^2<=1200^2 then candidates[#candidates+1]=item end
+        end
+        if #candidates==0 then return nil end
+        template = candidates[1+((p.nextOrderSequence-2)%#candidates)]
     end
     local distance = Config.RouteDistance(template.route)
     return {
@@ -130,6 +142,8 @@ function Delivery.Deliver(orderId, x, z, context)
         p.completedOrders = p.completedOrders + 1
         if order.tutorial then p.flags.tutorialCompleted = true end
         p.flags.firstDelivery = true
+        local progressed,detail=require("Career.Engagements").OnDelivery(p,order)
+        if not progressed then return false,detail end
         table.remove(p.activeOrders, orderIndex)
         p.phase = "working"
         print("[Career.Delivery] delivering " .. order.id .. " feeCents=" .. order.feeCents)

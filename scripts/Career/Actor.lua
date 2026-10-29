@@ -49,7 +49,7 @@ Actor.MAX_SPEED = 35 / 3.6 -- 电动车保留首日35km/h独立动力。
 local REVERSE_SPEED = 1.6
 local WALK_SPEED, RUN_SPEED = 1.8, 3.4
 local WALK_RADIUS = 0.32
-local MAP_LIMIT = 180
+local MAP_LIMIT = require("Career.WorldData").LIMIT
 local MOUNT_DISTANCE, STOP_SPEED = 3, 0.5
 local MAX_STEP, MAX_TIME_STEP = 0.18, 1 / 60
 
@@ -95,7 +95,7 @@ end
 --  the 1.90m scooter and its rear-mounted delivery box.
 --  No Bullet movement in parallel: ALL XZ displacement passes through City.Move.
 --  Segment <=.18m and time <=1/60s, including parking exits; dt<=.25s avoids
---  catching up huge paused/stalled frames. Edges clamp at +/- (180-radius).
+--  catching up huge paused/stalled frames. World.LIMIT is the shared boundary.
 --  Boundaries: zero input does not rotate/move; diagonal walk normalized;
 --  thin walls/corners use City sweep; blocked vehicle loses speed, no wall turbo;
 --  dismount tries full unobstructed paths, refuses if every exit is blocked;
@@ -121,6 +121,8 @@ function Actor:Init(scene, city)
     self.parking={}
     self.mounted, self.disposed, self.steer = false, false, 0
     self.reverseHold=0
+    ---@type number
+    self.walkHeight=0
     self.collisionLogged, self.walkLogged, self.rideLogged = false, false, false
     self.node = scene:CreateChild("CareerActorFollowTarget")
     self.node:SetVar("CareerAssetStatus", Variant(Actor.ProxyLabel))
@@ -165,7 +167,9 @@ function Actor:Move(x, z, dx, dz, radius)
     local stepX, stepZ = dx / steps, dz / steps
     local blocked = false
     for _ = 1, steps do
-        local nextX, nextZ = self.city:Move(x, z, stepX, stepZ, radius)
+        local walking=radius==WALK_RADIUS and not self.mounted
+        local nextX, nextZ = self.city:Move(x, z, stepX, stepZ, radius,walking and "walk" or "vehicle",self.walkHeight)
+        if walking then self.walkHeight=self.city:WalkSurface(nextX,nextZ,self.walkHeight) end
         nextX = clamp(nextX, -MAP_LIMIT + radius, MAP_LIMIT - radius)
         nextZ = clamp(nextZ, -MAP_LIMIT + radius, MAP_LIMIT - radius)
         if math.abs(nextX - x - stepX) + math.abs(nextZ - z - stepZ) > 0.0001 then
@@ -304,6 +308,7 @@ function Actor:ToggleMount()
         return false, "请先停稳再上下车（速度需低于0.5m/s）"
     end
     self.reverseHold=0
+    if not self.mounted and self.walkHeight>1 then return false,"请先沿天桥坡道回到地面，再走到车旁" end
     if not self.mounted then
         local dx, dz = self.bikeX - self.x, self.bikeZ - self.z
         local distance = math.sqrt(dx * dx + dz * dz)
@@ -349,7 +354,9 @@ end
 
 ---@return Vector3
 function Actor:GetPosition()
-    return V(self.x, self.city:Surface(self.x, self.z), self.z)
+    local y=self.mounted and self.city:Surface(self.x,self.z) or self.city:WalkSurface(self.x,self.z,self.walkHeight)
+    if not self.mounted then self.walkHeight=y end
+    return V(self.x,y,self.z)
 end
 
 -- Explicit test/recovery hook only. Walking restores the PERSON alone; a
@@ -358,8 +365,9 @@ end
 ---@param x number
 ---@param z number
 ---@param yaw number
-function Actor:Teleport(x, z, yaw)
+function Actor:Teleport(x, z, yaw, height)
     if self.disposed then return end
+    self.walkHeight=height or 0
     local radius = self.mounted and self:VehicleRadius() or WALK_RADIUS
     self.x, self.z = self:Move(clamp(x, -MAP_LIMIT + radius, MAP_LIMIT - radius),
         clamp(z, -MAP_LIMIT + radius, MAP_LIMIT - radius), 0, 0, radius)
