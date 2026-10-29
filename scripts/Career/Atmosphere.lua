@@ -101,7 +101,8 @@ function A.Sample(day,hour)
         sunDirection=sun,moonDirection=moon,
         sunColor=mix(rgb(1,.40,.16),rgb(1,.95,.86),smooth(0,.5,height)),
         sunBrightness=3.1*smooth(-.035,.12,height)*(1-.82*grey),
-        moonBrightness=.34*night*smooth(0,.20,moon.y)*(1-.78*grey),
+        -- 夜间保留冷色月光供步行/骑行辨路；阴天减弱但不把人物压成剪影。
+        moonBrightness=.75*night*smooth(0,.20,moon.y)*(1-.5*grey),
         sunEnergy=1-.93*smooth(.45,.94,cloudy),
         topColor=top,horizonColor=horizon,groundColor=ground,cloudColor=cloud,
         cloudAlpha=lerp(.12,.86,smooth(.08,.86,cloudy)),
@@ -280,7 +281,7 @@ function A:Apply(day,hour,cameraPosition,indoor)
     -- 不增加第二个Skybox/Capture，不每帧强制RequestCapture，保留调用方原有捕获节流。
     local capture=self.capture
     local captured=visible and capture and capture.enabledEffective and capture.supported and capture.ready
-    local intensity=captured and 1 or (.025+.75*s.dayMix)*(1-.4*s.cloudiness)
+    local intensity=captured and lerp(2,1,s.dayMix) or (.08+.70*s.dayMix)*(1-.4*s.cloudiness)
     self.zone.envTextureDiffIntensity=intensity; self.zone.envTextureSpecIntensity=intensity
     self.materials[1]:SetShaderParameter("MatDiffColor",Variant(color(s.cloudColor,s.cloudAlpha)))
     self.materials[2]:SetShaderParameter("MatDiffColor",Variant(color(s.cloudColor,s.overcastAlpha)))
