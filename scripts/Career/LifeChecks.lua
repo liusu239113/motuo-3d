@@ -34,17 +34,18 @@ function Checks.Run(session,shot)
     session.view:ClosePhone();session.view:ShowGame()
     session:OpenPhone("life")
     local paused=Store.Get()
+    local sky=assert(session.atmosphere)
+    local beforeSky=assert(sky.state)
+    local frozenU,frozenV=beforeSky.cloudU,beforeSky.cloudV
     local wasTest=session.options.test
     session.options.test=false
     local ok,message=pcall(function() session:Update(.1) end)
     session.options.test=wasTest
     assert(ok,message)
-    assert(Store.Get().time==paused.time and Store.Get().energy==paused.energy,"手机暂停时间与精力")
-    local sky=assert(session.atmosphere)
+    local afterPause=Store.Get()
+    assert(afterPause.time==paused.time and afterPause.energy==paused.energy and afterPause.hunger==paused.hunger,"手机暂停身体状态")
+    assert(sky.state.cloudU==frozenU and sky.state.cloudV==frozenV,"手机冻结云层漂移，不能先重置再断言")
     local Atmosphere=require("Career.Atmosphere")
-    local frozen=Atmosphere.Sample(paused.day,paused.time)
-    session:UpdateEnvironment(paused.time)
-    assert(sky.state.cloudU==frozen.cloudU and sky.state.cloudV==frozen.cloudV,"手机冻结云层漂移")
     local midnight=Atmosphere.Sample(1,24)
     local morning=Atmosphere.Sample(2,0)
     assert(midnight.cloudiness==morning.cloudiness and midnight.cloudU==morning.cloudU,"跨日天气连续")
@@ -55,6 +56,26 @@ function Checks.Run(session,shot)
     session:ApplySpace("city")
     assert(sky.root.enabled and session.sky.enabled,"出门恢复天空与云")
     session.view:ClosePhone();session.view:ShowGame()
+    local Delivery=require("Career.Delivery")
+    local offer=assert(Delivery.GetOffer())
+    assert(Delivery.Accept(offer.id))
+    assert(Store.Transaction(function(d) d.time=23;d.energy=24;return true end))
+    local advice=Life.Advice(Store.Get())
+    assert(advice.action=="继续配送" and advice.point==offer.pickupId,"深夜带单不能快捷导航去睡觉")
+    session:Refresh();session:Pause()
+    local menu=Store.Get()
+    local menuSky=assert(sky.state)
+    local menuU,menuV=menuSky.cloudU,menuSky.cloudV
+    session.options.test=false
+    local menuOK,menuError=pcall(function() session:Update(.1) end)
+    session.options.test=true
+    assert(menuOK,menuError)
+    local menuAfter=Store.Get()
+    assert(menuAfter.time==menu.time and menuAfter.hunger==menu.hunger and menuAfter.energy==menu.energy
+        and menuAfter.activeOrders[1].remainingHours==menu.activeOrders[1].remainingHours,"暂停菜单冻结人物与配送")
+    assert(sky.state.cloudU==menuU and sky.state.cloudV==menuV,"暂停菜单冻结天气")
+    session.view:ShowGame()
+    assert(Store.Transaction(function(d) d.activeOrders={};return true end))
     local cases={day={day=1,time=12,hunger=65,energy=80},dusk={day=1,time=17.8,hunger=43,energy=47},
         night={day=1,time=22,hunger=60,energy=24},cloudy={day=5,time=12,hunger=65,energy=80},
         mixed={day=4,time=12,hunger=65,energy=80},cloudnight={day=5,time=23,hunger=60,energy=24},
@@ -70,7 +91,11 @@ function Checks.Run(session,shot)
     if shot=="life" then session:OpenPhone("life") end
     session.view.notice:SetText("")
     session.options.lifeAudit=true
-    print("[生活时间验收通过] 活动消耗/12元15分钟用餐/免费过夜/手机冻结/饥饿疲劳提示；实拍="..tostring(shot))
+    session.options.lifeRide=shot=="ride"
+    if session.options.lifeRide then
+        session.actor.mounted=true;session.actor.visuals:SetMounted(true);session:Refresh()
+    end
+    print("[生活时间验收通过] 活动消耗/用餐/过夜/手机与暂停冻结/带单导航/天气连续；实拍="..tostring(shot))
 end
 ---@param session CareerSession
 function Checks.Audit(session)
@@ -95,7 +120,58 @@ function Checks.Audit(session)
         local r=bounds(button)
         assert(r.w>=44 and r.h>=44,"HUD触摸目标不足44")
     end
-    if view.phonePage=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard") end
-    print(string.format("[生活HUD渲染验收通过] screen %.0fx%.0f / 地图与时间卡分区 / 实际值一致 / 44触摸",view.root:GetLayout().w,view.root:GetLayout().h))
+    local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
+    local function tap(widget,held)
+        local r=widget:GetAbsoluteLayoutForHitTest()
+        local scale=UI.GetScale()
+        local function event(kind)
+            return PointerEvent.new(kind,{pointerId=791230,pointerType="touch",isPrimary=true,
+                x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
+        end
+        local down=event("PointerDown");UI.HandlePointerEvent(down)
+        assert(down.target==widget,"HUD触摸被遮挡 "..tostring(widget.props.id))
+        if held then held() end
+        local up=event("PointerUp");UI.HandlePointerEvent(up)
+        assert(up.target==widget,"HUD抬手命中错误 "..tostring(widget.props.id))
+    end
+    local wasPhone=view.phonePage
+    if wasPhone=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard");view:ClosePhone() end
+    local oldWaypoint,oldManual=session.waypoint,session.manualWaypoint
+    tap(d.lifeButton)
+    assert(session.waypoint==Life.Advice(p).point,"快捷按钮真实导航失败")
+    tap(d.helpButton)
+    assert(view.phonePage=="life","生活详情触摸未打开手机")
+    view:ClosePhone()
+    tap(view.pauseButton)
+    assert(view:IsBlocking(),"暂停按钮触摸未打开菜单")
+    view:ShowGame()
+    local originalMounted=session.actor.mounted
+    session.actor.mounted=true;view:SetControlMode(true)
+    for _=1,3 do Kit.LayoutTree(view.game);view:LayoutControls() end
+    Kit.LayoutTree(view.game)
+    -- 模拟合法但与生活卡重叠的自定义踏板位置，只改本次控件，不写玩家方案。
+    local layer=view.controlLayer:GetAbsoluteLayout()
+    local card=d.root:GetAbsoluteLayout()
+    view.controls.widgets.gas:SetStyle{left=card.x-layer.x,top=card.y-layer.y}
+    Kit.LayoutTree(view.game);view:AvoidHUDControls();Kit.LayoutTree(view.game)
+    for _,key in ipairs({"gas","brake","steering"}) do
+        local widget=view.controls.widgets[key]
+        local r=bounds(widget)
+        for _,obstacle in ipairs({d.root,view.navPanel,view.pauseButton,view.actionTray}) do
+            local q=obstacle:GetAbsoluteLayout()
+            assert(r.x+r.w<=q.x or r.x>=q.x+q.w or r.y+r.h<=q.y or r.y>=q.y+q.h,"骑行控件遮盖HUD "..key)
+        end
+        tap(widget,function()
+            assert(key=="steering" and view.controls.pointers.steer==791230
+                or key~="steering" and view.controls[key],"踏板未持有触摸 "..key)
+        end)
+        assert(key=="steering" and view.controls.pointers.steer==-1 or key~="steering" and not view.controls[key],"踏板松手未释放")
+    end
+    session.actor.mounted=originalMounted;view:SetControlMode(originalMounted)
+    view.controlWidth,view.controlHeight=0,0
+    session.waypoint,session.manualWaypoint=oldWaypoint,oldManual
+    session:Refresh();view:LayoutControls();Kit.LayoutTree(view.game)
+    if wasPhone=="life" then session:OpenPhone("life") end
+    print(string.format("[生活HUD渲染验收通过] screen %.0fx%.0f / 实际值一致 / 44尺寸 / 生活与暂停真实触摸 / 骑行避让与多指释放",view.root:GetLayout().w,view.root:GetLayout().h))
 end
 return Checks

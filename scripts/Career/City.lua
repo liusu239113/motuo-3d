@@ -320,7 +320,7 @@ function City:NightLight(x,y,z,brightness,range)
     self.nightLights[#self.nightLights+1]=light
 end
 function City:UpdateLights(hour)
-    local on=hour>=18 or hour<6
+    local on=hour>=17 or hour<7
     if self.lightsOn==on then return end
     self.lightsOn=on
     for _,light in ipairs(self.nightLights) do light.enabled=on end

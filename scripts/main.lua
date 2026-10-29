@@ -852,8 +852,8 @@ function Start()
     if careerCheck then legacyTest=false end
     if careerReadyShot_~="" then
         assert(careerCheck,"就绪实拍必须与显式隔离生涯测试参数组合")
-        SubscribeToEvent("PostRenderUpdate","CaptureCareerReadyFrame")
     end
+    if careerCheck then SubscribeToEvent("PostRenderUpdate","CaptureCareerReadyFrame") end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
         careerMode_,careerRace_=false,false
         hud_:SetCareerRace(false)
@@ -1252,12 +1252,14 @@ end
 -- 只对显式隔离验收启用。资源下载/校验帧数不定，必须等场景真正就绪再拍，
 -- 不能用固定全局帧号把加载页当作动作或应用截图。
 function CaptureCareerReadyFrame()
-    if careerReadyShot_=="" or not careerMode_ or not career_ or not career_.options.test
+    if not careerMode_ or not career_ or not career_.options.test
         or career_.loading or not career_.running or not career_.actor then return end
+    if careerReadyShot_=="" and not career_.options.lifeAudit then return end
     careerReadyFrames_=careerReadyFrames_+1
     local required=career_.options.lifeAudit and 24 or 8
     if careerReadyFrames_~=required then return end
     if career_.options.lifeAudit then require("Career.LifeChecks").Audit(career_) end
+    if careerReadyShot_=="" then return end
     local image=Image()
     local captured=graphics:TakeScreenShot(image)
     local saved=captured and image:SavePNG(careerReadyShot_)

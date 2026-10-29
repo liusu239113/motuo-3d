@@ -542,7 +542,7 @@ function View:BuildPhone(state,offer,active)
             PhoneKit.Text(string.format("第%d天 · %s · %s",state.day,Life.Part(state.time),state.weatherLabel or "晴朗"),11,PhoneKit.C.blue),
             PhoneKit.Text(advice.title,15,advice.urgent and PhoneKit.C.red or PhoneKit.C.green,{id="career-life-advice",fontWeight="bold"}),
             PhoneKit.Text(advice.detail,11,PhoneKit.C.muted),
-            PhoneKit.Button(advice.point=="breakfast" and "导航去吃饭" or "导航去休息",function()
+            PhoneKit.Button(advice.action=="继续配送" and "继续当前配送" or advice.point=="breakfast" and "导航去吃饭" or "导航去休息",function()
                 a.setWaypoint(advice.point); a.closePhone()
             end,"career-life-navigate",true)}}))
         section("人物状态 · 不是车辆电量")
@@ -623,6 +623,45 @@ function View:LayoutControls()
         self.controlWidth,self.controlHeight=area.w,area.h
         self.controls:SetCompact(area.w<920 or area.h<470)
         self.controls:ApplyScheme(ControlSettings.Current(),area.w,area.h)
+    end
+    if self.mountedControls then self:AvoidHUDControls() end
+end
+-- 只调整本次生涯画面的冲突位置，不改写玩家保存的竞速操作方案。
+function View:AvoidHUDControls()
+    local area=self.controlLayer:GetAbsoluteLayout()
+    local reserved={}
+    local function reserve(widget)
+        local b=widget:GetAbsoluteLayout()
+        reserved[#reserved+1]={x=b.x-area.x,y=b.y-area.y,w=b.w,h=b.h}
+    end
+    reserve(self.navPanel);reserve(self.dashboard.root);reserve(self.pauseButton);reserve(self.actionTray)
+    local function overlaps(x,y,w,h,r)
+        return x<r.x+r.w+6 and x+w>r.x-6 and y<r.y+r.h+6 and y+h>r.y-6
+    end
+    for _,key in ipairs({"gas","brake","steering"}) do
+        local widget=self.controls.widgets[key]
+        local b=widget:GetAbsoluteLayout()
+        local x,y,w,h=b.x-area.x,b.y-area.y,b.w,b.h
+        if w>0 and h>0 then
+            local xs,ys={x,0,math.max(0,area.w-w)},{y,0,math.max(0,area.h-h)}
+            for _,r in ipairs(reserved) do
+                xs[#xs+1]=r.x-w-8;xs[#xs+1]=r.x+r.w+8
+                ys[#ys+1]=r.y-h-8;ys[#ys+1]=r.y+r.h+8
+            end
+            local bestX,bestY,best=x,y,math.huge
+            for _,cx in ipairs(xs) do for _,cy in ipairs(ys) do
+                if cx>=0 and cy>=0 and cx+w<=area.w and cy+h<=area.h then
+                    local free=true
+                    for _,r in ipairs(reserved) do if overlaps(cx,cy,w,h,r) then free=false;break end end
+                    local distance=(cx-x)^2+(cy-y)^2
+                    if free and distance<best then bestX,bestY,best=cx,cy,distance end
+                end
+            end end
+            if best<math.huge and (math.abs(bestX-x)>.1 or math.abs(bestY-y)>.1) then
+                widget:SetStyle{left=bestX,top=bestY}
+            end
+            reserved[#reserved+1]={x=bestX,y=bestY,w=w,h=h}
+        end
     end
 end
 function View:SetControlMode(mounted)
