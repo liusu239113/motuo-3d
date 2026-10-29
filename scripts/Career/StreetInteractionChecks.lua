@@ -6,6 +6,7 @@ local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
 local Store=require("Career.Store")
 local Config=require("Career.Config")
 local Delivery=require("Career.Delivery")
+local Engagements=require("Career.Engagements")
 local Checks={}
 
 ---@param widget Widget
@@ -201,6 +202,54 @@ function Checks.Run(session)
         end
         unchanged(before,startWrites,writes)
 
+        -- Fresh-career fixtures have no active/ready engagement to preempt the HUD.
+        -- Use the real HUD and dialogue buttons, never call their callbacks directly.
+        do
+            for _,item in ipairs(Engagements.State(Store.Get()).list) do
+                assert(item.status~="active" and item.status~="ready",
+                    "HUD conversation fixtures require no active/ready engagement")
+            end
+            assert(Delivery.GetActive()==nil,"HUD conversation fixtures require no delivery")
+            near(cousin)
+            assert(Config.DistanceTo("bridge",actor.x,actor.z)>Config.INTERACTION_RADIUS,
+                "cousin navigation fixture must remain outside the original rest POI")
+            assert(view.interactButton.props.text=="交谈",
+                "near-cousin HUD must advertise the actual conversation action")
+            local cousinPoses=cousin.poseCount
+            tap(view,"career-interact")
+            assert(view.conversation:IsVisible() and view.blocked and view:IsBlocking()
+                and not view.phone:IsVisible() and not view.overlay:IsVisible() and view.phonePage==""
+                and cousin.poseCount>cousinPoses,"cousin HUD must open the real blocking conversation")
+            assert(assert(view.conversationBody:FindById("career-conversation-name")).props.text:find(cousin.name,1,true))
+            stale=descendants(view.conversationBody)
+            tap(view,"career-conversation-rest")
+            freed(stale); idle(view)
+            unchanged(before,startWrites,writes)
+            local target=assert(session:Target(),"cousin navigation must produce a real target")
+            assert(session.waypoint=="bridge" and session.manualWaypoint and target.pointId=="bridge"
+                and view.notice.props.text:find("已标出桥下落脚点",1,true),
+                "cousin rest choice must only navigate, never charge or advance the night")
+
+            local mechanic=assert(city.contacts:Get("mechanic"),"mechanic contact missing")
+            local dealer=Config.points.dealer
+            at(dealer.x+1,dealer.z+1.5)
+            assert(Config.DistanceTo("dealer",actor.x,actor.z)<=Config.INTERACTION_RADIUS
+                and (actor.x-mechanic.x)^2+(actor.z-mechanic.z)^2<=3^2,
+                "mechanic fixture must be inside both dealer POI and contact circles")
+            assert(assert(city.contacts:Nearest(actor,3)).id=="mechanic"
+                and view.interactButton.props.text=="交谈",
+                "overlapping dealer/contact HUD must advertise mechanic conversation")
+            local mechanicPoses=mechanic.poseCount
+            tap(view,"career-interact")
+            assert(view.conversation:IsVisible() and view.blocked and view:IsBlocking()
+                and not view.phone:IsVisible() and not view.overlay:IsVisible() and view.phonePage==""
+                and mechanic.poseCount>mechanicPoses,"dealer POI must talk, not open progression behind a talk prompt")
+            assert(assert(view.conversationBody:FindById("career-conversation-name")).props.text:find(mechanic.name,1,true))
+            stale=descendants(view.conversationBody)
+            tap(view,"career-conversation-leave")
+            freed(stale); idle(view); unchanged(before,startWrites,writes)
+        end
+
         -- Orders opens the real delivery app; it does not auto-accept or charge.
         near(owner); talk("breakfast_owner")
         stale=descendants(view.conversationBody)
@@ -346,7 +395,7 @@ function Checks.Run(session)
         assert(differences=="","UI tree differs at equivalent telemetry/modal state: "..differences)
         assert(finalCounts.root==baseline,"UI descendants leaked at equivalent state (zero tolerance)")
         assert(cloudCalls==0 and reads==0,"test must not read a save or touch cloud")
-        print("[街头交互验收通过] 真PointerDown/Up；交谈/离开/订单零收费；远距骑行桥上拒绝；按钮二次校验；原POI用餐单事务；真实早餐交接/重复拒奖/配送一次到账；旧树Destroy与手机弹窗互斥；内存禁云")
+        print("[街头交互验收通过] 真PointerDown/Up；交谈/离开/订单零收费；表哥指路零事务；车行双圈HUD提示与真实对话一致；远距骑行桥上拒绝；按钮二次校验；原POI用餐单事务；真实早餐交接/重复拒奖/配送一次到账；旧树Destroy与手机弹窗互斥；内存禁云")
     end)
     local cleaned,cleanupFailure=pcall(function()
         view:CloseConversation(); view:ClosePhone(); view:ShowGame()

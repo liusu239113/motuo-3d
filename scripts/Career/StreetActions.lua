@@ -69,8 +69,10 @@ function Actions:TalkTo(id)
         choices[#choices+1]={id="orders",text="打开外卖App接着跑",primary=#choices==0,
             onClick=present(function() self:OpenPhone("delivery") end)}
     elseif not resident and person.point=="bridge" then
-        choices[#choices+1]={id="rest",text="在桥下歇一晚",onClick=present(function()
-            self:Service("bridge",function() return Store.Rest("bridge") end)
+        choices[#choices+1]={id="rest",text="帮我指一下桥下落脚点",onClick=present(function()
+            self.waypoint="bridge"; self.manualWaypoint=true
+            self.view:Notice("已标出桥下落脚点；到标记附近停稳下车，在手机生活页选择休息")
+            self:Refresh()
         end)}
         choices[#choices+1]={id="letters",text="看看表哥留下的消息",onClick=present(function() self:OpenPhone("messages") end)}
     elseif not resident then

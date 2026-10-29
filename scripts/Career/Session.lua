@@ -314,6 +314,10 @@ function Session:Intro()
             self:OpenPhone("messages")
         end}})
 end
+---@class CareerSessionState: CareerProfile
+---@field contactName? string
+---@field trafficHint? string
+---@return CareerSessionState
 function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
     state.musicEnabled=self.audio and self.audio.musicEnabled
@@ -322,7 +326,21 @@ function Session:State()
     if self.city and self.actor and self.space=="city" and not self.actor.mounted and self.actor.walkHeight<=1
         and math.abs(self.actor.speed)<=.35 and not Delivery.GetActive() then
         local person=self.city.contacts:Nearest(self.actor,3)
-        if person then state.contactName=person.name end
+        if person then
+            local nearest,distance="",math.huge
+            for _,point in ipairs(Config.pointList) do
+                local d=Config.DistanceTo(point.id,self.actor.x,self.actor.z)
+                if d<distance then nearest,distance=point.id,d end
+            end
+            local talk=distance>2 or nearest=="breakfast" or nearest=="dealer"
+            if distance<=2 then
+                for _,item in ipairs(Engagements.State(state).list) do
+                    if item.status=="ready" and item.returnPointId==nearest
+                        or item.status=="active" and item.nextPointId==nearest and nearest~=item.returnPointId then talk=false end
+                end
+            end
+            if talk then state.contactName=person.name end
+        end
     end
     return state
 end
@@ -448,7 +466,9 @@ function Session:Interact()
     elseif nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif nearest=="home_old" then self:OpenPhone("life")
-    elseif nearest=="dealer" then self:OpenPhone("progression")
+    elseif nearest=="dealer" then
+        local contact=self.city.contacts:Nearest(self.actor,3)
+        if not contact or not self:TalkTo(contact.id) then self:OpenPhone("progression") end
     elseif Config.points[nearest].kind=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif Config.points[nearest].kind=="rest" then self:Service(nearest,function() return Store.Rest("park") end)
     elseif Config.points[nearest].kind=="merchant" then self:Service(nearest,function() return Store.Eat() end)
