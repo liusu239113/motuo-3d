@@ -6,6 +6,7 @@ local Store=require("Career.Store")
 local Config=require("Career.Config")
 local Delivery=require("Career.Delivery")
 local People=require("Career.DeliveryPeople")
+local Vehicles=require("Career.VehicleData")
 local function same(a,b)
     if type(a)~=type(b) then return false end
     if type(a)~="table" then return a==b end
@@ -111,7 +112,20 @@ end
 -- route segment at .05m spacing, including both endpoints. Do NOT incorrectly
 -- demand the entire 2m interaction disk be empty: the NPC intentionally stands
 -- inside its edge. Boundary probes cover the actual dynamic disk separately.
+---@param p CareerDeliveryPerson
+---@param city CareerCity
+local function trafficBlocker(p,city)
+    local traffic=assert(city.traffic,"production traffic must already be ready")
+    local found=false
+    for _,blocker in ipairs(traffic:Blockers()) do
+        if math.abs(blocker.x-p.x)<.000001 and math.abs(blocker.z-p.z)<.000001
+            and math.abs(blocker.radius-p.radius)<.000001 then found=true; break end
+    end
+    assert(found,"production Traffic.Blockers omitted active/held delivery entity: "..p.pointId)
+    assert(city:IsFree(p.x,p.z,.32,"walk",p.y+6),"City.IsFree ground entity blocks another height layer")
+end
 local function safe(p,city,pool,orders)
+    trafficBlocker(p,city)
     local height=p.node.position.y
     assert(city:StaticFree(p.x,p.z,p.radius or .4,"walk",height),"NPC stood inside real static obstacle")
     assert(not pool:IsFree(p.x,p.z,.32),"active delivery NPC has no dynamic blocker")
@@ -311,6 +325,29 @@ function Checks.Run(session)
         sync(testPool,{})
         assert(same(Store.Get(),profile) and writes==startWrites,"all-point checks mutated Store")
 
+        -- A non-current parked vehicle must participate in NEW Bind placement.
+        -- Only a detached actor table is changed; never move the real parked bike.
+        sync(testPool,{fixtures[1]},{x=0,z=-20,vehicleId=Vehicles.EBIKE,parking={}})
+        local parkedCandidate=assert(testPool:Get("noodle"))
+        local parkedX,parkedZ=parkedCandidate.x,parkedCandidate.z
+        local parkedId=""
+        ---@type number
+        local parkedRadius=0
+        for _,id in ipairs(Vehicles.Ids) do
+            local radius=Vehicles.Radii[id]
+            if id~=Vehicles.EBIKE and type(radius)=="number" then parkedId,parkedRadius=id,radius; break end
+        end
+        assert(parkedId~="" and parkedRadius>0,"parking fixture needs a valid non-current VehicleData radius")
+        local parkingViewer={x=0,z=-20,mounted=false,walkHeight=0,vehicleId=Vehicles.EBIKE,
+            parking={[parkedId]={x=parkedX,z=parkedZ,yaw=0}}}
+        sync(testPool,{},parkingViewer) -- clear prior target; force a fresh Bind
+        sync(testPool,{fixtures[1]},parkingViewer)
+        local avoided=assert(testPool:Get("noodle"),"parked non-current vehicle left no valid alternate stand")
+        assert((avoided.x-parkedX)^2+(avoided.z-parkedZ)^2>=(parkedRadius+avoided.radius)^2,
+            "new Bind overlaps a non-current parked vehicle")
+        testPool:Update(.1,nearActor(avoided),true); safe(avoided,city,testPool,{fixtures[1]}); pose(avoided,city)
+        sync(testPool,{},{x=0,z=-20,vehicleId=Vehicles.EBIKE,parking={}})
+
         sync(testPool,{fixtures[1]})
         local merchant=assert(testPool:Get("noodle"))
         testPool:Update(.1,nearActor(merchant),true)
@@ -322,6 +359,10 @@ function Checks.Run(session)
         local clamped=merchant.rig.reachClampedFrames or 0
         for _=1,25 do testPool:Update(.1,nearActor(merchant),true); pose(merchant,city) end
         assert((merchant.rig.reachClampedFrames or 0)==clamped,"handover IK clamped beyond anatomical reach")
+        -- A new pending order at this same merchant cancels the previous visual
+        -- departure hold; far-LOD checks below concern pose clocks, not exit time.
+        sync(testPool,{order("noodle_office",101,"accepted")})
+        assert(merchant.hold==0 and merchant.active,"new same-point work did not cancel pickup exit hold")
         local paused=frozen(merchant)
         for _=1,30 do testPool:Update(.1,nearActor(merchant),false) end
         samePose(merchant,paused,"phone/pause advanced clock, turn, gesture or bones")
@@ -376,6 +417,7 @@ function Checks.Run(session)
         assert(recipient.poseCount>recipientPoses and testPool:Get(tutorial.dropoffId)==recipient
             and recipient.hold>5.9 and not recipient.active and view.speech:IsVisible(),
             "successful production deliver must respond same real recipient and retain it six seconds")
+        trafficBlocker(recipient,city)
         pose(recipient,city)
         local delivered=after; count=writes
         session:Interact()
@@ -417,6 +459,15 @@ function Checks.Run(session)
         session:Interact()
         assert(assert(Delivery.GetActive()).status=="picked_up" and merchant.poseCount>beforePoses
             and Store.Get().cashCents==before.cashCents and writes==count+1,"real generic merchant handoff not connected")
+        assert(testPool:Get("noodle")==merchant and merchant.hold>5.9 and not merchant.active
+            and merchant.visible and merchant.node.enabledSelf,
+            "successful generic pickup merchant must remain visible for its six-second response")
+        trafficBlocker(merchant,city)
+        -- Retained merchants have no priority over four newly needed real targets.
+        local merchantPressure={fixtures[2],fixtures[3],fixtures[4],order("park_lunch",31,"picked_up")}
+        sync(testPool,merchantPressure)
+        assert(testPool:Stats().active==4 and testPool:Stats().created==4 and not testPool:Get("noodle"),
+            "retained pickup merchant must relinquish its slot to four active targets")
         at("office")
         recipient=assert(testPool:Get("office"))
         testPool:Update(.1,nearActor(recipient),true)
@@ -451,6 +502,49 @@ function Checks.Run(session)
         assert(testPool:Stats().active==4 and testPool:Stats().created==4 and not testPool:Get("office"),
             "retained recipient starved new active targets instead of relinquishing its slot")
         sync(testPool,{})
+
+        -- Two real picked-up orders share ONE recipient. The first success must
+        -- not start a departure timer while another delivery still needs them.
+        local sharedOrders={order("noodle_office",40,"picked_up"),order("noodle_office",41,"picked_up")}
+        installOrders(sharedOrders)
+        at("office")
+        local shared=assert(testPool:Get("office"))
+        testPool:Update(.1,nearActor(shared),true)
+        before=Store.Get(); count=writes; recipientPoses=shared.poseCount
+        session:Interact()
+        after=Store.Get()
+        assert(#after.activeOrders==1 and after.activeOrders[1].id==sharedOrders[2].id
+            and after.settledOrders[sharedOrders[1].id] and not after.settledOrders[sharedOrders[2].id]
+            and after.cashCents==before.cashCents+sharedOrders[1].feeCents
+            and after.completedOrders==before.completedOrders+1 and writes==count+1,
+            "first same-point delivery must settle only its own order")
+        assert(testPool:Get("office")==shared and shared.active and shared.hold==0
+            and shared.poseCount>recipientPoses,"first shared delivery started premature exit hold")
+        local firstDelivered=Store.Get(); count=writes
+        assert(not Delivery.Deliver(sharedOrders[1].id,actor.x,actor.z,{riding=false,speed=0}))
+        unchanged(firstDelivered,count)
+        for _=1,20 do testPool:Update(.1,nearActor(shared),true) end
+        assert(testPool:Get("office")==shared and shared.active and shared.hold==0,
+            "shared recipient lost the remaining order during two-second wait")
+        before=Store.Get(); count=writes; recipientPoses=shared.poseCount
+        session:Interact(); after=Store.Get()
+        assert(#after.activeOrders==0 and after.settledOrders[sharedOrders[2].id]
+            and after.cashCents==before.cashCents+sharedOrders[2].feeCents
+            and after.completedOrders==before.completedOrders+1 and after.revision==before.revision+1
+            and writes==count+1,"last shared order did not settle exactly once")
+        assert(testPool:Get("office")==shared and not shared.active and shared.hold>5.9
+            and shared.visible and shared.poseCount>recipientPoses,
+            "last shared delivery must start a NEW full six-second exit hold")
+        testPool:Update(.7,nearActor(shared),true)
+        local finalHold=shared.hold
+        local finalPose=shared.poseCount
+        delivered=Store.Get(); count=writes
+        session:Interact()
+        assert(not Delivery.Deliver(sharedOrders[2].id,actor.x,actor.z,{riding=false,speed=0}))
+        session:Refresh()
+        unchanged(delivered,count)
+        near(shared.hold,finalHold,.000001,"duplicate shared delivery renewed the six-second timer")
+        assert(shared.poseCount==finalPose,"duplicate shared delivery repeated recipient response")
         conversationLayout(session)
         assert(reads==0 and cloudCalls==0,"checks read a save or touched cloud")
         testPool:Dispose(); testPool:Dispose()
@@ -502,11 +596,13 @@ end
 -- actual Session.Interact commits, never a visual-only fake handoff.
 -- This intentionally leaves the isolated test session staged for the caller to shoot.
 ---@param session CareerSession
----@param view string pickup/recipient/handover
+---@param view string pickup/recipient/handover/handover0/handover1/handover2
 function Checks.Shot(session,view)
     assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function",
         "handoff shot requires explicit test=true memory Session")
-    assert(view=="pickup" or view=="recipient" or view=="handover","unknown handoff shot view")
+    local phase=view:match("^handover([012])$")
+    local handover=view=="handover" or phase~=nil
+    assert(view=="pickup" or view=="recipient" or handover,"unknown handoff shot view")
     local requested=false
     for _,arg in ipairs(GetArguments()) do if arg=="-careerhandoffshot="..view then requested=true end end
     assert(requested,"handoff shot requires explicit -careerhandoffshot=<view>")
@@ -521,7 +617,9 @@ function Checks.Shot(session,view)
     local function at(pointId)
         local p=assert(Config.points[pointId])
         assert(city:StaticFree(p.x,p.z,.32,"walk",0),"shot marker not statically reachable")
+        session.navigation={key="",route={}}
         actor:Teleport(p.x,p.z,180); actor.speed,actor.steer=0,0; actor:SyncVisuals(0)
+        session.navigation={key="",route={}}
         session:Refresh()
     end
     at("noodle")
@@ -531,18 +629,33 @@ function Checks.Shot(session,view)
         session:Interact(); assert(assert(Delivery.GetActive()).status=="picked_up")
         at("office"); person=assert(pool:Get("office"))
         for _=1,20 do pool:Update(.05,actor,true) end
-        if view=="handover" then
+        if handover then
             local count=person.poseCount
             session:Interact()
             assert(not Delivery.GetActive() and person.poseCount>count and person.hold>5.9,
                 "handover shot must execute real successful recipient delivery")
+            if phase then
+                -- Identical world/body clock and camera across all three shots;
+                -- only the existing successful response's gesture envelope changes.
+                local u=({["0"]=.04,["1"]=.5,["2"]=.82})[phase]
+                person.gestureTime=person.gestureDuration*u
+                person.gestureWeight=math.sin(u*math.pi)^.65
+                pool:Pose(person)
+                pose(person,city)
+                print(string.format("[配送交接固定相位] %s clock=%.3f t=%.3f weight=%.3f hold=%.3f",
+                    view,person.clock,person.gestureTime,person.gestureWeight,person.hold))
+            end
         end
     end
     -- The same production camera library used by Session; no hand-rolled orbit.
     local yaw=math.deg(math.atan(person.x-actor.x,person.z-actor.z))
-    session.yaw,session.pitch=yaw,10
+    actor:Teleport(actor.x,actor.z,yaw); actor.speed,actor.steer=0,0; actor:SyncVisuals(0)
+    session.navigation={key="",route={}}
+    session:Refresh()
+    local cameraYaw=yaw+180 -- look from the street side, not from inside the facade
+    session.yaw,session.pitch=cameraYaw,10
     session.camera:SetModeConfig("normal",{distance=4.8,offset=V(0,1.25,0),fov=58})
-    session.camera:SetMode("normal"); session.camera:Update(2,actor.node,yaw,10)
+    session.camera:SetMode("normal"); session.camera:Update(2,actor.node,cameraYaw,10)
     session:UpdateEnvironment(9)
     session.view.overlay:SetVisible(false); session.view:ResetInput()
     pool:Update(.1,actor,false) -- test auto-Update is frozen by the production Session

@@ -6,6 +6,7 @@ local Rig=require("Career.Rig")
 local Pedestrians=require("Career.Pedestrians")
 local Config=require("Career.Config")
 local World=require("Career.WorldData")
+local Vehicles=require("Career.VehicleData")
 local V=Vector3
 
 ---@alias CareerDeliveryPersonRole 'merchant'|'customer'
@@ -43,7 +44,7 @@ local TargetType={}
 ---@field pointId string 空闲时为空串
 ---@field role CareerDeliveryPersonRole
 ---@field visible boolean 室内/90m外隐藏，不等同于active
----@field hold number 送达后的剩余活动秒数，0..6；不随重复Sync/Respond续期
+---@field hold number 成功交接后的剩余活动秒数，0..6；重复Sync/Respond不续期，仍有同点单则继续等候
 ---@field active boolean 当前订单仍需要该点；hold>0时可以false
 ---@field radius number .4米，仅通过IsFree提供动态碰撞
 ---@field orderIds string[]
@@ -129,8 +130,14 @@ local function rememberViewer(self,actor)
     if not actor or not finite(actor.x) or not finite(actor.z) then return end
     local radius=1.2
     if type(actor.VehicleRadius)=="function" then radius=math.max(radius,actor:VehicleRadius()) end
+    local parked={}
+    for id,p in pairs(actor.parking or {}) do
+        if id~=actor.vehicleId and finite(p.x) and finite(p.z) then
+            parked[#parked+1]={x=p.x,z=p.z,radius=Vehicles.Radii[id] or radius}
+        end
+    end
     self.viewer={x=actor.x,z=actor.z,mounted=actor.mounted,walkHeight=actor.walkHeight,
-        bikeX=actor.bikeX,bikeZ=actor.bikeZ,vehicleRadius=radius}
+        bikeX=actor.bikeX,bikeZ=actor.bikeZ,vehicleRadius=radius,parking=parked}
 end
 ---@param viewer? table
 ---@return string
@@ -200,8 +207,8 @@ end
 -- 碰撞/站位设计（俯视，单位米）：
 --                     [真实建筑/树/静态街坊AABB]
 --   候选圆r=.4  O       -> City:StaticFree逐候选检查，不改World.SetLegacy/obstacles
---                 1.2..2.3m
---   来路 ===== 宽1.1m接近通道 ===== [marker中心/1.5m方块]  原2m交互规则不变
+--                 1.8..2.3m
+--   来路 ===== 净空半宽1.7m ===== [marker中心/1.5m方块]  原2m交互规则不变
 -- 候选圆不能覆盖marker（中心至少1.8m），接近段留骑车r1.2+.4+.1m走廊。
 -- POI->候选每<=.1m扫掠，防止隔着薄墙/楼角误选；地表中心+四向脚掌包络采样，
 -- 不跨>.16m高差/悬空边缘，不用全局最高桥面把地面人物吸到桥上。
@@ -257,6 +264,9 @@ function People:PoolFree(x,z,ignore)
         if (x-viewer.x)^2+(z-viewer.z)^2<actorRadius^2 then return false end
         if finite(viewer.bikeX) and finite(viewer.bikeZ)
             and (x-viewer.bikeX)^2+(z-viewer.bikeZ)^2<(viewer.vehicleRadius+.5)^2 then return false end
+        for _,parked in ipairs(viewer.parking) do
+            if (x-parked.x)^2+(z-parked.z)^2<(parked.radius+People.RADIUS+.1)^2 then return false end
+        end
     end
     return true
 end
@@ -434,10 +444,9 @@ function People:Sync(orders,actor)
                     self.unplacedIds[#self.unplacedIds+1]=target.pointId
                 end
             else
-                -- 同点增减订单只更新快照；同单重复Sync绝不重绑、续hold或触发IK。
-                local old={}
-                for _,id in ipairs(p.orderIds) do old[id]=true end
-                for _,id in ipairs(target.orderIds) do if not old[id] then p.hold=0; break end end
+                -- 同点仍有待交单就继续等候；只有最后一次交接成功才开始退场计时。
+                -- 因此多单交付不会沿用上一单的剩余hold，重复Sync也不会续期。
+                p.hold=0
                 p.active=true
                 p.orderIds=copyIds(target.orderIds)
             end
@@ -506,7 +515,7 @@ function People:Respond(pointId,pickup)
     if self.disposed or self.city.space~="city" or type(pickup)~="boolean" then return false end
     local p=self:Get(pointId)
     if not p or not p.visible or (not p.active and p.hold<=0) then return false end
-    if not pickup and p.hold<=0 then p.hold=People.HOLD_SECONDS end
+    if p.hold<=0 then p.hold=People.HOLD_SECONDS end
     p.gesture=pickup and "pickup" or "thanks"
     p.gestureTime,p.gestureDuration,p.gestureWeight=.22,2.2,.65
     -- 对话框当帧冻结Update也能看见回应；不转动髋/腿，不生成手持物。
