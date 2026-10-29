@@ -76,6 +76,7 @@ local raceAssetsReady_ = false
 local clock_, accumulator_, lastYaw_ = 0.0, 0.0, 0.0
 local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
+local careerReadyShot_,careerReadyFrames_="",0
 local testScenery_, testNitroShot_ = false, false
 local testFeature_, testFeatureDone_ = "", false
 local testFeaturePhase_, testFeatureAirborne_ = "active", false
@@ -831,6 +832,8 @@ function Start()
             or arg:match("^%-test") or arg:match("checks$") or arg == "-selftest"
             or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
         if arg == "-career" then careerStart = true end
+        local readyShot=arg:match("^%-careerreadyshot=(.+)$")
+        if readyShot then careerReadyShot_=readyShot end
         if arg == "-careerchecks" or arg=="-careertripchecks" then careerCheck, careerStart = true, true; legacyTest = false end
         -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
         if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
@@ -840,6 +843,10 @@ function Start()
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
     end
     if careerCheck then legacyTest=false end
+    if careerReadyShot_~="" then
+        assert(careerCheck,"就绪实拍必须与显式隔离生涯测试参数组合")
+        SubscribeToEvent("PostRenderUpdate","CaptureCareerReadyFrame")
+    end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
         careerMode_,careerRace_=false,false
         hud_:SetCareerRace(false)
@@ -1233,6 +1240,22 @@ function HandlePostUpdate(eventType, eventData)
     local visible = CockpitActive() and screen_ == "ride" and position.x > 0 and position.x < 1 and position.y > 0 and position.y < 1
     hud_:UpdateCockpit(position.x * graphics:GetWidth() / scale, position.y * graphics:GetHeight() / scale,
         visible, sim_.speed * 3.6, sim_.gear, sim_.rpm)
+end
+
+-- 只对显式隔离验收启用。资源下载/校验帧数不定，必须等场景真正就绪再拍，
+-- 不能用固定全局帧号把加载页当作动作或应用截图。
+function CaptureCareerReadyFrame()
+    if careerReadyShot_=="" or not careerMode_ or not career_ or not career_.options.test
+        or career_.loading or not career_.running or not career_.actor then return end
+    careerReadyFrames_=careerReadyFrames_+1
+    if careerReadyFrames_~=8 then return end
+    local image=Image()
+    local captured=graphics:TakeScreenShot(image)
+    local saved=captured and image:SavePNG(careerReadyShot_)
+    image:Dispose()
+    assert(saved,"就绪场景实拍未写出图片："..careerReadyShot_)
+    print("[生涯就绪实拍完成] "..careerReadyShot_.." / ready后8渲染帧 / 内存档")
+    engine:Exit()
 end
 
 function CaptureTestFrame()
