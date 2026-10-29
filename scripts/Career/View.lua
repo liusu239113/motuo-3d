@@ -161,7 +161,11 @@ function View:OpenPhone(page,state,offer,active)
     self:BuildPhone(state,offer,active)
 end
 function View:BuildPhone(state,offer,active)
-    self.phoneContent:ClearChildren()
+    print("[生涯手机] 构建页面 "..self.phonePage)
+    for i=self.phoneContent:GetNumChildren(),1,-1 do
+        local child=self.phoneContent:GetChildAt(i)
+        if child then child:Destroy() end
+    end
     local content=UI.Panel{width="100%",padding=0,gap=11}
     self.phoneContent:AddChild(content)
     local a=self.actions
