@@ -95,33 +95,11 @@ local function bubble(content,text,isSelf,id,name)
     if isSelf then row:AddChild(avatar(person,28)) end
     content:AddChild(row)
 end
--- Label的maxLines目前只有声明，没有渲染截断实现；自动宽Label即使nowrap
--- 被父级压窄也会走auto-wrap。列表专用显式宽+固定高，并用字体实测做UTF-8省略。
+-- 联系人姓名/摘要/时间是信息文案，使用同源自然测高；不截正文、
+-- 不再用固定24px行盒或省略算法掩盖字体实际行高与窄屏换行。
 local function listLine(text,size,color,id,weight)
-    local source=text:gsub("[\r\n]+"," ")
-    local label=K.Text(source,size,color,{id=id,width="100%",height=24,minHeight=24,maxHeight=24,
-        flexShrink=0,whiteSpace="nowrap",verticalAlign="middle",fontWeight=weight or "normal"})
-    local lastWidth=-1
-    label.Update=function(self)
-        local width=self:GetLayout().w
-        if width<=0 or math.abs(width-lastWidth)<.1 then return end
-        lastWidth=width
-        local fontSize=UI.Theme.FontSize(size)
-        local face=UI.Theme.FontFace("sans",weight or "normal")
-        local function measured(value) return UI.MeasureTextWidth(value,fontSize,face) end
-        local available=math.max(0,width-2) -- 保留字形边缘/像素取整余量。
-        if measured(source)<=available then self:SetText(source); return end
-        local stop=#source
-        while stop>0 do
-            local start=stop
-            while start>1 and source:byte(start)>=128 and source:byte(start)<192 do start=start-1 end
-            stop=start-1
-            local value=source:sub(1,stop).."…"
-            if measured(value)<=available then self:SetText(value); return end
-        end
-        self:SetText(measured("…")<=available and "…" or "")
-    end
-    return label
+    return K.Text(text:gsub("[\r\n]+"," "),size,color,{id=id,width="100%",
+        fontWeight=weight or "normal"})
 end
 local function listTime(thread)
     local last=thread.letters[#thread.letters]
@@ -142,17 +120,18 @@ function Apps.Messages(view,content,state)
             local item=thread
             local unread=view.phoneReadThreads[item.id]~=item.signature and item.unreadCount or 0
             -- 当前UI命中先递归子树，不能仅依赖父级box-only；装饰子容器显式穿透。
-            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=50,padding=0,gap=2,pointerEvents="none",children={
-                listLine(item.name,12,C.ink,"career-chat-name-"..item.id,"bold"),
-                listLine(item.summary,10,C.muted,"career-chat-summary-"..item.id)}}
-            local side=UI.Panel{width=34,minWidth=34,height=50,padding=0,gap=2,alignItems="flex-end",pointerEvents="none",children={
+            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,pointerEvents="none",children={
+                listLine(item.name,12,C.ink,"career-chat-name-"..item.id,"bold")}}
+            local side=UI.Panel{width=34,minWidth=34,padding=0,gap=2,alignItems="flex-end",pointerEvents="none",children={
                 listLine(listTime(item),8,C.muted,"career-chat-time-"..item.id)}}
             if unread>0 then side:AddChild(UI.Badge{id="career-chat-unread-"..item.id,content=unread,size="sm",variant="error",pointerEvents="none"}) end
-            list:AddChild(UI.Row{id="career-chat-"..item.id,width="100%",height=78,padding=8,gap=7,
-                alignItems="center",borderBottomWidth=1,borderBottomColor=C.line,pointerEvents="box-only",
+            list:AddChild(UI.Panel{id="career-chat-"..item.id,width="100%",minHeight=78,padding=8,gap=7,
+                borderBottomWidth=1,borderBottomColor=C.line,pointerEvents="box-only",
                 onClick=function()
                     view.phoneChatId=item.id; view.phoneReadThreads[item.id]=item.signature; rebuild(view)
-                end,children={avatar(item),info,side}})
+                end,children={UI.Row{width="100%",padding=0,gap=7,alignItems="center",pointerEvents="none",
+                    children={avatar(item),info,side}},
+                    listLine(item.summary,10,C.muted,"career-chat-summary-"..item.id)}})
         end
         content:AddChild(K.Text("未读只在本次游玩中标记；这里不是联网真人聊天。",9,C.muted,{id="career-message-scope"}))
         return
@@ -281,7 +260,7 @@ function Apps.Wallet(view,content,state)
 end
 local function routeRow(number,title,point,highlight)
     return UI.Row{width="100%",padding=0,gap=7,alignItems="flex-start",children={
-        K.Text(number,10,highlight and C.green or C.muted,{width=22,height=22,whiteSpace="nowrap",flexShrink=0,textAlign="center",verticalAlign="middle",borderRadius=11,backgroundColor=C.pale}),
+        K.Text(number,10,highlight and C.green or C.muted,{width=28,flexShrink=0,textAlign="center",borderRadius=14,backgroundColor=C.pale}),
         UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=2,children={
             K.Text(title,9,highlight and C.green or C.muted),K.Text(Config.points[point].label,11,C.ink,{fontWeight="bold"})}}}}
 end

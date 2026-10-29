@@ -1,7 +1,38 @@
 -- 隔离生涯内存档中的真实交通测试，不写入玩家档。
 local Routes=require("Career.TrafficRoutes")
 local Traffic=require("Career.Traffic")
+local Collision=require("Career.FootprintCollision")
+local Footprints=require("Career.VehicleFootprints")
 local Checks={}
+
+-- 侧撞判定必须贴真实局部车壳，不能把后视镜的全车最大宽度投成整片墙。
+-- 俯视：外侧O --> /斜侧壳|；接触后允许沿斜侧壳切向滑动，不允许向内侵入。
+-- 同时证明三件事：完整输入段确实命中；返回点不重叠；从返回点再向
+-- 车心推进2cm必进入同一可见壳。不能以远处提前停车或放宽bbox阈值过关。
+local function checkShellContact(city,car,ax,az,dx,dz,label)
+    local shell=Traffic.Shape(car)
+    local start=Collision.Circle(ax,az,.32)
+    assert(Collision.Free(start,shell,Collision.SKIN),label.."：输入起点不得落在车壳内")
+    assert(Collision.Sweep(start,shell,dx,dz),label.."：完整输入必须真实命中车壳，不能验证绕开的宽路径")
+    local x,z,blocked=city:Move(ax,az,dx,dz,.32,"walk",0)
+    assert(blocked,label.."：City连续扫掠应报告实际碰撞")
+    assert(Traffic.CircleFree(car,x,z,.32) and Collision.Free(Collision.Circle(x,z,.32),shell,Collision.SKIN),
+        label.."：玩家终点不得穿入同源可见轮廓")
+    local ix,iz=car.x-x,car.z-z
+    local length=math.sqrt(ix*ix+iz*iz)
+    assert(length>.02 and not Collision.Free(Collision.Circle(x+ix/length*.02,z+iz/length*.02,.32),shell,Collision.SKIN),
+        label.."：返回点必须真正贴壳，不能远处空气墙提前拦停")
+    -- 相同生产Move按0.1m输入逐段重放，每次提交都验证非穿透；不是仅看最终点。
+    local count=math.max(1,math.ceil(math.sqrt(dx*dx+dz*dz)/.1))
+    local px,pz=ax,az
+    for _=1,count do
+        local nx,nz=city:Move(px,pz,dx/count,dz/count,.32,"walk",0)
+        assert(Collision.Free(Collision.Circle(nx,nz,.32),shell,Collision.SKIN),label.."：中间提交不得穿车")
+        px,pz=nx,nz
+    end
+    assert(math.abs(px-x)+math.abs(pz-z)<.0001,label.."：长输入与连续小步必须得到相同接触点")
+    return x,z
+end
 function Checks.Run(session)
     local t=session.traffic
     local actor=session.actor
@@ -32,19 +63,19 @@ function Checks.Run(session)
     t.time=42
     for _=1,30 do t:Update(.1) end
     assert(car.s>waiting+3,"绿灯须恢复行驶")
-    -- 玩家站在车道内，交通不可穿过；玩家侧向进入也被同一OBB阻挡。
+    -- 玩家站在车道内，交通不可穿过；玩家侧向输入由同源可见车壳扫掠阻挡。
     car.s,car.speed=70,5; t:Place(car); t.time=0
     actor.x,actor.z=car.x,car.z+12
     for _=1,80 do t:Update(.1) end
     assert(Traffic.CircleFree(car,actor.x,actor.z,.32) and car.z<actor.z,"车必须让停行人")
     assert(not t:IsFree(car.x,car.z,.32),"车辆实体必须进入City碰撞域")
-    local x,z=session.city:Move(car.x+5,car.z,-5,0,.32)
-    assert(x>car.x+car.width/2+.3 and math.abs(z-car.z)<.01,"玩家不可侧穿车身")
+    checkShellContact(session.city,car,car.x+5,car.z,-5,0,"真实玩家侧向输入")
     -- 停放车辆同样有占用，不因玩家远离而被交通穿过。
     actor.x,actor.z=-50,-50
     actor.bikeX,actor.bikeZ=car.x,car.z+10
     for _=1,80 do t:Update(.1) end
-    assert(Traffic.CircleFree(car,actor.bikeX,actor.bikeZ,actor:VehicleRadius()))
+    assert(Collision.Free(Traffic.Shape(car),Footprints.At(actor.vehicleId,actor.bikeX,actor.bikeZ,actor.bikeYaw),Collision.SKIN),
+        "交通不得穿过同源真实停放车辆占地")
     -- 前车静止时，后车保持间隔；不依赖模型渲染才有效。
     actor.bikeX,actor.bikeZ=-52,-50
     local leader=all[5]

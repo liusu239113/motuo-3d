@@ -4,8 +4,8 @@ local Environment={}
 Environment.Bounds={x1=-1152,x2=-400,z1=-1152,z2=-400}
 Environment.Connector={x1=-400,x2=-380,z1=-400,z2=-380}
 Environment.SEA=.15
-Environment.Resources={"uuid://FA-0GUs_3oaHzyb-ntH1Nkwf","Materials/SingleLayerWater.xml"}
-Environment.ResourceTypes={[Environment.Resources[1]]="Material",[Environment.Resources[2]]="Material"}
+Environment.Resources={"uuid://FA-0GUs_3oaHzyb-ntH1Nkwf","Materials/SingleLayerWater.xml","image/career_bridge_sign.png"}
+Environment.ResourceTypes={[Environment.Resources[1]]="Material",[Environment.Resources[2]]="Material",[Environment.Resources[3]]="Texture2D"}
 -- 俯视：环街(-384,-384) -> 20m平接入口 -> 岸丘(-450,-450),y4
 --       -> 60m缓坡 -> 沙滩(-548,-548),y.27 -> 沿岸栈道 -> 西向观景栈桥。
 -- 海域x,z<-568，扣除8m宽栈桥；家具为可见实占矩形，坡不设AABB。
@@ -283,6 +283,14 @@ function Environment.SetupMaterials(mats)
     mats.coast_sand=material
     mats.coast_water=assert(cache:GetResource("Material",Environment.Resources[2])):Clone()
     mats.coast_water:SetShaderParameter("WaterTint",Variant(Color(.20,.46,.64)))
+    local sign=Material:new()
+    sign:SetTechnique(0,assert(cache:GetResource("Technique","Techniques/PBR/PBRDiff.xml")))
+    sign:SetTexture(TU_DIFFUSE,assert(cache:GetResource("Texture2D",Environment.Resources[3])))
+    sign:SetShaderParameter("MatDiffColor",Variant(Color(1,1,1)))
+    sign:SetShaderParameter("Roughness",Variant(.84))
+    sign:SetShaderParameter("Metallic",Variant(0))
+    sign:SetShaderParameter("MatEmissiveColor",Variant(Color(.07,.07,.07)))
+    mats.coast_bridge_sign=sign
 end
 -- 返回精确地形三角形，纯数据可离线验证重心插值与Height，渲染不另算高度。
 function Environment.TerrainTriangles(cell,emit)
@@ -446,7 +454,22 @@ function Environment.BuildCore(city)
     -- 双面大牌只悬空，不放新柱挡中心路；从南北导航接近均能看到桥下入口。
     for _,z in ipairs({-61.36,-78.64}) do
         d:Box("street_teal",0,4.30,z,11,.90,.12)
-        d:Sign("南城高架 · 桥下休息区",0,4.30,z+(z< -70 and -.075 or .075),z< -70 and 0 or 180,.48)
+        local node=d.root:CreateChild("桥下实体入口字牌")
+        node.position=Vector3(0,4.30,z+(z< -70 and -.075 or .075))
+        node.rotation=Quaternion(0,z< -70 and 0 or 180,0)
+        local geom=node:CreateComponent("CustomGeometry")
+        geom:BeginGeometry(0,TRIANGLE_LIST)
+        -- 独立0..1 UV，整张字牌只显示一次，不使用米制平铺UV。
+        local function vertex(x,y,u,v)
+            geom:DefineVertex(Vector3(x,y,0))
+            geom:DefineNormal(Vector3(0,0,-1))
+            geom:DefineTexCoord(Vector2(u,v))
+        end
+        vertex(-5.5,-.45,0,1);vertex(-5.5,.45,0,0);vertex(5.5,-.45,1,1)
+        vertex(5.5,-.45,1,1);vertex(-5.5,.45,0,0);vertex(5.5,.45,1,0)
+        assert(geom:GenerateTangents(),"桥下入口字牌切线生成失败")
+        geom:Commit();geom:SetMaterial(city.mats.coast_bridge_sign)
+        geom.castShadows=false;geom.drawDistance=140
     end
     print(string.format("[城市环境] 桥下原点(0,-70)不动 / 岸丘4m / %d件海岸设施 / 开放海湾752m / 分块8m地形",#Environment.Props))
 end
