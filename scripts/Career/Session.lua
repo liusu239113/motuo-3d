@@ -36,10 +36,13 @@ local Team = require("Career.Team")
 ---@field VisitEngagement fun(self:CareerSession,id:string)
 ---@field SignTeam fun(self:CareerSession,id:string)
 ---@field ClaimTeam fun(self:CareerSession)
+---@field TalkTo fun(self:CareerSession,id:string):boolean
+---@field DeliveryResponse fun(self:CareerSession,pointId:string,pickup:boolean)
 local Session={}
 Session.__index=Session
 require("Career.HousingActions").Install(Session)
 require("Career.EngagementActions").Install(Session)
+require("Career.StreetActions").Install(Session)
 function Session.New(options)
     local self=setmetatable({},Session)
     self:Init(options or {})
@@ -246,16 +249,27 @@ function Session:BuildWorld()
     self:Refresh()
     if Store.Get().phase=="opening" then self:Intro() end
     if self.options.test then
-        local contact,worldShot=false,""
-        local storyChecks,optimizeChecks=false,false
+        local contact,worldShot,streetShot=false,"",""
+        local storyChecks,optimizeChecks,streetChecks=false,false,false
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
             if arg=="-careercontact" then contact=true end
+            if arg=="-careerstreet" then streetChecks=true end
+            local street=arg:match("^%-careerstreetshot=(.+)$")
+            if street then streetShot=street end
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if optimizeChecks then
+        if streetChecks then
+            self.view:ClosePhone(); self.view:ShowGame()
+            require("Career.StreetLifeChecks").Run(self)
+            require("Career.StreetInteractionChecks").Run(self)
+            print("[老街品质验收通过] 街面/人物/现场交谈/原事务")
+        elseif streetShot~="" then
+            local checks=require("Career.StreetLifeChecks") --[[@as CareerStreetLifeChecks]]
+            checks.Shot(self,streetShot)
+        elseif optimizeChecks then
             self.view:ClosePhone(); self.view:ShowGame()
             require("Career.WorldChecks").Run(self)
             require("Career.MapPhoneChecks").Run(self)
@@ -305,6 +319,11 @@ function Session:State()
     state.musicEnabled=self.audio and self.audio.musicEnabled
     state.effectsEnabled=self.audio and self.audio.effectsEnabled
     state.trafficHint=self.traffic and self.actor and self.space=="city" and self.traffic:Hint(self.actor.x,self.actor.z,self.actor.yaw) or nil
+    if self.city and self.actor and self.space=="city" and not self.actor.mounted and self.actor.walkHeight<=1
+        and math.abs(self.actor.speed)<=.35 and not Delivery.GetActive() then
+        local person=self.city.contacts:Nearest(self.actor,3)
+        if person then state.contactName=person.name end
+    end
     return state
 end
 function Session:Target()
@@ -388,6 +407,11 @@ function Session:Interact()
     local nearby=dist<=Config.INTERACTION_RADIUS and Config.points[nearest] or nil
     local service=nearby and (nearby.kind=="charge" or nearby.kind=="rest" or nearby.kind=="merchant")
     local orderPoint=order and (order.status=="accepted" and order.pickupId or order.dropoffId)
+    if order and order.status~="accepted" and order.pickupId=="breakfast"
+        and Config.DistanceTo(order.pickupId,self.actor.x,self.actor.z)<=2 then
+        self.view:Notice("这份餐已经取好了，请按导航送到顾客处；补给可在手机中选择")
+        return
+    end
     -- 当前取送点保持配送优先；其他现场补给允许带单使用，由 Store 扣除订单时间。
     if order and (not service or Config.DistanceTo(orderPoint,self.actor.x,self.actor.z)<=Config.INTERACTION_RADIUS) then
         if self.actor.walkHeight>1 then self.view:Notice("请先回到地面再取送餐"); return end
@@ -398,8 +422,13 @@ function Session:Interact()
         else ok,message=Delivery.Deliver(order.id,self.actor.x,self.actor.z,context) end
         if ok then self.manualWaypoint=false end
         self.view:Notice(message); self:RefreshPhone()
+        if ok then self:DeliveryResponse(orderPoint,order.status=="accepted") end
         if ok and not Delivery.GetActive() then self.waypoint="breakfast" end
         return
+    end
+    if not order and dist>2 and not self.actor.mounted and math.abs(self.actor.speed)<=.35 and self.actor.walkHeight<=1 then
+        local contact=self.city.contacts:Nearest(self.actor,3)
+        if contact then self:TalkTo(contact.id); return end
     end
     if dist>2 then self.view:Notice("靠近商家、门厅、充电点或住处，再点击交互"); return end
     if self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请停稳下车后交互"); return end
@@ -412,7 +441,9 @@ function Session:Interact()
             self:ClaimEngagement(item.instanceId); return
         end
     end
-    if nearest=="breakfast" or nearest=="bridge" then self:OpenPhone("messages")
+    if nearest=="breakfast" then
+        if not self:TalkTo("station") then self:OpenPhone("messages") end
+    elseif nearest=="bridge" then self:OpenPhone("messages")
     elseif nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif nearest=="home_old" then self:OpenPhone("life")
@@ -511,11 +542,15 @@ function Session:Update(dt)
     end
     if not self.running or not self.actor then return end
     if self.city then self.city:UpdateStreaming(self.actor.x,self.actor.z) end
+    self.city.contacts:Update(dt,self.actor,self.environmentHour,
+        self.space=="city" and not self.view:IsBlocking() and not self.options.test)
+    self.view:UpdateSpeech(dt)
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
     if self.audio then self.audio:Update(dt,self.actor,self.view:IsBlocking(),self.space~="city",self.view:GetInput(),self.online and Delivery.GetOffer() or nil) end
     if input:GetKeyPress(KEY_ESCAPE) then
         if self.view.phonePage~="" then self.view:ClosePhone()
+        elseif self.view.conversation:IsVisible() then self.view:CloseConversation()
         elseif not self.view:IsBlocking() then self:Pause() end
         return
     end

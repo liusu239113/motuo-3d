@@ -8,7 +8,10 @@ local Interior = require("Career.Interior")
 local Signals = require("Career.TrafficSignals")
 local World = require("Career.WorldData")
 local Stream = require("Career.WorldStream")
+local StreetDressing = require("Career.StreetDressing")
 ---@class CareerCity
+---@field contacts CareerContacts
+---@field streetDressing CareerStreetDressing
 ---@field stream CareerWorldStream
 ---@field FindFree fun(self:CareerCity,x:number,z:number,radius:number,mode?:string,height?:number):number,number
 ---@field SetSpace fun(self:CareerCity,id:string)
@@ -33,6 +36,11 @@ end
 for _, path in ipairs(Landscape.Resources) do
     City.Resources[#City.Resources + 1] = path
     City.ResourceTypes[path] = Landscape.ResourceTypes[path]
+end
+
+for _, path in ipairs(StreetDressing.Resources) do
+    City.Resources[#City.Resources+1]=path
+    City.ResourceTypes[path]=StreetDressing.ResourceTypes[path]
 end
 
 ---@param scene Scene
@@ -72,6 +80,7 @@ function City:Init(scene)
     self:BuildRoads()
     self:BuildBlocks()
     self:BuildPlaces()
+    self.streetDressing=StreetDressing.New(self)
     self.contacts=require("Career.Contacts").New(self)
     self.signals=Signals.New(self.root,self.details)
     self.stats = self.details:Finish()
@@ -381,5 +390,11 @@ end
 
 function City:GetMarker(id) return self.markers[id] end
 function City:GetStats() return self.stats end
-function City:Dispose() self.stream:Dispose(); self.contacts:Dispose(); self.root:Dispose() end
+function City:Dispose()
+    self.stream:Dispose()
+    self.contacts:Dispose()
+    local dressing=self.streetDressing --[[@as CareerStreetDressing]]
+    dressing:Dispose()
+    self.root:Dispose()
+end
 return City

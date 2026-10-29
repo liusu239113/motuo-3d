@@ -144,8 +144,50 @@ function View:Init(actions)
     self.notice=label("",12,C.amber,{position="absolute",top=12,left="30%",right="22%",whiteSpace="normal",textAlign="center",maxLines=3})
     self.root:AddChild(self.home); self.root:AddChild(self.game); self.root:AddChild(self.phone)
     self.root:AddChild(self.overlay); self.root:AddChild(self.notice)
+    self.conversation=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,padding=18,
+        justifyContent="flex-end",alignItems="center",backgroundColor={0,0,0,25}})
+    self.conversationBody=UI.Panel{id="career-conversation",width=620,maxWidth="92%",maxHeight="88%",
+        padding=16,gap=9,backgroundColor={10,16,21,238},borderColor=C.border,borderWidth=1}
+    self.conversation:AddChild(self.conversationBody)
+    self.root:AddChild(self.conversation)
+    self.speech=UI.Panel{id="career-street-speech",position="absolute",bottom="20%",left="24%",right="24%",
+        visible=false,padding=10,backgroundColor={10,16,21,220},pointerEvents="none"}
+    self.speechText=label("",13,C.white,{whiteSpace="normal",maxLines=3,textAlign="center"})
+    self.speech:AddChild(self.speechText); self.root:AddChild(self.speech)
+    self.speechTime=0
+end
+function View:CloseConversation()
+    self.conversation:SetVisible(false)
+    destroyChildren(self.conversationBody)
+    self.blocked=self.overlay:IsVisible()
+    self.controls:SetEnabled(self.game:IsVisible() and self.phonePage=="" and not self.blocked)
+end
+function View:ShowConversation(name,text,choices)
+    self:ClosePhone(); self.overlay:SetVisible(false)
+    self:ResetInput(); self.controls:SetEnabled(false); self.blocked=true
+    self.speech:SetVisible(false); self.speechTime=0
+    destroyChildren(self.conversationBody)
+    self.conversationBody:AddChild(label("现场交谈 · "..name,17,C.amber,{id="career-conversation-name",fontWeight="bold"}))
+    self.conversationBody:AddChild(label(text,14,C.white,{id="career-conversation-line",whiteSpace="normal",maxLines=4}))
+    for _,choice in ipairs(choices) do
+        self.conversationBody:AddChild(btn(choice.text,function()
+            self:CloseConversation()
+            if choice.onClick then choice.onClick() end
+        end,choice.primary,{id="career-conversation-"..choice.id,height=44,padding=5,fontSize=12}))
+    end
+    self.conversation:SetVisible(true)
+end
+function View:Say(name,text)
+    self.speechText:SetText(name.."："..text)
+    self.speech:SetVisible(true); self.speechTime=5
+end
+function View:UpdateSpeech(dt)
+    if self.speechTime<=0 or self:IsBlocking() then return end
+    self.speechTime=math.max(0,self.speechTime-dt)
+    if self.speechTime==0 then self.speech:SetVisible(false) end
 end
 function View:ShowHome(hasSave,message)
+    self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ClosePhone()
     self.home:SetVisible(true); self.game:SetVisible(false); self.phone:SetVisible(false); self.overlay:SetVisible(false)
     self.phonePage=""; self.blocked=true; self.controls:SetEnabled(false)
@@ -156,6 +198,7 @@ function View:ShowHome(hasSave,message)
     if message then self.homeActions:AddChild(label(message,10,C.muted,{whiteSpace="normal"})) end
 end
 function View:ShowGame()
+    self:CloseConversation()
     self.home:SetVisible(false); self.game:SetVisible(true); self.overlay:SetVisible(false)
     self.controlWidth,self.controlHeight=0,0
     self.blocked=false; self.controls:SetEnabled(self.phonePage=="")
@@ -164,14 +207,16 @@ function View:ShowLoading(title,detail,fraction)
     self:ShowDialog(title,detail..string.format("\n已完成 %.0f%%",fraction*100),{})
 end
 function View:ShowDialog(title,text,buttons)
+    self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ResetInput(); self.controls:SetEnabled(false)
-    self.blocked=true; self.overlay:SetVisible(true)
+    self.blocked=true; self.phone:SetVisible(false); self.overlay:SetVisible(true)
     destroyChildren(self.dialogBody)
     self.dialogBody:AddChild(label(title,21,C.amber,{fontWeight="bold",whiteSpace="normal"}))
     self.dialogBody:AddChild(label(text,13,C.white,{whiteSpace="normal",maxLines=14}))
     for _,item in ipairs(buttons) do
         self.dialogBody:AddChild(btn(item.text,function()
             self.overlay:SetVisible(false); self.blocked=false
+            self.phone:SetVisible(self.phonePage~="")
             self.controls:SetEnabled(self.game:IsVisible() and self.phonePage=="")
             if item.onClick then item.onClick() end
         end,item.primary))
@@ -189,6 +234,8 @@ function View:ClosePhone()
     self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
 function View:OpenPhone(page,state,offer,active)
+    self:CloseConversation(); self.overlay:SetVisible(false); self.blocked=false
+    self.speech:SetVisible(false); self.speechTime=0
     if self.phonePage=="" then
         self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
     end
@@ -485,7 +532,7 @@ function View:Update(state,actor,target,active,offer,dt)
     self.mountButton:SetVisible(not indoor)
     self.map.root:SetVisible(not indoor)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
-        or active and (active.status=="accepted" and "取餐" or "送达") or "交互")
+        or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.status:SetText(string.format("王二狗  %s  第%d天 %02d:%02d\n饱腹 %.0f · 精力 %.0f · 电量 %.0f%%",money(state.cashCents),state.day,
         math.floor(state.time),math.floor(state.time*60)%60,state.hunger,state.energy,state.battery))
     self.objective:SetText(target and (target.name..string.format(" · %.0f米",target.distance)) or "打开右下角手机 → 外卖骑手 → 上线听单")
@@ -493,6 +540,7 @@ function View:Update(state,actor,target,active,offer,dt)
     self.hint:SetText(need<30 and "饥饿或疲劳已降低速度：去早餐店用餐，或去住处休息。"
         or state.time>=23 and "深夜已停止派新单，请完成配送后休息。"
         or state.trafficHint
+        or state.contactName and ("附近 · "..state.contactName.."，点击右侧交谈")
         or target and target.hint or "先活下去，再跑出自己的路。")
     self.speed:SetText(actor.mounted and string.format("%s  %.0f km/h",actor:VehicleName(),math.abs(actor.speed)*3.6)
         or "步行 · 车辆停在原处")
