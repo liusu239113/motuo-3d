@@ -10,13 +10,16 @@ end
 local function routeHash()
     local entries={}
     for _,t in ipairs(World.Orders) do
-        entries[#entries+1]=t.id;entries[#entries+1]=t.timeLimitHours
+        entries[#entries+1]=t.id
+        -- 必须显式格式化：Lua5.4/5.5对浮点的默认字符串精度不同。
+        -- 时限来自既有基线，不能把table.concat的默认转换当作稳定序列化。
+        entries[#entries+1]=string.format("%.9f",t.timeLimitHours)
         for _,p in ipairs(t.route) do entries[#entries+1]=string.format("%.6f,%.6f",p.x,p.z) end
     end
     local text=table.concat(entries,"|")
     local hash=2166136261
     for i=1,#text do hash=((hash ~ text:byte(i))*16777619)&0xffffffff end
-    return hash
+    return hash,#text
 end
 local function rectangle(p)
     return {x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-p.d/2,z2=p.z+p.d/2}
@@ -54,7 +57,13 @@ local function legacyOrders()
         near(i==1 and 500 or Config.FeeCents(e[2]),e[3],"旧单报价改变")
         for n,p in ipairs(e[5]) do near(t.route[n].x,p[1]);near(t.route[n].z,p[2]) end
     end
-    assert(#World.Orders==24 and routeHash()==61976824,"既有外区单完整route/时限改变")
+    -- 修改前git基线经Lua5.4/5.5各自逐点核对后，以相同固定格式重新序列化。
+    -- 两种解释器均得3803字节/FNV2567365835，不沿用隐式数字转字符串的旧hash。
+    local hash,bytes=routeHash()
+    print(string.format("[邻里订单签名] Lua=%s templates=%d got=%u expected=2567365835 bytes=%d expectedBytes=3803",
+        _VERSION,#World.Orders,hash,bytes))
+    assert(#World.Orders==24 and hash==2567365835 and bytes==3803,
+        string.format("既有外区单完整route/时限改变：got=%u bytes=%d templates=%d",hash,bytes,#World.Orders))
     for _,t in ipairs(World.Orders) do
         local length=Config.RouteDistance(t.route)
         assert(Config.FeeCents(length)==math.floor(math.max(250,math.min(1000,250+150*length/1000))+.5))
