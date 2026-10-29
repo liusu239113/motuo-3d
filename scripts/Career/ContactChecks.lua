@@ -113,6 +113,12 @@ function Checks.Motion(session)
             local b=rig:GetBonePosition("L_Foot")
             assert(math.abs(b.z-a.z+cycle*.08/(2*math.pi))<.001,"支撑脚后移应抵消真实前进距离")
         end
+        visuals:ResetGait()
+        visuals:UpdateGait(.1,0,.06)
+        assert(visuals.gaitWeight>0 and visuals.phase>0,"末子步撞墙不得吞掉本帧前段真实位移步态")
+        local partialPhase=visuals.phase
+        visuals:UpdateGait(.1,3.4,0)
+        assert(visuals.phase==partialPhase,"整帧没有真实位移时不得按残余速度踏步")
         for _,speed in ipairs({.18,.6,1.8,3.4}) do
             visuals:ResetGait()
             for _=1,60 do visuals:UpdateGait(1/60,speed,speed/60) end

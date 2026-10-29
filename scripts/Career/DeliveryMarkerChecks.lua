@@ -184,6 +184,29 @@ function Checks.Run(session)
         assert(same(fixtures,original) and same(Store.Get(),profile),"markers/checks mutated orders or Store")
         assert(city.obstacles==obstacles and same(city.obstacles,obstacleData),"city.obstacles changed")
         collisionUnchanged()
+        -- 近门前距离只在地面步行且真实整段净空时走直线；不修改订单/原路网/2米授权。
+        local office=assert(Config.points.office)
+        local approachActor={x=office.x,z=office.z-7,walkHeight=0,mounted=false} --[[@as CareerActor]]
+        local approach=setmetatable({actor=approachActor,city=city,space="city",manualWaypoint=true,
+            waypoint="office",navigation={key="",route={}}},getmetatable(session)) --[[@as CareerSession]]
+        assert(city:StaticSegmentFree(approachActor.x,approachActor.z,office.x,office.z,.32,"walk",0),"门前7米实景接近段应净空")
+        near(assert(approach:Target()).distance,7)
+        assert(not approach:Allowed("office"),"近门直线显示不得扩大2米交互圈")
+        approachActor.mounted=true
+        local routed=assert(approach:Target())
+        ---@type CareerRoutePoint[]
+        local routedPoints=assert(routed.route)
+        near(routed.distance,Config.RouteDistance(routedPoints))
+        assert(routed.distance>7,"骑行仍应显示原道路路线")
+        approachActor.mounted=false;approachActor.walkHeight=6
+        near(assert(approach:Target()).distance,routed.distance)
+        approachActor.walkHeight=0;approachActor.z=office.z+7
+        assert(not city:StaticSegmentFree(approachActor.x,approachActor.z,office.x,office.z,.32,"walk",0),"隔墙反例必须有实际低墙")
+        local blocked=assert(approach:Target())
+        ---@type CareerRoutePoint[]
+        local blockedPoints=assert(blocked.route)
+        near(blocked.distance,Config.RouteDistance(blockedPoints))
+        assert(same(Store.Get(),profile),"接近段显示不得改订单金额/档案")
         for _,kind in ipairs({"RigidBody","CollisionShape","RigidBody2D","CollisionShape2D"}) do
             assert(#p.root:GetChildrenWithComponent(kind,true)==0 and not p.root:HasComponent(kind),"marker acquired collision component")
         end

@@ -136,7 +136,8 @@ end
 -- 纯步态入口，回归可直接驱动；不处理输入/相机/存档/车辆。
 -- distance是Actor子步累计的真实移动距离（撞墙=0），省略时兼容既有速度驱动。
 function Visuals:UpdateGait(dt,speed,distance)
-    local velocity=math.abs(speed)
+    -- 子步末段可能已撞墙，但本帧前段仍实际移动；混合权重和相位都用整帧路程。
+    local velocity=distance~=nil and dt>0 and math.abs(distance)/dt or math.abs(speed)
     local target=math.sqrt(math.min(1,velocity/1.8))
     local run=math.max(0,math.min(1,(velocity-1.8)/1.6))
     local stopped=velocity<.025

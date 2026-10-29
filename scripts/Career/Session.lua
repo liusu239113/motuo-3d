@@ -399,8 +399,11 @@ function Session:Target()
     end
     local route=self.navigation.route
     local directDistance=Config.DistanceTo(id,self.actor.x,self.actor.z)
-    -- 已到原2米交互圈内就显示实际门前距离，不再把道路吸附的往返路段算成未送达。
-    local distance=directDistance<=Config.INTERACTION_RADIUS and directDistance
+    -- 交互圈保留精确距离；近门前有真实净空的步行接近段不再绕道路吸附点计距。
+    -- 只改显示；锁定配送费、订单路线和2米交互授权不变，隔墙/车上/高层仍用路网。
+    local walkApproach=directDistance<=20 and not self.actor.mounted and self.actor.walkHeight<=1
+        and self.city and self.city:StaticSegmentFree(self.actor.x,self.actor.z,point.x,point.z,.32,"walk",0)
+    local distance=(directDistance<=Config.INTERACTION_RADIUS or walkApproach) and directDistance
         or (#route>1 and Config.RouteDistance(route) or directDistance)
     return {name=point.label,x=point.x,z=point.z,pointId=point.id,kind=point.kind,route=route,
         distance=distance,
