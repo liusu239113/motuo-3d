@@ -122,7 +122,12 @@ local function trafficBlocker(p,city)
             and math.abs(blocker.radius-p.radius)<.000001 then found=true; break end
     end
     assert(found,"production Traffic.Blockers omitted active/held delivery entity: "..p.pointId)
-    assert(city:IsFree(p.x,p.z,.32,"walk",p.y+6),"City.IsFree ground entity blocks another height layer")
+    local height=p.y+6
+    assert(city.deliveryPeople:IsFree(p.x,p.z,.32,"walk",height),"ground delivery entity blocks another height layer")
+    -- 高层可能没有桥面，本来就被World拒绝；比较同一真实City带池/不带池，不能把无桥空中当可走区域。
+    local expected=city:StaticFree(p.x,p.z,.32,"walk",height)
+    assert(city:IsFree(p.x,p.z,.32,"walk",height)==expected,
+        "City.IsFree delivery entity changes another height layer")
 end
 local function safe(p,city,pool,orders)
     trafficBlocker(p,city)
