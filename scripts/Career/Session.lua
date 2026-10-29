@@ -272,6 +272,7 @@ function Session:BuildWorld()
     if self.options.test then
         local contact,worldShot,streetShot,handoffShot=false,"","",""
         local storyChecks,optimizeChecks,streetChecks,handoffChecks=false,false,false,false
+        local legacyChecks=false
         local qualityChecks,beaconShot,phoneShot,motionShot=false,"","",""
         local appQuality,animQuality,cityQuality=false,false,false
         local collisionQuality,environmentQuality,soundCrowdQuality=false,false,false
@@ -280,6 +281,7 @@ function Session:BuildWorld()
         local collisionShot,environmentShot,crowdShot="","",""
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careeroptimize" then optimizeChecks=true end
+            if arg=="-careerlegacychecks" then legacyChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
             if arg=="-careercontact" then contact=true end
             if arg=="-careerstreet" then streetChecks=true end
@@ -374,6 +376,7 @@ function Session:BuildWorld()
             require("Career.StoryChecks").Run(self)
         elseif worldShot~="" then require("Career.WorldChecks").Shot(self,worldShot)
         elseif contact then require("Career.ContactChecks").Run(self)
+        elseif legacyChecks then require("Career.Checks").RunWorld(self,{legacyOnly=true})
         else require("Career.Checks").RunWorld(self) end
     end
     print("[生涯] 场景与主流程已接通")

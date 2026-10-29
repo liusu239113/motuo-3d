@@ -834,7 +834,9 @@ function Start()
         if arg == "-career" then careerStart = true end
         local readyShot=arg:match("^%-careerreadyshot=(.+)$")
         if readyShot then careerReadyShot_=readyShot end
-        if arg == "-careerchecks" or arg=="-careertripchecks" then careerCheck, careerStart = true, true; legacyTest = false end
+        if arg == "-careerchecks" or arg=="-careertripchecks" or arg=="-careerlegacychecks" then
+            careerCheck,careerStart,legacyTest=true,true,false
+        end
         -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
         if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
             or arg=="-careercollisionquality" or arg=="-careerenvironmentquality" or arg=="-careersoundcrowdquality"

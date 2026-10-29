@@ -243,6 +243,19 @@ function Checks.Shot(session,name)
     session.camera:SetModeConfig("normal",{distance=7.8,offset=Vector3(0,1.4,0),fov=60})
     session.camera:SetMode("normal");session.camera:Update(2,a.node,session.yaw,session.pitch)
     session.view:ClosePhone();session.view:ShowGame();session.view:ResetInput();session:Refresh();session.view.overlay:SetVisible(false)
+    -- 仅隔离摄影对照：前牌原平面外移15cm，不旋转，并对照其余原牌。
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-careersigndebug" then
+            assert(name=="bridge","字牌对照只允许桥下隔离摄影")
+            for _,node in ipairs(city.details.root:GetChildren(false)) do
+                if node.name=="CitySign_南城高架 · 桥下休息区" and node.position.z> -70 then
+                    node.position=Vector3(0,4.30,-61.10)
+                    node.rotation=Quaternion(0,0,0)
+                    print("[桥下字牌摄影对照] 北牌外移至z=-61.10，yaw=0；南牌不变")
+                end
+            end
+        end
+    end
     print(string.format("[环境摄影就绪] %s (%.1f,%.1f) 仅摄影传送；可达性由独立Actor.Update专项验收",name,p[1],p[2]))
 end
 return Checks

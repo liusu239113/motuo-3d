@@ -69,7 +69,16 @@ function Kit.Button(text,fn,id,primary,props)
     props.minHeight=math.max(touchSize,props.minHeight or 44); props.minWidth=math.max(touchSize,props.minWidth or 44)
     props.fontSize=props.fontSize or 11
     props.minFontSize=props.fontSize
-    props.padding=props.padding or 4; props.borderRadius=9; props.borderWidth=0
+    props.padding=props.padding or 4
+    -- Button.Init在展开padding前会补paddingHorizontal=16；只写padding=4
+    -- 最终左右仍为16。手机统一显式四边，避免主题/构造器吃掉窄按钮内宽。
+    UI.Widget.ExpandPaddingShorthand(props)
+    props.paddingLeft=props.paddingLeft or 4; props.paddingRight=props.paddingRight or 4
+    props.paddingTop=props.paddingTop or 4; props.paddingBottom=props.paddingBottom or 4
+    props.paddingHorizontal=props.paddingLeft; props.paddingVertical=props.paddingTop
+    props.hoverPadding={props.paddingTop,props.paddingRight,props.paddingBottom,props.paddingLeft}
+    props.pressedPadding={props.paddingTop,props.paddingRight,props.paddingBottom,props.paddingLeft}
+    props.borderRadius=9; props.borderWidth=0
     props.boxShadow=false; props.pressedBoxShadow=false
     local fill=primary and C.green or C.pale
     props.backgroundGradient={direction="to-bottom",from=fill,to=fill}

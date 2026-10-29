@@ -340,7 +340,8 @@ function Checks.RunMobile(session)
     view:ShowGame(); session:RestorePosition(); session:Refresh()
     print("[生涯触屏验收通过] 复用赛车骑行方案/二维步行摇杆/右手独立视角/斜向与后移/上下车/刹停持续倒车/松手停稳/手机暂停清输入/取消触摸")
 end
-function Checks.RunWorld(session)
+---@param options? {legacyOnly: boolean}
+function Checks.RunWorld(session,options)
     -- 原有配送/住房用静态城市回归；交通在独立确定性场景中检验，不污染首单轨迹。
     session.traffic.active=false
     Checks.RunLogic()
@@ -405,12 +406,17 @@ function Checks.RunWorld(session)
     require("Career.DeliveryMarkerChecks").Run(session)
     require("Career.NavigationChecks").Run(session)
     require("Career.MapPhoneChecks").RunLayout(session.view,session:State(),Delivery.GetOffer(),Delivery.GetActive())
-    require("Career.PhoneAppChecks").Run(session)
-    require("Career.LocomotionChecks").Run(session)
-    require("Career.CityExpansionChecks").Run(session)
-    require("Career.CollisionChecks").Run(session)
-    require("Career.CityEnvironmentChecks").Run(session)
-    require("Career.SoundCrowdChecks").Run(session)
+    -- 独立旧回归不重复长距离新专项；默认入口仍全覆盖，日志明确区分。
+    if options and options.legacyOnly then
+        print("[旧系统独立回归] 跳过新增专项：PhoneAppChecks/LocomotionChecks/CityExpansionChecks/CollisionChecks/CityEnvironmentChecks/SoundCrowdChecks；不代表这些专项通过")
+    else
+        require("Career.PhoneAppChecks").Run(session)
+        require("Career.LocomotionChecks").Run(session)
+        require("Career.CityExpansionChecks").Run(session)
+        require("Career.CollisionChecks").Run(session)
+        require("Career.CityEnvironmentChecks").Run(session)
+        require("Career.SoundCrowdChecks").Run(session)
+    end
     session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end

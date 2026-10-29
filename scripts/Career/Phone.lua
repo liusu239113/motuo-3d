@@ -41,10 +41,14 @@ function Phone.Create(view,actions)
         {fontWeight="bold",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0})
     local touchSize=Kit.TouchSize()
     view.phoneBack=Theme.Button("首页",function() require("Career.PhoneApps").Back(view) end,false,52,
-        {id="career-phone-back",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12,visible=false})
+        {id="career-phone-back",height=touchSize,minHeight=touchSize,minWidth=touchSize,
+            paddingLeft=4,paddingRight=4,paddingTop=0,paddingBottom=0,
+            paddingHorizontal=4,paddingVertical=0,hoverPadding={0,4,0,4},pressedPadding={0,4,0,4},fontSize=12,visible=false})
     screen:AddChild(UI.Row{id="career-phone-toolbar",width="100%",height=touchSize,minHeight=touchSize,padding=0,gap=4,alignItems="center",children={
         view.phoneBack,view.phoneTitle,
-        Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12})}})
+        Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=touchSize,minHeight=touchSize,minWidth=touchSize,
+            paddingLeft=4,paddingRight=4,paddingTop=0,paddingBottom=0,
+            paddingHorizontal=4,paddingVertical=0,hoverPadding={0,4,0,4},pressedPadding={0,4,0,4},fontSize=12})}})
     -- 首页不在任何 ScrollView 内。长订单/装备等内页共用一个有界滚动容器。
     view.phoneDesktop=UI.Panel{id="career-phone-desktop",width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0,overflow="hidden"}
     view.phoneContent=UI.ScrollView{id="career-phone-content",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
@@ -57,8 +61,9 @@ function Phone.Create(view,actions)
     return shell
 end
 function Phone.Desktop(content,state,actions,height)
-    content:AddChild(Kit.Text("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,
-        Theme.Colors.amber,{id="career-phone-summary",width="100%",textAlign="center",visible=(height or 0)>=330}))
+    local summary=Kit.Text("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,
+        Theme.Colors.amber,{id="career-phone-summary",width="100%",textAlign="center",visible=(height or 0)>=330})
+    content:AddChild(summary)
     local grid=UI.Panel{id="career-app-grid",width="100%",flexGrow=1,flexBasis=0,minHeight=156,gap=8,padding=0,
         justifyContent="center"}
     for row=1,2 do
@@ -73,6 +78,22 @@ function Phone.Desktop(content,state,actions,height)
                 children={UI.Panel{width=44,height=44,borderRadius=10,backgroundImage="image/career_phone/"..id..".png",
                     backgroundFit="contain",pointerEvents="none"},
                     Kit.Text(app[2],11,Theme.Colors.white,{width="100%",textAlign="center",pointerEvents="none"})}})
+        end
+        -- 每列保持图标44px；文字自然高度不能被旧minHeight74夹住。
+        local rowMinimum=74
+        line.Update=function(self)
+            local required=74
+            for _,icon in ipairs(self:GetChildren()) do
+                local caption=icon:GetChildAt(2)
+                if caption then required=math.max(required,44+4+(caption.props.height or 0)) end
+            end
+            if math.abs(required-rowMinimum)>.01 then
+                rowMinimum=required
+                self:SetStyle{minHeight=required,maxHeight=math.max(98,required)}
+                for _,icon in ipairs(self:GetChildren()) do icon:SetStyle{minHeight=required} end
+                -- 两行都使用同字体字号；按较高行给网格保底。
+                grid:SetStyle{minHeight=required*2+8}
+            end
         end
         grid:AddChild(line)
     end

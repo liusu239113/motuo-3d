@@ -282,7 +282,7 @@ function Environment.SetupMaterials(mats)
     material:SetShaderParameter("Roughness",Variant(.96));material:SetShaderParameter("Metallic",Variant(0))
     mats.coast_sand=material
     mats.coast_water=assert(cache:GetResource("Material",Environment.Resources[2])):Clone()
-    mats.coast_water:SetShaderParameter("WaterTint",Variant(Color(.035,.19,.23)))
+    mats.coast_water:SetShaderParameter("WaterTint",Variant(Color(.20,.46,.64)))
 end
 -- 返回精确地形三角形，纯数据可离线验证重心插值与Height，渲染不另算高度。
 function Environment.TerrainTriangles(cell,emit)
@@ -357,7 +357,9 @@ function Environment.RenderCell(d,cell)
             local y=assert(Environment.Surface(x,-660))
             d:Box("wood",x,y-.20,-660,.20,.28,8.2)
             for _,z in ipairs({-664.1,-655.9}) do
-                d:Box("wood",x,y-.85,z,.22,1.7,.22)
+                -- 桩底埋入同源真实海床15cm，桩顶接甲板底；不按固定短柱悬在水中。
+                local bottom=Environment.Height(x,z)-.15
+                d:Box("wood",x,(bottom+y)/2,z,.22,y-bottom,.22)
                 d:Box("metal",x,y+.55,z,.08,1.1,.08)
                 d:Box("wood",x,y+1.05,z,8,.09,.10)
             end
@@ -432,10 +434,12 @@ function Environment.BuildCore(city)
         end
     end
     -- 纸板/睡袋位于原木板床，周围留足两个方向进出；(0,-70)两米交互圆全空。
-    d:Box("street_paper",2,.115,-73,2.35,.035,1.15)
-    d:Box("street_canvas",2,.25,-73.05,1.85,.20,.70)
-    d:Box("street_canvasLight",2.72,.32,-73.05,.28,.14,.59)
-    for x=1.25,2.6,.16 do d:Box("metal",x,.355,-73.34,.045,.012,.018) end
+    -- 原木床面y=.24；各层由底面向上叠放，不能把纸板和睡袋埋进床内。
+    local paperTop=.24+.004+.035
+    d:Box("street_paper",2,paperTop-.035/2,-73,2.35,.035,1.15)
+    d:Box("street_canvas",2,paperTop+.20/2,-73.05,1.85,.20,.70)
+    d:Box("street_canvasLight",2.72,paperTop+.20+.14/2,-73.05,.28,.14,.59)
+    for x=1.25,2.6,.16 do d:Box("metal",x,paperTop+.20+.006,-73.34,.045,.012,.018) end
     d:Box("metal",0,5.30,-70,5.2,.12,.40)
     d:Box("lamp",0,5.22,-70,4.8,.035,.25)
     city:NightLight(0,4.9,-70,12,13)
