@@ -62,7 +62,19 @@ function Checks.Run(session,shot)
     assert(Store.Transaction(function(d) d.time=23;d.energy=24;return true end))
     local advice=Life.Advice(Store.Get())
     assert(advice.action=="继续配送" and advice.point==offer.pickupId,"深夜带单不能快捷导航去睡觉")
-    session:Refresh();session:Pause()
+    session:Refresh();session:OpenPhone("life")
+    local phoneOrder=Store.Get()
+    local phoneSky=assert(sky.state)
+    local phoneU,phoneV=phoneSky.cloudU,phoneSky.cloudV
+    session.options.test=false
+    local phoneOK,phoneError=pcall(function() session:Update(.1) end)
+    session.options.test=true
+    assert(phoneOK,phoneError)
+    local phoneAfter=Store.Get()
+    assert(phoneAfter.time==phoneOrder.time and phoneAfter.energy==phoneOrder.energy and phoneAfter.hunger==phoneOrder.hunger
+        and phoneAfter.activeOrders[1].remainingHours==phoneOrder.activeOrders[1].remainingHours,"手机冻结活动订单与人物")
+    assert(sky.state.cloudU==phoneU and sky.state.cloudV==phoneV,"手机带单冻结天气")
+    session.view:ClosePhone();session:Pause()
     local menu=Store.Get()
     local menuSky=assert(sky.state)
     local menuU,menuV=menuSky.cloudU,menuSky.cloudV
@@ -121,11 +133,11 @@ function Checks.Audit(session)
         assert(r.w>=44 and r.h>=44,"HUD触摸目标不足44")
     end
     local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
-    local function tap(widget,held)
+    local function tap(widget,held,pointerId)
         local r=widget:GetAbsoluteLayoutForHitTest()
         local scale=UI.GetScale()
         local function event(kind)
-            return PointerEvent.new(kind,{pointerId=791230,pointerType="touch",isPrimary=true,
+            return PointerEvent.new(kind,{pointerId=pointerId or 791230,pointerType="touch",isPrimary=true,
                 x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
         end
         local down=event("PointerDown");UI.HandlePointerEvent(down)
@@ -167,6 +179,13 @@ function Checks.Audit(session)
         end)
         assert(key=="steering" and view.controls.pointers.steer==-1 or key~="steering" and not view.controls[key],"踏板松手未释放")
     end
+    tap(view.controls.widgets.gas,function()
+        tap(view.controls.widgets.brake,function()
+            assert(view.controls.gas and view.controls.brake,"双指必须能独立持有油门和刹车")
+        end,791231)
+        assert(view.controls.gas and not view.controls.brake,"松开刹车不能释放另一根手指的油门")
+    end)
+    assert(not view.controls.gas and not view.controls.brake,"双指松手必须全部释放")
     session.actor.mounted=originalMounted;view:SetControlMode(originalMounted)
     view.controlWidth,view.controlHeight=0,0
     session.waypoint,session.manualWaypoint=oldWaypoint,oldManual
