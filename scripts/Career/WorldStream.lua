@@ -97,7 +97,8 @@ local function cellBatch(d,material,_x,_z)
     node.position=V(cx,0,cz)
     local geom=node:CreateComponent("CustomGeometry")
     geom:BeginGeometry(0,TRIANGLE_LIST)
-    geom:SetMaterial(assert(d.mats[material],"WorldStream材质缺失 "..material))
+    local materialResource=assert(d.mats[material],"WorldStream材质缺失 "..material)
+    geom:SetMaterial(materialResource)
     geom.castShadows=material~="road" and material~="grass" and material~="yellow" and material~="paint"
     geom.shadowDistance,geom.drawDistance=85,450
     batch={geometry=geom,cx=cx,cz=cz,vertices=0}

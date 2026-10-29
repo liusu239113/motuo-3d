@@ -1,0 +1,749 @@
+[2026-10-29 08_18_43_066][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_066][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_066][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_066][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_457][23] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_457][23] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_43_457][23] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 08_18_42_617][0] INFO: DownloadManager initialized
+[2026-10-29 08_18_42_619][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 08_18_42_620][0] INFO: Engine construct finish.
+[2026-10-29 08_18_42_982][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 08_18_42_998][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 08_18_43_001][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 08_18_43_433][23] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 08_18_45_062][102]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 08_18_45_065][102]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 08_18_45_065][102]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 08_18_45_068][102] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 08_18_46_479][128] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 08_18_46_484][128][Script] IsNetworkMode:    false
+[2026-10-29 08_18_46_502][128][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 08_18_46_502][128][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 08_18_46_502][128][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 08_18_46_502][128][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 08_18_46_505][128][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 08_18_46_992][128][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 08_18_47_559][128][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 08_18_47_563][128][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 08_18_47_594][128][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 08_18_47_594][128][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 08_18_47_621][128][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_47_687][128][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 08_18_47_687][128][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 08_18_47_688][129][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 08_18_50_400][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 08_18_50_400][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 08_18_50_400][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_50_400][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_50_400][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_50_420][169] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 08_18_50_420][169] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 08_18_50_440][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 08_18_50_440][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_50_440][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_50_461][171] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 08_18_50_461][171] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 08_18_55_538][223][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 08_18_55_539][223][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 08_18_55_539][223][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 08_18_55_539][223][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 08_18_55_539][223][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 08_18_55_539][223][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 08_18_55_539][223][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 08_18_56_258][223][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_56_373][223][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_56_407][223][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 08_18_56_526][223][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 08_18_56_530][223][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_56_643][223][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_56_645][223][Script] [街区联系人] 站长、表哥、车行师傅已到驻点；复用便服资产，不冒充三套新人物美术
+[2026-10-29 08_18_56_693][223][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 08_18_56_696][223][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 08_18_56_698][223][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 08_18_56_698][223][Script] [生涯城市] 33栋建筑 / 479批次 / 145582三角面 / 33招牌 / 43碰撞区域
+[2026-10-29 08_18_56_702][224][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 08_18_57_175][224][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 08_18_57_177][224][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 08_18_57_549][224][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 08_18_57_553][224][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 08_18_57_557][224][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 08_18_57_557][224][Script] [生涯音频] 已加载 steps audio/sfx/career_step_single.wav
+[2026-10-29 08_18_57_557][224][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-29 08_18_57_557][224][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-29 08_18_57_558][224][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-29 08_18_57_558][224][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-29 08_18_57_558][224][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-29 08_18_57_558][224][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-29 08_18_57_558][224][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-29 08_18_57_563][224][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 08_18_57_564][224][Script] [WorldStream] 错误：块-1:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_564][224][Script] [WorldStream] 错误：块0:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_565][224][Script] [WorldStream] 错误：块-1:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_565][224][Script] [WorldStream] 错误：块0:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_567][224][Script] [WorldStream] 错误：块-1:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_568][224][Script] [WorldStream] 错误：块0:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_569][224][Script] [WorldStream] 错误：块-2:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_570][224][Script] [WorldStream] 错误：块1:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_572][224][Script] [WorldStream] 错误：块-2:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_573][224][Script] [WorldStream] 错误：块1:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_574][224][Script] [WorldStream] 错误：块-1:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_575][224][Script] [WorldStream] 错误：块0:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_576][224][Script] [WorldStream] 错误：块-2:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_577][224][Script] [WorldStream] 错误：块1:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_579][224][Script] [WorldStream] 错误：块-2:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_580][224][Script] [WorldStream] 错误：块1:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_580][224][Script] [WorldStream] 错误：块-1:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_580][224][Script] [WorldStream] 错误：块0:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_581][224][Script] [WorldStream] 错误：块-3:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_581][224][Script] [WorldStream] 错误：块2:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_581][224][Script] [WorldStream] 错误：块-3:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_582][224][Script] [WorldStream] 错误：块2:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_582][224][Script] [WorldStream] 错误：块-1:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_583][224][Script] [WorldStream] 错误：块0:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_18_57_584][224][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_57_789][224][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_57_793][224][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 08_18_57_911][224][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 08_18_57_914][224][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_58_029][224][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_58_033][224][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 08_18_58_156][224][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 08_18_58_160][224][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_58_272][224][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_58_275][224][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 08_18_58_444][224][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 08_18_58_447][224][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 08_18_58_574][224][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 08_18_58_578][224][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 08_18_58_716][224][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 08_18_58_718][224][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 08_18_58_718][224][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 08_18_58_719][224][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 08_18_58_720][224][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 08_18_58_724][224][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 08_18_58_725][224][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 08_18_58_725][224][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 08_18_58_730][224][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 08_18_58_730][224][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 08_18_58_731][224][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 08_18_58_735][224][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 08_18_58_735][224][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 08_18_58_736][224][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 08_18_58_737][224][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 08_18_58_737][224][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 08_18_58_738][224][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 08_18_58_742][224][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 08_18_58_743][224][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 08_18_58_743][224][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 08_18_58_748][224][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 08_18_58_748][224][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-29 08_18_58_748][224][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 08_18_58_758][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_58_759][224][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 08_18_58_759][224][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 08_18_58_760][224][Script] [Career.Store] loaded revision=3 day=1 cashCents=5000 orders=1
+[2026-10-29 08_18_58_760][224][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 08_18_58_761][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_58_761][224][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 08_18_58_761][224][Script] [Career.Store] loaded revision=4 day=1 cashCents=5500 orders=0
+[2026-10-29 08_18_58_762][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_58_762][224][Script] [Career.Store] loaded revision=6 day=2 cashCents=4300 orders=0
+[2026-10-29 08_18_58_762][224][Script] [生涯逻辑验收通过] 50元开局/借车/171m教学5元/远程与骑乘拒绝/先取后送/结算幂等/读档/磁盘失败回滚/吃饭/次日/坏档保护
+[2026-10-29 08_18_58_763][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_58_763][224][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 08_18_58_763][224][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 08_18_58_763][224][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 08_18_58_769][224][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 08_18_58_769][224][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 08_18_58_770][224][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 08_18_58_774][224][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 08_18_58_774][224][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 08_18_58_775][224][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 08_18_58_779][224][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 08_18_58_779][224][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 08_18_58_779][224][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-29 08_18_58_783][224][Script] [Career.Delivery] accepting career-v1-5 feeCents=275
+[2026-10-29 08_18_58_783][224][Script] [Career.Delivery] picked up career-v1-5
+[2026-10-29 08_18_58_784][224][Script] [Career.Delivery] delivering career-v1-5 feeCents=275
+[2026-10-29 08_18_58_788][224][Script] [Career.Delivery] accepting career-v1-6 feeCents=288
+[2026-10-29 08_18_58_788][224][Script] [Career.Delivery] picked up career-v1-6
+[2026-10-29 08_18_58_789][224][Script] [Career.Delivery] delivering career-v1-6 feeCents=288
+[2026-10-29 08_18_58_792][224][Script] [Career.Delivery] accepting career-v1-7 feeCents=290
+[2026-10-29 08_18_58_793][224][Script] [Career.Delivery] picked up career-v1-7
+[2026-10-29 08_18_58_793][224][Script] [Career.Delivery] delivering career-v1-7 feeCents=290
+[2026-10-29 08_18_58_797][224][Script] [Career.Delivery] accepting career-v1-8 feeCents=276
+[2026-10-29 08_18_58_798][224][Script] [Career.Delivery] picked up career-v1-8
+[2026-10-29 08_18_58_799][224][Script] [Career.Delivery] delivering career-v1-8 feeCents=276
+[2026-10-29 08_18_58_803][224][Script] [Career.Delivery] accepting career-v1-9 feeCents=283
+[2026-10-29 08_18_58_803][224][Script] [Career.Delivery] picked up career-v1-9
+[2026-10-29 08_18_58_804][224][Script] [Career.Delivery] delivering career-v1-9 feeCents=283
+[2026-10-29 08_18_58_808][224][Script] [Career.Delivery] accepting career-v1-10 feeCents=275
+[2026-10-29 08_18_58_808][224][Script] [Career.Delivery] picked up career-v1-10
+[2026-10-29 08_18_58_809][224][Script] [Career.Delivery] delivering career-v1-10 feeCents=275
+[2026-10-29 08_18_58_813][224][Script] [Career.Delivery] accepting career-v1-11 feeCents=275
+[2026-10-29 08_18_58_817][224][Script] [Career.Delivery] accepting career-v1-12 feeCents=288
+[2026-10-29 08_18_58_818][224][Script] [Career.Delivery] picked up career-v1-12
+[2026-10-29 08_18_58_818][224][Script] [Career.Delivery] delivering career-v1-12 feeCents=288
+[2026-10-29 08_18_58_819][224][Script] [Career.Delivery] picked up career-v1-11
+[2026-10-29 08_18_58_819][224][Script] [Career.Delivery] delivering career-v1-11 feeCents=275
+[2026-10-29 08_18_58_826][224][Script] [Career.Store] loaded revision=51 day=17 cashCents=484184 orders=0
+[2026-10-29 08_18_58_829][224][Script] [Career.Delivery] accepting career-v1-13 feeCents=290
+[2026-10-29 08_18_58_830][224][Script] [Career.Delivery] picked up career-v1-13
+[2026-10-29 08_18_58_830][224][Script] [Career.Delivery] delivering career-v1-13 feeCents=290
+[2026-10-29 08_18_58_834][224][Script] [Career.Delivery] accepting career-v1-14 feeCents=276
+[2026-10-29 08_18_58_835][224][Script] [Career.Delivery] picked up career-v1-14
+[2026-10-29 08_18_58_836][224][Script] [Career.Delivery] delivering career-v1-14 feeCents=276
+[2026-10-29 08_18_58_840][224][Script] [Career.Delivery] accepting career-v1-15 feeCents=283
+[2026-10-29 08_18_58_840][224][Script] [Career.Delivery] picked up career-v1-15
+[2026-10-29 08_18_58_841][224][Script] [Career.Delivery] delivering career-v1-15 feeCents=283
+[2026-10-29 08_18_58_845][224][Script] [Career.Delivery] accepting career-v1-16 feeCents=275
+[2026-10-29 08_18_58_845][224][Script] [Career.Delivery] picked up career-v1-16
+[2026-10-29 08_18_58_846][224][Script] [Career.Delivery] delivering career-v1-16 feeCents=275
+[2026-10-29 08_18_58_850][224][Script] [Career.Delivery] accepting career-v1-17 feeCents=275
+[2026-10-29 08_18_58_850][224][Script] [Career.Delivery] picked up career-v1-17
+[2026-10-29 08_18_58_851][224][Script] [Career.Delivery] delivering career-v1-17 feeCents=275
+[2026-10-29 08_18_58_855][224][Script] [Career.Delivery] accepting career-v1-18 feeCents=288
+[2026-10-29 08_18_58_856][224][Script] [Career.Delivery] picked up career-v1-18
+[2026-10-29 08_18_58_856][224][Script] [Career.Delivery] delivering career-v1-18 feeCents=288
+[2026-10-29 08_18_58_860][224][Script] [Career.Delivery] accepting career-v1-19 feeCents=290
+[2026-10-29 08_18_58_861][224][Script] [Career.Delivery] picked up career-v1-19
+[2026-10-29 08_18_58_862][224][Script] [Career.Delivery] delivering career-v1-19 feeCents=290
+[2026-10-29 08_18_58_866][224][Script] [Career.Delivery] accepting career-v1-20 feeCents=276
+[2026-10-29 08_18_58_866][224][Script] [Career.Delivery] picked up career-v1-20
+[2026-10-29 08_18_58_867][224][Script] [Career.Delivery] delivering career-v1-20 feeCents=276
+[2026-10-29 08_18_58_872][224][Script] [Career.Delivery] accepting career-v1-21 feeCents=283
+[2026-10-29 08_18_58_873][224][Script] [Career.Delivery] picked up career-v1-21
+[2026-10-29 08_18_58_874][224][Script] [Career.Delivery] delivering career-v1-21 feeCents=283
+[2026-10-29 08_18_58_878][224][Script] [Career.Delivery] accepting career-v1-22 feeCents=275
+[2026-10-29 08_18_58_878][224][Script] [Career.Delivery] picked up career-v1-22
+[2026-10-29 08_18_58_879][224][Script] [Career.Delivery] delivering career-v1-22 feeCents=275
+[2026-10-29 08_18_58_886][224][Script] [Career.Delivery] accepting career-v1-23 feeCents=275
+[2026-10-29 08_18_58_887][224][Script] [Career.Delivery] picked up career-v1-23
+[2026-10-29 08_18_58_888][224][Script] [Career.Delivery] delivering career-v1-23 feeCents=275
+[2026-10-29 08_18_58_892][224][Script] [Career.Delivery] accepting career-v1-24 feeCents=288
+[2026-10-29 08_18_58_893][224][Script] [Career.Delivery] picked up career-v1-24
+[2026-10-29 08_18_58_893][224][Script] [Career.Delivery] delivering career-v1-24 feeCents=288
+[2026-10-29 08_18_58_897][224][Script] [Career.Delivery] accepting career-v1-25 feeCents=290
+[2026-10-29 08_18_58_898][224][Script] [Career.Delivery] picked up career-v1-25
+[2026-10-29 08_18_58_899][224][Script] [Career.Delivery] delivering career-v1-25 feeCents=290
+[2026-10-29 08_18_58_903][224][Script] [Career.Delivery] accepting career-v1-26 feeCents=276
+[2026-10-29 08_18_58_904][224][Script] [Career.Delivery] picked up career-v1-26
+[2026-10-29 08_18_58_905][224][Script] [Career.Delivery] delivering career-v1-26 feeCents=276
+[2026-10-29 08_18_58_909][224][Script] [Career.Delivery] accepting career-v1-27 feeCents=283
+[2026-10-29 08_18_58_909][224][Script] [Career.Delivery] picked up career-v1-27
+[2026-10-29 08_18_58_910][224][Script] [Career.Delivery] delivering career-v1-27 feeCents=283
+[2026-10-29 08_18_58_914][224][Script] [Career.Delivery] accepting career-v1-28 feeCents=275
+[2026-10-29 08_18_58_915][224][Script] [Career.Delivery] picked up career-v1-28
+[2026-10-29 08_18_58_916][224][Script] [Career.Delivery] delivering career-v1-28 feeCents=275
+[2026-10-29 08_18_58_920][224][Script] [Career.Delivery] accepting career-v1-29 feeCents=275
+[2026-10-29 08_18_58_921][224][Script] [Career.Delivery] picked up career-v1-29
+[2026-10-29 08_18_58_922][224][Script] [Career.Delivery] delivering career-v1-29 feeCents=275
+[2026-10-29 08_18_58_926][224][Script] [Career.Delivery] accepting career-v1-30 feeCents=288
+[2026-10-29 08_18_58_927][224][Script] [Career.Delivery] picked up career-v1-30
+[2026-10-29 08_18_58_927][224][Script] [Career.Delivery] delivering career-v1-30 feeCents=288
+[2026-10-29 08_18_58_932][224][Script] [Career.Delivery] accepting career-v1-31 feeCents=290
+[2026-10-29 08_18_58_939][224][Script] [Career.Delivery] picked up career-v1-31
+[2026-10-29 08_18_58_940][224][Script] [Career.Delivery] delivering career-v1-31 feeCents=290
+[2026-10-29 08_18_58_945][224][Script] [Career.Delivery] accepting career-v1-32 feeCents=276
+[2026-10-29 08_18_58_945][224][Script] [Career.Delivery] picked up career-v1-32
+[2026-10-29 08_18_58_946][224][Script] [Career.Delivery] delivering career-v1-32 feeCents=276
+[2026-10-29 08_18_58_951][224][Script] [Career.Delivery] accepting career-v1-33 feeCents=283
+[2026-10-29 08_18_58_951][224][Script] [Career.Delivery] picked up career-v1-33
+[2026-10-29 08_18_58_952][224][Script] [Career.Delivery] delivering career-v1-33 feeCents=283
+[2026-10-29 08_18_58_957][224][Script] [Career.Delivery] accepting career-v1-34 feeCents=275
+[2026-10-29 08_18_58_957][224][Script] [Career.Delivery] picked up career-v1-34
+[2026-10-29 08_18_58_958][224][Script] [Career.Delivery] delivering career-v1-34 feeCents=275
+[2026-10-29 08_18_58_963][224][Script] [Career.Delivery] accepting career-v1-35 feeCents=275
+[2026-10-29 08_18_58_963][224][Script] [Career.Delivery] picked up career-v1-35
+[2026-10-29 08_18_58_964][224][Script] [Career.Delivery] delivering career-v1-35 feeCents=275
+[2026-10-29 08_18_58_969][224][Script] [Career.Delivery] accepting career-v1-36 feeCents=288
+[2026-10-29 08_18_58_969][224][Script] [Career.Delivery] picked up career-v1-36
+[2026-10-29 08_18_58_970][224][Script] [Career.Delivery] delivering career-v1-36 feeCents=288
+[2026-10-29 08_18_58_975][224][Script] [Career.Delivery] accepting career-v1-37 feeCents=290
+[2026-10-29 08_18_58_976][224][Script] [Career.Delivery] picked up career-v1-37
+[2026-10-29 08_18_58_976][224][Script] [Career.Delivery] delivering career-v1-37 feeCents=290
+[2026-10-29 08_18_58_981][224][Script] [Career.Delivery] accepting career-v1-38 feeCents=276
+[2026-10-29 08_18_58_982][224][Script] [Career.Delivery] picked up career-v1-38
+[2026-10-29 08_18_58_982][224][Script] [Career.Delivery] delivering career-v1-38 feeCents=276
+[2026-10-29 08_18_58_987][224][Script] [Career.Delivery] accepting career-v1-39 feeCents=283
+[2026-10-29 08_18_58_988][224][Script] [Career.Delivery] picked up career-v1-39
+[2026-10-29 08_18_58_989][224][Script] [Career.Delivery] delivering career-v1-39 feeCents=283
+[2026-10-29 08_18_58_993][224][Script] [Career.Delivery] accepting career-v1-40 feeCents=275
+[2026-10-29 08_18_58_994][224][Script] [Career.Delivery] picked up career-v1-40
+[2026-10-29 08_18_58_995][224][Script] [Career.Delivery] delivering career-v1-40 feeCents=275
+[2026-10-29 08_18_59_000][224][Script] [Career.Delivery] accepting career-v1-41 feeCents=275
+[2026-10-29 08_18_59_005][224][Script] [Career.Delivery] accepting career-v1-42 feeCents=288
+[2026-10-29 08_18_59_009][224][Script] [Career.Delivery] accepting career-v1-43 feeCents=290
+[2026-10-29 08_18_59_014][224][Script] [Career.Delivery] accepting career-v1-44 feeCents=276
+[2026-10-29 08_18_59_015][224][Script] [Career.Delivery] picked up career-v1-44
+[2026-10-29 08_18_59_016][224][Script] [Career.Delivery] delivering career-v1-44 feeCents=276
+[2026-10-29 08_18_59_017][224][Script] [Career.Delivery] picked up career-v1-43
+[2026-10-29 08_18_59_018][224][Script] [Career.Delivery] delivering career-v1-43 feeCents=290
+[2026-10-29 08_18_59_019][224][Script] [Career.Delivery] picked up career-v1-42
+[2026-10-29 08_18_59_020][224][Script] [Career.Delivery] delivering career-v1-42 feeCents=288
+[2026-10-29 08_18_59_021][224][Script] [Career.Delivery] picked up career-v1-41
+[2026-10-29 08_18_59_022][224][Script] [Career.Delivery] delivering career-v1-41 feeCents=275
+[2026-10-29 08_18_59_026][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_033][224][Script] [Career.Store] loaded revision=155 day=20 cashCents=185000 orders=0
+[2026-10-29 08_18_59_034][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_056][224][Script] [Career.Store] loaded revision=168 day=27 cashCents=3670000 orders=0
+[2026-10-29 08_18_59_059][224][Script] [生涯成长验收通过] 10单升级/双单与四单倒序独立结算/按晚住宿/代表班次防连点/5万元首购/训练/六站职业/未完赛零奖励/结算回滚与幂等/终章/旧金币隔离
+[2026-10-29 08_18_59_060][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_060][224][Script] [Career.Store] cloud save unconfirmed
+[2026-10-29 08_18_59_060][224][Script] [云回调保护验收通过] 保存/读取超时解锁，迟到回包不确认旧版本、不覆盖新进度（回调桩测试）
+[2026-10-29 08_18_59_066][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_066][224][Script] [Career.Store] loaded revision=0 day=1 cashCents=5000 orders=0
+[2026-10-29 08_18_59_066][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_069][224][Script] [Career.Team] 显式签约；首轮履约后才发签约奖金
+[2026-10-29 08_18_59_069][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_069][224][Script] [Career.Team] 显式签约；首轮履约后才发签约奖金
+[2026-10-29 08_18_59_070][224][Script] [Career.Store] loaded revision=9 day=1 cashCents=20080000 orders=0
+[2026-10-29 08_18_59_072][224][Script] [Career.Store] loaded revision=12 day=1 cashCents=20065000 orders=0
+[2026-10-29 08_18_59_076][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_078][224][Script] [Career.Store] loaded revision=20 day=1 cashCents=20275000 orders=0
+[2026-10-29 08_18_59_078][224][Script] [Career.Team] 第1轮奖金150000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_078][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_079][224][Script] [Career.Store] loaded revision=20 day=1 cashCents=20275000 orders=0
+[2026-10-29 08_18_59_079][224][Script] [Career.Team] 第1轮奖金150000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_080][224][Script] [Career.Store] loaded revision=21 day=1 cashCents=20425000 orders=0
+[2026-10-29 08_18_59_087][224][Script] [Career.Team] 第2轮奖金240000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_092][224][Script] [Career.Team] 第3轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_099][224][Script] [Career.Team] 第4轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_107][224][Script] [Career.Team] 第5轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_115][224][Script] [Career.Team] 第6轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 08_18_59_118][224][Script] [Career.Store] loaded revision=59 day=1 cashCents=28870000 orders=0
+[2026-10-29 08_18_59_128][224][Script] [车队合同验收通过] 旧档无自动签约/9积分与训练/车行显式签约/签字零现金/3完赛+领奖台/DNF与赛事ID去重/赛后与领奖失败回滚/整数分固定奖金/晋升续约封顶/存读档及历史流水一致性
+[2026-10-29 08_18_59_133][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_134][224][Script] [Career.Store] loaded revision=0 day=1 cashCents=5000 orders=0
+[2026-10-29 08_18_59_134][224][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 08_18_59_134][224][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 08_18_59_139][224][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 08_18_59_139][224][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 08_18_59_140][224][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=3
+[2026-10-29 08_18_59_140][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_140][224][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=3
+[2026-10-29 08_18_59_141][224][Script] [Career.Store] loaded revision=9 day=2 cashCents=5776 orders=0
+[2026-10-29 08_18_59_145][224][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 08_18_59_145][224][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 08_18_59_149][224][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 08_18_59_150][224][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 08_18_59_151][224][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_151][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_151][224][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_152][224][Script] [Career.Engagements] credited career-v1-3 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_156][224][Script] [Career.Delivery] accepting career-v1-5 feeCents=275
+[2026-10-29 08_18_59_156][224][Script] [Career.Delivery] picked up career-v1-5
+[2026-10-29 08_18_59_161][224][Script] [Career.Delivery] accepting career-v1-6 feeCents=288
+[2026-10-29 08_18_59_161][224][Script] [Career.Delivery] picked up career-v1-6
+[2026-10-29 08_18_59_166][224][Script] [Career.Delivery] accepting career-v1-7 feeCents=290
+[2026-10-29 08_18_59_166][224][Script] [Career.Delivery] picked up career-v1-7
+[2026-10-29 08_18_59_171][224][Script] [Career.Delivery] accepting career-v1-8 feeCents=276
+[2026-10-29 08_18_59_171][224][Script] [Career.Delivery] picked up career-v1-8
+[2026-10-29 08_18_59_176][224][Script] [Career.Delivery] accepting career-v1-9 feeCents=283
+[2026-10-29 08_18_59_177][224][Script] [Career.Delivery] picked up career-v1-9
+[2026-10-29 08_18_59_182][224][Script] [Career.Delivery] accepting career-v1-10 feeCents=275
+[2026-10-29 08_18_59_182][224][Script] [Career.Delivery] picked up career-v1-10
+[2026-10-29 08_18_59_183][224][Script] [Career.Engagements] credited career-v1-10 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_184][224][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 08_18_59_184][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_185][224][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 08_18_59_186][224][Script] [Career.Store] loaded revision=38 day=2 cashCents=9521 orders=0
+[2026-10-29 08_18_59_186][224][Script] [Career.Engagements] accepted engagement:v1:cousin_reply orderWatermark=11
+[2026-10-29 08_18_59_187][224][Script] [Career.Engagements] visited park
+[2026-10-29 08_18_59_187][224]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 08_18_59_187][224][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 08_18_59_187][224][Script] [Career.Engagements] visited convenience
+[2026-10-29 08_18_59_189][224][Script] [Career.Store] loaded revision=40 day=2 cashCents=9521 orders=0
+[2026-10-29 08_18_59_189][224][Script] [Career.Engagements] visited park
+[2026-10-29 08_18_59_190][224][Script] [Career.Engagements] claimed engagement:v1:cousin_reply rewardCents=800
+[2026-10-29 08_18_59_191][224][Script] [Career.Engagements] accepted engagement:v1:mechanic_balance orderWatermark=11
+[2026-10-29 08_18_59_195][224][Script] [Career.Delivery] accepting career-v1-11 feeCents=275
+[2026-10-29 08_18_59_196][224][Script] [Career.Delivery] picked up career-v1-11
+[2026-10-29 08_18_59_202][224][Script] [Career.Delivery] accepting career-v1-12 feeCents=288
+[2026-10-29 08_18_59_203][224][Script] [Career.Delivery] picked up career-v1-12
+[2026-10-29 08_18_59_208][224][Script] [Career.Delivery] accepting career-v1-13 feeCents=290
+[2026-10-29 08_18_59_209][224][Script] [Career.Delivery] picked up career-v1-13
+[2026-10-29 08_18_59_213][224][Script] [Career.Delivery] accepting career-v1-14 feeCents=276
+[2026-10-29 08_18_59_214][224][Script] [Career.Delivery] picked up career-v1-14
+[2026-10-29 08_18_59_215][224][Script] [Career.Engagements] credited career-v1-14 -> engagement:v1:mechanic_balance
+[2026-10-29 08_18_59_216][224][Script] [Career.Engagements] credited career-v1-13 -> engagement:v1:mechanic_balance
+[2026-10-29 08_18_59_220][224][Script] [Career.Delivery] accepting career-v1-15 feeCents=283
+[2026-10-29 08_18_59_221][224][Script] [Career.Delivery] picked up career-v1-15
+[2026-10-29 08_18_59_221][224][Script] [Career.Engagements] credited career-v1-15 -> engagement:v1:mechanic_balance
+[2026-10-29 08_18_59_226][224][Script] [Career.Delivery] accepting career-v1-16 feeCents=275
+[2026-10-29 08_18_59_226][224][Script] [Career.Delivery] picked up career-v1-16
+[2026-10-29 08_18_59_227][224][Script] [Career.Engagements] credited career-v1-16 -> engagement:v1:mechanic_balance
+[2026-10-29 08_18_59_233][224][Script] [Career.Engagements] claimed engagement:v1:mechanic_balance rewardCents=2000
+[2026-10-29 08_18_59_235][224][Script] [Career.Store] loaded revision=71 day=5 cashCents=3200 orders=0
+[2026-10-29 08_18_59_238][224][Script] [Career.Store] loaded revision=72 day=5 cashCents=1200 orders=0
+[2026-10-29 08_18_59_238][224][Script] [Career.Engagements] accepted engagement:v1:mechanic_balance orderWatermark=17
+[2026-10-29 08_18_59_239][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_240][224][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 08_18_59_240][224][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 08_18_59_240][224][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 08_18_59_241][224][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=2
+[2026-10-29 08_18_59_244][224][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 08_18_59_245][224][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 08_18_59_245][224][Script] [Career.Engagements] credited career-v1-2 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_245][224][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 08_18_59_246][224][Script] [Career.Engagements] credited career-v1-2 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_246][224][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 08_18_59_250][224][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 08_18_59_250][224][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 08_18_59_250][224][Script] [Career.Engagements] credited career-v1-3 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_250][224][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 08_18_59_254][224][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 08_18_59_255][224][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 08_18_59_255][224][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 08_18_59_255][224][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-29 08_18_59_256][224][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 08_18_59_257][224][Script] [Career.Store] loaded revision=14 day=1 cashCents=7834 orders=0
+[2026-10-29 08_18_59_257][224][Script] [生活委托验收通过] 三条前置人物链/现场授权/新亲送与倒序来源去重/旧单模拟单迟到拒计/回访回信/训练后维生/整数分一次奖信/写失败原子回滚/旧档兼容/生产Deliver接线/全内存无云
+[2026-10-29 08_18_59_262][224][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 08_18_59_542][224][Script] [世界验收通过] bounds ±15000m / 29996m真实共享路网全段精确扫掠（不是0.1m遍历）
+[2026-10-29 08_18_59_550][224][Script] [世界验收通过] east_market / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_561][224][Script] [世界验收通过] west_garden / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_587][224][Script] [世界验收通过] north_campus / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_600][224][Script] [世界验收通过] south_yards / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_663][224][Script] [世界验收通过] canal_quarter / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_747][224][Script] [世界验收通过] cedar_town / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_804][224][Script] [世界验收通过] east_tech / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_861][224][Script] [世界验收通过] west_works / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_916][224][Script] [世界验收通过] north_lake / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_18_59_971][224][Script] [世界验收通过] south_station / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_19_00_085][224][Script] [世界验收通过] east_orchard / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_19_00_194][224][Script] [世界验收通过] west_village / 4个静态POI可达 / 老街共享Route全段SegmentFree
+[2026-10-29 08_19_01_058][224][Script] [世界验收通过] 24个外区订单模板完整路线精确扫掠，无真实Ensure全12区
+[2026-10-29 08_19_01_058][224][Script] [世界验收通过] 旧报价 tutorial / 171m / 500分 / 原拐点与时限不变
+[2026-10-29 08_19_01_060][224][Script] [世界验收通过] 旧报价 old_home / 171m / 276分 / 原拐点与时限不变
+[2026-10-29 08_19_01_062][224][Script] [世界验收通过] 旧报价 dealer_lunch / 221m / 283分 / 原拐点与时限不变
+[2026-10-29 08_19_01_064][224][Script] [世界验收通过] 旧报价 park_lunch / 166m / 275分 / 原拐点与时限不变
+[2026-10-29 08_19_01_066][224][Script] [世界验收通过] 旧报价 noodle_office / 168m / 275分 / 原拐点与时限不变
+[2026-10-29 08_19_01_068][224][Script] [世界验收通过] 旧报价 shop_old / 250m / 288分 / 原拐点与时限不变
+[2026-10-29 08_19_01_070][224][Script] [世界验收通过] 旧报价 noodle_dealer / 267m / 290分 / 原拐点与时限不变
+[2026-10-29 08_19_01_080][224][Script] [CareerActor] 仅测试/恢复 Teleport(6176.00,-20.00,37.0)，mounted=false
+[2026-10-29 08_19_01_080][224][Script] [Career.Store] loaded revision=8 day=1 cashCents=5000 orders=0
+[2026-10-29 08_19_01_087][224][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,0.00,0.0)，mounted=false
+[2026-10-29 08_19_01_095][224][Script] [CareerActor] 仅测试/恢复 Teleport(6176.00,-20.00,37.0)，mounted=false
+[2026-10-29 08_19_01_095][224][Script] [WorldStream] 错误：块24:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_096][224][Script] [WorldStream] 错误：块24:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_096][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_096][224][Script] [WorldStream] 错误：块23:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_098][224][Script] [WorldStream] 错误：块25:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_099][224][Script] [WorldStream] 错误：块25:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_101][224][Script] [WorldStream] 错误：块24:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_102][224][Script] [WorldStream] 错误：块23:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_103][224][Script] [WorldStream] 错误：块24:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_105][224][Script] [WorldStream] 错误：块23:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_106][224][Script] [WorldStream] 错误：块22:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_107][224][Script] [WorldStream] 错误：块22:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_108][224][Script] [WorldStream] 错误：块25:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_122][224][Script] [WorldStream] 错误：块25:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_123][224][Script] [WorldStream] 错误：块22:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_124][224][Script] [WorldStream] 错误：块22:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_125][224][Script] [WorldStream] 错误：块26:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_127][224][Script] [WorldStream] 错误：块26:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_128][224][Script] [WorldStream] 错误：块24:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_129][224][Script] [WorldStream] 错误：块23:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_130][224][Script] [WorldStream] 错误：块24:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_132][224][Script] [WorldStream] 错误：块23:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_133][224][Script] [WorldStream] 错误：块26:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_134][224][Script] [WorldStream] 错误：块25:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_135][224][Script] [WorldStream] 错误：块21:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_136][224][Script] [WorldStream] 错误：块21:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_136][224][Script] [世界验收通过] east_tech 远坐标人物+独立停车 Save/Load/Session.RestorePosition，不回老街，space正确
+[2026-10-29 08_19_01_141][224][Script] [CareerActor] 仅测试/恢复 Teleport(6080.00,21.40,0.0)，mounted=false
+[2026-10-29 08_19_01_145][224][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 08_19_01_146][224][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 08_19_01_209][224][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 08_19_01_210][224][Script] [Career.Store] loaded revision=16 day=1 cashCents=5276 orders=0
+[2026-10-29 08_19_01_210][224][Script] [世界验收通过] east_tech 本地订单真实派发/Accept/Pickup/Actor.Move实走170.80m 950帧/Deliver/持久化幂等；dt=.1、1.8m/s，非Actor.Update动力测试
+[2026-10-29 08_19_01_211][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_211][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_211][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_212][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_212][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_212][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_213][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_213][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_213][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_213][224]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 08_19_01_213][224][Script] [WorldStream] 错误：块23:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_247][224][Script] [WorldStream] 错误：块23:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_248][224][Script] [WorldStream] 错误：块24:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_248][224][Script] [WorldStream] 错误：块24:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_248][224][Script] [WorldStream] 错误：块22:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_249][224][Script] [WorldStream] 错误：块22:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_249][224][Script] [WorldStream] 错误：块23:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_249][224][Script] [WorldStream] 错误：块23:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_250][224][Script] [WorldStream] 错误：块24:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_250][224][Script] [WorldStream] 错误：块24:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_250][224][Script] [WorldStream] 错误：块25:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_251][224][Script] [WorldStream] 错误：块25:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_251][224][Script] [WorldStream] 错误：块22:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_251][224][Script] [WorldStream] 错误：块22:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_252][224][Script] [WorldStream] 错误：块25:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_252][224][Script] [WorldStream] 错误：块25:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_252][224][Script] [WorldStream] 错误：块21:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_252][224][Script] [WorldStream] 错误：块21:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_253][224][Script] [WorldStream] 错误：块23:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_253][224][Script] [WorldStream] 错误：块23:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_253][224][Script] [WorldStream] 错误：块24:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_254][224][Script] [WorldStream] 错误：块24:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_254][224][Script] [WorldStream] 错误：块26:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_254][224][Script] [WorldStream] 错误：块26:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_260][224][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 08_19_01_260][224][Script] [WorldStream] 错误：块-1:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_260][224][Script] [WorldStream] 错误：块0:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_260][224][Script] [WorldStream] 错误：块-1:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_261][224][Script] [WorldStream] 错误：块0:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_264][224][Script] [WorldStream] 错误：块-1:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_265][224][Script] [WorldStream] 错误：块0:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_265][224][Script] [WorldStream] 错误：块-2:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_265][224][Script] [WorldStream] 错误：块1:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_266][224][Script] [WorldStream] 错误：块-2:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_266][224][Script] [WorldStream] 错误：块1:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_278][224][Script] [WorldStream] 错误：块-1:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_279][224][Script] [WorldStream] 错误：块0:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_280][224][Script] [WorldStream] 错误：块-2:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_281][224][Script] [WorldStream] 错误：块1:-2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_282][224][Script] [WorldStream] 错误：块-2:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_283][224][Script] [WorldStream] 错误：块1:1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_284][224][Script] [WorldStream] 错误：块-1:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_285][224][Script] [WorldStream] 错误：块0:-3 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_285][224][Script] [WorldStream] 错误：块-3:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_286][224][Script] [WorldStream] 错误：块2:-1 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_286][224][Script] [WorldStream] 错误：块-3:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_286][224][Script] [WorldStream] 错误：块2:0 [string "Career/WorldStream"]:100: error in function 'SetMaterial[2026-10-29 08_19_01_298][224] ERROR: Execute Lua function failed: [string "Career/Session"]:480: [string "Career/WorldChecks"]:274: [string "Career/Store"]:775: [string "Career/WorldChecks"]:293: 流式块构建失败或预热未完成
+stack traceback:
+	[C]: in function 'error'
+	[string "Career/Session"]:480: in method 'Update'
+	[string "main"]:959: in function 'HandleUpdate'
+'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_287][224][Script] [WorldStream] 错误：块-1:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_288][224][Script] [WorldStream] 错误：块0:2 [string "Career/WorldStream"]:100: error in function 'SetMaterial'.
+     argument #3 is 'string'; '[no object]' expected.
+
+[2026-10-29 08_19_01_294][224][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-29 08_19_01_297][224][Script] [生涯错误] [string "Career/WorldChecks"]:274: [string "Career/Store"]:775: [string "Career/WorldChecks"]:293: 流式块构建失败或预热未完成
+[2026-10-29 08_19_02_191][278]INFO__VALIDATE_UPDATE__:false

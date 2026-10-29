@@ -197,6 +197,31 @@ local function localDelivery(session,d)
     assert(Store.Save() and Store.Load())
     assert(Store.Get().settledOrders[offer.id] and Store.Get().cashCents==cash+offer.feeCents)
     passed(string.format("%s 本地订单真实派发/Accept/Pickup/Actor.Move实走%.2fm %d帧/Deliver/持久化幂等；dt=.1、1.8m/s，非Actor.Update动力测试",d.id,meters,frames))
+
+    -- 真实 Session 入口回归：带单在外区补给，不应被配送分支无条件截断。
+    assert(Store.Transaction(function(p) p.battery=20; p.hunger=20; p.time=8; return true end))
+    local nextOffer=assert(Delivery.GetOffer())
+    assert(Delivery.Accept(nextOffer.id))
+    local pickup=assert(Config.points[nextOffer.pickupId])
+    a:Teleport(pickup.x,pickup.z,0)
+    assert(Delivery.Pickup(nextOffer.id,a.x,a.z,{riding=false,speed=0}))
+    local charge=assert(Config.points["world_"..d.id.."_charge"])
+    a:Teleport(charge.x,charge.z,0)
+    local beforeCash,beforeTime=Store.Get().cashCents,Store.Get().activeOrders[1].remainingHours
+    session:Interact()
+    assert(Store.Get().battery==100 and Store.Get().cashCents==beforeCash-200,"带单外区现场充电入口被截断")
+    near(Store.Get().activeOrders[1].remainingHours,beforeTime-.5,.001,"充电没有消耗订单时间")
+    a:Teleport(from.x,from.z,0)
+    beforeCash,beforeTime=Store.Get().cashCents,Store.Get().activeOrders[1].remainingHours
+    session:Interact()
+    assert(Store.Get().hunger>20 and Store.Get().cashCents==beforeCash-1200,"带单外区用餐入口被截断")
+    near(Store.Get().activeOrders[1].remainingHours,beforeTime-.25,.001,"用餐没有消耗订单时间")
+    local rest=assert(Config.points["world_"..d.id.."_rest"])
+    a:Teleport(rest.x,rest.z,0)
+    local beforeDay=Store.Get().day
+    session:Interact()
+    assert(Store.Get().day==beforeDay and Delivery.GetActive(),"带单不应允许过夜清除时限")
+    passed("外区带单 Session.Interact 充电/用餐及订单扣时真实接线，休息仍拒绝过夜")
 end
 
 local function bridgeTrip(session,d)
