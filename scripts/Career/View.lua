@@ -438,6 +438,7 @@ function View:BuildPhone(state,offer,active)
     end
     content:SetStyle{padding=desktop and 0 or modern and 8 or 9,borderRadius=10,
         backgroundColor=desktop and {0,0,0,0} or modern and PhoneKit.C.paper or {8,19,27,238}}
+    UI.Widget.SetStyle(self.phoneContent,{backgroundColor=modern and PhoneKit.C.paper or {0,0,0,0},borderRadius=10})
     self.phoneTitle:SetText(({apps="手机桌面",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
@@ -590,7 +591,7 @@ function View:Update(state,actor,target,active,offer,dt)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.dashboard:Update(state,actor)
-    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 打开手机上线听单")
+    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 手机接单")
     self.hint:SetText(state.trafficHint
         or state.contactName and ("附近 · "..state.contactName.."，点击交谈")
         or target and target.hint or "停稳后可查看手机、接单与补给。")
@@ -606,12 +607,14 @@ function View:LayoutControls()
     local narrow=w<720
     local navWidth=narrow and math.max(150,math.min(194,w*.33)) or 238
     local dashWidth=narrow and math.max(230,math.min(270,w*.46)) or 300
+    local compact=h<470
+    self.dashboard.speed:SetVisible(not compact)
+    self.dashboard.wallet:SetVisible(not compact)
     self.navPanel:SetStyle{width=navWidth}
-    self.dashboard.root:SetStyle{width=dashWidth}
+    self.dashboard.root:SetStyle{width=dashWidth,gap=compact and 4 or 7,padding=compact and 8 or 12}
     local dash=self.dashboard.root:GetLayout()
     local dashBottom=dash.y+dash.h+6
     self.pauseButton:SetStyle{top=dashBottom,right=12}
-    local nav=self.navPanel:GetLayout()
     self.actionTray:SetStyle{top=math.max(dashBottom+52,math.min(h*.52,h-190))}
     self.map.root:SetStyle{height=h<470 and 72 or 106}
     self.hint:SetVisible(h>=470)

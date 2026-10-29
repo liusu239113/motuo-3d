@@ -37,7 +37,7 @@ function Dashboard:Init(actions)
     self.advice=text("身体状态良好",11,C.green,"career-hud-advice")
     self.lifeButton=Kit.Button("生活详情",function() actions.phone("life") end,"career-life-quick",true,
         {width="48%",flexGrow=1,flexShrink=1,fontSize=11})
-    self.helpButton=Kit.Button("生活 / 补给",function() actions.phone("life") end,"career-life-details",false,
+    self.helpButton=Kit.Button("生活详情",function() actions.phone("life") end,"career-life-details",false,
         {width="48%",flexGrow=1,flexShrink=1,fontSize=11})
     -- 延续现有钢灰/琥珀BrawlForge衍生色板，不改变旧竞速主题。
     self.root=UI.Card{id="career-life-dashboard",position="absolute",right=12,top=12,width=300,
@@ -65,9 +65,9 @@ function Dashboard:Update(p,actor)
     self.energyBar:SetStyle{fillColor=p.energy<30 and C.red or p.energy<=45 and C.amber or C.cyan}
     self.advice:SetText(advice.title.." · "..(advice.urgent and "请尽快补给" or "点开生活查看安排"))
     self.advice:SetStyle{fontColor=advice.urgent and C.red or C.amber}
-    self.lifeButton:SetText(advice.action)
+    self.lifeButton:SetText(advice.action=="生活详情" and "导航吃饭" or advice.action)
     self.lifeButton.props.onClick=function()
-        if advice.action=="生活详情" or p.currentSpace and p.currentSpace~="city" then self.actions.phone("life")
+        if p.currentSpace and p.currentSpace~="city" then self.actions.phone("life")
         else self.actions.setWaypoint(advice.point) end
     end
     self.speed:SetText(actor.mounted and string.format("%s · %.0f km/h",actor:VehicleName(),math.abs(actor.speed)*3.6)

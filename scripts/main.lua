@@ -1255,9 +1255,9 @@ function CaptureCareerReadyFrame()
     if careerReadyShot_=="" or not careerMode_ or not career_ or not career_.options.test
         or career_.loading or not career_.running or not career_.actor then return end
     careerReadyFrames_=careerReadyFrames_+1
-    local required=career_.lifeAudit and 24 or 8
+    local required=career_.options.lifeAudit and 24 or 8
     if careerReadyFrames_~=required then return end
-    if career_.lifeAudit then require("Career.LifeChecks").Audit(career_) end
+    if career_.options.lifeAudit then require("Career.LifeChecks").Audit(career_) end
     local image=Image()
     local captured=graphics:TakeScreenShot(image)
     local saved=captured and image:SavePNG(careerReadyShot_)

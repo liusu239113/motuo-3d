@@ -54,7 +54,7 @@ function Checks.Run(session,shot)
     session:Refresh();session:UpdateEnvironment(Store.Get().time)
     if shot=="life" then session:OpenPhone("life") end
     session.view.notice:SetText("")
-    session.lifeAudit=true
+    session.options.lifeAudit=true
     print("[生活时间验收通过] 活动消耗/12元15分钟用餐/免费过夜/手机冻结/饥饿疲劳提示；实拍="..tostring(shot))
 end
 ---@param session CareerSession
