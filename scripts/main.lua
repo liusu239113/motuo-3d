@@ -844,6 +844,9 @@ function Start()
             or arg:match("^%-careercollisionshot=") or arg:match("^%-careerenvironmentshot=") or arg:match("^%-careercrowdshot=") then
             careerCheck,careerStart,legacyTest=true,true,false
         end
+        if arg=="-careerlifechecks" or arg:match("^%-careerlifeshot=") then
+            careerCheck,careerStart,legacyTest=true,true,false
+        end
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
     end
     if careerCheck then legacyTest=false end
@@ -1252,7 +1255,9 @@ function CaptureCareerReadyFrame()
     if careerReadyShot_=="" or not careerMode_ or not career_ or not career_.options.test
         or career_.loading or not career_.running or not career_.actor then return end
     careerReadyFrames_=careerReadyFrames_+1
-    if careerReadyFrames_~=8 then return end
+    local required=career_.lifeAudit and 24 or 8
+    if careerReadyFrames_~=required then return end
+    if career_.lifeAudit then require("Career.LifeChecks").Audit(career_) end
     local image=Image()
     local captured=graphics:TakeScreenShot(image)
     local saved=captured and image:SavePNG(careerReadyShot_)

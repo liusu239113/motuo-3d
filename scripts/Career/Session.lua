@@ -279,7 +279,11 @@ function Session:BuildWorld()
         local collisionPhase="all"
         local appShot,animShot,cityShot="","",""
         local collisionShot,environmentShot,crowdShot="","",""
+        local lifeChecks,lifeShot=false,""
         for _,arg in ipairs(GetArguments()) do
+            if arg=="-careerlifechecks" then lifeChecks=true end
+            local life=arg:match("^%-careerlifeshot=(.+)$")
+            if life then lifeShot=life end
             if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerlegacychecks" then legacyChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
@@ -320,7 +324,8 @@ function Session:BuildWorld()
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if appShot~="" then require("Career.PhoneAppChecks").Shot(self,appShot)
+        if lifeChecks or lifeShot~="" then require("Career.LifeChecks").Run(self,lifeShot)
+        elseif appShot~="" then require("Career.PhoneAppChecks").Shot(self,appShot)
         elseif animShot~="" then require("Career.LocomotionChecks").Shot(self,animShot)
         elseif cityShot~="" then require("Career.CityExpansionChecks").Shot(self,cityShot)
         elseif collisionShot~="" then require("Career.CollisionChecks").Shot(self,collisionShot)

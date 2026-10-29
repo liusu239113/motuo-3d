@@ -14,6 +14,8 @@ local PhoneKit = require("Career.PhoneKit")
 local Engagements = require("Career.Engagements")
 local Team = require("Career.Team")
 local World = require("Career.WorldData")
+local Dashboard = require("Career.LifeDashboard")
+local Life = require("Career.LifeStatus")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -103,39 +105,21 @@ function View:Init(actions)
     self.home:AddChild(label("生涯现金与旧竞速金币分别保存。驾驶仅限游戏，请勿现实模仿。",10,C.muted,{whiteSpace="normal"}))
     self.game=full{visible=false,pointerEvents="box-none",padding=0}
     local safe=UI.SafeAreaView{width="100%",height="100%",nativeMenuInset=true,padding=12,pointerEvents="box-none"}
-    self.status=label("",12,C.white)
-    self.clock=label("08:00",25,C.white,{fontWeight="bold"})
-    self.daypart=label("早晨 · 第1天",10,C.muted)
-    self.weather=label("晴朗 · 天气随游戏日变化",10,C.cyan)
-    self.hungerValue=label("饱腹 65%",10,C.white)
-    self.energyValue=label("精力 80%",10,C.white)
-    self.hungerBar=UI.ProgressBar{value=65,max=100,width="100%",height=5,showLabel=false,
-        fillColor=C.green,backgroundColor={123,133,143,70},borderWidth=0,borderRadius=3,padding=0}
-    self.energyBar=UI.ProgressBar{value=80,max=100,width="100%",height=5,showLabel=false,
-        fillColor=C.cyan,backgroundColor={123,133,143,70},borderWidth=0,borderRadius=3,padding=0}
-    self.objective=label("",13,C.amber,{whiteSpace="normal",maxLines=3})
-    self.hint=label("",11,C.white,{whiteSpace="normal",maxLines=2})
+    self.hudSafe=safe
+    self.dashboard=Dashboard.New(actions)
+    self.objective=PhoneKit.Text("",13,C.amber,{id="career-hud-objective",fontWeight="bold"})
+    self.hint=PhoneKit.Text("",10,C.white,{id="career-hud-hint"})
     self.map=Map.New("career-minimap")
-    self.map.root:SetStyle{width=148,height=112}
-    self.mapCaption=label("附近街区 · 南城老街",11,C.white,{id="career-minimap-caption",width="100%",maxLines=1})
-    self.mapOpenHint=label("局部地图 · 点此查看全城",10,C.amber,{width="100%",maxLines=1})
-    self.mapOpen=UI.Panel{id="career-minimap-open",width=170,minHeight=44,padding=6,gap=3,
-        backgroundColor={8,14,18,155},pointerEvents="box-only",onClick=function()
+    self.map.root:SetStyle{width="100%",height=106}
+    self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
+    self.mapOpenHint=PhoneKit.Text("点开全城地图",9,C.cyan,{id="career-map-open-hint"})
+    self.mapOpen=UI.Panel{id="career-minimap-open",width="100%",minHeight=44,padding=0,gap=3,
+        pointerEvents="box-only",onClick=function()
             if not self:IsBlocking() then actions.phone("map") end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
-    local lifePanel=UI.Panel{id="career-life-dashboard",width="100%",padding=8,gap=5,
-        backgroundColor={10,16,21,226},borderColor={66,77,85,180},borderWidth=1,borderRadius=6,pointerEvents="box-none",
-        children={
-            UI.Row{width="100%",padding=0,alignItems="center",justifyContent="space-between",children={self.clock,self.weather}},
-            self.daypart,self.hungerValue,self.hungerBar,self.energyValue,self.energyBar,
-            btn("打开生活 · 吃饭 / 休息",function() actions.phone("life") end,true,{id="career-life-quick",height=38,minHeight=38,fontSize=10})}}
-    self.statusPanel=UI.Panel{id="career-status-panel",width="100%",padding=0,gap=6,pointerEvents="box-none",
-        children={lifePanel,self.objective,self.hint}}
-    safe:AddChild(UI.Panel{width=300,maxWidth="52%",padding=0,gap=7,pointerEvents="box-none",
-        children={self.statusPanel,self.mapOpen}})
-    self.speed=label("步行",14,C.white)
-    safe:AddChild(UI.Panel{position="absolute",right=12,top=12,width=155,gap=8,padding=8,backgroundColor={10,16,21,210},
-        children={self.speed,btn("暂停",actions.pause,false)}})
+    self.navPanel=UI.Card{id="career-navigation-card",position="absolute",left=12,top=12,width=238,padding=10,gap=6,
+        pointerEvents="box-none",children={self.mapOpen,self.objective,self.hint}}
+    self.pauseButton=btn("暂停",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=64,height=46})
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
         onPointerDown=function(event)
@@ -159,6 +143,9 @@ function View:Init(actions)
     self.walkStick=WalkStick.New(function() return self:IsBlocking() or self.mountedControls end)
     self.controlLayer:AddChild(self.walkStick.root)
     safe:AddChild(self.controlLayer)
+    safe:AddChild(self.navPanel)
+    safe:AddChild(self.dashboard.root)
+    safe:AddChild(self.pauseButton)
     self.mountButton=btn("上车",actions.mount,false,{id="career-mount",width=72,height=46,padding=0})
     self.interactButton=btn("交互",actions.interact,false,{id="career-interact",width=82,height=46,padding=0})
     self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=8,padding=0,pointerEvents="box-none",children={
@@ -547,16 +534,31 @@ function View:BuildPhone(state,offer,active)
             text("王二狗：从桥洞到自己的住处，从战损电动车到冠军发车格。人生没有白跑的路。\n年度冠军达成，仍可继续配送、改善生活、收藏车辆和参加比赛。",14,C.amber)
         end
     elseif page=="life" then
-        section("今天的身体状态")
-        text(string.format("第%d天 · %02d:%02d · %s",state.day,math.floor(state.time),math.floor(state.time*60)%60,state.weatherLabel or "晴朗"),13,C.green)
-        text(string.format("饱腹 %.0f%% · 精力 %.0f%% · 电量 %.0f%%",state.hunger,state.energy,state.battery),13,C.amber)
-        text("饱腹≤55%建议吃饭，≤30%会明显影响移动；精力≤45%安排休息，≤25%尽快睡觉。21:00后建议收单休息，23:00停止派新单。",11,C.muted)
-        text("用餐：12元、15游戏分钟，饱腹+55、精力+8。过夜：桥下/公园免费；住房按晚收费，均休息至次日08:00。",11,C.muted)
-        text("生活服务需到地点、停车下车后交互；当前时间与天气也显示在游戏左上角。",11,C.muted)
+        section("生活仪表盘")
+        local advice=Life.Advice(state)
+        target:AddChild(PhoneKit.Card("career-life-summary",{children={
+            PhoneKit.Text(Life.Clock(state.time),30,PhoneKit.C.ink,{id="career-life-clock",fontWeight="bold"}),
+            PhoneKit.Text(string.format("第%d天 · %s · %s",state.day,Life.Part(state.time),state.weatherLabel or "晴朗"),11,PhoneKit.C.blue),
+            PhoneKit.Text(advice.title,15,advice.urgent and PhoneKit.C.red or PhoneKit.C.green,{id="career-life-advice",fontWeight="bold"}),
+            PhoneKit.Text(advice.detail,11,PhoneKit.C.muted),
+            PhoneKit.Button(advice.point=="breakfast" and "导航去吃饭" or "导航去休息",function()
+                a.setWaypoint(advice.point); a.closePhone()
+            end,"career-life-navigate",true)}}))
+        section("人物状态 · 不是车辆电量")
+        for _,stat in ipairs({{id="hunger",name="饱腹",value=state.hunger,color=PhoneKit.C.orange,
+                detail="低于30不能奔跑；55以下建议补一餐。"},
+            {id="energy",name="精力 / 体力",value=state.energy,color=PhoneKit.C.blue,
+                detail="低于30不能奔跑；45以下安排过夜休息。"}}) do
+            target:AddChild(PhoneKit.Card("career-life-stat-"..stat.id,{children={
+                PhoneKit.Text(string.format("%s  %.0f / 100",stat.name,stat.value),14,stat.color,{fontWeight="bold"}),
+                UI.ProgressBar{value=stat.value,max=100,width="100%",height=7,showLabel=false,fillColor=stat.color},
+                PhoneKit.Text(stat.detail,11,PhoneKit.C.muted)}}))
+        end
+        text("游戏活动15现实分钟≈2游戏小时；手机、暂停时冻结时间与订单。用餐和过夜会按规则推进游戏时间。",11,C.muted)
         section("吃饭与补给")
-        action("career-life-meal","早餐店用餐","到早餐店停稳下车。","费用 ¥12","用餐",a.eat,false)
-        action("career-life-bridge","桥下落脚点","在桥下休息至次日。","免费","休息",function() a.rest("bridge") end,false)
-        action("career-life-park","公园长椅","在公园休息至次日。","免费","休息",function() a.rest("park") end,false)
+        action("career-life-meal","早餐店用餐","花12元吃一餐，耗时15游戏分钟。饱腹+55、精力+8，最多100。",nil,"用餐 / 导航",a.eat,false)
+        action("career-life-bridge","桥下落脚点","免费睡至次日08:00，精力至少恢复到70；不能带单过夜。",nil,"休息 / 导航",function() a.rest("bridge") end,false)
+        action("career-life-park","公园长椅","免费睡至次日08:00，精力至少恢复到75；不能带单过夜。",nil,"休息 / 导航",function() a.rest("park") end,false)
         section("今晚住哪里")
         local home=assert(Housing.Get(state.accommodation))
         text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
@@ -587,41 +589,11 @@ function View:Update(state,actor,target,active,offer,dt)
     self.mapCaption:SetText("附近街区 · "..World.District(actor.x,actor.z).label)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
-    self.clock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
-    local hour=state.time
-    local part=hour<5 and "凌晨" or hour<9 and "早晨" or hour<11 and "上午" or hour<14 and "午间"
-        or hour<17 and "下午" or hour<19 and "黄昏" or hour<23 and "夜间" or "深夜"
-    self.daypart:SetText(string.format("%s · 第%d天",part,state.day))
-    local cloudiness=state.weatherCloudiness or 0
-    local skyDescription=cloudiness>=.7 and "厚云漫天" or cloudiness>=.3 and "云层渐多" or "晴空开阔"
-    self.weather:SetText((state.weatherLabel or "晴朗").." · "..skyDescription)
-    self.weather:SetStyle{fontColor=cloudiness>=.7 and C.muted or cloudiness>=.3 and C.amber or C.cyan}
-    local hunger=math.max(0,math.min(100,state.hunger))
-    local energy=math.max(0,math.min(100,state.energy))
-    self.hungerValue:SetText(string.format("饱腹 %.0f%% · %s",hunger,hunger<=30 and "尽快吃饭" or hunger<=55 and "该补充饮食" or "状态稳定"))
-    self.energyValue:SetText(string.format("精力 %.0f%% · %s",energy,energy<=25 and "尽快休息" or energy<=45 and "安排休息" or "状态稳定"))
-    self.hungerBar:SetValue(hunger)
-    self.energyBar:SetValue(energy)
-    self.hungerBar:SetStyle{fillColor=hunger<=30 and C.red or hunger<=55 and C.amber or C.green}
-    self.energyBar:SetStyle{fillColor=energy<=25 and C.red or energy<=45 and C.amber or C.cyan}
-    self.objective:SetText(target and (target.name..string.format(" · %.0f米",target.distance)) or "打开右下角手机 → 外卖骑手 → 上线听单")
-    local need=math.min(state.hunger,state.energy)
-    local lifeAdvice=state.hunger<=30 and "饱腹不足30%：尽快去早餐店用餐（12元，增加55%饱腹）。"
-        or state.energy<=25 and "精力不足25%：尽快回住处休息；休息会推进到次日08:00。"
-        or state.hunger<=55 and "饱腹偏低：建议尽早吃饭；可点上方生活入口导航到早餐店。"
-        or state.energy<=45 and "精力偏低：建议收单后回住处，或到桥下 / 公园过夜。"
-        or hour>=21 and "夜间建议完成配送后回住处；23:00停止派新单。"
-        or nil
-    self.hint:SetText(lifeAdvice or need<30 and "身体状态已影响移动速度：打开生活页查看补给与休息地点。"
-        or state.time>=23 and "深夜已停止派新单，请完成配送后休息。"
-        or state.trafficHint
-        or state.contactName and ("附近 · "..state.contactName.."，点击右侧交谈")
-        or target and target.hint or "先活下去，再跑出自己的路。")
-    self.speed:SetText(actor.mounted and string.format("%s  %.0f km/h",actor:VehicleName(),math.abs(actor.speed)*3.6)
-        or "步行 · 车辆停在原处")
-    if actor.vehicleId~="borrowed_ebike" then
-        self.speed:SetText(self.speed.props.text..string.format("\n摩托燃油 %.0f%%",state.motorcycleFuel or 100))
-    end
+    self.dashboard:Update(state,actor)
+    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 打开手机上线听单")
+    self.hint:SetText(state.trafficHint
+        or state.contactName and ("附近 · "..state.contactName.."，点击交谈")
+        or target and target.hint or "停稳后可查看手机、接单与补给。")
     self.map:SetTelemetry(actor,target,active)
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))
     if self.noticeTime==0 then self.notice:SetText("") end
@@ -629,6 +601,21 @@ end
 function View:LayoutControls()
     local area=self.controlLayer:GetAbsoluteLayout()
     if area.w<=60 or area.h<=60 then return end
+    local bounds=self.hudSafe:GetAbsoluteLayout()
+    local w,h=bounds.w,bounds.h
+    local narrow=w<720
+    local navWidth=narrow and math.max(150,math.min(194,w*.33)) or 238
+    local dashWidth=narrow and math.max(230,math.min(270,w*.46)) or 300
+    self.navPanel:SetStyle{width=navWidth}
+    self.dashboard.root:SetStyle{width=dashWidth}
+    local dash=self.dashboard.root:GetLayout()
+    local dashBottom=dash.y+dash.h+6
+    self.pauseButton:SetStyle{top=dashBottom,right=12}
+    local nav=self.navPanel:GetLayout()
+    self.actionTray:SetStyle{top=math.max(dashBottom+52,math.min(h*.52,h-190))}
+    self.map.root:SetStyle{height=h<470 and 72 or 106}
+    self.hint:SetVisible(h>=470)
+    self.controlHint:SetVisible(h>=470)
     if area.w~=self.controlWidth or area.h~=self.controlHeight then
         self.controlWidth,self.controlHeight=area.w,area.h
         self.controls:SetCompact(area.w<920 or area.h<470)
