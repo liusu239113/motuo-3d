@@ -5,6 +5,7 @@ local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
 local Store=require("Career.Store")
 local Config=require("Career.Config")
 local World=require("Career.WorldData")
+local Delivery=require("Career.Delivery")
 local Checks={}
 
 ---@param widget Widget
@@ -131,7 +132,7 @@ function Checks.Run(session)
         "请在已挂载、非弹窗、非手机的测试游戏态调用")
     local old={x=actor.x,z=actor.z,yaw=actor.yaw,speed=actor.speed,space=session.space,
         cityX=session.cityX,cityZ=session.cityZ,cityYaw=session.cityYaw,waypoint=session.waypoint,
-        navigation=session.navigation,online=session.online,lastActor=view.lastActor,lastTarget=view.lastTarget,
+        navigation=session.navigation,manualWaypoint=session.manualWaypoint,online=session.online,lastActor=view.lastActor,lastTarget=view.lastTarget,
         notice=view.notice.props.text,noticeTime=view.noticeTime,mapDistrictId=view.mapDistrictId,
         mapPointPage=view.mapPointPage,mapPickerOpen=view.mapPickerOpen}
     local files={}
@@ -260,7 +261,30 @@ function Checks.Run(session)
             assert(view.phoneContent:GetNumChildren()==0 and #tree(view.root)==baseCount,"收起未释放手机子树")
         end
         assert(writes==initialWrites+1 and cloudCalls==0,"导航/切区不应读写存档或云；仅允许室内fixture事务写内存")
-        print(string.format("[地图手机验收通过] 真触摸14区/地点/导航；老街%d点分页完整；绿带最近4真实点；室内城市入口；旧树Destroy；地图活控件峰值%d（非真机性能结论）；内存禁云",oldCount,maximum))
+        -- 带单真实点选补给，不能只改waypoint却仍强制把HUD指向订单。
+        assert(Delivery.Accept())
+        local active=assert(Delivery.GetActive())
+        session.manualWaypoint=false
+        assert(session:Target().pointId==active.pickupId,"默认仍应导航当前取餐点")
+        local beforeNavigation=Store.Get()
+        session:OpenPhone("map")
+        choose(view,"east_market")
+        tap(view,"career-map-poi-world_east_market_charge")
+        local supply=assert(session:Target())
+        assert(supply.pointId=="world_east_market_charge" and session.manualWaypoint and #supply.route>=2,
+            "带单点选充电站必须切换实际导航而非静默被订单覆盖")
+        local supplyHint=assert(supply.hint,"补给导航缺少提示")
+        assert(supplyHint:find("配送继续计时",1,true),"补给导航应提示配送仍计时")
+        session:OpenPhone("delivery")
+        tap(view,"career-order-navigation")
+        assert(view.phonePage=="" and not session.manualWaypoint and session:Target().pointId==active.pickupId,
+            "外卖页应可真实触摸切回订单导航")
+        local afterNavigation=Store.Get()
+        assert(afterNavigation.revision==beforeNavigation.revision and afterNavigation.cashCents==beforeNavigation.cashCents
+            and afterNavigation.activeOrders[1].remainingHours==beforeNavigation.activeOrders[1].remainingHours,
+            "手机导航不得结算、停表重置或额外保存订单")
+        assert(writes==initialWrites+2 and cloudCalls==0,"仅允许额外一次接单内存事务，导航仍零存档写入")
+        print(string.format("[地图手机验收通过] 真触摸14区/地点/导航；老街%d点分页完整；绿带最近4真实点；带单补给导航与订单导航切回；室内城市入口；旧树Destroy；地图活控件峰值%d（非真机性能结论）；内存禁云",oldCount,maximum))
     end)
     -- finally 不调用RestorePosition/ApplySpace，不触真实档、不反复加载世界。
     local cleaned,cleanupFailure=pcall(function()
@@ -269,6 +293,7 @@ function Checks.Run(session)
         session.space=old.space
         session.cityX,session.cityZ,session.cityYaw=old.cityX,old.cityZ,old.cityYaw
         session.waypoint,session.navigation,session.online=old.waypoint,old.navigation,old.online
+        session.manualWaypoint=old.manualWaypoint
     end)
     restore()
     local refreshed,refreshFailure=pcall(function()

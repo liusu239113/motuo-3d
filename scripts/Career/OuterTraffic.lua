@@ -55,6 +55,9 @@ local Rig=require("Career.Rig")
 ---@field poseTime number
 ---@field recycled number
 ---@field Hint fun(self:CareerOuterTraffic,x:number,z:number,yaw:number):string?
+---@field AcquireCar fun(self:CareerOuterTraffic,id:string):OuterTrafficCar?
+---@field Scan fun(self:CareerOuterTraffic)
+---@field Step fun(self:CareerOuterTraffic,dt:number,blockers:table[])
 ---@field Gap fun(self:CareerOuterTraffic,car:OuterTrafficCar,blockers:table[]):number
 ---@field Separate fun(self:CareerOuterTraffic,car:table):boolean
 ---@field IsFree fun(self:CareerOuterTraffic,x:number,z:number,r:number):boolean
@@ -66,6 +69,9 @@ Outer.__index=Outer
 Outer.CAR_BUDGET,Outer.PEOPLE_BUDGET=6,4
 Outer.OLD_MARGIN=220
 Outer.CAR_RANGE,Outer.PEOPLE_RANGE=260,145
+-- 路线端点安全域覆盖现有资产，也覆盖停止线验收用的10m长/4m宽车辆。
+-- 超出上限的未来资产在Fill明确拒绝，不能悄悄使用不足的掉头留距。
+Outer.TURN_MAX_LENGTH,Outer.TURN_MAX_WIDTH=10,4
 
 -- 碰撞设计（俯视，米；路宽W=12/16）：
 -- 建筑 | 人行道4m | <-lane r=W/4 -- 中线 -- lane r=W/4-> | 人行道 | 建筑
@@ -188,10 +194,11 @@ function Outer:Scan()
                         if along>=0 then start=math.max(start,Outer.OLD_MARGIN+10)
                         else finish=math.min(finish,-Outer.OLD_MARGIN-10) end
                     end
-                    if finish-start>=140 then
-                        candidates[#candidates+1]={axis=axis,road=center,start=start,finish=finish,
-                            radius=road.width/4,width=road.width,sidewalk=road.sidewalk or 4,id=road.id,d2=d2}
-                    end
+                    local route={axis=axis,road=center,start=start,finish=finish,
+                        radius=road.width/4,width=road.width,sidewalk=road.sidewalk or 4,id=road.id,d2=d2}
+                    -- 环路真实端点/320m滑窗端点可能贴着受控中心；完整掉头弧与车角必须留在白线上游。
+                    route.start,route.finish=Signals.TrimTurns(route,Outer.TURN_MAX_LENGTH,Outer.TURN_MAX_WIDTH)
+                    if route.finish-route.start>=140 then candidates[#candidates+1]=route end
                 end
             end
         end
@@ -320,7 +327,7 @@ function Outer:Fill(blockers)
                             car.route,car.s,car.x,car.z,car.yaw=route,s,x,z,yaw
                             car.speed,car.cruise=0,5.8+(slot%3)*.65
                             -- 校验实际包围盒，而不是只信配置近似值。
-                            if self:CarFree(car,blockers) then
+                            if car.length<=Outer.TURN_MAX_LENGTH and car.width<=Outer.TURN_MAX_WIDTH and self:CarFree(car,blockers) then
                                 self.cars[#self.cars+1]=car
                                 car.contactX=nil; self:ApplyContact(car); visible(car.node,true)
                                 self.spawned=self.spawned+1; placed=true

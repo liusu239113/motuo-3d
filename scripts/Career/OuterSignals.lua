@@ -121,6 +121,30 @@ function Signals.StopOffset(junction,axis)
     return half+Signals.LINE_OFFSET+Signals.LINE_HALF+Signals.BUMPER_MARGIN
 end
 
+-- 掉头安全域（沿道路，米）：
+--   白线 | 停线余量 | < 车身外包圆R > (半圆轨迹最前端) -- radius -- 掉头圆心
+--   start/finish是圆心，不是弧的最远点；整车OBB始终落在半径hypot(L/2,W/2)内。
+-- 端点落入中心两侧禁掉头区时只向路线内部裁剪，绝不延长到原道路之外。
+-- 贯穿中心且两端足够远的路线不变；过短/反向的结果由Scan拒绝，不把弧当直行放行。
+---@param route table
+---@param length number 最大车长
+---@param width number 最大车宽
+---@return number,number
+function Signals.TrimTurns(route,length,width)
+    local start,finish=route.start,route.finish
+    local bodyRadius=math.sqrt((length/2)^2+(width/2)^2)
+    for _,j in ipairs(Signals.Junctions) do
+        local across=route.axis=="ns" and j.x or j.z
+        if math.abs(route.road-across)<.01 then
+            local cross=route.axis=="ns" and j.z or j.x
+            local clearance=Signals.StopOffset(j,route.axis)+route.radius+bodyRadius
+            if math.abs(start-cross)<clearance then start=cross+clearance end
+            if math.abs(finish-cross)<clearance then finish=cross-clearance end
+        end
+    end
+    return start,finish
+end
+
 -- 返回车头到上游停车目标的有符号距离；负值含.20m余量区，
 -- 只有超过该余量、真正越过白线上游边缘才算已入场。nil表示非本路口直行。
 ---@param junction OuterSignalJunction

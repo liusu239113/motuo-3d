@@ -58,6 +58,7 @@ function Session:Init(options)
     self.running,self.loading,self.online,self.disposed=false,false,false,false
     self.yaw,self.pitch,self.timer=0,14,0
     self.waypoint=""
+    self.manualWaypoint=false
     self.navigation={key="",route={}}
     self.space="city"
     self.cityX,self.cityZ,self.cityYaw=0,-20,0
@@ -104,6 +105,7 @@ function Session:Init(options)
                 end
                 return false,"订单不存在"
             end)
+            self.manualWaypoint=false
             self.view:Notice(message); self:RefreshPhone()
         end,
         mount=function()
@@ -111,7 +113,14 @@ function Session:Init(options)
             if self.actor then local _,message=self.actor:ToggleMount(); self.view:ResetInput(); self.view:Notice(message); self:SavePosition(); self:Refresh() end
         end,
         interact=function() self:Interact() end,
-        setWaypoint=function(id) self.waypoint=id; self:Refresh() end,
+        setWaypoint=function(id)
+            if not Config.points[id] then self.view:Notice("导航地点不存在"); return end
+            local order=Delivery.GetActive()
+            local orderPoint=order and (order.status=="accepted" and order.pickupId or order.dropoffId)
+            self.waypoint=id; self.manualWaypoint=id~=orderPoint
+            if order and self.manualWaypoint then self.view:Notice("已切换地点导航；订单继续计时，可在外卖页切回订单导航") end
+            self:Refresh()
+        end,
         eat=function() self:Service("breakfast",function() return Store.Eat() end) end,
         rest=function(id) self:Service(id,function() return Store.Rest(id) end) end,
         charge=function() self:Service("charge",function() return Store.Charge() end) end,
@@ -165,6 +174,7 @@ function Session:StartCareer(fresh,confirmed)
     if fresh then ok,message=Store.NewCareer() else ok,message=Store.Load() end
     if not ok then self.view:ShowDialog("未进入生涯",message,{{text="返回主页",onClick=function() self:Home() end}}); return end
     if self.actor then self:DisposeWorld() end
+    self.waypoint=""; self.manualWaypoint=false; self.navigation={key="",route={}}
     self.loading=true
     self.view.home:SetVisible(false)
     self.view:ShowLoading("准备南城老街","正在校验城市、人物、车辆和材质。",0)
@@ -301,8 +311,9 @@ function Session:Target()
     if not self.actor then return nil end
     if self.space~="city" then return self:InteriorTarget() end
     local order=Delivery.GetActive()
-    local id=self.waypoint
-    if order then id=order.status=="accepted" and order.pickupId or order.dropoffId end
+    local orderPoint=order and (order.status=="accepted" and order.pickupId or order.dropoffId)
+    local id=self.manualWaypoint and Config.points[self.waypoint] and self.waypoint or orderPoint or self.waypoint
+    local navigatingOrder=order and id==orderPoint
     local point=Config.points[id]
     if not point then return nil end
     local key=id..":"..math.floor(self.actor.x/16)..":"..math.floor(self.actor.z/16)
@@ -314,7 +325,8 @@ function Session:Target()
     local distance=#route>1 and Config.RouteDistance(route) or Config.DistanceTo(id,self.actor.x,self.actor.z)
     return {name=point.label,x=point.x,z=point.z,pointId=point.id,kind=point.kind,route=route,
         distance=distance,
-        hint=order and (order.status=="accepted" and "停车下车，靠近店门点击取餐" or "停车下车，靠近门厅点击送达") or "到点后停车下车，点击交互"}
+        hint=navigatingOrder and (order.status=="accepted" and "停车下车，靠近店门点击取餐" or "停车下车，靠近门厅点击送达")
+            or order and "地点导航 · 配送继续计时，外卖页可切回订单" or "到点后停车下车，点击交互"}
 end
 function Session:Refresh()
     if not self.actor then return end
@@ -333,7 +345,8 @@ function Session:Accept()
     if self.space~="city" then self.view:Notice("请先出门，再上线接单"); return end
     if not self.online then self.view:Notice("先上线听单"); return end
     self:SavePosition()
-    local _,message=Delivery.Accept()
+    local ok,message=Delivery.Accept()
+    if ok then self.manualWaypoint=false end
     self.view:Notice(message); self:RefreshPhone()
 end
 function Session:Allowed(id)
@@ -348,7 +361,7 @@ function Session:Allowed(id)
 end
 function Session:Service(id,callback)
     local allowed,message=self:Allowed(id)
-    if not allowed then self.waypoint=id; self.view:Notice(message); self:Refresh(); return end
+    if not allowed then self.waypoint=id; self.manualWaypoint=true; self.view:Notice(message); self:Refresh(); return end
     self:SavePosition()
     local ok,detail=callback()
     self.view:Notice(detail)
@@ -383,6 +396,7 @@ function Session:Interact()
         local ok,message
         if order.status=="accepted" then ok,message=Delivery.Pickup(order.id,self.actor.x,self.actor.z,context)
         else ok,message=Delivery.Deliver(order.id,self.actor.x,self.actor.z,context) end
+        if ok then self.manualWaypoint=false end
         self.view:Notice(message); self:RefreshPhone()
         if ok and not Delivery.GetActive() then self.waypoint="breakfast" end
         return

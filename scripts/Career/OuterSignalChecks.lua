@@ -6,6 +6,7 @@ local Traffic=require("Career.Traffic")
 local World=require("Career.WorldData")
 local Store=require("Career.Store")
 local Config=require("Career.Config")
+local Assets=require("VehicleAssets")
 local Checks={}
 local function near(a,b,message)
     assert(math.abs(a-b)<.0001,message..string.format(" (%.6f / %.6f)",a,b))
@@ -57,6 +58,42 @@ end
 local function advance(outer,seconds)
     for _=1,math.floor(seconds*100+.5) do outer:Step(.01,{}) end
 end
+-- 不复制Scan公式：直接检查生产Scan返回的每一条候选，两端半圆均采样完整OBB。
+-- 每个角点须位于其所在一侧白线上游；直线贯穿中心仍由真实红灯停车测试覆盖。
+local function verifyScanTurns(route)
+    local straight=route.finish-route.start
+    local arc=math.pi*route.radius
+    assert(straight>=140,"signal trimming must preserve minimum lane length")
+    for _,j in ipairs(Signals.Junctions) do
+        local across=route.axis=="ns" and j.x or j.z
+        if math.abs(route.road-across)<.01 then
+            local cross=route.axis=="ns" and j.z or j.x
+            local stop=Signals.StopOffset(j,route.axis)
+            for _,atFinish in ipairs({false,true}) do
+                local endpoint=atFinish and route.finish or route.start
+                local side=endpoint>cross and 1 or -1
+                for sample=0,128 do
+                    local distance=(atFinish and straight or 2*straight+arc)+arc*sample/128
+                    local x,z,yaw=Outer.Pose(route,distance)
+                    local a=math.rad(yaw)
+                    for _,u in ipairs({-Outer.TURN_MAX_WIDTH/2,Outer.TURN_MAX_WIDTH/2}) do
+                        for _,v in ipairs({-Outer.TURN_MAX_LENGTH/2,Outer.TURN_MAX_LENGTH/2}) do
+                            local px=x+math.cos(a)*u+math.sin(a)*v
+                            local pz=z-math.sin(a)*u+math.cos(a)*v
+                            local along=route.axis=="ns" and pz or px
+                            assert(side*(along-cross)>=stop-Signals.EPSILON,
+                                "Scan U-turn corner crosses centre stop line: "..route.id.." / "..j.id)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+local function scannedRoute(outer,id)
+    for _,route in ipairs(outer.lanes) do if route.id==id then return route end end
+    error("real Scan omitted expected regression lane: "..id)
+end
 -- 区域验收（米、俯视）：
 --   车尾 [ OBB半长L/2 -- 车心 -- L/2 ]车头 | .20 | 白线上游边 .15 | 白线中心
 --   红/黄/双全红：所有四个来向、4.8m与10m车，车头不越线且真正停稳。
@@ -101,6 +138,16 @@ function Checks.Run(session)
             local outer=assert(fixture) --[[@as CareerOuterTraffic]]
             local signals=outer.signals
             assert(Outer.CAR_BUDGET==6 and Outer.PEOPLE_BUDGET==4,"outer budget changed")
+            -- 实测加载包围盒，不能只凭targetSize近似值推定10m/4m足够。
+            for _,id in ipairs(Assets.TrafficIds) do
+                local node=Assets.Add(outer.root,id,nil,"distant")
+                local size=node:GetVar("VehicleSize"):GetVector3()
+                assert(size.z<=Outer.TURN_MAX_LENGTH and size.x<=Outer.TURN_MAX_WIDTH,
+                    "traffic asset exceeds validated U-turn envelope: "..id)
+                print(string.format("[外区掉头包络] %s 实测长%.4fm 宽%.4fm；上限%.1fm/%.1fm",
+                    id,size.z,size.x,Outer.TURN_MAX_LENGTH,Outer.TURN_MAX_WIDTH))
+                node:Dispose()
+            end
             assert(#sourceTraffic.cars==15 and #sourceTraffic.pedestrians.people==8,"old budgets changed")
             assert(#Signals.Junctions==12,"only the twelve district centres are signalized")
             for _,j in ipairs(Signals.Junctions) do
@@ -132,6 +179,73 @@ function Checks.Run(session)
                     assert(World.IsFree(x,z,.25,"walk",0),"pole overlaps static building/bridge/prop")
                 end
             end
+            -- 真实Scan端点回归：3072环路在运河/杉林中心结束，不得在红灯线上掉头。
+            -- 先证明目标环路仍进入候选（不能以删掉所有外区交通绕过）；再走完整生产Step。
+            for _,sample in ipairs({
+                {x=3072,z=3072,id="ring_n3072"},{x=3072,z=3072,id="ring_e3072"},
+                {x=-3072,z=3072,id="ring_n3072"},{x=-3072,z=3072,id="ring_w3072"},
+            }) do
+                actor.x,actor.z=sample.x,sample.z
+                outer:Scan()
+                local route=scannedRoute(outer,sample.id)
+                verifyScanTurns(route)
+                local junction=assert(Signals.Find(sample.x,sample.z))
+                local cross=route.axis=="ns" and junction.z or junction.x
+                assert(cross<route.start or cross>route.finish,"endpoint regression must stay a non-through route")
+                local sign=cross>route.finish and 1 or -1
+                local car=carAt(outer,route,10,sign,0,junction)
+                local straight=route.finish-route.start
+                local arc=math.pi*route.radius
+                car.s=sign==1 and straight-1 or 2*straight+arc-1
+                car.x,car.z,car.yaw=Outer.Pose(route,car.s)
+                car.speed=2.2; outer.cars={car}
+                local travelled=car.travelled
+                for _=1,800 do
+                    -- 固定红灯，排除“等到绿灯才完成掉头”的假通过。
+                    outer.time=phaseTime(junction,route.axis,21); signals:SetTime(outer.time)
+                    outer:Step(.02,{})
+                    local a=math.rad(car.yaw)
+                    local along=route.axis=="ns" and car.z or car.x
+                    local extent=route.axis=="ns"
+                        and math.abs(math.cos(a))*car.length/2+math.abs(math.sin(a))*car.width/2
+                        or math.abs(math.sin(a))*car.length/2+math.abs(math.cos(a))*car.width/2
+                    assert(sign*(cross-along)-extent>=Signals.StopOffset(junction,route.axis)-Signals.EPSILON,
+                        "real ring endpoint car crossed stop line during red U-turn")
+                end
+                assert(car.travelled>travelled+arc+3,"safe endpoint U-turn must complete, not freeze traffic")
+                outer.cars={}; car.node:Dispose(); table.remove(outer.carPool)
+            end
+            -- 全12中心，真实Scan滑窗两端靠近/跨过中心的情况；每个返回路线完整采样。
+            local scanned=0
+            for _,junction in ipairs(Signals.Junctions) do
+                for _,axis in ipairs({"ns","ew"}) do
+                    for _,offset in ipairs({-384,-160,0,160,384}) do
+                        actor.x=junction.x+(axis=="ew" and offset or 0)
+                        actor.z=junction.z+(axis=="ns" and offset or 0)
+                        outer:Scan()
+                        for _,route in ipairs(outer.lanes) do verifyScanTurns(route); scanned=scanned+1 end
+                    end
+                end
+            end
+            assert(scanned>0,"Scan regression did not inspect production routes")
+            -- 真实贯穿路线仍停车/起步，不因裁剪回归成无信号穿线。
+            actor.x,actor.z=768,0; outer:Scan()
+            local through=scannedRoute(outer,"equator")
+            local centre=assert(Signals.Find(768,0))
+            for _,sign in ipairs({1,-1}) do
+                local car=carAt(outer,through,10,sign,18,centre)
+                outer.cars={car}; car.speed=6
+                outer.time=phaseTime(centre,"ew",21); signals:SetTime(outer.time)
+                advance(outer,6)
+                local gap=assert(Signals.Approach(centre,through,car.s,car.length))
+                assert(gap>=-.0001 and gap<.05 and car.speed<.02,"real Scan through route bypassed red stop line")
+                local travelled=car.travelled
+                outer.time=phaseTime(centre,"ew",0); signals:SetTime(outer.time)
+                advance(outer,2)
+                assert(car.travelled>travelled+2,"real Scan through route cannot restart on green")
+                outer.cars={}; car.node:Dispose(); table.remove(outer.carPool)
+            end
+            actor.x,actor.z=768,-40
             local j=assert(Signals.Find(768,0))
             for _,axis in ipairs({"ns","ew"}) do
                 local route=routeAt(j,axis)
@@ -245,7 +359,7 @@ function Checks.Run(session)
     assert(sourceCity.details.meshCount==originalDetails.meshes and sourceCity.details.boxes==originalDetails.boxes
         and #sourceCity.details.surfaces==originalDetails.surfaces and #sourceCity.obstacles==originalDetails.obstacles,"original city details accumulated")
     if not ok then error(message) end
-    print(string.format("[外区中心信号验收通过] 12中心互斥/黄灯双全红/四向长短车车头停线/绿起步/已入清空/无灯让行/freeze/邻近加载卸载Dispose；独立内存与节点夹具；CPU %.3fs",os.clock()-started))
+    print(string.format("[外区中心信号验收通过] 12中心互斥/黄灯双全红/四向长短车车头停线/真实Scan环路与滑窗端点完整车角掉头/贯穿路线红停绿行/已入清空/无灯让行/freeze/邻近加载卸载Dispose；独立内存与节点夹具；CPU %.3fs",os.clock()-started))
     return true
 end
 return Checks

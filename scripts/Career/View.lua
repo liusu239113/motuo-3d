@@ -333,7 +333,8 @@ function View:BuildPhone(state,offer,active)
                 local id=order.id
                 button("切换任务 · "..order.title.." / "..(order.status=="accepted" and "待取餐" or "待送达"),function() a.selectOrder(id) end,false)
             end
-            button("导航到当前任务",function() a.setWaypoint(active.status=="accepted" and active.pickupId or active.dropoffId); a.closePhone() end,true)
+            text("地点导航可临时切换去补给，配送仍计时；下面可切回当前订单导航。",11,C.muted)
+            button("导航到当前任务",function() a.setWaypoint(active.status=="accepted" and active.pickupId or active.dropoffId); a.closePhone() end,true,"career-order-navigation")
             button(active.status=="accepted" and "到店取餐（需下车到点）" or "交付外卖（需下车到点）",a.interact,false)
         elseif state.online and offer then
             text(offer.title,18)
