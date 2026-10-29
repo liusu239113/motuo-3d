@@ -106,10 +106,11 @@ function Apps.Messages(view,content,state)
         for _,thread in ipairs(threads) do
             local item=thread
             local unread=view.phoneReadThreads[item.id]~=item.signature and item.unreadCount or 0
-            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,children={
+            -- 当前UI命中先递归子树，不能仅依赖父级box-only；装饰子容器显式穿透。
+            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,pointerEvents="none",children={
                 K.Text(item.name,12,C.ink,{maxLines=1,fontWeight="bold",whiteSpace="nowrap"}),
                 K.Text(item.summary,10,C.muted,{maxLines=1,whiteSpace="nowrap"})}}
-            local side=UI.Panel{width=48,padding=0,gap=4,alignItems="flex-end",children={
+            local side=UI.Panel{width=48,padding=0,gap=4,alignItems="flex-end",pointerEvents="none",children={
                 K.Text(item.time,8,C.muted,{maxLines=1,whiteSpace="nowrap"})}}
             if unread>0 then side:AddChild(UI.Badge{id="career-chat-unread-"..item.id,content=unread,size="sm",variant="error",pointerEvents="none"}) end
             list:AddChild(UI.Row{id="career-chat-"..item.id,width="100%",height=78,padding=8,gap=7,
@@ -223,7 +224,7 @@ function Apps.Wallet(view,content,state)
             list:AddChild(UI.Row{id="career-wallet-entry-"..i,width="100%",height=76,padding=8,gap=5,alignItems="center",
                 pointerEvents="box-only",borderBottomWidth=1,borderBottomColor=C.line,
                 onClick=function() view.phoneLedgerId=detail.id; rebuild(view) end,children={
-                    UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,children={
+                    UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,pointerEvents="none",children={
                         K.Text(Apps.LedgerName(entry),11,C.ink,{fontWeight="bold",maxLines=1}),
                         K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
                         K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",8,C.muted)}},

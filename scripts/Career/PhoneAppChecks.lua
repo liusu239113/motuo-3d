@@ -40,8 +40,26 @@ local function tap(view,id)
             x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
     end
     local down=event("PointerDown"); UI.HandlePointerEvent(down)
-    assert(down.target==widget,"实际触摸命中错误 "..id)
-    UI.HandlePointerEvent(event("PointerUp"))
+    local up=event("PointerUp"); UI.HandlePointerEvent(up)
+    if down.target~=widget or up.target~=widget then
+        local function description(target)
+            if not target then return "nil" end
+            local bounds=target:GetAbsoluteLayoutForHitTest()
+            return string.format("%s#%s pe=%s rect=(%.1f,%.1f,%.1f,%.1f)",tostring(target._className),
+                tostring(target.props.id),tostring(target.props.pointerEvents),bounds.x,bounds.y,bounds.w,bounds.h)
+        end
+        local sx,sy=view.phoneContent:GetScroll()
+        local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
+        print(string.format("[手机触摸命中诊断] page=%s expected=%s down=%s up=%s scroll=(%.1f,%.1f) viewport=(%.1f,%.1f,%.1f,%.1f) scale=%.3f",
+            view.phonePage,description(widget),description(down.target),description(up.target),sx,sy,area.x,area.y,area.w,area.h,scale))
+        local ancestor=down.target
+        for depth=1,7 do
+            if not ancestor then break end
+            print("[手机触摸命中祖先] "..depth.." "..description(ancestor))
+            ancestor=ancestor.parent
+        end
+        error("实际触摸命中错误 "..id,0)
+    end
 end
 local function deliverOne()
     local offer=assert(Delivery.GetOffer())
