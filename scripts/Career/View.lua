@@ -490,7 +490,8 @@ function View:BuildPhone(state,offer,active)
                 end,false)
         end
         section("城市车库 · 到车行取车")
-        text("摩托城市限速60km/h，电动车35km/h。换车不召回：原车留在停车处；接单前需换回带箱9号。燃油独立于电量，摩托共享油量。",11,C.muted)
+        target:AddChild(PhoneKit.Text("摩托城市限速60km/h，电动车35km/h。换车不召回：原车留在停车处；接单前需换回带箱9号。燃油独立于电量，摩托共享油量。",11,PhoneKit.C.muted,
+            {id="career-garage-description"}))
         action("career-city-ebike","9号电动车","带保温箱的配送用车；需到车行切换。",nil,"切换用车",
             function() a.cityVehicle("borrowed_ebike") end,false)
         for _,item in ipairs(Progress.Motorcycles) do
@@ -547,6 +548,8 @@ function View:BuildPhone(state,offer,active)
         action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2","充电",a.charge,false)
         action("career-life-aid","低现金基础帮助","满足条件才可领取基础补给，不发放现金。",nil,"申请帮助",a.aid,false)
         section("声音与偏好")
+        -- 短屏scale<1时子项端点取整可超过自动父高度1～2px；尾部留2物理px真实内边距。
+        target:SetStyle{paddingBottom=2/math.max(.1,UI.GetScale())}
         action("career-music","背景音乐",state.musicEnabled and "当前开启" or "当前关闭",nil,
             state.musicEnabled and "关闭音乐" or "开启音乐",a.toggleMusic,false)
         action("career-effects","车辆 / 脚步 / 环境音",state.effectsEnabled and "当前开启" or "当前关闭",nil,

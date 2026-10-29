@@ -46,13 +46,20 @@ function Checks.Audit(view,context)
                 assert(measured.width<=width+size+1,"多行文案不可换行 "..context.." / "..name)
             end
             assert(measured.height<=height+1,"文字高度裁切 "..context.." / "..name.." measured="..measured.height.." available="..height)
+            local rendered=kind=="Label" and require("Career.PhoneKit").RenderedTextMetrics(widget) or nil
+            if rendered then
+                assert(rendered.textHeight<=height+1,"真实Render文字高度裁切 "..context.." / "..name
+                    .." rendered="..rendered.textHeight.." available="..height.." breakWidth="..rendered.breakWidth)
+            end
             local parent=widget.parent
             if parent and parent._className~="ScrollView" then
                 local b=parent:GetAbsoluteLayout()
                 local q=parent.props
                 assert(r.x>=b.x+(q.paddingLeft or 0)-1 and r.x+r.w<=b.x+b.w-(q.paddingRight or 0)+1,
                     "文字超出父内容宽度 "..context.." / "..name)
-                assert(r.y>=b.y-1 and r.y+r.h<=b.y+b.h+1,"文字超出父高度 "..context.." / "..name)
+                assert(r.y>=b.y-1 and r.y+r.h<=b.y+b.h+1,string.format(
+                    "文字超出父高度 %s / %s child=(%.6f,%.6f) parent=(%.6f,%.6f) propsH=%s parentH=%s padding=(%s,%s)",
+                    context,name,r.y,r.h,b.y,b.h,tostring(p.height),tostring(q.height),tostring(p.paddingTop),tostring(p.paddingBottom)))
             end
             if kind=="Button" then assert(r.w>=44 and r.h>=44,"动作真实尺寸不足44 "..name) end
             count=count+1
@@ -366,6 +373,25 @@ function Checks.Shot(session,page)
     layout(view)
     if app=="messages" and page~="messages" then visibleTextLayout(view,"career-chat-header-info") end
     if app=="delivery" then visibleTextLayout(view,"career-delivery-online-label") end
+    local garage=view.phoneBody:FindById("career-garage-description")
+    if garage then
+        local emitted=0
+        local function report()
+            local r=garage:GetAbsoluteLayout()
+            local metrics=garage.multilineMetrics_
+            local valid=require("Career.PhoneKit").RenderedTextMetrics(garage)
+            print(string.format("[手机车库Render诊断] layout=(%.6f,%.6f,%.6f,%.6f) propsH=%s renderH=%s breakW=%s cacheW=%s valid=%s autoHeight=%s align=%s",
+                r.x,r.y,r.w,r.h,tostring(garage.props.height),tostring(metrics and metrics.textHeight),
+                tostring(metrics and metrics.breakWidth),tostring(garage.lastMultilineWidth_),tostring(valid~=nil),
+                tostring(garage.autoHeight_),tostring(garage.props.verticalAlign)))
+        end
+        report() -- Shot就绪前不保证已Render；明确打印nil，不伪造渲染证据。
+        local inherited=garage.Update
+        garage.Update=function(self,dt)
+            if inherited then inherited(self,dt) end
+            if self.multilineMetrics_ and emitted<2 then emitted=emitted+1; report() end
+        end
+    end
     view.notice:SetText("")
     local state=Store.Get()
     local income,expense=Apps.Today(state)

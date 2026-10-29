@@ -35,14 +35,26 @@ end
 ---@param j OuterSignalJunction
 ---@return OuterTrafficCar
 local function carAt(outer,route,length,sign,gap,j)
+    -- 真实Step必须使用真实车型ID与Assets归一化后的尺寸；不能把虚构
+    -- signal_fixture或任意10m长度交给同源模型占地查询。10m×4m极限
+    -- 包络仍由下方verifyScanTurns逐角点验证，不冒充一辆实际存在的车。
+    local id=length>6 and "truck" or "sedan"
+    local node=Assets.Add(outer.root,id,nil,"distant")
+    if id=="truck" then require("Career.VehicleContact").CompleteTruck(node) end
+    local size=node:GetVar("VehicleSize"):GetVector3()
+    local actualLength=size.z
     local cross=route.axis=="ns" and j.z or j.x
-    local along=cross-sign*(Signals.StopOffset(j,route.axis)+length/2+gap)
+    local along=cross-sign*(Signals.StopOffset(j,route.axis)+actualLength/2+gap)
     local straight=route.finish-route.start
     local s=sign==1 and along-route.start or straight+math.pi*route.radius+route.finish-along
     local x,z,yaw=Outer.Pose(route,s)
     ---@type OuterTrafficCar
-    local car={id="signal_fixture",node=outer.root:CreateChild("停止线验收车"),length=length,width=1.85,
+    local car={id=id,node=node,length=actualLength,width=size.x,
         route=route,s=s,x=x,z=z,yaw=yaw,speed=0,cruise=6,inUse=true,travelled=0}
+    node.position=Vector3(x,World.Surface(x,z,"vehicle",0),z)
+    node.rotation=Quaternion(0,yaw,0)
+    assert(Assets.Vehicles[car.id] and car.length<=Outer.TURN_MAX_LENGTH and car.width<=Outer.TURN_MAX_WIDTH,
+        "信号夹具必须使用真实模型与验证过的尺寸域")
     outer.carPool[#outer.carPool+1]=car
     return car
 end
@@ -96,7 +108,8 @@ local function scannedRoute(outer,id)
 end
 -- 区域验收（米、俯视）：
 --   车尾 [ OBB半长L/2 -- 车心 -- L/2 ]车头 | .20 | 白线上游边 .15 | 白线中心
---   红/黄/双全红：所有四个来向、4.8m与10m车，车头不越线且真正停稳。
+--   红/黄/双全红：所有四个来向、真实sedan/truck按各自实测长宽停线。
+--   10m×4m是独立纯路线角点压力包络，不宣称真实模型已放大到10m。
 --   绿：无冲突起步；异向已入场/长车尾部未清空让停，已越线车不因变红急停。
 --   四角底座.4m外包与全部共享道路+完整步道不相交，不创建墙/空气碰撞。
 --   每次只测独立夹具；不调用session:ApplySpace/Teleport、真实交通Fill或玩家存档。
@@ -256,7 +269,7 @@ function Checks.Run(session)
                         assert(Outer.StaticFree(city,car),"fixture must be on a real unobstructed road")
                         outer.time=phaseTime(j,axis,21); signals:SetTime(outer.time)
                         car.speed=6; advance(outer,6)
-                        local gap=assert(Signals.Approach(j,route,car.s,length))
+                        local gap=assert(Signals.Approach(j,route,car.s,car.length))
                         assert(gap>=-.0001 and gap<.05 and car.speed<.02,"red must stop actual bumper before white line")
                         local waiting=car.travelled
                         outer.time=phaseTime(j,axis,0); signals:SetTime(outer.time)
@@ -266,20 +279,20 @@ function Checks.Run(session)
                             moveTo(car,j,sign,1.5); car.speed=3
                             outer.time=phaseTime(j,axis,phase); signals:SetTime(outer.time)
                             advance(outer,1.6)
-                            local stopped=assert(Signals.Approach(j,route,car.s,length))
+                            local stopped=assert(Signals.Approach(j,route,car.s,car.length))
                             assert(stopped>=-.0001 and stopped<.05 and car.speed<.02,"yellow/all-red bumper stop failed")
                         end
                         -- 贴线与余量内不能误判成已入；真正越过线上游边缘允许清空。
                         moveTo(car,j,sign,-.10)
                         outer.time=phaseTime(j,axis,21); signals:SetTime(outer.time)
-                        near(signals:StopGap(route,car.s,length),0,"margin region must still wait")
+                        near(signals:StopGap(route,car.s,car.length),0,"margin region must still wait")
                         moveTo(car,j,sign,-.50); car.speed=3
-                        assert(signals:StopGap(route,car.s,length)==math.huge,"already-entered car stopped in junction")
+                        assert(signals:StopGap(route,car.s,car.length)==math.huge,"already-entered car stopped in junction")
                         local entered=car.travelled
                         advance(outer,.4)
                         assert(car.travelled>entered+.5,"entered car failed to clear on red")
                         -- 掉头弧不应当被错误直线投影到路口停止线。
-                        assert(Signals.Approach(j,route,route.finish-route.start+.5,length)==nil,"U-turn treated as straight approach")
+                        assert(Signals.Approach(j,route,route.finish-route.start+.5,car.length)==nil,"U-turn treated as straight approach")
                         car.node:Dispose(); table.remove(outer.carPool)
                     end
                 end
@@ -359,7 +372,7 @@ function Checks.Run(session)
     assert(sourceCity.details.meshCount==originalDetails.meshes and sourceCity.details.boxes==originalDetails.boxes
         and #sourceCity.details.surfaces==originalDetails.surfaces and #sourceCity.obstacles==originalDetails.obstacles,"original city details accumulated")
     if not ok then error(message) end
-    print(string.format("[外区中心信号验收通过] 12中心互斥/黄灯双全红/四向长短车车头停线/真实Scan环路与滑窗端点完整车角掉头/贯穿路线红停绿行/已入清空/无灯让行/freeze/邻近加载卸载Dispose；独立内存与节点夹具；CPU %.3fs",os.clock()-started))
+    print(string.format("[外区中心信号验收通过] 12中心互斥/黄灯双全红/四向真实sedan与truck实测车头停线/10m×4m纯路线包络角点压力/真实Scan环路与滑窗端点掉头/贯穿路线红停绿行/已入清空/无灯让行/freeze/邻近加载卸载Dispose；独立内存与节点夹具；CPU %.3fs",os.clock()-started))
     return true
 end
 return Checks

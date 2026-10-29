@@ -8,6 +8,27 @@ local C=Kit.C
 -- Yoga按物理像素对两端取整；44逻辑px在scale<1时可能回读43.x。
 -- 多留一个物理像素，保证真实命中布局仍不小于44，而不是放宽验收阈值。
 function Kit.TouchSize() return 44+1/math.max(.1,UI.GetScale()) end
+-- 只消费同一文案/排版宽/字体/行距/渲染上下文的缓存，绝不沿用旧宽度或旧字。
+---@param label table
+---@return table?
+function Kit.RenderedTextMetrics(label)
+    local p=label.props
+    local metrics=label.multilineMetrics_
+    if not metrics or not metrics.textHeight then return nil end
+    local width=label:GetLayout().w-(p.paddingLeft or 0)-(p.paddingRight or 0)
+    local align=p.textAlign=="center" and NVG_ALIGN_CENTER or p.textAlign=="right" and NVG_ALIGN_RIGHT or NVG_ALIGN_LEFT
+    if label.lastMultilineText_~=(p.text or "")
+        or math.abs((label.lastMultilineWidth_ or -1)-width)>.0001
+        or label.lastMultilineFontSize_~=UI.Theme.FontSize(p.fontSize)
+        or label.lastMultilineFontFace_~=UI.Theme.FontFace(p.fontFamily,p.fontWeight)
+        or label.lastMultilineLineHeight_~=p.lineHeight
+        or label.lastMultilineLetterSpacing_~=(p.letterSpacing or 0)
+        or label.lastMultilineHAlign_~=align
+        or label.lastMultilineFontVersion_~=UI.GetFontVersion()
+        or label.lastMultilineScale_~=UI.Theme.GetScale()
+        or label.lastMultilineContext_~=UI.GetNVGContext() then return nil end
+    return metrics
+end
 function Kit.Text(text,size,color,props)
     props=props or {}
     props.text,props.fontSize,props.fontColor=text,size or 11,color or C.ink
@@ -15,6 +36,7 @@ function Kit.Text(text,size,color,props)
     props.lineHeight=1.35; props.pointerEvents="none"
     props.minFontSize=props.fontSize -- 不用自动缩字掩盖信息架构问题。
     if props.whiteSpace=="normal" then
+        props.verticalAlign=props.verticalAlign or "top"
         props.width=props.width or "100%"
         if props.flexShrink==nil then props.flexShrink=0 end
     end
@@ -25,6 +47,7 @@ function Kit.Text(text,size,color,props)
     if naturalHeight then
         local inheritedUpdate=label.Update -- 当前Label/Widget没有Update；保留未来库实现的回调。
         local previous=""
+        local measuredHeight=0
         label.Update=function(self,dt)
             if inheritedUpdate then inheritedUpdate(self,dt) end
             local p=self.props
@@ -39,14 +62,18 @@ function Kit.Text(text,size,color,props)
             local key=string.format("%s|%.4f|%s|%.6f|%.4f|%s|%.4f|%.4f|%.4f|%.4f",source,width,
                 tostring(UI.GetFontVersion()),UI.GetScale(),size,face,p.lineHeight,p.letterSpacing or 0,
                 p.paddingTop or 0,p.paddingBottom or 0)
-            if key==previous then return end
-            local measured=UI.MeasureTextFit(source,{fontSize=size,minFontSize=size,
-                fontFace=face,width=math.max(1,width-2),
-                multiline=true,lineHeight=p.lineHeight,letterSpacing=p.letterSpacing or 0})
-            -- 字体尚未就绪时不缓存失败，下一帧继续尝试；绝不把长文锁成一行。
-            if source~="" and (measured.height or 0)<=0 then return end
-            previous=key
-            local height=math.ceil(math.max(size*p.lineHeight,measured.height or 0))+2
+            if key~=previous then
+                local measured=UI.MeasureTextFit(source,{fontSize=size,minFontSize=size,
+                    fontFace=face,width=math.max(1,width-2),
+                    multiline=true,lineHeight=p.lineHeight,letterSpacing=p.letterSpacing or 0})
+                -- 字体尚未就绪时不缓存失败，下一帧继续尝试。
+                if source~="" and (measured.height or 0)<=0 then return end
+                previous=key
+                measuredHeight=math.max(size*p.lineHeight,measured.height or 0)
+            end
+            local rendered=Kit.RenderedTextMetrics(self)
+            -- 不累加历史高度；总是max(当前测量,同源真实Render)。宽/字变化即重算。
+            local height=math.ceil(math.max(measuredHeight,rendered and rendered.textHeight or 0))+2
                 +(p.paddingTop or 0)+(p.paddingBottom or 0)
             if math.abs(height-(p.height or 0))>.01 then self:SetHeight(height) end
         end
@@ -101,7 +128,9 @@ function Kit.ActionCard(id,title,description,terms,action,fn,primary)
     return card
 end
 function Kit.Heading(title,subtitle,id)
-    return UI.Panel{id=id,width="100%",padding=0,gap=3,children={
+    -- 两行自然高在scale<1时分别取整，自动父高可能比末行底少1～2px。
+    -- 该处是Heading而非Card；保留真实底部空间，不放宽父边界验收。
+    return UI.Panel{id=id,width="100%",padding=0,paddingBottom=2/math.max(.1,UI.GetScale()),gap=3,children={
         Kit.Text(title,17,C.ink,{fontWeight="bold"}),Kit.Text(subtitle,10,C.muted)}}
 end
 function Kit.Tag(text,color)
