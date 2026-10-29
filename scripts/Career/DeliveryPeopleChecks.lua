@@ -1,6 +1,6 @@
--- Opt-in production regression; no build/runtime, save load, cloud or second City.
--- Run requires an already-ready test Session. All fixture transactions are nested
--- memory-only; the real Session.Interact and Delivery settlement remain unmodified.
+-- 显式启用的生产回归；不构建、不启动运行时、不读档、不访问云端、不创建第二座 City。
+-- Run 要求已经就绪的测试 Session。所有测试准备事务均嵌套在纯内存存储中，
+-- 真实 Session.Interact 与 Delivery 结算逻辑保持不变。
 local UI=require("urhox-libs/UI")
 local Store=require("Career.Store")
 local Config=require("Career.Config")
@@ -43,7 +43,7 @@ local function order(templateId,sequence,status)
 end
 ---@param orders CareerOrder[]
 local function installOrders(orders)
-    -- Authorized fixture only: never seed cash, ledgers, settlement keys or rewards.
+    -- 仅准备授权的测试数据：绝不预置现金、流水、结算键或奖励。
     assert(Store.Transaction(function(p)
         p.equipment=p.equipment or {}; p.equipment.large_box=true
         p.activeOrders=copy(orders); p.phase="working"
@@ -105,13 +105,12 @@ local function nearActor(p)
     return {x=p.x+1.5,z=p.z,mounted=false,walkHeight=p.node.position.y}
 end
 
--- Collision design (metres, top view):
--- incoming route -- [2m approach segment, walking r=.32] -- marker centre
---                                  NPC disk r=.4 to the SIDE, not in the lane
--- Check real static surroundings, exact marker, and each production last/first
--- route segment at .05m spacing, including both endpoints. Do NOT incorrectly
--- demand the entire 2m interaction disk be empty: the NPC intentionally stands
--- inside its edge. Boundary probes cover the actual dynamic disk separately.
+-- 碰撞设计（单位米，俯视图）：
+-- 来路 -- [2m 接近段，步行半径 r=.32] -- 标记中心
+--                                  NPC 圆盘 r=.4 位于侧面，不占通道
+-- 检查真实静态环境、精确标记点，以及生产路线的首段或末段，
+-- 按 .05m 间隔采样并包含两端点。不要错误地要求整个 2m 交互圆净空：
+-- NPC 本来就站在圆的边缘以内。另用边界探针检查实际动态圆盘。
 ---@param p CareerDeliveryPerson
 ---@param city CareerCity
 local function trafficBlocker(p,city)
@@ -138,8 +137,8 @@ local function safe(p,city,pool,orders)
     assert(pool:IsFree(p.x,p.z,.32)==false,"pool centre must remain blocked independent of visual LOD")
     local radius=p.radius or .4
     assert(not pool:IsFree(p.x+radius+.32-.001,p.z,.32,"walk",height),"dynamic disk inside edge is not blocked")
-    -- Other occupants may legitimately block an outside probe; test the centre's
-    -- own geometric boundary only when no other active/held NPC overlaps it.
+    -- 其他占位者可能合理地挡住圆外探针；只有没有其他 active/held NPC
+    -- 重叠时，才单独验证此圆盘自身的几何边界。
     local outside=p.x+radius+.32+.01
     local another=false
     for _,other in ipairs(pool.people) do
@@ -218,8 +217,8 @@ function Checks.Run(session)
         "requires ready outdoor production Session/UI")
     assert(not view:IsBlocking() and view.phonePage=="","close phone/conversation/modal before Run")
     assert(session.deliveryPeople and city.deliveryPeople==session.deliveryPeople,"production pool not connected to Session/City")
-    -- Normalize only the already-ready OUTER test profile before measuring scene
-    -- nodes, so a stale lazily-created production target cannot look like a leak.
+    -- 在统计场景节点前，仅归一化已经就绪的外层测试档，
+    -- 避免把延迟创建的生产目标误判为节点泄漏。
     session:Refresh()
     local old={pool=session.deliveryPeople,cityPool=city.deliveryPeople,citySpace=city.space,
         x=actor.x,z=actor.z,yaw=actor.yaw,speed=actor.speed,mounted=actor.mounted,walkHeight=actor.walkHeight,
@@ -252,13 +251,13 @@ function Checks.Run(session)
     ---@type CareerDeliveryPeople?
     local pool=nil
     local ok,failure=pcall(function()
-        assert(Store.NewCareer()) -- Explicit new inner memory profile; NEVER Store.Load/Get before this.
+        assert(Store.NewCareer()) -- 显式新建内层内存档；此前绝不调用 Store.Load/Get。
         pool=People.New(city)
         local testPool=assert(pool)
         session.deliveryPeople,city.deliveryPeople=testPool,testPool
         actor.mounted,actor.speed,actor.walkHeight=false,0,0
         session.online=false
-        session.navigation={key="",route={}} -- keep outer navigation table itself untouched
+        session.navigation={key="",route={}} -- 保持外层 navigation 表本身不变
         local profile=Store.Get()
         local startWrites=writes
         local fixtures={order("noodle_office",1,"accepted"),order("shop_old",2,"accepted"),
@@ -291,7 +290,7 @@ function Checks.Run(session)
         sync(testPool,overflow)
         assert(testPool:Stats().created==4 and testPool:Stats().active<=4 and testPool:Stats().overflow>=1
             and scene:GetNumChildren(true)==warmNodes,"fifth target must not create an unbounded fifth actor")
-        -- Churn different points repeatedly, retaining node identities and all four rigs.
+        -- 反复切换不同目标点，保持节点身份和全部四套 Rig 不变。
         for _=1,12 do
             sync(testPool,fixtures); sync(testPool,{order("park_lunch",12,"picked_up")}); sync(testPool,{})
         end
@@ -299,9 +298,8 @@ function Checks.Run(session)
         for i,p in ipairs(testPool.people) do assert(p.node==nodes[i] and p.rig==heldRigs[i],"slot recycling replaced a Rig/node") end
         assert(same(Store.Get(),profile) and writes==startWrites,"pool Sync/Update mutated Store")
 
-        -- Visit EVERY unique configured endpoint, including outer districts, using
-        -- the same real City. Collect all placement failures before rejecting so
-        -- one old-street pass cannot conceal an untested outer-city target.
+        -- 使用同一真实 City 遍历全部不重复的配置端点，包括外区。
+        -- 汇总全部站位失败后再拒绝，避免仅凭老街通过就掩盖未测的外区目标。
         local seen,missing={},{ }
         for _,template in ipairs(Config.orderTemplates) do
             for _,pickup in ipairs({true,false}) do
@@ -330,8 +328,8 @@ function Checks.Run(session)
         sync(testPool,{})
         assert(same(Store.Get(),profile) and writes==startWrites,"all-point checks mutated Store")
 
-        -- A non-current parked vehicle must participate in NEW Bind placement.
-        -- Only a detached actor table is changed; never move the real parked bike.
+        -- 非当前驾驶的停放车辆也必须参与新的 Bind 站位选择。
+        -- 仅修改独立的 actor 测试表，绝不移动真实停放的车辆。
         sync(testPool,{fixtures[1]},{x=0,z=-20,vehicleId=Vehicles.EBIKE,parking={}})
         local parkedCandidate=assert(testPool:Get("noodle"))
         local parkedX,parkedZ=parkedCandidate.x,parkedCandidate.z
@@ -345,7 +343,7 @@ function Checks.Run(session)
         assert(parkedId~="" and parkedRadius>0,"parking fixture needs a valid non-current VehicleData radius")
         local parkingViewer={x=0,z=-20,mounted=false,walkHeight=0,vehicleId=Vehicles.EBIKE,
             parking={[parkedId]={x=parkedX,z=parkedZ,yaw=0}}}
-        sync(testPool,{},parkingViewer) -- clear prior target; force a fresh Bind
+        sync(testPool,{},parkingViewer) -- 清除之前的目标，强制重新 Bind
         sync(testPool,{fixtures[1]},parkingViewer)
         local avoided=assert(testPool:Get("noodle"),"parked non-current vehicle left no valid alternate stand")
         assert((avoided.x-parkedX)^2+(avoided.z-parkedZ)^2>=(parkedRadius+avoided.radius)^2,
@@ -364,8 +362,8 @@ function Checks.Run(session)
         local clamped=merchant.rig.reachClampedFrames or 0
         for _=1,25 do testPool:Update(.1,nearActor(merchant),true); pose(merchant,city) end
         assert((merchant.rig.reachClampedFrames or 0)==clamped,"handover IK clamped beyond anatomical reach")
-        -- A new pending order at this same merchant cancels the previous visual
-        -- departure hold; far-LOD checks below concern pose clocks, not exit time.
+        -- 同一商家接到新待取订单时，取消之前视觉回应的退场保留。
+        -- 下方远距 LOD 检查针对姿势时钟，而非退场计时。
         sync(testPool,{order("noodle_office",101,"accepted")})
         assert(merchant.hold==0 and merchant.active,"new same-point work did not cancel pickup exit hold")
         local paused=frozen(merchant)
@@ -388,17 +386,18 @@ function Checks.Run(session)
         assert(not testPool:Get("not_exists") and not testPool:Respond("not_exists",false),"unknown target accepted")
         sync(testPool,{})
 
-        -- Production Session.Interact only: successful transactions cause real
-        -- response; rejection (authorization AND memory commit failure) cannot.
+        -- 仅使用生产 Session.Interact：成功事务才触发真实回应；
+        -- 授权拒绝或内存提交失败都不得触发回应。
         local function at(pointId)
             local point=assert(Config.points[pointId])
             actor.x,actor.z,actor.speed,actor.walkHeight,actor.mounted=point.x,point.z,0,0,false
             session:Refresh()
+            assert(assert(session:Target()).distance<.01,"marker navigation must display actual zero-distance arrival")
         end
         local function unchanged(before,writeCount)
             assert(same(Store.Get(),before) and writes==writeCount,"rejected/duplicate handoff mutated wallet/order/profile")
         end
-        assert(Delivery.Accept()) -- Real first order, not an invented payout fixture.
+        assert(Delivery.Accept()) -- 真实首单，不是虚构奖励的测试数据。
         session:Refresh()
         local tutorial=assert(Delivery.GetActive())
         local owner=assert(city.contacts:Get("breakfast_owner"))
@@ -468,7 +467,7 @@ function Checks.Run(session)
             and merchant.visible and merchant.node.enabledSelf,
             "successful generic pickup merchant must remain visible for its six-second response")
         trafficBlocker(merchant,city)
-        -- Retained merchants have no priority over four newly needed real targets.
+        -- 留场商家的优先级不得高于四个新需要的真实目标。
         local merchantPressure={fixtures[2],fixtures[3],fixtures[4],order("park_lunch",31,"picked_up")}
         sync(testPool,merchantPressure)
         assert(testPool:Stats().active==4 and testPool:Stats().created==4 and not testPool:Get("noodle"),
@@ -481,7 +480,7 @@ function Checks.Run(session)
         rejectWrite=true; session:Interact(); rejectWrite=false
         unchanged(state,count+1); samePose(recipient,bones,"failed delivery commit responded/rewarded recipient")
         assert(view.speechText.props.text==speech and recipient.hold==0,"failed delivery began success exit hold")
-        -- Failed authorization on the actual delivery branch as well as pickup.
+        -- 实际送达分支与取餐分支都要覆盖授权失败。
         actor.mounted=true; count=writes; session:Interact(); actor.mounted=false
         unchanged(state,count); samePose(recipient,bones,"mounted delivery responded")
         actor.speed=.36; session:Interact(); actor.speed=0
@@ -501,18 +500,25 @@ function Checks.Run(session)
         assert(not Delivery.Deliver(generic.id,actor.x,actor.z,{riding=false,speed=0}))
         unchanged(delivered,count)
         assert(recipient.poseCount==recipientPoses,"duplicate completion repeated entity handover")
-        -- Ready targets take priority over an inactive six-second hold.
+        -- 当前需要的目标优先于 inactive 人物的六秒留场。
         local pressure={fixtures[1],fixtures[2],fixtures[4],order("park_lunch",30,"picked_up")}
         sync(testPool,pressure)
         assert(testPool:Stats().active==4 and testPool:Stats().created==4 and not testPool:Get("office"),
             "retained recipient starved new active targets instead of relinquishing its slot")
         sync(testPool,{})
 
-        -- Two real picked-up orders share ONE recipient. The first success must
-        -- not start a departure timer while another delivery still needs them.
+        -- 两份真实已取餐订单共用一位收餐人。首次送达后还有订单需要此人，
+        -- 因此不能启动退场计时。
         local sharedOrders={order("noodle_office",40,"picked_up"),order("noodle_office",41,"picked_up")}
         installOrders(sharedOrders)
         at("office")
+        local markerX,markerZ=actor.x,actor.z
+        actor.x=markerX+1.5
+        session:Refresh()
+        near(assert(session:Target()).distance,1.5,.000001,"near-marker navigation must display actual 1.5m distance")
+        actor.x,actor.z=markerX,markerZ
+        session:Refresh()
+        assert(assert(session:Target()).distance<.01,"restored marker navigation must display zero distance")
         local shared=assert(testPool:Get("office"))
         testPool:Update(.1,nearActor(shared),true)
         before=Store.Get(); count=writes; recipientPoses=shared.poseCount
@@ -557,8 +563,8 @@ function Checks.Run(session)
         assert(not testPool:Get("office") and testPool:Stats().disposed,"disposed pool API still live")
         assert(scene:GetNumChildren(true)==beforeNodes and #city.obstacles==beforeObstacles,"pool Dispose leaked nodes/static blockers")
     end)
-    -- Every stage is independent: an assertion/Dispose/UI failure must NEVER
-    -- prevent restoring outer Store or real Session/City identities.
+    -- 各恢复阶段相互独立：断言、Dispose 或 UI 清理失败，
+    -- 都绝不能阻止恢复外层 Store 和真实 Session/City 的对象身份。
     local errors={}
     local function cleanup(fn)
         local worked,detail=pcall(fn)
@@ -580,7 +586,7 @@ function Checks.Run(session)
             person.node:SetEnabledRecursive(saved.visible); person.rig.visible=saved.rigVisible
         end)
     end
-    cleanup(restore) -- outer Store restored even if any cleanup above failed
+    cleanup(restore) -- 即使上述清理失败，也恢复外层 Store
     cleanup(function()
         view:CloseConversation(); view:ClosePhone(); view:ShowGame()
         session:Refresh()
@@ -596,10 +602,10 @@ function Checks.Run(session)
     return true
 end
 
--- Controlled real-scene staging only; caller owns capture and test Session Dispose.
--- Pickup shows the real accepted merchant; recipient/handover progress through
--- actual Session.Interact commits, never a visual-only fake handoff.
--- This intentionally leaves the isolated test session staged for the caller to shoot.
+-- 仅布置受控的真实场景；调用者负责截图和测试 Session 的 Dispose。
+-- pickup 展示真实已接单商家；recipient/handover 通过真实 Session.Interact
+-- 提交推进，绝不伪造只有视觉表现的交接。
+-- 此入口会有意保留隔离测试场景，供调用者截图。
 ---@param session CareerSession
 ---@param view string pickup/recipient/handover/handover0/handover1/handover2
 function Checks.Shot(session,view)
@@ -626,6 +632,7 @@ function Checks.Shot(session,view)
         actor:Teleport(p.x,p.z,180); actor.speed,actor.steer=0,0; actor:SyncVisuals(0)
         session.navigation={key="",route={}}
         session:Refresh()
+        assert(assert(session:Target()).distance<.01,"shot marker navigation must display actual zero-distance arrival")
     end
     at("noodle")
     local person=assert(pool:Get("noodle"),"shot merchant not placed")
@@ -640,8 +647,8 @@ function Checks.Shot(session,view)
             assert(not Delivery.GetActive() and person.poseCount>count and person.hold>5.9,
                 "handover shot must execute real successful recipient delivery")
             if phase then
-                -- Identical world/body clock and camera across all three shots;
-                -- only the existing successful response's gesture envelope changes.
+                -- 三张截图使用相同的世界、身体时钟和相机；
+                -- 只改变已有成功回应的手势包络。
                 local u=({["0"]=.04,["1"]=.5,["2"]=.82})[phase]
                 person.gestureTime=person.gestureDuration*u
                 person.gestureWeight=math.sin(u*math.pi)^.65
@@ -652,18 +659,21 @@ function Checks.Shot(session,view)
             end
         end
     end
-    -- The same production camera library used by Session; no hand-rolled orbit.
+    -- 使用与 Session 相同的生产相机库，不手动实现环绕相机。
     local yaw=math.deg(math.atan(person.x-actor.x,person.z-actor.z))
-    actor:Teleport(actor.x,actor.z,yaw); actor.speed,actor.steer=0,0; actor:SyncVisuals(0)
+    actor:Teleport(actor.x,actor.z,yaw); actor.speed,actor.steer=0,0
+    -- SyncVisuals(0) 不会衰减残留步态；显式归零既有步态字段，再求真实站姿。
+    actor.visuals.phase,actor.visuals.gaitWeight,actor.visuals.runWeight=0,0,0
+    actor:SyncVisuals(0)
     session.navigation={key="",route={}}
     session:Refresh()
-    local cameraYaw=yaw+180 -- look from the street side, not from inside the facade
+    local cameraYaw=yaw+145 -- 从街道侧斜向观察，避免骑手遮住顾客上肢
     session.yaw,session.pitch=cameraYaw,10
-    session.camera:SetModeConfig("normal",{distance=4.8,offset=V(0,1.25,0),fov=58})
+    session.camera:SetModeConfig("normal",{distance=5.2,offset=V(0,1.15,0),fov=58})
     session.camera:SetMode("normal"); session.camera:Update(2,actor.node,cameraYaw,10)
     session:UpdateEnvironment(9)
     session.view.overlay:SetVisible(false); session.view:ResetInput()
-    pool:Update(.1,actor,false) -- test auto-Update is frozen by the production Session
+    pool:Update(.1,actor,false) -- 生产 Session 已冻结测试模式的自动 Update
     print(string.format("[配送交接实拍就绪] %s / %s / (%.2f,%.2f) / production Rig + ThirdPersonCamera / memory-only / fixed phase frozen",view,person.pointId,person.x,person.z))
 end
 return Checks

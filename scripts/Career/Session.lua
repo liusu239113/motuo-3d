@@ -373,7 +373,10 @@ function Session:Target()
         self.navigation.route=World.Route(self.actor.x,self.actor.z,point.x,point.z) or {}
     end
     local route=self.navigation.route
-    local distance=#route>1 and Config.RouteDistance(route) or Config.DistanceTo(id,self.actor.x,self.actor.z)
+    local directDistance=Config.DistanceTo(id,self.actor.x,self.actor.z)
+    -- 已到原2米交互圈内就显示实际门前距离，不再把道路吸附的往返路段算成未送达。
+    local distance=directDistance<=Config.INTERACTION_RADIUS and directDistance
+        or (#route>1 and Config.RouteDistance(route) or directDistance)
     return {name=point.label,x=point.x,z=point.z,pointId=point.id,kind=point.kind,route=route,
         distance=distance,
         hint=navigatingOrder and (order.status=="accepted" and "停车下车，靠近店门点击取餐" or "停车下车，靠近门厅点击送达")
