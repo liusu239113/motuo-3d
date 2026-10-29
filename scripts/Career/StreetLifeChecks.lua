@@ -5,6 +5,7 @@ local Life=require("Career.StreetLife")
 local Store=require("Career.Store")
 local Config=require("Career.Config")
 local Routes=require("Career.TrafficRoutes")
+local Pedestrians=require("Career.Pedestrians") --[[@as CareerPedestrians]]
 ---@class CareerStreetLifeChecks
 ---@field Run fun(session:CareerSession):boolean
 ---@field Shot fun(session:CareerSession,view:string)
@@ -62,19 +63,50 @@ local function withoutSelf(city,p,x,z,radius)
     end
     return true
 end
-local function reachable(contacts,city)
-    -- 旧8条行人线路的所有.2m样本；同源已核对Pedestrians原始path。
-    local paths={
-        {-82,-8.7,-38,-8.7},{-80,8.7,-24,8.7},{18,-8.7,74,-8.7},{22,8.7,77,8.7},
-        {-82,91.3,-25,91.3},{22,108.7,76,108.7},{-108.7,25,-108.7,60},{91.3,20,91.3,65},
-    }
-    for _,path in ipairs(paths) do
+local function obstacleHits(city,x,z,radius,sources)
+    local entries={}
+    for index,o in ipairs(city.obstacles) do
+        if x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then
+            entries[#entries+1]=string.format("%s obstacle#%d AABB[x=%.4f..%.4f,z=%.4f..%.4f]",
+                sources[o] or "legacy",index,o.x1,o.x2,o.z1,o.z2)
+        end
+    end
+    return table.concat(entries,"; ")
+end
+local function compareProbe(city,baseline,sources,x,z,radius,mode,label)
+    local currentFree=city:StaticFree(x,z,radius,mode,0)
+    local baselineFree=baseline:StaticFree(x,z,radius,mode,0)
+    -- 不能用“baseline本来就堵”遮盖叠在同位置的新障碍：新增项逐个独立检查。
+    for _,o in ipairs(city.obstacles) do
+        if sources[o] and x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then
+            error(string.format("新增阻挡 %s sample=(%.4f,%.4f) r=%.3f baselineFree=%s / %s",
+                label,x,z,radius,tostring(baselineFree),obstacleHits(city,x,z,radius,sources)))
+        end
+    end
+    assert(currentFree==baselineFree,string.format("碰撞回归 %s sample=(%.4f,%.4f) r=%.3f currentFree=%s baselineFree=%s / current:%s / baseline:%s",
+        label,x,z,radius,tostring(currentFree),tostring(baselineFree),obstacleHits(city,x,z,radius,sources),obstacleHits(baseline,x,z,radius,{})))
+    return baselineFree
+end
+local function reachable(contacts,city,baseline,sources,paths)
+    -- 直接读取生产Pedestrians.people.path，不维护易漂移的第二份路径配置。
+    assert(#paths==8,"生产老街行人应有8条路径")
+    for pathIndex,path in ipairs(paths) do
         local count=math.ceil(math.sqrt((path[3]-path[1])^2+(path[4]-path[2])^2)/.2)
+        local legacyBlocked=0
         for step=0,count do
             local f=step/count
-            assert(city:StaticFree(path[1]+(path[3]-path[1])*f,path[2]+(path[4]-path[2])*f,.32,"walk",0),
-                "驻点或建筑堵塞旧行人线路")
+            local x,z=path[1]+(path[3]-path[1])*f,path[2]+(path[4]-path[2])*f
+            local free=compareProbe(city,baseline,sources,x,z,.32,"walk","ped path#"..pathIndex.." step#"..step)
+            if not free then
+                legacyBlocked=legacyBlocked+1
+                if legacyBlocked==1 then
+                    print(string.format("[街坊路线baseline] path#%d (%.2f,%.2f)->(%.2f,%.2f) 首个原有阻挡sample=(%.4f,%.4f) r=.32 / %s",
+                        pathIndex,path[1],path[2],path[3],path[4],x,z,obstacleHits(baseline,x,z,.32,{})))
+                end
+            end
         end
+        assert(legacyBlocked==0,string.format("生产行人线路仍有原障碍 path#%d blockedSamples=%d；不得把baseline阻挡冒称新线路可通",pathIndex,legacyBlocked))
+        print(string.format("[街坊路线对照] path#%d samples=%d baselineBlocked=%d 新增阻挡=0 / 逐样本StaticFree一致",pathIndex,count+1,legacyBlocked))
     end
     for _,p in ipairs(contacts.people) do
         assert(withoutSelf(city,p,p.x,p.z,.45),"人物自身之外静态空间不安全："..p.id)
@@ -109,10 +141,10 @@ local function reachable(contacts,city)
         assert(nearest==p,"最近街坊查询与实际位置不同源："..p.id)
     end
     -- 真实TrafficRoutes.Pose覆盖每条直线和两端弧，不推进真实车、不修改s/speed。
-    for _,route in ipairs(Routes.List) do
+    for routeIndex,route in ipairs(Routes.List) do
         for step=0,math.ceil(Routes.LENGTH/.25) do
             local x,z=Routes.Pose(route,step*.25)
-            assert(city:StaticFree(x,z,1.2,"vehicle",0),"新增驻点占用老街车辆完整轨迹")
+            compareProbe(city,baseline,sources,x,z,1.2,"vehicle","vehicle route#"..routeIndex.." step#"..step)
         end
     end
 end
@@ -191,7 +223,17 @@ function Checks.Run(session)
     local beforeNodes=scene:GetNumChildren(true)
     local beforeObstacles=#city.obstacles
     local scratch=scene:CreateChild("StreetLifeChecks隔离节点")
-    -- 复用真实City方法/地面/mats，不重建城市；剔除生产联系人AABB以免同驻点互挡。
+    -- 生产原障碍baseline：仅剔除本轮联系人与StreetDressing自身注册项。
+    -- 不重建建筑、不按“前N个”猜障碍归属，按对象identity严格分组。
+    local additions={}
+    for _,p in ipairs(city.contacts.people) do additions[p.blocker]="contact:"..p.id end
+    if city.streetDressing then
+        for index,o in ipairs(city.streetDressing.collisions) do additions[o]="dressing#"..index end
+    end
+    local baselineObstacles={}
+    for _,o in ipairs(city.obstacles) do if not additions[o] then baselineObstacles[#baselineObstacles+1]=o end end
+    local baseline=setmetatable({root=scratch,obstacles=baselineObstacles,space="city"},{__index=city}) --[[@as CareerCity]]
+    -- 测试生产新增环境但不重复生产人物：旧联系人blocker剔除、临时真实人物稍后注册。
     local liveBlockers={}
     for _,p in ipairs(city.contacts.people) do liveBlockers[p.blocker]=true end
     local obstacles={}
@@ -211,7 +253,27 @@ function Checks.Run(session)
             contacts=Contacts.New(fixture)
             local testContacts=assert(contacts)
             assert(#testContacts.people==8 and #fixture.obstacles==baseObstacleCount+8,"角色数量无界/碰撞数不匹配")
-            reachable(testContacts,fixture)
+            for _,p in ipairs(testContacts.people) do additions[p.blocker]="test-contact:"..p.id end
+            ---@type number[][]
+            local paths=Pedestrians.Paths
+            -- 保存旧第3条出错位置的可复现证据；新线路必须全程可通，不接受baseline也堵。
+            local oldPath={18,-8.7,74,-8.7}
+            local oldBlocked=0
+            for step=0,280 do
+                local x=oldPath[1]+(oldPath[3]-oldPath[1])*step/280
+                if not baseline:StaticFree(x,oldPath[2],.32,"walk",0) then
+                    oldBlocked=oldBlocked+1
+                    if oldBlocked==1 then print(string.format("[原第3线路证据] sample=(%.4f,-8.7000) / %s",x,obstacleHits(baseline,x,-8.7,.32,{}))) end
+                end
+            end
+            assert(oldBlocked>0,"原第3线路充电桩baseline证据丢失，请重新审查线路修复")
+            assert(paths[3][2]==-7.7 and paths[3][4]==-7.7,"第3线路必须有据避开旧充电桩")
+            for _,person in ipairs(session.traffic.pedestrians.people) do
+                local matched=false
+                for _,path in ipairs(paths) do if person.path==path then matched=true; break end end
+                assert(matched,"生产行人未使用导出的同源Paths")
+            end
+            reachable(testContacts,fixture,baseline,additions,paths)
             poses(testContacts,fixture)
             timing(testContacts,fixture)
             local after=Store.Get()

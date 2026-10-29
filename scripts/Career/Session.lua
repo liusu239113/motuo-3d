@@ -263,8 +263,8 @@ function Session:BuildWorld()
         end
         if streetChecks then
             self.view:ClosePhone(); self.view:ShowGame()
-            require("Career.StreetLifeChecks").Run(self)
             require("Career.StreetInteractionChecks").Run(self)
+            require("Career.StreetLifeChecks").Run(self)
             print("[老街品质验收通过] 街面/人物/现场交谈/原事务")
         elseif streetShot~="" then
             local checks=require("Career.StreetLifeChecks") --[[@as CareerStreetLifeChecks]]
@@ -442,7 +442,8 @@ function Session:Interact()
         end
     end
     if nearest=="breakfast" then
-        if not self:TalkTo("station") then self:OpenPhone("messages") end
+        local contact=self.city.contacts:Nearest(self.actor,3)
+        if not contact or not self:TalkTo(contact.id) then self:OpenPhone("messages") end
     elseif nearest=="bridge" then self:OpenPhone("messages")
     elseif nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)

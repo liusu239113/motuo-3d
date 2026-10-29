@@ -1,5 +1,7 @@
 -- 独立便服路人：使用两套真实骨骼模型，复用骑手库的两段IK，不复制主角外卖服。
 local Rig=require("Career.Rig")
+---@class CareerPedestrians
+---@field Paths number[][]
 local Pedestrians={}
 Pedestrians.__index=Pedestrians
 ---@class CityPedestrianAsset
@@ -33,9 +35,12 @@ for _,s in ipairs(specs) do
 end
 -- 只在独立人行道段往返，距路口至少18m，不横穿机动车道，不挤占店门。
 local paths={
-    {-82,-8.7,-38,-8.7},{-80,8.7,-24,8.7},{18,-8.7,74,-8.7},{22,8.7,77,8.7},
+    {-82,-8.7,-38,-8.7},{-80,8.7,-24,8.7},{18,-7.7,74,-7.7},{22,8.7,77,8.7},
     {-82,91.3,-25,91.3},{22,108.7,76,108.7},{-108.7,25,-108.7,60},{91.3,20,91.3,65},
 }
+-- 第3条向道路侧退1m避开原有充电桩(24,-9)，仍在[-12,-6]人行道内。
+-- 导出同源线路供碰撞验收读取，其余七条保持原样。
+Pedestrians.Paths=paths
 function Pedestrians.New(root,city)
     local self=setmetatable({},Pedestrians)
     self:Init(root,city)

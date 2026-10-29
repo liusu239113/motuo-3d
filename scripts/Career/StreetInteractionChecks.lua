@@ -208,8 +208,10 @@ function Checks.Run(session)
             "meal authorization must still use original 2m breakfast POI")
         -- Pick a point inside BOTH independent circles without moving either source.
         local p=Config.points.breakfast
-        at((owner.x+p.x)/2,(owner.z+p.z)/2)
-        assert(Config.DistanceTo("breakfast",actor.x,actor.z)<=2)
+        at(p.x+.43*(owner.x-p.x),p.z+.43*(owner.z-p.z))
+        assert(Config.DistanceTo("breakfast",actor.x,actor.z)<=Config.INTERACTION_RADIUS)
+        assert((actor.x-owner.x)^2+(actor.z-owner.z)^2<=3^2,
+            "meal fixture must remain inside both original POI and contact authorization circles")
         talk("breakfast_owner")
         local mealBefore=Store.Get()
         local mealWrites=writes
