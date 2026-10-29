@@ -331,7 +331,7 @@ function Checks.Shot(session,view)
     actor.mounted=false; actor.visuals:SetMounted(false)
     actor.bikeX,actor.bikeZ=-14,-18
     local x,z,yaw,pitch,distance=-25,-7.8,180,12,9
-    if view=="bridge" then x,z,yaw,pitch,distance=-9.5,-69.7,-70,10,8 end
+    if view=="bridge" then x,z,yaw,pitch,distance=16,-70,180,16,8 end
     if view=="conversation" or view:match("^gesture") then
         local station=assert(contacts:Get("station"))
         local forward=Quaternion(0,station.homeYaw,0)*V.FORWARD
