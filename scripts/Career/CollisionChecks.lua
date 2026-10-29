@@ -1,7 +1,7 @@
--- Explicit isolated input-to-contact regression. Never calls Store / Save /
--- Session.Update, never replaces the player's actor, parking, city or real files.
--- Fixture owns its actor and scene root; Run destroys all visible objects even
--- after failure. Shot keeps only its isolated objects for a real engine capture.
+-- 隔离输入/接触回归；不替换正式玩家、城市或停车表。
+-- 换车定点验收仅通过Store.WithTestStorage写内存，绝不写真实存档。
+-- 夹具持有独立角色和节点；Run即使断言失败也释放全部可见对象。
+-- Shot只保留独立夹具，供真实引擎摄影。
 local Actor=require("Career.Actor")
 local City=require("Career.City")
 local Traffic=require("Career.Traffic")
@@ -109,6 +109,127 @@ local function contact(scene,mounted,yaw,approach)
     if mounted then assert(math.abs(f.actor.speed)<.4,"Blocked vehicle must not accumulate wall turbo; tapered shell may slide tangentially") end
     return f
 end
+-- 生产Switch定点验收：只注入资源是否ready与下载器回调；业务入口、
+-- 实际模型Footprint、City形状查询、Store事务均为生产实现。
+function Checks.RunSwitch(session)
+    assert(session.options and session.options.test,"换车验收只允许隔离测试会话")
+    assert(cache:GetResource("Model",Assets.Vehicles.sport.model),"换车验收所需sport真实模型尚未就绪")
+    local Store=require("Career.Store")
+    local Actions=require("Career.VehicleActions")
+    local Vehicles=require("Career.VehicleData")
+    local Loader=require("RideLoader")
+    local resourceCache=cache
+    local originalNew=Loader.New
+    local f=fixture(session.scene)
+    local files={}
+    local failWrite,pending=false,false
+    local pendingRequest={}
+    local restores,snapshots,queries=0,0,0
+    local fake={actor=f.actor,city=f.city,options={test=true},disposed=false,
+        view={Notice=function() end,ClosePhone=function() end,ResetInput=function() end,
+            ShowGame=function() end,ShowLoading=function() end,controls={SetEnabled=function() end}}}
+    function fake:Allowed() return true,"" end
+    function fake:PositionSnapshot()
+        snapshots=snapshots+1
+        local p=Store.Get().position
+        p.x,p.z,p.yaw=self.actor.x,self.actor.z,self.actor.yaw
+        p.mounted=false;p.space="city"
+        p.activeVehicle=self.actor.vehicleId
+        p.bikeX,p.bikeZ,p.bikeYaw=self.actor.bikeX,self.actor.bikeZ,self.actor.bikeYaw
+        p.vehicleParking=self.actor:ParkingSnapshot()
+        return p
+    end
+    function fake:RestorePosition()
+        restores=restores+1
+        local p=Store.Get().position
+        self.actor.vehicleId=p.activeVehicle
+        self.actor.bikeX,self.actor.bikeZ,self.actor.bikeYaw=p.bikeX,p.bikeZ,p.bikeYaw
+        self.actor.parking=p.vehicleParking
+    end
+    function fake:Refresh() end
+    local oldQuery=f.city.IsShapeFree
+    f.city.IsShapeFree=function(city,...)
+        queries=queries+1
+        return oldQuery(city,...)
+    end
+    local ok,message=xpcall(function()
+        -- 只在本次同步隔离检查期间代理全局cache；每个路径都在finally还原。
+        cache=setmetatable({Exists=function() return not pending end,
+            GetResource=function(_,...)return resourceCache:GetResource(...)end},
+            {__index=function(_,key)return resourceCache[key]end})
+        Loader.New=function(_,progress,completed,failed)
+            pendingRequest={completed=completed,failed=failed}
+            return {Start=function() end}
+        end
+        Store.WithTestStorage({read=function(path)return files[path],nil,files[path]==nil end,
+            write=function(path,text)if failWrite then return false,"换车验收模拟写失败" end;files[path]=text;return true end},function()
+            local function reset()
+                f.city.obstacles={}
+                assert(Store.NewCareer())
+                assert(Store.Transaction(function(p)p.phase="working";p.ownedMotorcycles.sport=true;p.activeOrders={};return true end))
+                local a=f.actor
+                a.vehicleId=Vehicles.EBIKE;a.mounted=false;a.x,a.z,a.yaw=100,70,0
+                a.bikeX,a.bikeZ,a.bikeYaw=104,70,0;a.parking={}
+                pending=false;failWrite=false;restores,snapshots,queries=0,0,0
+            end
+            local base=Vehicles.Parking
+            local shape=F.Get("sport")
+            reset()
+            -- 真实车型两侧只留4cm；旧外接圆会错误拒绝，不能改成空旷交车位。
+            f.city.obstacles={{x1=base.x+shape.x1-.14,x2=base.x+shape.x1-.04,z1=base.z-2,z2=base.z+2},
+                {x1=base.x+shape.x2+.04,x2=base.x+shape.x2+.14,z1=base.z-2,z2=base.z+2}}
+            assert(not f.city:IsFree(base.x,base.z,Vehicles.Radii.sport),"夹具必须复现旧整车圆空气墙")
+            assert(Actions.Switch(fake,"sport"),"生产换车必须接受贴真实模型的窄交车位")
+            assert(Store.Get().position.bikeZ==base.z and restores==1,"不能跳到远处宽车位掩盖空气墙")
+            local oldBike=Store.Get().position.vehicleParking[Vehicles.EBIKE]
+            assert(oldBike.x==104 and oldBike.z==70,"交新车必须保留原车停车")
+            reset()
+            f.actor.bikeX,f.actor.bikeZ=base.x,base.z -- 首位被实车占用
+            assert(Actions.Switch(fake,"sport"))
+            assert(Store.Get().position.bikeZ==base.z-4,"首位被占用应继续试其它独立车位")
+            reset()
+            f.actor.x,f.actor.z=base.x,base.z -- 不在停车表的玩家本人也占地
+            assert(Actions.Switch(fake,"sport") and Store.Get().position.bikeZ==base.z-4,"不得把新车交到玩家身体内")
+            reset()
+            f.actor.parking.sport={x=110,z=65,yaw=90}
+            assert(Actions.Switch(fake,"sport"))
+            local parked=Store.Get().position.vehicleParking.sport
+            assert(parked.x==110 and parked.z==65 and parked.yaw==90,"已交付车型不能随换车召回")
+            reset()
+            f.actor.parking.sport={x=110,z=65,yaw=90}
+            f.city.obstacles={{x1=109,x2=111,z1=64,z2=66}}
+            local revision=Store.Get().revision
+            assert(not Actions.Switch(fake,"sport") and Store.Get().revision==revision and restores==0,"旧车被占用应拒绝且不改档")
+            reset();failWrite=true
+            revision=Store.Get().revision
+            assert(not Actions.Switch(fake,"sport") and Store.Get().revision==revision and f.actor.vehicleId==Vehicles.EBIKE and restores==0,"保存失败不能提前切车")
+            failWrite=false
+            reset();pending=true
+            revision=Store.Get().revision
+            assert(Actions.Switch(fake,"sport") and snapshots==0 and queries==0,"资源未ready前不得取旧快照或读模型占地")
+            pendingRequest.failed("模拟下载失败")
+            assert(Store.Get().revision==revision and f.actor.vehicleId==Vehicles.EBIKE and restores==0,"下载失败必须完整保留原车原档")
+            reset();pending=true
+            assert(Actions.Switch(fake,"sport"))
+            f.actor.x,f.actor.z=101,71;f.actor.bikeX=103
+            pending=false;pendingRequest.completed()
+            assert(Store.Get().position.x==101 and Store.Get().position.vehicleParking[Vehicles.EBIKE].x==103,"下载完成必须提交最新人物与停车快照")
+            local committed=Store.Get().revision
+            pendingRequest.completed()
+            assert(Store.Get().revision==committed and restores==1,"重复完成回调不得再次提交")
+            reset();pending=true
+            assert(Actions.Switch(fake,"sport"))
+            assert(Store.Transaction(function(p)p.ownedMotorcycles.sport=nil;return true end))
+            revision=Store.Get().revision
+            pending=false;pendingRequest.completed()
+            assert(Store.Get().revision==revision and restores==0,"下载期间所有权变化必须重新校验")
+        end)
+    end,debug.traceback)
+    cache=resourceCache;Loader.New=originalNew
+    f:Dispose()
+    assert(ok,message)
+    print("[生产换车碰撞验收通过] 窄交车位/原车占位/玩家占位/保留旧停车与朝向/被占拒绝/写失败原子/下载前零形状查询/下载失败原子/下载后新快照/回调幂等/所有权重验；内存档隔离")
+end
 function Checks.Run(session)
     assert(session.options and session.options.test,"碰撞验收只允许隔离测试会话")
     local count=0
@@ -169,6 +290,7 @@ function Checks.Run(session)
     for _,f in ipairs(liveFixtures) do f:Dispose() end
     liveFixtures={}
     assert(ok,message)
+    Checks.RunSwitch(session)
     print(string.format("[CollisionChecks PASS] %d isolated real-input fixtures; visible white-car 5cm-per-side gap / walking circle / 6 yaw / fore-aft-side contact / cargo+mirror rejection / parked bike / mount / high-speed swept static post; no save writes",count))
 end
 function Checks.Shot(session,name)

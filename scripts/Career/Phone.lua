@@ -57,8 +57,8 @@ function Phone.Create(view,actions)
     return shell
 end
 function Phone.Desktop(content,state,actions,height)
-    content:AddChild(Theme.Label("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,
-        Theme.Colors.amber,{id="career-phone-summary",width="100%",height=22,textAlign="center",visible=(height or 0)>=330}))
+    content:AddChild(Kit.Text("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,
+        Theme.Colors.amber,{id="career-phone-summary",width="100%",textAlign="center",visible=(height or 0)>=330}))
     local grid=UI.Panel{id="career-app-grid",width="100%",flexGrow=1,flexBasis=0,minHeight=156,gap=8,padding=0,
         justifyContent="center"}
     for row=1,2 do

@@ -5,6 +5,8 @@ local Store=require("Career.Store")
 local Config=require("Career.Config")
 local UI=require("urhox-libs/UI")
 local Pointer=require("urhox-libs/UI/Core/PointerEvent")
+---@class EnvironmentCheckTarget
+---@field route table[]
 local Checks={}
 local function near(a,b,label,tolerance) assert(math.abs(a-b)<(tolerance or .00001),label or "环境数值不一致") end
 local function isolated(session)
@@ -114,6 +116,12 @@ end
 ---@param session CareerSession
 function Checks.Run(session)
     isolated(session)
+    local phase="all"
+    for _,arg in ipairs(GetArguments()) do
+        local value=arg:match("^%-careerenvironmentphase=(.+)$")
+        if value then phase=value end
+    end
+    assert(({all=true,["walk-out"]=true,["walk-back"]=true,["ride-out"]=true,["ride-back"]=true,["bridge-stream"]=true})[phase],"未知环境验收phase "..phase)
     local actor,city,view=session.actor,session.city,session.view
     local old={position=session:PositionSnapshot(),space=session.space,online=session.online,running=session.running,
         yaw=session.yaw,pitch=session.pitch,waypoint=session.waypoint,manual=session.manualWaypoint,
@@ -128,20 +136,37 @@ function Checks.Run(session)
         city.traffic,city.deliveryPeople,city.crowd=nil,nil,nil
         actor.parking={};actor.mounted=false;actor.visuals:SetMounted(false)
         actor.bikeX,actor.bikeZ=20,-20
-        actor:Teleport(0,-20,180) -- 仅fixture初始化；下列完整线路没有Teleport/改XZ。
-        session.waypoint="coast_pier";session.manualWaypoint=true
-        local startTarget=assert(session:Target())
-        for i=2,#startTarget.route do
-            local a,b=startTarget.route[i-1],startTarget.route[i]
-            assert(city:StaticSegmentFree(a.x,a.z,b.x,b.z,.32,"walk",city:Surface(a.x,a.z)),"生产开局导航路线被挡")
-        end
-        local walk=travel(actor,Checks.Path,false)
         local reverse={};for i=#Checks.Path,1,-1 do reverse[#reverse+1]=Checks.Path[i] end
-        travel(actor,reverse,false)
-        actor.bikeX,actor.bikeZ,actor.bikeYaw=actor.x,actor.z,actor.yaw
-        actor.mounted=true;actor.visuals:SetMounted(true);actor.speed=0
-        local ride=travel(actor,Checks.Path,true)
-        assert(walk>1200 and ride>1200,"不能只验入口到海滩")
+        local distances={}
+        local function movement(name,mounted,back)
+            local path=back and reverse or Checks.Path
+            local start=path[1]
+            actor.mounted=mounted;actor.visuals:SetMounted(mounted)
+            actor.bikeX,actor.bikeZ=mounted and start.x or 20,mounted and start.z or -20
+            actor.bikeYaw=back and 90 or 180
+            -- 每个独立phase只在起点设置夹具；之后全长由生产Actor.Update输入驱动。
+            actor:Teleport(start.x,start.z,actor.bikeYaw,city:Surface(start.x,start.z))
+            actor.speed=0
+            session.waypoint=back and "bridge" or "coast_pier";session.manualWaypoint=true
+            local target=assert(session:Target()) --[[@as EnvironmentCheckTarget]]
+            for i=2,#target.route do
+                local a,b=target.route[i-1],target.route[i]
+                assert(city:StaticSegmentFree(a.x,a.z,b.x,b.z,.32,"walk",city:Surface(a.x,a.z)),"生产导航路线被挡 "..name)
+            end
+            print(string.format("[环境phase开始] %s 起点(%.2f,%.2f)，全程Actor.Update/真实视觉，不传送跨段",name,start.x,start.z))
+            local started=os.clock()
+            local distance=travel(actor,path,mounted)
+            assert(distance>1219 and distance<1221,"未覆盖完整城到栈桥路线 "..name)
+            distances[name]=distance
+            print(string.format("[环境phase通过] %s / 连续%.2fm / CPU %.3fs / Plan与31单不变；仅本phase，不代表其余phase通过",
+                name,distance,os.clock()-started))
+        end
+        if phase=="all" or phase=="walk-out" then movement("walk-out",false,false) end
+        if phase=="all" or phase=="walk-back" then movement("walk-back",false,true) end
+        if phase=="all" or phase=="ride-out" then movement("ride-out",true,false) end
+        if phase=="all" or phase=="ride-back" then movement("ride-back",true,true) end
+        if phase=="all" or phase=="bridge-stream" then
+        print("[环境phase开始] bridge-stream / 水域栈桥、坡上恢复、桥下交互、流式重载")
         -- 栈桥尽头驶出必须被真实水域挡住，不能漂在海水Surface上。
         local x,z,blocked=city:MoveShape(-676,-660,-20,0,actor:Footprint(true),-90,"vehicle",.8,actor.vehicleId)
         assert(blocked and x>=-684 and math.abs(z+660)<.01,"栈桥尽头未阻水")
@@ -149,10 +174,14 @@ function Checks.Run(session)
         local position=session:PositionSnapshot()
         position.x,position.z,position.yaw=-450,-450,0;position.mounted=false;position.groundHeight=4
         position.bikeX,position.bikeZ=-455,-455
+        -- PositionSnapshot含车辆停车真源；移动夹具车位必须同步活动车记录，不能伪造不一致档。
+        local active=position.activeVehicle or require("Career.VehicleData").EBIKE
+        position.vehicleParking=position.vehicleParking or {}
+        position.vehicleParking[active]={x=position.bikeX,z=position.bikeZ,yaw=position.bikeYaw}
         assert(Store.SetPosition(position));session:RestorePosition()
         near(actor.x,-450,"坡上恢复X");near(actor.z,-450,"坡上恢复Z");near(actor:GetPosition().y,4,"坡上读档高度丢失")
         session.waypoint="coast_pier";session.manualWaypoint=true
-        local target=assert(session:Target(),"生产海岸导航缺失")
+        local target=assert(session:Target(),"生产海岸导航缺失") --[[@as EnvironmentCheckTarget]]
         local route=assert(target.route)
         for i=2,#route do assert(Environment.SegmentFree(route[i-1],route[i],.8),"生产导航切入海水") end
         -- 实际现场Interact与真实UI触摸：取消无写入，离开后确认重检，在原点免费过夜。
@@ -173,9 +202,14 @@ function Checks.Run(session)
         stream:Unload("-3:-3");stream:Ensure(-548,-548,550)
         local after=stream:Stats()
         assert(after.failed==0 and after.active<=80 and after.loaded==second.loaded+1,"环境块重载失败")
+        print(string.format("[环境phase通过] bridge-stream / 岸丘4m恢复、水域阻挡、桥下真实确认取消与免费过夜、流式重载 / 地形%d面、每块最多%d面；仅本phase",
+            stats.terrainTriangles,stats.maxCellTerrainTriangles))
+        end
         assert(cloud==0)
-        print(string.format("[环境验收通过] Actor.Update开局步骑各%.1f/%.1fm，岸丘4m，地形%d面/最多%d每块，水域阻挡/栈桥/坡上恢复/桥下真实确认取消与免费过夜/31单不变/内存禁云",
-            walk,ride,stats.terrainTriangles,stats.maxCellTerrainTriangles))
+        if phase=="all" then
+            print(string.format("[环境全部phase通过] 步出%.2fm/步返%.2fm/骑出%.2fm/骑返%.2fm + bridge-stream / 31单不变 / 内存禁云",
+                distances["walk-out"],distances["walk-back"],distances["ride-out"],distances["ride-back"]))
+        end
     end)
     local clean,cleanup=pcall(function()
         city.traffic,city.deliveryPeople,city.crowd=old.traffic,old.people,old.crowd

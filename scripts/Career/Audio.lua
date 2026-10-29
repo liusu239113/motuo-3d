@@ -9,6 +9,11 @@ local World=require("Career.WorldData")
 ---@field leftArmed boolean
 ---@field rightArmed boolean
 ---@field lastFoot string
+---@field phase? number
+---@field progress number
+---@field lastProgress number
+---@field leftProgress number
+---@field rightProgress number
 local FootstepStateType={}
 ---@class CareerAudioContext
 ---@field surface? string concrete/sand/wood；由CityEnvironment.SurfaceKind同源提供
@@ -19,6 +24,7 @@ local FootstepStateType={}
 ---@field grounded? boolean false强制禁止落足音
 ---@field left? number 左鞋底到实际地表高度，米，不是骨骼踝点高度
 ---@field right? number 右鞋底到实际地表高度，米
+---@field phase? number 归一化完整左右步态周期，未知时禁止足音
 local AudioContextType={}
 ---@class CareerSoundscape
 ---@field sources table<string,SoundSource>
@@ -41,13 +47,16 @@ local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.
 local function unit(n) return finite(n) and math.max(0,math.min(1,n)) or 0 end
 local function smooth(n) local t=unit(n); return t*t*(3-2*t) end
 function Audio.NewStepState()
-    return {distance=0,elapsed=0,leftArmed=false,rightArmed=false,lastFoot=""} --[[@as CareerFootstepState]]
+    return {distance=0,elapsed=0,leftArmed=false,rightArmed=false,lastFoot="",progress=0,lastProgress=-1,
+        leftProgress=-1,rightProgress=-1} --[[@as CareerFootstepState]]
 end
 function Audio.ResetSteps(state,x,z)
     state.x,state.z=x,z
     state.distance,state.elapsed=0,0
     state.leftArmed,state.rightArmed=false,false
     state.lastFoot=""
+    state.phase=nil; state.progress=0; state.lastProgress=-1
+    state.leftProgress,state.rightProgress=-1,-1
 end
 -- 单步接触设计（侧视，米）：
 --       抬脚 > .028 -> armed       落足 <= .018 -> 一次接触边沿
@@ -63,10 +72,19 @@ function Audio.AdvanceStep(state,dt,sample)
     local x,z=sample.x,sample.z
     local previousX,previousZ=state.x,state.z
     state.x,state.z=x,z
-    if not sample.enabled or sample.grounded~=true or not finite(dt) or dt<=0 or dt>.25
+    if not sample.enabled or sample.grounded~=true or not finite(sample.phase) or not finite(dt) or dt<=0 or dt>.25
         or not previousX or not previousZ then
-        Audio.ResetSteps(state,x,z); return nil
+        Audio.ResetSteps(state,x,z)
+        state.phase=finite(sample.phase) and sample.phase%1 or nil
+        return nil
     end
+    local phase=sample.phase%1
+    local lastPhase=state.phase
+    state.phase=phase
+    if lastPhase==nil then return nil end
+    local advance=(phase-lastPhase)%1
+    if advance>.35 then Audio.ResetSteps(state,x,z); state.phase=phase; return nil end
+    state.progress=state.progress+advance
     local moved=math.sqrt((x-previousX)^2+(z-previousZ)^2)
     if moved<=.00001 or moved>6*dt+.08 then Audio.ResetSteps(state,x,z); return nil end
     state.distance=math.min(1.7,state.distance+moved)
@@ -80,11 +98,18 @@ function Audio.AdvanceStep(state,dt,sample)
                 if side=="left" then state.leftArmed=true else state.rightArmed=true end
             elseif height>=-.045 and height<=.018 and armed then
                 if side=="left" then state.leftArmed=false else state.rightArmed=false end
-                if not contact and state.distance>=.14 and state.elapsed>=.16 and state.lastFoot~=side then contact=side end
+                local previous=side=="left" and state.leftProgress or state.rightProgress
+                -- 鞋底高度重复跨阈值只作候选；完整周期进度去重，不产生事件。
+                -- 是否源动作多峰或重定向异常，交由隔离曲线对照与Runtime判断。
+                if not contact and state.distance>=.14 and state.elapsed>=.16 and state.lastFoot~=side
+                    and state.progress-state.lastProgress>=.32 and state.progress-previous>=.85 then contact=side end
             end
         end
     end
-    if contact then state.distance,state.elapsed=0,0; state.lastFoot=contact end
+    if contact then
+        state.distance,state.elapsed=0,0; state.lastFoot=contact; state.lastProgress=state.progress
+        if contact=="left" then state.leftProgress=state.progress else state.rightProgress=state.progress end
+    end
     return contact
 end
 
@@ -200,12 +225,14 @@ end
 ---@param context CareerAudioContext
 ---@return table
 function Audio.Support(actor,context)
-    local result={x=actor.x,z=actor.z,grounded=false,left=context.left,right=context.right}
+    local result={x=actor.x,z=actor.z,grounded=false,left=context.left,right=context.right,phase=context.phase}
     if context.grounded==false or actor.mounted or actor.grounded==false or actor.onGround==false then return result end
     local visuals=actor.visuals
     local rig=visuals and visuals.walker
     local city=actor.city
     if rig and city and not rig.disposed then
+        local motion=rig.locomotion or visuals.locomotion
+        if result.phase==nil and motion then result.phase=motion.phase end
         local root=rig.parent.worldPosition
         for _,side in ipairs({"left","right"}) do
             if result[side]==nil then

@@ -13,20 +13,20 @@ function Checks.Steps()
     local x=0
     local function step(height,enabled,grounded)
         x=x+.09
-        return Audio.AdvanceStep(state,.05,{x=x,z=0,left=height,right=.10,enabled=enabled~=false,grounded=grounded~=false})
+        return Audio.AdvanceStep(state,.05,{x=x,z=0,left=height,right=.10,phase=x/1.2,enabled=enabled~=false,grounded=grounded~=false})
     end
     assert(not step(0) and not step(.07),"首次/抬脚不可发声")
     for _=1,3 do step(.07) end
     assert(step(0)=="left","真实位移后的支撑边沿没有触发")
     assert(not step(0),"持续支撑重复触发")
     for _=1,10 do
-        assert(not Audio.AdvanceStep(state,.05,{x=x,z=0,left=0,right=0,enabled=true,grounded=true}),"静止时伪造脚步")
+        assert(not Audio.AdvanceStep(state,.05,{x=x,z=0,left=0,right=0,phase=x/1.2,enabled=true,grounded=true}),"静止时伪造脚步")
     end
     for _,mode in ipairs({"paused","air","ride","indoor"}) do
         Audio.ResetSteps(state,x,0)
         for i=1,20 do
             x=x+.09
-            assert(not Audio.AdvanceStep(state,.05,{x=x,z=0,left=i%4==0 and 0 or .1,right=.1,
+            assert(not Audio.AdvanceStep(state,.05,{x=x,z=0,left=i%4==0 and 0 or .1,right=.1,phase=x/1.2,
                 enabled=mode=="air",grounded=mode~="air"}),mode.."应禁足音")
         end
     end
@@ -36,34 +36,92 @@ function Checks.Steps()
     assert(Audio.Environment(0,0).sea==0,"不存在海岸的市中心凭空响海浪")
 end
 
--- 真模型/真官动：160相位读取同一鞋底蒙皮支撑，而非手工fake高低声称官动同步。
+-- 每段按高度阈值分组并输出段内min/max与相位；源探针是绑定相对Foot/Toe，非源模型鞋底。
+---@param values number[]
+local function curve(label,values)
+    local groups={}
+    local start,kind,low,high=1,"",math.huge,-math.huge
+    local lowAt,highAt=1,1
+    for i=1,#values+1 do
+        local value=values[i]
+        local band=value and (value<=.018 and "接地" or value>.028 and "抬脚" or "过渡") or "结束"
+        if band~=kind then
+            if i>1 then
+                groups[#groups+1]=string.format("%s[%.4f..%.4f]谷%.4f@%.4f峰%.4f@%.4f",kind,(start-1)/80,(i-2)/80,low,(lowAt-1)/80,high,(highAt-1)/80)
+            end
+            start,kind,low,high=i,band,math.huge,-math.huge
+        end
+        if value then
+            if value<low then low,lowAt=value,i end
+            if value>high then high,highAt=value,i end
+        end
+    end
+    print("[官动支撑曲线] "..label.." "..table.concat(groups,"; "))
+end
+-- 真模型/真官动：原161相位和正式Update分别验；不扩大两周期事件上界。
 function Checks.Motion(scene,city)
     local root=scene:CreateChild("SoundCrowdChecks官方步态夹具")
     local rig=Rig.New(root)
     local ground={WalkSurface=function() return .085 end,Surface=function() return .085 end} --[[@as CareerCity]]
     rig.ground=ground
     local locomotion=Motion.New(rig)
+    rig.locomotion=locomotion -- 与Rig:EnableOfficialLocomotion生产字段一致。
     local actor={x=0,z=0,mounted=false,walkHeight=.085,city=ground,visuals={walker=rig}}
     local ok,err=pcall(function()
         for _,speed in ipairs({1.8,3.4}) do
             local state=Audio.NewStepState()
-            local count=0
-            local total=0
-            local duration=speed==1.8 and locomotion.clips.walk.length or locomotion.clips.run.length
+            local count,total=0,0
+            local clip=speed==1.8 and locomotion.clips.walk or locomotion.clips.run
+            local duration=clip.length
+            ---@type table<string,number[]>
+            local curves={left={},right={},sourceLeft={},sourceRight={}}
             for i=0,160 do
                 local phase=i/80
                 actor.x=phase*speed*duration
                 root.position=Vector3(actor.x,.085,0)
                 locomotion:PoseNormalized(phase,speed)
                 local support=Audio.Support(actor,{})
+                assert(support.phase==locomotion.phase,"未读取生产rig.locomotion.phase")
                 support.enabled=true
+                local source=locomotion:SampleSource(clip,(phase%1)*duration)
+                for _,side in ipairs({"left","right"}) do
+                    curves[side][#curves[side]+1]=support[side]
+                    local prefix=side=="left" and "Bip001 L " or "Bip001 R "
+                    local foot,toe=prefix.."Foot",prefix.."Toe0"
+                    local sourceHeight=math.min(source[foot]:Translation().y-locomotion.reference[foot]:Translation().y,
+                        source[toe]:Translation().y-locomotion.reference[toe]:Translation().y)*locomotion.rootRatio
+                    local key=side=="left" and "sourceLeft" or "sourceRight"
+                    curves[key][#curves[key]+1]=sourceHeight
+                end
                 local foot=Audio.AdvanceStep(state,duration/80,support)
-                if foot then count=count+1 end
+                if foot then
+                    count=count+1
+                    print(string.format("[官动落足事件] Pose %.1fm/s phase=%.4f %s L=%.4f R=%.4f",speed,phase,foot,support.left,support.right))
+                end
                 total=total+(support.grounded and 1 or 0)
             end
+            for _,key in ipairs({"left","right","sourceLeft","sourceRight"}) do curve(string.format("%.1fm/s %s",speed,key),curves[key]) end
             assert(total>=150,"官动步/跑支撑误判为持续空中")
             assert(count>=2 and count<=5,string.format("官动%d相位 %.1fm/s 足音次数异常%d",161,speed,count))
             print(string.format("[真实官动足音] %.1fm/s 161相位 两周期 支撑帧%d 事件%d",speed,total,count))
+            -- 连续正式Update：先完成移动混合再测两周期，距离/phase都来自同一路径。
+            locomotion:Reset()
+            local dt=duration/80
+            for _=1,160 do locomotion:Update(dt,speed,speed*dt) end
+            state=Audio.NewStepState(); count=0; actor.x=0
+            for i=0,160 do
+                if i>0 then actor.x=actor.x+speed*dt; locomotion:Update(dt,speed,speed*dt) end
+                root.position=Vector3(actor.x,.085,0)
+                local support=Audio.Support(actor,{})
+                support.enabled=true
+                local foot=Audio.AdvanceStep(state,dt,support)
+                if foot then
+                    count=count+1
+                    print(string.format("[官动落足事件] Update %.1fm/s frame=%d phase=%.4f %s L=%.4f R=%.4f",speed,i,support.phase,foot,support.left,support.right))
+                end
+            end
+            assert(count>=2 and count<=5,string.format("正式Motion.Update %.1fm/s 两周期足音次数异常%d",speed,count))
+            print(string.format("[真实官动足音] Motion.Update %.1fm/s 两周期 事件%d",speed,count))
         end
         -- 停止、空中、骑行、室内和暂停通过同一个Audio.Update正式入口检查。
         ---@type CareerSoundscape

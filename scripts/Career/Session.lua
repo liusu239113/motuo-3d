@@ -275,6 +275,7 @@ function Session:BuildWorld()
         local qualityChecks,beaconShot,phoneShot,motionShot=false,"","",""
         local appQuality,animQuality,cityQuality=false,false,false
         local collisionQuality,environmentQuality,soundCrowdQuality=false,false,false
+        local collisionPhase="all"
         local appShot,animShot,cityShot="","",""
         local collisionShot,environmentShot,crowdShot="","",""
         for _,arg in ipairs(GetArguments()) do
@@ -290,6 +291,8 @@ function Session:BuildWorld()
             if arg=="-careercollisionquality" then collisionQuality=true end
             if arg=="-careerenvironmentquality" then environmentQuality=true end
             if arg=="-careersoundcrowdquality" then soundCrowdQuality=true end
+            local collisionPart=arg:match("^%-careercollisionphase=(.+)$")
+            if collisionPart then collisionPhase=collisionPart end
             local collision=arg:match("^%-careercollisionshot=(.+)$")
             if collision then collisionShot=collision end
             local environment=arg:match("^%-careerenvironmentshot=(.+)$")
@@ -323,7 +326,11 @@ function Session:BuildWorld()
         elseif crowdShot~="" then require("Career.SoundCrowdChecks").Shot(self,crowdShot)
         elseif appQuality or animQuality or cityQuality or collisionQuality or environmentQuality or soundCrowdQuality then
             self.view:ClosePhone();self.view:ShowGame()
-            if collisionQuality then require("Career.CollisionChecks").Run(self) end
+            if collisionQuality then
+                assert(collisionPhase=="all" or collisionPhase=="switch","未知碰撞专项阶段")
+                if collisionPhase=="switch" then require("Career.CollisionChecks").RunSwitch(self)
+                else require("Career.CollisionChecks").Run(self) end
+            end
             if environmentQuality then require("Career.CityEnvironmentChecks").Run(self) end
             if soundCrowdQuality then require("Career.SoundCrowdChecks").Run(self) end
             if appQuality then require("Career.PhoneAppChecks").Run(self) end
