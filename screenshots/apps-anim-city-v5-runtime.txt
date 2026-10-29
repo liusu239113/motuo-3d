@@ -1,0 +1,525 @@
+[2026-10-29 22_34_32_751][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_32_751][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_32_751][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_32_751][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_33_781][61] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_33_781][61] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_33_781][61] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_32_394][0] INFO: DownloadManager initialized
+[2026-10-29 22_34_32_396][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 22_34_32_396][0] INFO: Engine construct finish.
+[2026-10-29 22_34_32_692][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 22_34_32_709][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 22_34_32_711][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 22_34_33_758][61] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 22_34_35_041][117]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 22_34_35_046][117]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 22_34_35_046][117]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 22_34_35_049][117] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 22_34_36_667][143] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 22_34_36_672][143][Script] IsNetworkMode:    false
+[2026-10-29 22_34_36_692][143][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 22_34_36_692][143][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 22_34_36_692][143][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 22_34_36_692][143][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 22_34_36_695][143][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 22_34_37_349][143][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 22_34_38_335][143][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 22_34_38_339][143][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 22_34_38_376][143][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 22_34_38_376][143][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 22_34_38_384][143][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 22_34_38_518][143][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 22_34_38_518][143][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 22_34_38_519][144][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 22_34_41_199][183] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 22_34_41_199][183] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 22_34_41_199][183] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_41_199][183] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_41_199][183] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_41_238][184] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 22_34_41_238][184] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 22_34_41_268][185] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 22_34_41_268][185] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_41_268][185] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_41_299][186] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 22_34_41_299][186] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 22_34_46_816][253][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 22_34_46_816][253][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 22_34_46_816][253][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 22_34_46_816][253][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 22_34_46_816][253][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 22_34_46_816][253][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 22_34_46_816][253][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 22_34_46_866][253][Script] [City footprint] model/e799bc6c-0cef-5148-978f-9a41183cc268/Meshes/c531d52ef7284ea8ae32f415bfe4b98e.mdl / 18 low-wall strips
+[2026-10-29 22_34_46_867][253][Script] [City footprint] model/62f2b98b-631d-5438-94ed-5ed78d3984b0/Meshes/94b007f45c784751825b3e1b8e1e624a.mdl / 1 low-wall strips
+[2026-10-29 22_34_46_926][253][Script] [City footprint] model/ea4b7cae-42e1-5651-8edf-6ccadbbd2046/Meshes/863a459ef93647c88fe260263a9b2a1d.mdl / 3 low-wall strips
+[2026-10-29 22_34_47_517][253][Script] [老街街面] 门面5 / 0..1UV图层6 / 合批72 / 实体碰撞40 / 排水细节21；路面/导航未改
+[2026-10-29 22_34_47_538][253][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_47_658][253][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_47_663][253][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_47_807][253][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_47_811][253][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_47_936][253][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_47_940][253][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_48_096][253][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_48_100][253][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_48_228][253][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_48_232][253][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_48_361][253][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_48_365][253][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_48_487][253][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_48_491][253][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_48_613][253][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_48_616][253][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-29 22_34_48_662][253][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 22_34_48_664][253][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 22_34_48_667][253][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 22_34_48_667][253][Script] [生涯城市] 33栋建筑 / 563批次 / 152912三角面 / 65招牌 / 130碰撞区域
+[2026-10-29 22_34_48_670][254][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 22_34_49_110][254][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 22_34_49_124][254][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-29 22_34_49_134][254][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-29 22_34_49_140][254][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-29 22_34_49_142][254][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-29 22_34_49_144][254][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 22_34_49_535][254][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 22_34_49_538][254][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 22_34_49_538][254][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 steps audio/sfx/career_step_single.wav
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-29 22_34_49_538][254][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-29 22_34_49_539][254][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-29 22_34_49_539][254][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-29 22_34_49_542][254][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 22_34_49_663][254][Script] [WorldStream] 加载 -1:-1 / 13楼 / 6142面 / 12批
+[2026-10-29 22_34_49_693][254][Script] [WorldStream] 加载 0:-1 / 13楼 / 6252面 / 13批
+[2026-10-29 22_34_49_719][254][Script] [WorldStream] 加载 -1:0 / 12楼 / 5158面 / 13批
+[2026-10-29 22_34_49_748][254][Script] [WorldStream] 加载 0:0 / 12楼 / 5940面 / 13批
+[2026-10-29 22_34_49_809][254][Script] [WorldStream] 加载 -1:-2 / 16楼 / 11062面 / 15批
+[2026-10-29 22_34_49_857][254][Script] [WorldStream] 加载 0:-2 / 14楼 / 10452面 / 17批
+[2026-10-29 22_34_49_931][254][Script] [WorldStream] 加载 -2:-1 / 24楼 / 16464面 / 17批
+[2026-10-29 22_34_50_016][254][Script] [WorldStream] 加载 1:-1 / 24楼 / 16404面 / 17批
+[2026-10-29 22_34_50_093][254][Script] [WorldStream] 加载 -2:0 / 24楼 / 17682面 / 16批
+[2026-10-29 22_34_50_183][254][Script] [WorldStream] 加载 1:0 / 24楼 / 17534面 / 16批
+[2026-10-29 22_34_50_232][254][Script] [WorldStream] 加载 -1:1 / 16楼 / 10810面 / 15批
+[2026-10-29 22_34_50_289][254][Script] [WorldStream] 加载 0:1 / 14楼 / 10202面 / 17批
+[2026-10-29 22_34_50_332][254][Script] [WorldStream] 加载 -2:-2 / 14楼 / 9056面 / 16批
+[2026-10-29 22_34_50_377][254][Script] [WorldStream] 加载 1:-2 / 15楼 / 9686面 / 15批
+[2026-10-29 22_34_50_430][254][Script] [WorldStream] 加载 -2:1 / 15楼 / 9318面 / 16批
+[2026-10-29 22_34_50_489][254][Script] [WorldStream] 加载 1:1 / 15楼 / 9978面 / 16批
+[2026-10-29 22_34_50_498][254][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-29 22_34_50_516][254][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-29 22_34_50_537][254][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-29 22_34_50_552][254][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-29 22_34_50_574][254][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-29 22_34_50_592][254][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-29 22_34_50_618][254][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-29 22_34_50_629][254][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-29 22_34_50_631][254][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_50_750][254][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_50_754][254][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_50_891][254][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_50_895][254][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_51_020][254][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_51_024][254][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_51_157][254][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_51_163][254][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_51_325][254][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_51_330][254][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_51_481][254][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_51_484][254][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 22_34_51_611][254][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 22_34_51_614][254][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 22_34_51_740][254][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 22_34_51_742][254][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 22_34_51_743][254][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 22_34_51_743][254][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 22_34_51_745][254][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 22_34_51_749][254][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 22_34_51_749][254][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 22_34_51_750][254][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 22_34_51_754][254][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 22_34_51_755][254][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 22_34_51_756][254][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 22_34_51_759][254][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 22_34_51_760][254][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 22_34_51_760][254][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 22_34_51_761][254][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 22_34_51_762][254][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 22_34_51_762][254][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 22_34_51_767][254][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 22_34_51_767][254][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 22_34_51_768][254][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 22_34_51_772][254][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 22_34_51_773][254][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-29 22_34_51_775][254][Script] [任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；6米光柱与地环，无碰撞
+[2026-10-29 22_34_51_775][254][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 22_34_51_785][254][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 22_34_51_792][254][Script] [UI] Root widget pointerEvents auto-set to "box-none" (prevents root from blocking game input). Set pointerEvents explicitly to suppress this message.
+[2026-10-29 22_34_51_792][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_794][254][Script] [手机布局触摸尺寸] career-app-delivery rect=(410.000000000,135.000000000,63.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_794][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_51_796][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_796][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_797][254][Script] [手机布局触摸尺寸] career-app-map rect=(479.000000000,135.000000000,62.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_798][254][Script] [生涯手机] 构建页面 map
+[2026-10-29 22_34_51_801][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_801][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_802][254][Script] [手机布局触摸尺寸] career-app-wallet rect=(547.000000000,135.000000000,63.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_802][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_805][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(481.000000000,441.000000000,58.000000000,45.000000000) physical=(58.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_805][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_807][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(543.000000000,441.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_807][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_819][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(418.000000000,441.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_819][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_821][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(418.000000000,497.000000000,184.000000000,76.000000000) physical=(184.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_821][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_822][254][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,58.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_823][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_824][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_824][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_825][254][Script] [手机布局触摸尺寸] career-app-messages rect=(410.000000000,231.000000000,63.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_826][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_829][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_829][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_830][254][Script] [手机布局触摸尺寸] career-app-life rect=(479.000000000,231.000000000,62.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_830][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_51_832][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_832][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_833][254][Script] [手机布局触摸尺寸] career-app-progression rect=(547.000000000,231.000000000,63.000000000,88.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_833][254][Script] [生涯手机] 构建页面 progression
+[2026-10-29 22_34_51_837][254][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_838][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_839][254][Script] [手机布局触摸尺寸] career-phone-close rect=(558.000000000,58.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_839][254][Script] [手机布局验收通过] 640x360 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-29 22_34_51_839][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_841][254][Script] [手机布局触摸尺寸] career-app-delivery rect=(685.000000000,216.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_841][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_51_842][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_842][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_843][254][Script] [手机布局触摸尺寸] career-app-map rect=(767.000000000,216.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_844][254][Script] [生涯手机] 构建页面 map
+[2026-10-29 22_34_51_846][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_846][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_848][254][Script] [手机布局触摸尺寸] career-app-wallet rect=(849.000000000,216.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_848][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_850][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(769.000000000,456.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_850][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_852][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(845.000000000,456.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_852][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_854][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(693.000000000,456.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_854][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_856][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(693.000000000,512.000000000,224.000000000,76.000000000) physical=(224.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_856][254]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 22_34_51_856][254][Script] [生涯手机] 构建页面 wallet
+[2026-10-29 22_34_51_857][254][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,73.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_858][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_858][254]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 22_34_51_858][254][Script] [生涯手机] 构建页面 apps
+[2026-10-29 22_34_51_860][254][Script] [手机布局触摸尺寸] career-app-messages rect=(685.000000000,322.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_860][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_862][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_863][254][Script] [手机布局触摸尺寸] career-app-life rect=(767.000000000,322.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_863][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_51_865][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_866][254][Script] [手机布局触摸尺寸] career-app-progression rect=(849.000000000,322.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_866][254][Script] [生涯手机] 构建页面 progression
+[2026-10-29 22_34_51_870][254][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_872][254][Script] [手机布局触摸尺寸] career-phone-close rect=(873.000000000,73.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_872][254][Script] [手机布局验收通过] 960x540 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-29 22_34_51_874][254][Script] [手机布局触摸尺寸] career-app-delivery rect=(992.000000000,306.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_874][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_51_875][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_876][254][Script] [手机布局触摸尺寸] career-app-map rect=(1078.000000000,306.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_877][254][Script] [生涯手机] 构建页面 map
+[2026-10-29 22_34_51_879][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_881][254][Script] [手机布局触摸尺寸] career-app-wallet rect=(1164.000000000,306.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_883][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1080.000000000,509.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_885][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(1160.000000000,509.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_887][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(1000.000000000,509.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_889][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(1000.000000000,565.000000000,236.000000000,76.000000000) physical=(236.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_890][254][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,126.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_891][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_893][254][Script] [手机布局触摸尺寸] career-app-messages rect=(992.000000000,412.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_893][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_895][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_896][254][Script] [手机布局触摸尺寸] career-app-life rect=(1078.000000000,412.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_896][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_51_899][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_901][254][Script] [手机布局触摸尺寸] career-app-progression rect=(1164.000000000,412.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_901][254][Script] [生涯手机] 构建页面 progression
+[2026-10-29 22_34_51_905][254][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_915][254][Script] [手机布局触摸尺寸] career-phone-close rect=(1192.000000000,126.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_916][254][Script] [手机布局验收通过] 1280x720 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-29 22_34_51_917][254][Script] [Layout Warning] Overflow in 'Panel': children=252x182, container=252x180. Consider: flexShrink=1 on children, or increase container size.
+[2026-10-29 22_34_51_917][254][Script] [手机布局触摸尺寸] career-app-delivery rect=(386.000000000,142.000000000,63.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_917][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_51_919][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_920][254][Script] [手机布局触摸尺寸] career-app-map rect=(455.000000000,142.000000000,62.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_920][254][Script] [生涯手机] 构建页面 map
+[2026-10-29 22_34_51_923][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_924][254][Script] [手机布局触摸尺寸] career-app-wallet rect=(523.000000000,142.000000000,63.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_927][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(457.000000000,474.000000000,58.000000000,45.000000000) physical=(58.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_928][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(519.000000000,474.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_930][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(394.000000000,474.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_932][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(394.000000000,530.000000000,184.000000000,76.000000000) physical=(184.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_933][254][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,91.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_935][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_936][254][Script] [手机布局触摸尺寸] career-app-messages rect=(386.000000000,236.000000000,63.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_936][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_939][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_940][254][Script] [手机布局触摸尺寸] career-app-life rect=(455.000000000,236.000000000,62.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_940][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_51_942][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_943][254][Script] [手机布局触摸尺寸] career-app-progression rect=(523.000000000,236.000000000,63.000000000,86.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_943][254][Script] [生涯手机] 构建页面 progression
+[2026-10-29 22_34_51_947][254][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_949][254][Script] [手机布局触摸尺寸] career-phone-close rect=(534.000000000,91.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_949][254][Script] [手机布局验收通过] 640x360 安全边距24/36；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-29 22_34_51_951][254][Script] [手机布局触摸尺寸] career-app-delivery rect=(679.000000000,240.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_951][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_51_952][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_953][254][Script] [手机布局触摸尺寸] career-app-map rect=(753.000000000,240.000000000,69.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_954][254][Script] [生涯手机] 构建页面 map
+[2026-10-29 22_34_51_956][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_958][254][Script] [手机布局触摸尺寸] career-app-wallet rect=(828.000000000,240.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_960][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(755.000000000,500.000000000,65.000000000,45.000000000) physical=(65.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_962][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(824.000000000,500.000000000,64.000000000,45.000000000) physical=(64.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_964][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(687.000000000,500.000000000,64.000000000,45.000000000) physical=(64.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_966][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(687.000000000,556.000000000,201.000000000,76.000000000) physical=(201.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_967][254][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,117.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_968][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_970][254][Script] [手机布局触摸尺寸] career-app-messages rect=(679.000000000,346.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_970][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_972][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_974][254][Script] [手机布局触摸尺寸] career-app-life rect=(753.000000000,346.000000000,69.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_974][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_51_975][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_977][254][Script] [手机布局触摸尺寸] career-app-progression rect=(828.000000000,346.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_977][254][Script] [生涯手机] 构建页面 progression
+[2026-10-29 22_34_51_981][254][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_982][254][Script] [手机布局触摸尺寸] career-phone-close rect=(844.000000000,117.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-29 22_34_51_983][254][Script] [手机布局验收通过] 960x540 安全边距32/48；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-29 22_34_51_985][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1828.000000000,693.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_987][254][Script] [手机触摸尺寸] career-wallet-filter-all hit=(1748.000000000,693.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_989][254][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(1748.000000000,749.000000000,236.000000000,76.000000000) physical=(236.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_51_991][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_993][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_51_994][254][Script] [手机触摸尺寸] career-app-messages hit=(1740.000000000,596.000000000,80.000000000,98.000000000) physical=(80.000000000,98.000000000) scale=1.000000000000 configuredH=nil minH=74 minW=44
+[2026-10-29 22_34_51_995][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_51_997][254][Script] [手机触摸尺寸] career-chat-cousin hit=(1748.000000000,432.000000000,236.000000000,78.000000000) physical=(236.000000000,78.000000000) scale=1.000000000000 configuredH=78 minH=nil minW=nil
+[2026-10-29 22_34_51_997][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_52_004][254][Script] [手机文字布局] career-chat-header-info rect=(1788.0,369.0,196.0,18.0)
+[2026-10-29 22_34_52_005][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_005][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_52_010][254][Script] [手机触摸尺寸] career-chat-cousin hit=(1748.000000000,432.000000000,236.000000000,78.000000000) physical=(236.000000000,78.000000000) scale=1.000000000000 configuredH=78 minH=nil minW=nil
+[2026-10-29 22_34_52_010][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_52_012][254][Script] [手机触摸尺寸] career-chat-quick-life hit=(1748.000000000,823.000000000,236.000000000,45.000000000) physical=(236.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_012][254][Script] [生涯手机] 构建页面 life
+[2026-10-29 22_34_52_014][254][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 22_34_52_015][254][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 22_34_52_015][254][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 22_34_52_016][254][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 22_34_52_019][254][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 22_34_52_020][254][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 22_34_52_020][254][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 22_34_52_024][254][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 22_34_52_024][254][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 22_34_52_025][254][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 22_34_52_036][254][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1828.000000000,693.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_040][254][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(1908.000000000,693.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_042][254][Script] [手机触摸尺寸] career-wallet-entry-5 hit=(1748.000000000,749.000000000,236.000000000,76.000000000) physical=(236.000000000,76.000000000) scale=1.000000000000 configuredH=76 minH=nil minW=nil
+[2026-10-29 22_34_52_044][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_046][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_050][254][Script] [手机触摸尺寸] career-app-messages hit=(1740.000000000,596.000000000,80.000000000,98.000000000) physical=(80.000000000,98.000000000) scale=1.000000000000 configuredH=nil minH=74 minW=44
+[2026-10-29 22_34_52_052][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_52_055][254][Script] [手机触摸尺寸] career-chat-journal hit=(1748.000000000,666.000000000,236.000000000,78.000000000) physical=(236.000000000,78.000000000) scale=1.000000000000 configuredH=78 minH=nil minW=nil
+[2026-10-29 22_34_52_055][254]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-29 22_34_52_055][254][Script] [生涯手机] 构建页面 messages
+[2026-10-29 22_34_52_057][254][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_059][254][Script] [手机触摸尺寸] career-chat-station_master hit=(1748.000000000,510.000000000,236.000000000,78.000000000) physical=(236.000000000,78.000000000) scale=1.000000000000 configuredH=78 minH=nil minW=nil
+[2026-10-29 22_34_52_061][254][Script] [手机触摸尺寸] career-engagement-breakfast_shift hit=(1758.000000000,588.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_061][254][Script] [生涯提示] 请先前往老街早餐店（2米内）
+[2026-10-29 22_34_52_070][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_52_071][254][Script] [手机触摸尺寸] career-online hit=(1890.000000000,440.000000000,86.000000000,45.000000000) physical=(86.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_073][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_52_078][254][Script] [手机文字布局] career-delivery-online-label rect=(1756.0,440.0,129.0,20.0)
+[2026-10-29 22_34_52_079][254][Script] [手机触摸尺寸] career-accept hit=(1758.000000000,793.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_081][254][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 22_34_52_081][254][Script] [生涯提示] 已接单，请到老街早餐店取餐
+[2026-10-29 22_34_52_081][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_52_087][254][Script] [手机触摸尺寸] career-order-interact hit=(1758.000000000,708.150000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_087][254][Script] [生涯提示] 请靠近交互点（2米内）
+[2026-10-29 22_34_52_087][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_52_090][254][Script] [手机触摸尺寸] career-order-navigation hit=(1758.000000000,575.675000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_091][254][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 22_34_52_091][254][Script] [生涯手机] 构建页面 delivery
+[2026-10-29 22_34_52_093][254][Script] [手机触摸尺寸] career-phone-close hit=(1940.000000000,310.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-29 22_34_52_094][254][Script] [手机应用验收通过] 真触摸会话/已读/左右气泡/真实剧情/业务引导/钱包初始空态/收支筛选/账单详情/听单/接单/取送导航；现场二次授权；内存写入16次，云0次
+[2026-10-29 22_34_52_178][254][Script] [官动相位] speed0.00 phase0.000 hip0.831m/0.472h kneeL/R0.441/0.431m soleL/R0.0077/-0.0000m contacttrue/true
+[2026-10-29 22_34_52_213][254][Script] [官动相位] speed0.00 phase0.125 hip0.831m/0.472h kneeL/R0.441/0.431m soleL/R0.0072/0.0000m contacttrue/true
+[2026-10-29 22_34_52_252][254][Script] [官动相位] speed0.00 phase0.250 hip0.832m/0.473h kneeL/R0.441/0.432m soleL/R0.0070/0.0000m contacttrue/true
+[2026-10-29 22_34_52_284][254][Script] [官动相位] speed0.00 phase0.375 hip0.833m/0.473h kneeL/R0.442/0.433m soleL/R0.0072/-0.0000m contacttrue/true
+[2026-10-29 22_34_52_316][254][Script] [官动相位] speed0.00 phase0.500 hip0.833m/0.474h kneeL/R0.442/0.435m soleL/R0.0075/0.0000m contacttrue/true
+[2026-10-29 22_34_52_348][254][Script] [官动相位] speed0.00 phase0.625 hip0.833m/0.473h kneeL/R0.442/0.434m soleL/R0.0074/-0.0000m contacttrue/true
+[2026-10-29 22_34_52_381][254][Script] [官动相位] speed0.00 phase0.750 hip0.832m/0.473h kneeL/R0.441/0.432m soleL/R0.0073/0.0000m contacttrue/true
+[2026-10-29 22_34_52_412][254][Script] [官动相位] speed0.00 phase0.875 hip0.831m/0.472h kneeL/R0.441/0.431m soleL/R0.0075/-0.0000m contacttrue/true
+[2026-10-29 22_34_52_470][254][Script] [官动相位] speed0.60 phase0.000 hip0.852m/0.484h kneeL/R0.464/0.454m soleL/R0.0104/0.0242m contacttrue/false
+[2026-10-29 22_34_52_503][254][Script] [官动相位] speed0.60 phase0.125 hip0.821m/0.466h kneeL/R0.463/0.421m soleL/R0.0234/0.0103m contactfalse/true
+[2026-10-29 22_34_52_534][254][Script] [官动相位] speed0.60 phase0.250 hip0.812m/0.461h kneeL/R0.455/0.429m soleL/R0.0136/0.0358m contacttrue/false
+[2026-10-29 22_34_52_565][254][Script] [官动相位] speed0.60 phase0.375 hip0.847m/0.481h kneeL/R0.476/0.447m soleL/R0.0388/0.0080m contactfalse/true
+[2026-10-29 22_34_52_596][254][Script] [官动相位] speed0.60 phase0.500 hip0.861m/0.489h kneeL/R0.461/0.472m soleL/R0.0311/0.0057m contactfalse/true
+[2026-10-29 22_34_52_628][254][Script] [官动相位] speed0.60 phase0.625 hip0.823m/0.467h kneeL/R0.423/0.463m soleL/R0.0068/0.0209m contacttrue/false
+[2026-10-29 22_34_52_664][254][Script] [官动相位] speed0.60 phase0.750 hip0.807m/0.459h kneeL/R0.437/0.449m soleL/R0.0308/0.0082m contactfalse/true
+[2026-10-29 22_34_52_707][254][Script] [官动相位] speed0.60 phase0.875 hip0.830m/0.472h kneeL/R0.434/0.463m soleL/R0.0136/0.0214m contacttrue/false
+[2026-10-29 22_34_52_739][254][Script] [官动相位] speed1.80 phase0.000 hip0.849m/0.483h kneeL/R0.463/0.452m soleL/R0.0113/0.0231m contacttrue/false
+[2026-10-29 22_34_52_771][254][Script] [官动相位] speed1.80 phase0.125 hip0.819m/0.466h kneeL/R0.467/0.420m soleL/R0.0284/0.0112m contactfalse/true
+[2026-10-29 22_34_52_804][254][Script] [官动相位] speed1.80 phase0.250 hip0.806m/0.458h kneeL/R0.455/0.426m soleL/R0.0147/0.0371m contacttrue/false
+[2026-10-29 22_34_52_839][254][Script] [官动相位] speed1.80 phase0.375 hip0.837m/0.476h kneeL/R0.469/0.437m soleL/R0.0323/0.0087m contactfalse/true
+[2026-10-29 22_34_52_871][254][Script] [官动相位] speed1.80 phase0.500 hip0.857m/0.487h kneeL/R0.457/0.472m soleL/R0.0292/0.0062m contactfalse/true
+[2026-10-29 22_34_52_904][254][Script] [官动相位] speed1.80 phase0.625 hip0.818m/0.465h kneeL/R0.420/0.468m soleL/R0.0074/0.0269m contacttrue/false
+[2026-10-29 22_34_52_936][254][Script] [官动相位] speed1.80 phase0.750 hip0.795m/0.452h kneeL/R0.433/0.447m soleL/R0.0318/0.0089m contactfalse/true
+[2026-10-29 22_34_52_998][254][Script] [官动相位] speed1.80 phase0.875 hip0.817m/0.464h kneeL/R0.424/0.456m soleL/R0.0156/0.0148m contacttrue/true
+[2026-10-29 22_34_53_141][254][Script] [官动相位] speed2.60 phase0.000 hip0.821m/0.467h kneeL/R0.449/0.422m soleL/R0.1182/0.0056m contactfalse/true
+[2026-10-29 22_34_53_172][254][Script] [官动相位] speed2.60 phase0.125 hip0.918m/0.522h kneeL/R0.614/0.544m soleL/R0.1575/0.0703m contactfalse/false
+[2026-10-29 22_34_53_204][254][Script] [官动相位] speed2.60 phase0.250 hip0.797m/0.453h kneeL/R0.468/0.469m soleL/R0.0289/0.0688m contactfalse/false
+[2026-10-29 22_34_53_235][254][Script] [官动相位] speed2.60 phase0.375 hip0.781m/0.444h kneeL/R0.432/0.390m soleL/R0.0101/0.1584m contacttrue/false
+[2026-10-29 22_34_53_267][254][Script] [官动相位] speed2.60 phase0.500 hip0.822m/0.467h kneeL/R0.419/0.480m soleL/R0.0100/0.0748m contacttrue/false
+[2026-10-29 22_34_53_298][254][Script] [官动相位] speed2.60 phase0.625 hip0.877m/0.498h kneeL/R0.503/0.568m soleL/R0.0545/0.1095m contactfalse/false
+[2026-10-29 22_34_53_330][254][Script] [官动相位] speed2.60 phase0.750 hip0.793m/0.451h kneeL/R0.456/0.467m soleL/R0.0920/0.0282m contactfalse/false
+[2026-10-29 22_34_53_361][254][Script] [官动相位] speed2.60 phase0.875 hip0.780m/0.443h kneeL/R0.389/0.433m soleL/R0.1480/0.0107m contactfalse/true
+[2026-10-29 22_34_53_392][254][Script] [官动相位] speed3.40 phase0.000 hip0.776m/0.441h kneeL/R0.421/0.394m soleL/R0.3388/0.0000m contactfalse/true
+[2026-10-29 22_34_53_423][254][Script] [官动相位] speed3.40 phase0.125 hip0.907m/0.515h kneeL/R0.661/0.584m soleL/R0.2172/0.1294m contactfalse/false
+[2026-10-29 22_34_53_455][254][Script] [官动相位] speed3.40 phase0.250 hip0.785m/0.446h kneeL/R0.482/0.535m soleL/R0.0431/0.3549m contactfalse/false
+[2026-10-29 22_34_53_486][254][Script] [官动相位] speed3.40 phase0.375 hip0.725m/0.412h kneeL/R0.404/0.347m soleL/R0.0114/0.4087m contacttrue/false
+[2026-10-29 22_34_53_518][254][Script] [官动相位] speed3.40 phase0.500 hip0.788m/0.448h kneeL/R0.391/0.508m soleL/R0.0139/0.2603m contacttrue/false
+[2026-10-29 22_34_53_549][254][Script] [官动相位] speed3.40 phase0.625 hip0.841m/0.478h kneeL/R0.513/0.582m soleL/R0.1252/0.1016m contactfalse/false
+[2026-10-29 22_34_53_661][254][Script] [官动相位] speed3.40 phase0.750 hip0.787m/0.447h kneeL/R0.482/0.487m soleL/R0.3874/0.0474m contactfalse/false
+[2026[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_701][254] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_702][254] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_743][254] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 22_34_56_744][254] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+-10-29 22_34_53_697][254][Script] [官动相位] speed3.40 phase0.875 hip0.719m/0.408h kneeL/R0.333/0.389m soleL/R0.3465/0.0067m contactfalse/true
+[2026-10-29 22_34_53_804][254][Script] [官动精确缓存等价] PASS 源97->24骨 96采样/2208映射矩阵，矩阵误差0 髋误差0 净空误差0；鞋615/598->286/295顶点，320鞋底对照最大误差0
+[2026-10-29 22_34_53_804][254][Script] [官方走跑数据验收] PASS 160姿态 骨长误差0.0000009m Walk髋0.794..0.867 Run髋0.715..0.934 腾空14 左右支撑7/8；视觉必须另看多相位实拍
+[2026-10-29 22_34_53_811][254][Script] [邻里订单签名] Lua=Lua 5.4 templates=24 got=2567365835 expected=2567365835 bytes=3803 expectedBytes=3803
+[2026-10-29 22_34_54_814][254][Script] [邻里路径开始] name=east mode=walk r=0.32 start=(0.000000,-20.000000) segments=6
+[2026-10-29 22_34_55_000][254][Script] [邻里路径开始] name=east mode=vehicle r=1.20 start=(0.000000,-20.000000) segments=6
+[2026-10-29 22_34_55_158][254][Script] [邻里验收] east 开局连续走/骑各 474.0m，City.Move全子步，无传送
+[2026-10-29 22_34_55_158][254][Script] [邻里路径开始] name=west mode=walk r=0.32 start=(0.000000,-20.000000) segments=6
+[2026-10-29 22_34_55_298][254][Script] [邻里路径开始] name=west mode=vehicle r=1.20 start=(0.000000,-20.000000) segments=6
+[2026-10-29 22_34_55_443][254][Script] [邻里验收] west 开局连续走/骑各 474.0m，City.Move全子步，无传送
+[2026-10-29 22_34_55_444][254][Script] [邻里路径开始] name=north mode=walk r=0.32 start=(0.000000,-20.000000) segments=5
+[2026-10-29 22_34_55_579][254][Script] [邻里路径开始] name=north mode=vehicle r=1.20 start=(0.000000,-20.000000) segments=5
+[2026-10-29 22_34_55_707][254][Script] [邻里验收] north 开局连续走/骑各 430.0m，City.Move全子步，无传送
+[2026-10-29 22_34_55_707][254][Script] [邻里路径开始] name=south mode=walk r=0.32 start=(0.000000,-20.000000) segments=5
+[2026-10-29 22_34_55_826][254][Script] [邻里路径开始] name=south mode=vehicle r=1.20 start=(0.000000,-20.000000) segments=5
+[2026-10-29 22_34_55_948][254][Script] [邻里验收] south 开局连续走/骑各 390.0m，City.Move全子步，无传送
+[2026-10-29 22_34_56_580][254][Script] [邻里模型预算] 原78+补187=265楼 / 4492面资产215栋 / 最坏LOD0总1772080面 / 每格最多179936面、24楼；程序几何另限36k面/格
+[2026-10-29 22_34_56_580][254][Script] [邻里验收通过] 34街段/10812m中心线/265楼/142商铺/4小广场；单块最多24楼；旧31单完整route/费保留
+[2026-10-29 22_34_56_580][254][Script] [应用动作街区专项完成] 指定专项已执行；具体结果见各模块断言
+[2026-10-29 22_34_56_580][254][Script] [生涯] 场景与主流程已接通
+[2026-10-29 22_34_58_876][383]INFO__VALIDATE_UPDATE__:false
+[2026-10-29 22_34_58_885][383][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-29 22_34_58_886][383][Script] [WorldStream] 卸载 0:-2
+[2026-10-29 22_34_58_886][383][Script] [WorldStream] 卸载 1:-2
+[2026-10-29 22_34_58_886][383][Script] [WorldStream] 卸载 1:1
+[2026-10-29 22_34_58_886][383][Script] [WorldStream] 卸载 0:1
+[2026-10-29 22_34_58_887][383][Script] [WorldStream] 卸载 -1:-2
+[2026-10-29 22_34_58_887][383][Script] [WorldStream] 卸载 -2:-2
+[2026-10-29 22_34_58_887][383][Script] [WorldStream] 卸载 0:2
+[2026-10-29 22_34_58_887][383][Script] [WorldStream] 卸载 2:-1
+[2026-10-29 22_34_58_888][383][Script] [WorldStream] 卸载 1:-1
+[2026-10-29 22_34_58_888][383][Script] [WorldStream] 卸载 0:-1
+[2026-10-29 22_34_58_888][383][Script] [WorldStream] 卸载 1:0
+[2026-10-29 22_34_58_889][383][Script] [WorldStream] 卸载 2:0
+[2026-10-29 22_34_58_889][383][Script] [WorldStream] 卸载 -1:2
+[2026-10-29 22_34_58_889][383][Script] [WorldStream] 卸载 -1:0
+[2026-10-29 22_34_58_889][383][Script] [WorldStream] 卸载 0:-3
+[2026-10-29 22_34_58_890][383][Script] [WorldStream] 卸载 -1:-3
+[2026-10-29 22_34_58_890][383][Script] [WorldStream] 卸载 -3:0
+[2026-10-29 22_34_58_890][383][Script] [WorldStream] 卸载 -2:0
+[2026-10-29 22_34_58_891][383][Script] [WorldStream] 卸载 -2:1
+[2026-10-29 22_34_58_891][383][Script] [WorldStream] 卸载 -1:1
+[2026-10-29 22_34_58_891][383][Script] [WorldStream] 卸载 -3:-1
+[2026-10-29 22_34_58_891][383][Script] [WorldStream] 卸载 0:0
+[2026-10-29 22_34_58_892][383][Script] [WorldStream] 卸载 -1:-1
+[2026-10-29 22_34_58_892][383][Script] [WorldStream] 卸载 -2:-1

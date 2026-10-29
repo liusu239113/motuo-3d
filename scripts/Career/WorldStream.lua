@@ -4,6 +4,7 @@
 local World = require("Career.WorldData")
 local Details = require("Career.CityDetails")
 local Expansion = require("Career.CityExpansion")
+local Environment = require("Career.CityEnvironment")
 local V = Vector3
 ---@class CareerWorldChunk
 ---@field root Node
@@ -15,6 +16,8 @@ local V = Vector3
 ---@field iz number
 ---@field distance number
 ---@class CareerWorldStream
+---@field Stats fun(self:CareerWorldStream):table
+---@field Unload fun(self:CareerWorldStream,k:string)
 ---@field Ensure fun(self:CareerWorldStream,x:number,z:number,radius?:number):table
 ---@field Update fun(self:CareerWorldStream,x:number,z:number)
 ---@field SetVisible fun(self:CareerWorldStream,visible:boolean)
@@ -509,6 +512,7 @@ function Stream:Load(ix,iz)
         d.Batch=cellBatch
         for _,s in ipairs(data.grounds) do rect(d,s) end
         local markingQuads=roadMarkings(d,data)
+        local terrainTriangles=Environment.RenderCell(d,data)
         local models,modelTriangles,expansionModels=0,0,0
         for _,b in ipairs(data.buildings) do
             if self:Building(d,root,b) then
@@ -555,6 +559,7 @@ function Stream:Load(ix,iz)
         stats.buildings,stats.models,stats.obstacles=#data.buildings,models,#data.obstacles
         stats.modelTriangles,stats.expansionModels=modelTriangles,expansionModels
         stats.markingQuads=markingQuads
+        stats.terrainTriangles=terrainTriangles
         assert(stats.triangles<=Stream.MAX_TRIANGLES,"单块三角面预算超限")
         -- 释放Details持有的临时程序圆柱；本流式块未使用Bar/Lamp。
         if d.shapes.cylinder then d.shapes.cylinder:Dispose() end

@@ -37,8 +37,8 @@ function Phone.Create(view,actions)
     view.phoneClock=Theme.Label("08:00",11,Theme.Colors.white,{height=18})
     screen:AddChild(UI.Row{id="career-phone-status",width="100%",height=18,padding=0,justifyContent="space-between",children={
         view.phoneClock,Theme.Label("4G · 86%",11,Theme.Colors.white,{height=18})}})
-    view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,
-        {fontWeight="bold",flexGrow=1,flexShrink=1,minWidth=0,maxLines=1})
+    view.phoneTitle=Kit.Text("手机桌面",13,Theme.Colors.white,
+        {fontWeight="bold",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,whiteSpace="nowrap",height=28})
     local touchSize=Kit.TouchSize()
     view.phoneBack=Theme.Button("首页",function() require("Career.PhoneApps").Back(view) end,false,52,
         {id="career-phone-back",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12,visible=false})
@@ -72,7 +72,7 @@ function Phone.Desktop(content,state,actions,height)
                 pointerEvents="box-only",onClick=function() actions.phone(id) end,
                 children={UI.Panel{width=44,height=44,borderRadius=10,backgroundImage="image/career_phone/"..id..".png",
                     backgroundFit="contain",pointerEvents="none"},
-                    Theme.Label(app[2],11,Theme.Colors.white,{width="100%",height=20,textAlign="center",pointerEvents="none"})}})
+                    Theme.Label(app[2],11,Theme.Colors.white,{width="100%",height=24,textAlign="center",pointerEvents="none"})}})
         end
         grid:AddChild(line)
     end

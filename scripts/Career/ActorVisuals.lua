@@ -7,6 +7,7 @@ local Vehicles=require("Career.VehicleData")
 local Rider=require("Rider")
 local Bike=require("Bike")
 local Contact=require("Career.VehicleContact")
+local Footprints=require("Career.VehicleFootprints")
 local V=Vector3
 local SCOOTER="model/873a3764f21f49e4b717387160d13d19/"
 local BOX="model/8c4f0f26f9ee4d3eac2eec49a497852f/"
@@ -39,26 +40,26 @@ function Visuals:Init(scene,target,city)
     local model=cache:GetResource("Model",scooterModel)
     local bounds=model.boundingBox
     -- 长轴只确定轴线，正面实拍以白色头灯/前挡板为+Z；红尾灯与号牌必须在-Z。
-    local scale=1.90/1.3094
+    local rotation,scale,offset=Footprints.ScooterTransform(model)
     body:SetScale(scale)
-    body.rotation=Quaternion(0,226.1,0)
-    body.position=V(0,-bounds.min.y*scale,0)
+    body.rotation=rotation
+    body.position=offset
     local draw=body:CreateComponent("StaticModel")
     draw.model=model; draw.material=cache:GetResource("Material",scooterMaterial); draw.castShadows=true
     self.cargoMount=self.bikeVisual:CreateChild("外卖箱固定挂点")
-    self.cargoMount.position=V(0,.88,-.72)
+    self.cargoMount.position=Footprints.CargoPosition
     local box=self.cargoMount:CreateChild("橙色软保温外卖箱")
     local cargo=cache:GetResource("Model",boxModel)
     local bb=cargo.boundingBox
-    local bs=.58/math.max(bb.size.x,bb.size.z)
-    box:SetScale(bs); box.position=V(-bb.center.x*bs,-bb.min.y*bs,-bb.center.z*bs)
+    local br,bs,bo=Footprints.BoxTransform(cargo)
+    box:SetScale(bs); box.rotation=br; box.position=bo
     local cargoDraw=box:CreateComponent("StaticModel")
     cargoDraw.model=cargo; cargoDraw.material=cache:GetResource("Material",boxMaterial); cargoDraw.castShadows=true
     local metal=Parts.Material(.08,.09,.1,.55,.55)
     local mirror=Parts.Material(.45,.57,.62,.1,.85)
     -- 原模型的完整高镜在-X（左侧），只补缺失的+X右镜；位置按原镜顶点镜像。
     Parts.Bar(self.bikeVisual,metal,V(.29,1.21,.27),V(.31,1.40,.20),.008)
-    Parts.Add(self.bikeVisual,"9号右后视镜镜壳","Sphere",metal,V(.31,1.425,.19),V(.145,.10,.045),Quaternion(0,12,0),true)
+    Parts.Add(self.bikeVisual,"9号右后视镜镜壳","Sphere",metal,Footprints.MirrorCenter,Footprints.MirrorSize,Quaternion(0,Footprints.MirrorYaw,0),true)
     Parts.Add(self.bikeVisual,"9号右后视镜镜片","Sphere",mirror,V(.306,1.425,.169),V(.125,.082,.012),Quaternion(0,12,0),false)
     for _,side in ipairs({-1,1}) do
         Parts.Bar(self.bikeVisual,metal,V(side*.2,.68,-.56),V(side*.2,.88,-.91),.015)

@@ -21,9 +21,8 @@ function Checks.Run(session)
     assert(sound.sources.music and sound.sources.electric and sound.sources.steps and sound.sources.engine)
     local snapshot={speed=actor.speed,mounted=actor.mounted,vehicle=actor.vehicleId}
     actor.speed,actor.mounted,actor.vehicleId=1.8,false,"borrowed_ebike"
-    local before=sound.stepCount
-    sound:Update(.25,actor,false,false,{},nil); sound:Update(.25,actor,false,false,{},nil)
-    assert(sound.stepCount>before and sound.sources.steps.frequency==sound.sounds.steps:GetFrequency(),"脚步应按距离触发并使用正确采样率")
+    -- 足音改为真实位移+鞋底支撑，不再把speed=1.8但坐标不动冒称“距离”。
+    require("Career.SoundCrowdChecks").Steps()
     sound:Update(.1,actor,true,false,{},nil)
     assert(sound.stepDistance==0 and not sound.sources.steps.playing,"手机暂停必须停止脚步")
     actor.speed,actor.mounted=4,true

@@ -48,6 +48,7 @@
 ---@field points CareerWorldPoint[]
 local World = {}
 local Expansion = require("Career.CityExpansion")
+local Environment = require("Career.CityEnvironment")
 -- 仅用于渲染与地图的接续几何；不插入既有订单使用的固定导航图。
 ---@type table[]
 World.ExpansionRoads=Expansion.Roads
@@ -276,6 +277,11 @@ local function ground(cell,rect,material,y,cuts)
         z1=math.max(rect.z1,cell.z1),z2=math.min(rect.z2,cell.z2)}
     if clipped.x1>=clipped.x2 or clipped.z1>=clipped.z2 then return end
     local pieces=subtract(clipped,protected)
+    for _,region in ipairs({Environment.Bounds,Environment.Connector}) do
+        local nextPieces={}
+        for _,p in ipairs(pieces) do for _,q in ipairs(subtract(p,region)) do nextPieces[#nextPieces+1]=q end end
+        pieces=nextPieces
+    end
     for _,cut in ipairs(cuts or {}) do
         local nextPieces={}
         for _,p in ipairs(pieces) do for _,q in ipairs(subtract(p,cut)) do nextPieces[#nextPieces+1]=q end end
@@ -305,6 +311,7 @@ local function building(cell,b,cuts)
 end
 local function owner(cell,x,z) return math.floor(x/256)==cell.ix and math.floor(z/256)==cell.iz end
 local function reserved(rect)
+    if Environment.Reserved(rect) then return true end
     if overlap(rect,protected) then return true end
     for _,d in ipairs(World.Districts) do
         if overlap(rect,{x1=d.x-110,x2=d.x+110,z1=d.z-64,z2=d.z+64}) then return true end
@@ -427,6 +434,7 @@ function World.DescribeCell(ix,iz)
             end
         end
     end
+    for _,o in ipairs(Environment.CollectObstacles(cell)) do cell.obstacles[#cell.obstacles+1]=o end
     if cacheCount>=World.CACHE_LIMIT then
         local oldestKey,oldestAge="",math.huge
         for ck,ca in pairs(cacheAge) do if ca<oldestAge then oldestKey,oldestAge=ck,ca end end
@@ -473,6 +481,8 @@ end
 ---@param height? number 上一子步步行高度，不使用全局可变桥层
 ---@return number
 function World.Surface(x,z,mode,height)
+    local terrain=Environment.Surface(x,z)
+    if terrain~=nil then return terrain end
     local groundY=groundHeight(x,z)
     if mode~="walk" or height==nil then return groundY end
     for _,b in ipairs(bridges) do
@@ -528,7 +538,7 @@ end
 function World.IsFree(x,z,radius,mode,height)
     local r=math.max(0,radius or .32)
     if x~=x or z~=z or math.abs(x)>15000-r or math.abs(z)>15000-r then return false end
-    if not bridgeFree(x,z,r,mode or "vehicle",height) then return false end
+    if Environment.Surface(x,z)==nil and not bridgeFree(x,z,r,mode or "vehicle",height) then return false end
     if math.abs(x)<195+r and math.abs(z)<195+r then
         for _,o in ipairs(legacyObstacles) do if hit(o,x,z,r) then return false end end
     end

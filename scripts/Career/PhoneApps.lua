@@ -99,7 +99,7 @@ end
 -- 被父级压窄也会走auto-wrap。列表专用显式宽+固定高，并用字体实测做UTF-8省略。
 local function listLine(text,size,color,id,weight)
     local source=text:gsub("[\r\n]+"," ")
-    local label=K.Text(source,size,color,{id=id,width="100%",height=20,minHeight=20,maxHeight=20,
+    local label=K.Text(source,size,color,{id=id,width="100%",height=24,minHeight=24,maxHeight=24,
         flexShrink=0,whiteSpace="nowrap",verticalAlign="middle",fontWeight=weight or "normal"})
     local lastWidth=-1
     label.Update=function(self)
@@ -142,10 +142,10 @@ function Apps.Messages(view,content,state)
             local item=thread
             local unread=view.phoneReadThreads[item.id]~=item.signature and item.unreadCount or 0
             -- 当前UI命中先递归子树，不能仅依赖父级box-only；装饰子容器显式穿透。
-            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=42,padding=0,gap=2,pointerEvents="none",children={
+            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=50,padding=0,gap=2,pointerEvents="none",children={
                 listLine(item.name,12,C.ink,"career-chat-name-"..item.id,"bold"),
                 listLine(item.summary,10,C.muted,"career-chat-summary-"..item.id)}}
-            local side=UI.Panel{width=34,minWidth=34,height=42,padding=0,gap=2,alignItems="flex-end",pointerEvents="none",children={
+            local side=UI.Panel{width=34,minWidth=34,height=50,padding=0,gap=2,alignItems="flex-end",pointerEvents="none",children={
                 listLine(listTime(item),8,C.muted,"career-chat-time-"..item.id)}}
             if unread>0 then side:AddChild(UI.Badge{id="career-chat-unread-"..item.id,content=unread,size="sm",variant="error",pointerEvents="none"}) end
             list:AddChild(UI.Row{id="career-chat-"..item.id,width="100%",height=78,padding=8,gap=7,
@@ -158,7 +158,7 @@ function Apps.Messages(view,content,state)
         return
     end
     view.phoneReadThreads[selected.id]=selected.signature
-    view.phoneTitle:SetText(selected.name)
+    view.phoneTitle:SetText("联系人")
     view.phoneBack:SetText("会话")
     content:AddChild(UI.Row{id="career-chat-header",width="100%",padding=0,gap=8,alignItems="center",children={
         avatar(selected,32),K.Text(selected.name.."\n剧情记录 · 非实时通讯",10,C.muted,
@@ -185,6 +185,7 @@ function Apps.Messages(view,content,state)
         card:AddChild(K.Tag(({locked="尚未解锁",available="可现场接取",active="进行中",ready="待当面交付",claimed="已交付"})[item.status]))
         card:AddChild(K.Text(item.title,13,C.ink,{fontWeight="bold"}))
         card:AddChild(K.Text(item.description,11,C.muted))
+        card:AddChild(K.Text(item.objectiveText,11,C.muted,{id="career-chat-objective-"..item.id}))
         card:AddChild(K.Text(item.progressText,10,C.ink,{id="career-chat-progress-"..item.id}))
         card:AddChild(K.Text("一次性谢礼 "..K.Money(item.rewardCents).." · 到驻点当面办理",10,C.green))
         if item.status=="available" then
@@ -194,10 +195,11 @@ function Apps.Messages(view,content,state)
         end
         if item.status~="claimed" then
             local point=item.nextPointId or item.acceptPointId
-            card:AddChild(K.Button("去"..Config.points[point].label,function() view.actions.setWaypoint(point); view.actions.closePhone() end,
+            card:AddChild(K.Text("导航地点\n"..Config.points[point].label,11,C.muted))
+            card:AddChild(K.Button("设为导航",function() view.actions.setWaypoint(point); view.actions.closePhone() end,
                 "career-chat-navigate-"..item.id,false))
             if item.status=="active" and point~=item.returnPointId then
-                card:AddChild(K.Button("到场联系 / 确认访问",function() view.actions.visitEngagement(point) end,
+                card:AddChild(K.Button("确认访问",function() view.actions.visitEngagement(point) end,
                     "career-chat-visit-"..item.id,false))
             end
         end
@@ -205,7 +207,7 @@ function Apps.Messages(view,content,state)
     -- 只有业务引导，不伪造发信/对方已读/自动回复。
     if selected.id=="cousin" then
         content:AddChild(K.Text("快捷办理 · 不发送聊天消息",9,C.muted))
-        content:AddChild(K.Button("看看吃饭和落脚的地方",function() view.actions.phone("life") end,"career-chat-quick-life",false))
+        content:AddChild(K.Button("吃饭与落脚",function() view.actions.phone("life") end,"career-chat-quick-life",false))
     elseif selected.id=="mechanic" then
         content:AddChild(K.Button("查看车手生涯",function() view.actions.phone("progression") end,"career-chat-quick-career",false))
     elseif selected.id=="station_master" then
@@ -257,15 +259,14 @@ function Apps.Wallet(view,content,state)
             or filter=="expense" and entry.deltaCents<0 then
             count=count+1
             local detail=entry
-            list:AddChild(UI.Row{id="career-wallet-entry-"..i,width="100%",height=76,padding=8,gap=5,alignItems="center",
+            list:AddChild(UI.Panel{id="career-wallet-entry-"..i,width="100%",minHeight=86,padding=8,gap=4,
                 pointerEvents="box-only",borderBottomWidth=1,borderBottomColor=C.line,
                 onClick=function() view.phoneLedgerId=detail.id; rebuild(view) end,children={
-                    UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,pointerEvents="none",children={
-                        K.Text(Apps.LedgerName(entry),11,C.ink,{fontWeight="bold",maxLines=1}),
-                        K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
-                        K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",8,C.muted)}},
-                    K.Text(string.format("%+.2f",entry.deltaCents/100),12,entry.deltaCents>0 and C.green or C.ink,
-                        {id="career-wallet-entry-amount-"..i,whiteSpace="nowrap",flexShrink=0,fontWeight="bold"})}})
+                    K.Text(Apps.LedgerName(entry),12,C.ink,{fontWeight="bold"}),
+                    K.Text(string.format("%+.2f",entry.deltaCents/100),13,entry.deltaCents>0 and C.green or C.ink,
+                        {id="career-wallet-entry-amount-"..i,fontWeight="bold"}),
+                    K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
+                    K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",9,C.muted)}})
         end
     end
     if count==0 then list:AddChild(K.Text("暂无"..(view.phoneWalletFilter=="income" and "收入" or "支出").."记录\n完成配送或发生消费后会在这里显示。",11,C.muted,
@@ -273,8 +274,9 @@ function Apps.Wallet(view,content,state)
     content:AddChild(K.Text("共"..count.."笔 · 点击账单可查看真实编号与账后余额",9,C.muted,{id="career-wallet-count"}))
     local archive=K.Card("career-wallet-storage",{children={K.Text("存档与备份",12,C.ink,{fontWeight="bold"}),
         K.Text(view.actions.saveStatus and view.actions.saveStatus() or "本地保存不等于云端确认。",9,C.muted),
-        K.Button("保存本地并同步账号云档",view.actions.save,"career-wallet-save",true),
-        K.Button("读取账号云档（需确认）",view.actions.loadCloud,"career-wallet-load",false)}})
+        K.Text("保存会写本地并尝试账号云同步；读取云档需再次确认。",10,C.muted),
+        K.Button("保存与同步",view.actions.save,"career-wallet-save",true),
+        K.Button("读取云档",view.actions.loadCloud,"career-wallet-load",false)}})
     content:AddChild(archive)
 end
 local function routeRow(number,title,point,highlight)
@@ -292,7 +294,7 @@ local function offerCard(content,offer,actions,stacked)
     card:AddChild(K.Text(string.format("路线 %.0f米 · 配送时限 %.0f游戏分钟",offer.distanceMeters,offer.remainingHours*60),9,C.muted))
     card:AddChild(routeRow("取","到店取餐",offer.pickupId,true))
     card:AddChild(routeRow("送","送到顾客",offer.dropoffId,false))
-    card:AddChild(K.Button(stacked and "再接一单 · 独立结算" or "接单",actions.accept,stacked and "career-accept-stack" or "career-accept",true))
+    card:AddChild(K.Button(stacked and "加接订单" or "接单",actions.accept,stacked and "career-accept-stack" or "career-accept",true))
 end
 ---@param view CareerView
 function Apps.Delivery(view,content,state,offer,active)
@@ -318,7 +320,7 @@ function Apps.Delivery(view,content,state,offer,active)
         card:AddChild(routeRow(picked and "已" or "取",picked and "已取餐" or "当前目标 · 到店取餐",active.pickupId,not picked))
         card:AddChild(routeRow("送",picked and "当前目标 · 送达顾客" or "下一步 · 送达顾客",active.dropoffId,picked))
         card:AddChild(K.Button("导航到当前任务",function() view.actions.setWaypoint(picked and active.dropoffId or active.pickupId); view.actions.closePhone() end,"career-order-navigation",true))
-        card:AddChild(K.Button(picked and "交付外卖 · 需下车到点" or "到店取餐 · 需下车到点",view.actions.interact,"career-order-interact",false))
+        card:AddChild(K.Button(picked and "交付外卖" or "到店取餐",view.actions.interact,"career-order-interact",false))
         card:AddChild(K.Text("必须到真实取送点停稳、下车后交接；按钮仍核对现场位置。",9,C.muted))
         if #state.activeOrders>1 then
             content:AddChild(K.Text("配送队列 · "..#state.activeOrders.." / "..Progress.Capacity(state),13,C.ink,{fontWeight="bold"}))

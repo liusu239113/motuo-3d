@@ -7,6 +7,7 @@ local Contact=require("Career.VehicleContact")
 local Pedestrians=require("Career.Pedestrians")
 local Rig=require("Career.Rig")
 local Walk=require("Career.LocalWalk")
+local Motion=require("Career.TrafficMotion")
 ---@class OuterTrafficCar
 ---@field id string
 ---@field node Node
@@ -120,15 +121,7 @@ function Outer.Pose(route,distance)
 end
 
 function Outer.StaticFree(city,car)
-    local count=math.max(2,math.ceil(car.length/.8))
-    local halfStep=car.length/count/2
-    local radius=math.sqrt((car.width/2)^2+halfStep^2)+.08
-    local a=math.rad(car.yaw)
-    for i=1,count do
-        local v=-car.length/2+(i-.5)*car.length/count
-        if not city:StaticFree(car.x+math.sin(a)*v,car.z+math.cos(a)*v,radius,"vehicle",0) then return false end
-    end
-    return true
+    return Motion.StaticFree(city,car)
 end
 
 ---@return CareerOuterTraffic
@@ -234,7 +227,7 @@ function Outer:CarFree(car,blockers)
     if oldArea(car.x,car.z) or not Outer.StaticFree(self.city,car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not self.owner.Separate(car,other) then return false end end
     for _,other in ipairs(self.owner.cars) do if not self.owner.Separate(car,other) then return false end end
-    for _,b in ipairs(blockers) do if not self.owner.CircleFree(car,b.x,b.z,b.radius) then return false end end
+    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b) then return false end end
     for _,p in ipairs(self.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius+.15) then return false end end
     for _,p in ipairs(self.owner.pedestrians.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius) then return false end end
     return true

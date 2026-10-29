@@ -4,6 +4,8 @@ local Assets=require("VehicleAssets")
 local Pedestrians=require("Career.Pedestrians")
 local Contact=require("Career.VehicleContact")
 local OuterTraffic=require("Career.OuterTraffic")
+local Motion=require("Career.TrafficMotion")
+local Collision=require("Career.FootprintCollision")
 ---@class CityTraffic
 ---@field cars table[]
 ---@field IsFree fun(self:CityTraffic,x:number,z:number,r:number):boolean
@@ -29,25 +31,9 @@ local function localPoint(car,x,z)
     local dx,dz=x-car.x,z-car.z
     return dx*math.cos(a)-dz*math.sin(a),dx*math.sin(a)+dz*math.cos(a)
 end
-function Traffic.CircleFree(car,x,z,r)
-    local u,v=localPoint(car,x,z)
-    local dx=math.max(0,math.abs(u)-car.width/2)
-    local dz=math.max(0,math.abs(v)-car.length/2)
-    return dx*dx+dz*dz>=(r+.08)^2
-end
--- 四个分离轴的OBB检测，不能用车心距离替代长货车碰撞。
-function Traffic.Separate(a,b)
-    for _,yaw in ipairs({a.yaw,a.yaw+90,b.yaw,b.yaw+90}) do
-        local angle=math.rad(yaw)
-        local nx,nz=math.sin(angle),math.cos(angle)
-        local function extent(c)
-            local t=math.rad(c.yaw)
-            return math.abs(nx*math.sin(t)+nz*math.cos(t))*c.length/2+math.abs(nx*math.cos(t)-nz*math.sin(t))*c.width/2
-        end
-        if math.abs((b.x-a.x)*nx+(b.z-a.z)*nz)>extent(a)+extent(b)+.12 then return true end
-    end
-    return false
-end
+Traffic.CircleFree=Motion.CircleFree
+Traffic.Separate=Motion.Separate
+Traffic.Shape=Motion.Shape
 ---@param city CareerCity
 ---@param actor CareerActor
 ---@return CityTraffic
@@ -90,16 +76,23 @@ function Traffic:Init(city,actor)
 end
 function Traffic:Blockers()
     local a=self.actor
-    local list={{x=a.x,z=a.z,radius=a.mounted and a:VehicleRadius() or .32}}
-    if not a.mounted then list[#list+1]={x=a.bikeX,z=a.bikeZ,radius=a:VehicleRadius()} end
+    local list={{x=a.x,z=a.z,radius=a.mounted and a:VehicleRadius() or .32,
+        shape=Collision.Pose(a:Footprint(),a.x,a.z,a.yaw)}}
+    local function park(id,x,z,yaw,radius)
+        list[#list+1]={x=x,z=z,radius=radius,shape=require("Career.VehicleFootprints").At(id,x,z,yaw)}
+    end
+    if not a.mounted then park(a.vehicleId,a.bikeX,a.bikeZ,a.bikeYaw,a:VehicleRadius()) end
     for id,p in pairs(a.parking) do
-        if id~=a.vehicleId then list[#list+1]={x=p.x,z=p.z,radius=require("Career.VehicleData").Radii[id]} end
+        if id~=a.vehicleId then park(id,p.x,p.z,p.yaw,require("Career.VehicleData").Radii[id]) end
     end
     local people=self.city.deliveryPeople
     if people then
         for _,person in ipairs(people.people) do
             if person.active or person.hold>0 then list[#list+1]={x=person.x,z=person.z,radius=.4} end
         end
+    end
+    if self.city.crowd then
+        for _,b in ipairs(self.city.crowd:GetBlockers()) do list[#list+1]=b end
     end
     return list
 end
@@ -118,15 +111,34 @@ function Traffic:CanPlace(car,blockers)
     if self.city.space=="city" and not OuterTraffic.StaticFree(self.city,car) then return false end
     if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
-    for _,b in ipairs(blockers) do if not Traffic.CircleFree(car,b.x,b.z,b.radius) then return false end end
+    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b) then return false end end
     for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius) then return false end end
     return true
 end
+function Traffic:CollisionShapes(result,area,dx,dz)
+    local function carList(cars)
+        for _,car in ipairs(cars) do
+            local reach=(car.length+car.width)/2
+            if car.x+reach>=math.min(area.x1,area.x1+dx)-.01 and car.x-reach<=math.max(area.x2,area.x2+dx)+.01
+                and car.z+reach>=math.min(area.z1,area.z1+dz)-.01 and car.z-reach<=math.max(area.z2,area.z2+dz)+.01 then
+                result[#result+1]=Motion.Shape(car)
+            end
+        end
+    end
+    carList(self.cars)
+    for _,p in ipairs(self.pedestrians.people) do result[#result+1]=Collision.Circle(p.x,p.z,p.radius) end
+    if self.outer and not self.outer.disposed then
+        carList(self.outer.cars)
+        for _,p in ipairs(self.outer.people) do result[#result+1]=Collision.Circle(p.x,p.z,p.radius) end
+    end
+end
 function Traffic:IsFree(x,z,r)
     if not self.active or self.city.space~="city" then return true end
-    for _,car in ipairs(self.cars) do if not Traffic.CircleFree(car,x,z,r) then return false end end
-    for _,p in ipairs(self.pedestrians.people) do if (x-p.x)^2+(z-p.z)^2<(r+p.radius)^2 then return false end end
-    return not self.outer or self.outer:IsFree(x,z,r)
+    local shape=Collision.Circle(x,z,r)
+    local others={}
+    self:CollisionShapes(others,shape,0,0)
+    for _,other in ipairs(others) do if not Collision.Free(shape,other,Collision.SKIN) then return false end end
+    return true
 end
 function Traffic:CrossingBusy(car)
     for _,j in ipairs(Routes.Junctions) do

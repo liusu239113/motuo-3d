@@ -11,9 +11,14 @@ local Stream = require("Career.WorldStream")
 local StreetDressing = require("Career.StreetDressing")
 local Footprints = require("Career.BuildingFootprints")
 local Expansion = require("Career.CityExpansion")
+local Environment = require("Career.CityEnvironment")
+local Collision = require("Career.CityCollision")
+local Footprint = require("Career.FootprintCollision")
 ---@class CareerCity
+---@field actor? CareerActor
 ---@field contacts CareerContacts
 ---@field deliveryPeople? CareerDeliveryPeople
+---@field crowd? CareerCrowd
 ---@field streetDressing CareerStreetDressing
 ---@field stream CareerWorldStream
 ---@field FindFree fun(self:CareerCity,x:number,z:number,radius:number,mode?:string,height?:number):number,number
@@ -44,6 +49,10 @@ end
 for _, path in ipairs(StreetDressing.Resources) do
     City.Resources[#City.Resources+1]=path
     City.ResourceTypes[path]=StreetDressing.ResourceTypes[path]
+end
+for _,path in ipairs(Environment.Resources) do
+    City.Resources[#City.Resources+1]=path
+    City.ResourceTypes[path]=Environment.ResourceTypes[path]
 end
 
 ---@param scene Scene
@@ -87,6 +96,7 @@ function City:Init(scene)
     self:BuildBlocks()
     self:BuildPlaces()
     self.streetDressing=StreetDressing.New(self)
+    Environment.BuildCore(self)
     self.contacts=require("Career.Contacts").New(self)
     self.signals=Signals.New(self.root,self.details)
     self.stats = self.details:Finish()
@@ -137,10 +147,11 @@ function City:BuildRoads()
     end
 end
 
--- 碰撞设计（俯视，米）：建筑实体AABB；移动圆r经AABB各边外扩r检测。
---   道路 -> 人行道 -> 门前交互圆(2m) -> [建筑实体]
--- 不把门前圆放进墙体；短步沿X/Z分轴滑移，最大步长0.1m，避免薄墙穿越。
--- 读档使用FindFree恢复到邻近空位；普通移动只沿切向滑移，世界边界由World.LIMIT统一。
+-- Collision plan (metres, top view): road -> sidewalk -> [visible solid shell].
+-- Walk uses a true circle; ride/parking uses oriented triangle-derived strips.
+-- Continuous casts + contact-normal sliding cover tiny posts and oblique corners;
+-- <=.10m substeps remain for dynamics. No enclosing vehicle disc / square radius.
+-- FindFree is recovery-only; ordinary input never searches or teleports.
 function City:Obstacle(x,z,w,depth)
     self.obstacles[#self.obstacles+1] = {x1=x-w/2,x2=x+w/2,z1=z-depth/2,z2=z+depth/2}
 end
@@ -324,11 +335,15 @@ function City:SetSpace(id)
 end
 function City:Surface(x,z)
     if self.space~="city" then return .085 end
+    local environment=Environment.Surface(x,z)
+    if environment~=nil then return environment end
     if World.IsOld(x,z) then return self.details:Surface(x,z) end
     return math.max(self.details:Surface(x,z),World.Surface(x,z,"vehicle",0))
 end
 function City:WalkSurface(x,z,height)
     if self.space~="city" then return .085 end
+    local environment=Environment.Surface(x,z)
+    if environment~=nil then return environment end
     if World.IsOld(x,z) then return self.details:Surface(x,z) end
     return math.max(self.details:Surface(x,z),World.Surface(x,z,"walk",height or 0))
 end
@@ -359,18 +374,25 @@ function City:VehicleSurface(x,z,yaw,front,rear)
 end
 
 function City:IsFree(x,z,radius,mode,height)
-    if not self:StaticFree(x,z,radius,mode,height) then return false end
-    if self.space~="city" or (mode=="walk" and (height or 0)>1) then return true end
-    if self.deliveryPeople and not self.deliveryPeople:IsFree(x,z,radius,mode,height) then return false end
-    return not self.traffic or self.traffic:IsFree(x,z,radius)
+    return Collision.ShapeFree(self,Footprint.Circle(0,0,radius),x,z,0,mode,height)
 end
 function City:StaticFree(x,z,radius,mode,height)
-    if self.space~="city" then return self.interior:IsFree(x,z,radius) end
-    if not World.IsOld(x,z) and not World.IsFree(x,z,radius,mode or "vehicle",height or 0) then return false end
-    for _,o in ipairs(self.obstacles) do
-        if x>o.x1-radius and x<o.x2+radius and z>o.z1-radius and z<o.z2+radius then return false end
-    end
-    return true
+    return Collision.ShapeFree(self,Footprint.Circle(0,0,radius),x,z,0,mode,height,nil,true)
+end
+
+-- Oriented visible-shell footprint API. The circle API remains available for
+-- pedestrians, navigation checks and older callers; no vehicle radius leaks in.
+function City:IsShapeFree(x,z,shape,yaw,mode,height,ignoreId)
+    return Collision.ShapeFree(self,shape,x,z,yaw,mode,height,ignoreId)
+end
+function City:StaticShapeFree(x,z,shape,yaw,mode,height)
+    return Collision.ShapeFree(self,shape,x,z,yaw,mode,height,nil,true)
+end
+function City:MoveShape(x,z,dx,dz,shape,yaw,mode,height,ignoreId)
+    return Collision.Move(self,x,z,dx,dz,shape,yaw,mode,height,ignoreId)
+end
+function City:FindShapeFree(x,z,shape,yaw,mode,height,ignoreId)
+    return Collision.Find(self,x,z,shape,yaw,mode,height,ignoreId)
 end
 
 ---@param x number
@@ -380,58 +402,17 @@ end
 ---@param height? number
 ---@return number,number
 function City:FindFree(x,z,radius,mode,height)
-    if self.space~="city" then return self.interior:FindFree(x,z,radius) end
-    local limit=World.LIMIT-radius
-    local px,pz=math.max(-limit,math.min(limit,x)),math.max(-limit,math.min(limit,z))
-    if self:IsFree(px,pz,radius,mode,height) then return px,pz end
-    for distance=1,50 do
-        for step=1,24 do
-            local angle=step*math.pi/12
-            local nx,nz=px+math.sin(angle)*distance,pz+math.cos(angle)*distance
-            if self:IsFree(nx,nz,radius,mode,height) then return nx,nz end
-        end
-    end
-    return 0,-20
+    return Collision.Find(self,x,z,Footprint.Circle(0,0,radius),0,mode,height)
 end
 
--- Complete swept query: local rectangles use exact slab intersection against the expanded
--- wall (the same square-radius convention as StaticFree); World/bridge domain uses a
--- conservative cover of discs, including both endpoints, never sparse point samples.
+-- Every segment is a continuous rounded-circle / polygon cast. Thin poles and
+-- vehicle corners cannot fall between samples; oblique tangency remains free.
 function City:StaticSegmentFree(ax,az,bx,bz,radius,mode,height)
-    if not self:StaticFree(ax,az,radius,mode,height) or not self:StaticFree(bx,bz,radius,mode,height) then return false end
-    local dx,dz=bx-ax,bz-az
-    for _,o in ipairs(self.obstacles) do
-        local lo,hi=0,1
-        for _,v in ipairs({{ax,dx,o.x1-radius,o.x2+radius},{az,dz,o.z1-radius,o.z2+radius}}) do
-            if math.abs(v[2])<1e-10 then
-                if v[1]<=v[3] or v[1]>=v[4] then hi=-1; break end
-            else
-                local a,b=(v[3]-v[1])/v[2],(v[4]-v[1])/v[2]
-                lo=math.max(lo,math.min(a,b)); hi=math.min(hi,math.max(a,b))
-            end
-        end
-        if lo<hi and hi>0 and lo<1 then return false end
-    end
-    if self.space=="city" and World.IsOld(ax,az) and World.IsOld(bx,bz) then return true end
-    local length=math.sqrt(dx*dx+dz*dz)
-    local count=math.max(1,math.ceil(length/.2))
-    local cover=length/count/2
-    for i=0,count do
-        local f=i/count
-        if not self:StaticFree(ax+dx*f,az+dz*f,radius+cover,mode,height) then return false end
-    end
-    return true
+    return Collision.SegmentFree(self,ax,az,bx,bz,radius,mode,height)
 end
 
 function City:Move(x,z,dx,dz,radius,mode,height)
-    if self.space~="city" then return self.interior:Move(x,z,dx,dz,radius) end
-    local count=math.max(1,math.ceil(math.sqrt(dx*dx+dz*dz)/.1))
-    local sx,sz=dx/count,dz/count
-    for _=1,count do
-        if self:IsFree(x+sx,z,radius,mode,height) then x=x+sx end
-        if self:IsFree(x,z+sz,radius,mode,height) then z=z+sz end
-    end
-    return x,z
+    return Collision.Move(self,x,z,dx,dz,Footprint.Circle(0,0,radius),0,mode,height)
 end
 
 function City:GetMarker(id) return self.markers[id] end

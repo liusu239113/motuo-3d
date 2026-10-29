@@ -93,6 +93,26 @@ function Details:Quad(material, a, b, c, d, tile)
     batch.vertices = batch.vertices + 6
 end
 
+-- 三角形用于岸坡沿折线精确切分，避免退化Quad造成零面积切线。
+---@param material string
+---@param a Vector3
+---@param b Vector3
+---@param c Vector3
+---@param tile? number
+function Details:Triangle(material,a,b,c,tile)
+    local cross=(b-a):CrossProduct(c-a)
+    if cross:LengthSquared()<.0000000001 then return end
+    local batch=self:Batch(material,(a.x+b.x+c.x)/3,(a.z+b.z+c.z)/3)
+    local normal=cross:Normalized()
+    local origin=V(batch.cx,0,batch.cz)
+    for _,p in ipairs({a,b,c}) do
+        batch.geometry:DefineVertex(p-origin)
+        batch.geometry:DefineNormal(normal)
+        batch.geometry:DefineTexCoord(Vector2(p.x*(tile or .5),p.z*(tile or .5)))
+    end
+    batch.vertices=batch.vertices+3
+end
+
 ---@param material string
 ---@param x number
 ---@param y number
@@ -253,10 +273,11 @@ end
 ---@param x number
 ---@param z number
 ---@param yaw number
-function Details:Bench(x,z,yaw)
+---@param baseY? number
+function Details:Bench(x,z,yaw,baseY)
     local a=math.rad(yaw)
     local function box(mat,px,py,pz,w,h,d)
-        self:Box(mat,x+px*math.cos(a)+pz*math.sin(a),py,z-px*math.sin(a)+pz*math.cos(a),w,h,d,yaw)
+        self:Box(mat,x+px*math.cos(a)+pz*math.sin(a),py+(baseY or 0),z-px*math.sin(a)+pz*math.cos(a),w,h,d,yaw)
     end
     for i=1,5 do box("wood",0,.52,-.30+i*.12,2.3,.075,.095) end
     for i=1,3 do box("wood",0,.73+i*.14,.37,2.3,.105,.07) end

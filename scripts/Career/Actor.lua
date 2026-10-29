@@ -2,6 +2,8 @@
 -- 城市负责碰撞；Session负责输入、相机、电量与存档，不复用赛车速度参数。
 local Visuals = require("Career.ActorVisuals")
 local Vehicles = require("Career.VehicleData")
+local Footprints = require("Career.VehicleFootprints")
+local Collision = require("Career.FootprintCollision")
 local V = Vector3
 
 ---@class CareerActorInput
@@ -84,22 +86,19 @@ local function approach(value, target, amount)
 end
 
 -- Collision plan (metres, top view; +Z forward):
---
---          building / inflated City AABB
---          +-------------------------+
---          |                         |
---          +-------------------------+
---        O -> ->   tangency slides; inward displacement is blocked
---        |<-r->|
---  walker: circle r=.32; vehicle: conservative circle r=1.20, enclosing
---  the 1.90m scooter and its rear-mounted delivery box.
---  No Bullet movement in parallel: ALL XZ displacement passes through City.Move.
---  Segment <=.18m and time <=1/60s, including parking exits; dt<=.25s avoids
---  catching up huge paused/stalled frames. World.LIMIT is the shared boundary.
---  Boundaries: zero input does not rotate/move; diagonal walk normalized;
---  thin walls/corners use City sweep; blocked vehicle loses speed, no wall turbo;
---  dismount tries full unobstructed paths, refuses if every exit is blocked;
---  grounded at Surface, no artificial jump/ceiling/gravity in this flat city.
+--      wall |  .32m walker circle   | local car-shell strips
+--           |       O ->           |    /---------\
+--           |    +mirror+          |   |           |
+--           |    | bike | ->       |   |           |
+--           |    | box  |          |    \---------/
+-- Walk is a true circle; ride/parking is a directional union measured from
+-- the rendered model, box and mirrors (VehicleFootprints shares their layout).
+-- No enclosing diagonal circle and no axis-aligned vehicle-sized square.
+-- City continuously casts each <=.10m displacement; <=1/60s dynamics steps,
+-- and <=.25-degree swept rotation intervals prevent high-speed corner tunnelling.
+-- Tangency slides, contact blocks inward travel, no speed accumulation into walls.
+-- Mount/dismount ignore only the target vehicle, never unrelated parked vehicles.
+-- No parallel Bullet movement, no gravity/jump in this flat locomotion domain.
 
 ---@param scene Scene
 ---@param city CareerCity
@@ -115,6 +114,7 @@ end
 function Actor:Init(scene, city)
     assert(scene and city, "Actor.New requires scene and City")
     self.scene, self.city = scene, city
+    city.actor=self -- independent parking is part of the same City query domain
     self.x, self.z, self.yaw, self.speed = 0, -20, 0, 0
     self.bikeX, self.bikeZ, self.bikeYaw = 1.5, -20, 0
     self.vehicleId=Vehicles.EBIKE
@@ -133,7 +133,17 @@ function Actor:Init(scene, city)
         self.x, self.z, self.bikeX, self.bikeZ))
 end
 
-function Actor:VehicleRadius() return Vehicles.Radii[self.vehicleId] end
+function Actor:VehicleRadius() return Vehicles.Radii[self.vehicleId] end -- compatibility/broad phase only
+function Actor:Footprint(mounted)
+    if mounted==nil then mounted=self.mounted end
+    return mounted and Footprints.Get(self.vehicleId) or Collision.Circle(0,0,WALK_RADIUS)
+end
+function Actor:ParkedShapes(ignoreId)
+    local list={}
+    if not self.mounted and self.vehicleId~=ignoreId then list[#list+1]=Footprints.At(self.vehicleId,self.bikeX,self.bikeZ,self.bikeYaw) end
+    for id,p in pairs(self.parking) do if id~=self.vehicleId and id~=ignoreId then list[#list+1]=Footprints.At(id,p.x,p.z,p.yaw) end end
+    return list
+end
 function Actor:VehicleName() return Vehicles.Names[self.vehicleId] end
 function Actor:MaxSpeed() return self.vehicleId==Vehicles.EBIKE and Actor.MAX_SPEED or 60/3.6 end
 function Actor:ParkingSnapshot()
@@ -145,11 +155,11 @@ end
 function Actor:RestoreVehicles(pos)
     self.parking={}
     for id,p in pairs(pos.vehicleParking or {}) do
-        local x,z=self.city:FindFree(p.x,p.z,Vehicles.Radii[id])
+        local x,z=self.city:FindShapeFree(p.x,p.z,Footprints.Get(id),p.yaw,"vehicle",0,id)
         self.parking[id]={x=x,z=z,yaw=p.yaw}
     end
     self.vehicleId=pos.activeVehicle or Vehicles.EBIKE
-    local x,z=self.city:FindFree(pos.bikeX,pos.bikeZ,self:VehicleRadius())
+    local x,z=self.city:FindShapeFree(pos.bikeX,pos.bikeZ,self:Footprint(true),pos.bikeYaw,"vehicle",0,self.vehicleId)
     self.bikeX,self.bikeZ,self.bikeYaw=x,z,pos.bikeYaw
     self.parking[self.vehicleId]={x=x,z=z,yaw=pos.bikeYaw}
     self.visuals:SetVehicle(self.vehicleId)
@@ -162,23 +172,57 @@ end
 ---@param dz number
 ---@param radius number
 ---@return number, number, boolean
-function Actor:Move(x, z, dx, dz, radius)
+function Actor:Move(x, z, dx, dz, radius, yaw, ignoreId)
     local distance = math.sqrt(dx * dx + dz * dz)
     local steps = math.max(1, math.ceil(distance / MAX_STEP))
     local stepX, stepZ = dx / steps, dz / steps
     local blocked = false
+    local walking=radius==WALK_RADIUS
+    local shape=walking and self:Footprint(false) or self:Footprint(true)
     for _ = 1, steps do
-        local walking=radius==WALK_RADIUS and not self.mounted
-        local nextX, nextZ = self.city:Move(x, z, stepX, stepZ, radius,walking and "walk" or "vehicle",self.walkHeight)
+        local nextX,nextZ,hit=self.city:MoveShape(x,z,stepX,stepZ,shape,yaw or self.yaw,
+            walking and "walk" or "vehicle",self.walkHeight,ignoreId)
         if walking then self.walkHeight=self.city:WalkSurface(nextX,nextZ,self.walkHeight) end
-        nextX = clamp(nextX, -MAP_LIMIT + radius, MAP_LIMIT - radius)
-        nextZ = clamp(nextZ, -MAP_LIMIT + radius, MAP_LIMIT - radius)
-        if math.abs(nextX - x - stepX) + math.abs(nextZ - z - stepZ) > 0.0001 then
-            blocked = true
-        end
-        x, z = nextX, nextZ
+        if hit or math.abs(nextX-x-stepX)+math.abs(nextZ-z-stepZ)>.0001 then blocked=true end
+        x,z=nextX,nextZ
     end
-    return x, z, blocked
+    return x,z,blocked
+end
+
+-- Turn the entire visible footprint, not just its centre. Each short angular
+-- interval is enclosed by start/end hulls plus arc sagitta <=0.01mm. The query
+-- therefore covers the continuous rotation rather than sparse yaw samples.
+function Actor:TurnTo(x,z,fromYaw,toYaw)
+    local delta=wrapYaw(toYaw-fromYaw)
+    if math.abs(delta)<1e-8 then return fromYaw,false end
+    local count=math.max(1,math.ceil(math.abs(delta)/.25))
+    local shape=self:Footprint(true)
+    -- Only a broad-phase success may skip narrow angular casts; failure never
+    -- blocks a gap using this enclosing disc.
+    if self.city:IsShapeFree(x,z,Collision.Circle(0,0,shape.reach),0,"vehicle",0,self.vehicleId) then
+        return wrapYaw(toYaw),false
+    end
+    local accepted=fromYaw
+    for i=1,count do
+        local nextYaw=fromYaw+delta*i/count
+        local first=Collision.Pose(shape,0,0,accepted)
+        local last=Collision.Pose(shape,0,0,nextYaw)
+        local parts={}
+        local pad=shape.reach*(1-math.cos(math.rad(math.abs(delta/count))*.5))+.000001
+        for index,p in ipairs(first.parts) do
+            local points={}
+            for _,v in ipairs(p.points) do
+                for _,d in ipairs({{pad,pad},{-pad,pad},{pad,-pad},{-pad,-pad}}) do points[#points+1]={x=v.x+d[1],z=v.z+d[2]} end
+            end
+            for _,v in ipairs(last.parts[index].points) do
+                for _,d in ipairs({{pad,pad},{-pad,pad},{pad,-pad},{-pad,-pad}}) do points[#points+1]={x=v.x+d[1],z=v.z+d[2]} end
+            end
+            parts[#parts+1]={points=Collision.Hull(points)}
+        end
+        if not self.city:IsShapeFree(x,z,Collision.Shape(parts),0,"vehicle",0,self.vehicleId) then return accepted,true end
+        accepted=nextYaw
+    end
+    return wrapYaw(accepted),false
 end
 
 ---@param dt number
@@ -269,13 +313,16 @@ function Actor:RideStep(dt, controls)
     -- reverses steering naturally; no pivoting or leaning while parked.
     local steeringAngle = self.steer * (30 - 12 * math.min(1, math.abs(self.speed) / maxSpeed))
     local yawDelta = math.deg(self.speed / 1.45 * math.tan(math.rad(steeringAngle))) * dt
-    local middleYaw = math.rad(self.yaw + yawDelta * 0.5)
+    local firstYaw,turnBlocked=self:TurnTo(self.x,self.z,self.yaw,self.yaw+yawDelta*.5)
+    local middleYaw = math.rad(firstYaw)
     local distance = (oldSpeed + self.speed) * 0.5 * dt
     local nextX, nextZ, blocked = self:Move(self.x, self.z,
-        math.sin(middleYaw) * distance, math.cos(middleYaw) * distance, self:VehicleRadius())
+        math.sin(middleYaw) * distance, math.cos(middleYaw) * distance, self:VehicleRadius(),firstYaw,self.vehicleId)
+    local finalYaw,endBlocked=self:TurnTo(nextX,nextZ,firstYaw,self.yaw+yawDelta)
+    blocked=blocked or turnBlocked or endBlocked
     local moved = math.sqrt((nextX - self.x) ^ 2 + (nextZ - self.z) ^ 2)
     self.x, self.z = nextX, nextZ
-    self.yaw = wrapYaw(self.yaw + yawDelta)
+    self.yaw = finalYaw
     if blocked then
         if math.abs(distance) > 0.00001 then
             self.speed = self.speed * math.min(1, moved / math.abs(distance))
@@ -321,7 +368,10 @@ function Actor:ToggleMount()
             return false, "请走到停放的车旁3米内，不会随地召回车辆"
         end
         -- A nearby bike behind a wall is not reachable through that wall.
-        local mountX, mountZ, blocked = self:Move(self.x, self.z, dx, dz, WALK_RADIUS)
+        if not self.city:IsShapeFree(self.bikeX,self.bikeZ,self:Footprint(true),self.bikeYaw,"vehicle",0,self.vehicleId) then
+            return false,"车辆旁空间不足，请先移开其它障碍物"
+        end
+        local mountX, mountZ, blocked = self:Move(self.x, self.z, dx, dz, WALK_RADIUS,self.yaw,self.vehicleId)
         if blocked or math.abs(mountX - self.bikeX) + math.abs(mountZ - self.bikeZ) > 0.01 then
             return false, "车辆在障碍物另一侧，请绕到车旁"
         end
@@ -333,16 +383,19 @@ function Actor:ToggleMount()
         return true, "已上车 · " .. self:VehicleName()
     end
 
-    -- Exit centres clear the bike's enclosing circle + walker radius. Test
-    -- both sides, then fore/aft; follow each complete path with City.Move.
-    -- No teleport through wall, no arbitrary map-wide search/vehicle recall.
+    -- Step out past the real side / nose / cargo edge, not the enclosing disc.
+    -- The traversed path ignores only this bike; the final walker must also
+    -- clear its actual shell, so a tiny slot cannot be used as a dismount cheat.
     local heading = math.rad(self.bikeYaw)
-    local exitDistance = self:VehicleRadius() + WALK_RADIUS + 0.10
-    for _, exit in ipairs({{-1, 0}, {1, 0}, {0, -1}, {0, 1}}) do
-        local dx = (exit[1] * math.cos(heading) + exit[2] * math.sin(heading)) * exitDistance
-        local dz = (exit[2] * math.cos(heading) - exit[1] * math.sin(heading)) * exitDistance
-        local newX, newZ, blocked = self:Move(self.bikeX, self.bikeZ, dx, dz, WALK_RADIUS)
-        if not blocked and math.abs(newX - self.bikeX - dx) + math.abs(newZ - self.bikeZ - dz) < 0.01 then
+    local footprint=self:Footprint(true)
+    local exits={{footprint.x1-WALK_RADIUS-.08,0},{footprint.x2+WALK_RADIUS+.08,0},
+        {0,footprint.z1-WALK_RADIUS-.08},{0,footprint.z2+WALK_RADIUS+.08}}
+    for _, exit in ipairs(exits) do
+        local dx = exit[1]*math.cos(heading)+exit[2]*math.sin(heading)
+        local dz = exit[2]*math.cos(heading)-exit[1]*math.sin(heading)
+        local newX,newZ,blocked=self:Move(self.bikeX,self.bikeZ,dx,dz,WALK_RADIUS,self.bikeYaw,self.vehicleId)
+        local clearBike=Collision.Free(Collision.Circle(newX,newZ,WALK_RADIUS),Footprints.At(self.vehicleId,self.bikeX,self.bikeZ,self.bikeYaw),Collision.SKIN)
+        if not blocked and clearBike and math.abs(newX - self.bikeX - dx) + math.abs(newZ - self.bikeZ - dz) < 0.01 then
             self.x, self.z, self.yaw = newX, newZ, self.bikeYaw
             self.speed, self.steer, self.mounted = 0, 0, false
             self.visuals:SetMounted(false)
@@ -372,10 +425,10 @@ end
 function Actor:Teleport(x, z, yaw, height)
     if self.disposed then return end
     self.walkHeight=height or 0
-    local radius = self.mounted and self:VehicleRadius() or WALK_RADIUS
-    self.x, self.z = self:Move(clamp(x, -MAP_LIMIT + radius, MAP_LIMIT - radius),
-        clamp(z, -MAP_LIMIT + radius, MAP_LIMIT - radius), 0, 0, radius)
-    self.yaw, self.speed, self.steer = wrapYaw(yaw), 0, 0
+    self.yaw=wrapYaw(yaw)
+    self.x,self.z=self.city:FindShapeFree(x,z,self:Footprint(),self.yaw,
+        self.mounted and "vehicle" or "walk",self.walkHeight,self.mounted and self.vehicleId or nil)
+    self.speed,self.steer=0,0
     self.walkDistance=0
     self.visuals:ResetGait()
     if self.mounted then
@@ -390,6 +443,8 @@ function Actor:Dispose()
     if self.disposed then return end
     self.disposed = true
     self.visuals:Dispose()
+    local city=self.city --[[@as CareerCity]]
+    if city.actor==self then city.actor=nil end
     self.node:Dispose()
     print("[CareerActor] 已释放人物、独立停放车与配送装备")
 end

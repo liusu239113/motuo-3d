@@ -40,13 +40,7 @@ local function find(view,id)
 end
 ---@param view CareerView
 local function layout(view)
-    UI.Layout()
-    view.phoneArea:Update(0)
-    UI.Layout()
-    view.phoneContent:Update(0) -- 同步内容尺寸，无惯性推进或游戏 Update。
-    local map=view.phoneContent:FindById("career-phone-map")
-    if map then map:Update(0) end
-    UI.Layout()
+    require("Career.PhoneKit").LayoutTree(view.phoneArea)
 end
 ---@param view CareerView
 ---@param id string
@@ -91,6 +85,7 @@ local function choose(view,district)
         "切区不应重建整页/全城概览")
     freed(old)
     layout(view)
+    require("Career.PhoneAppChecks").Audit(view,"地图切区/"..district)
 end
 ---@param view CareerView
 ---@return Widget[]
@@ -157,8 +152,16 @@ function Checks.Run(session)
         tap(view,"career-app-map")
         assert(view.mapDistrictId=="east_market","初开应由实时actor而非老存档定位")
         assert(find(view,"career-map-current").props.text:find("东门市集",1,true))
-        assert(find(view,"career-map-region-east_market").props.text:find("当前区",1,true))
+        assert(find(view,"career-map-region-east_market-card"):GetChildAt(2).props.text:find("当前区",1,true))
         assert(#verifyRows(view,"east_market",actor.x,actor.z)==4)
+        for _,place in ipairs(require("Career.CityEnvironment").Points) do
+            assert(Config.points[place.id] and find(view,"career-map-coast-title-"..place.id).props.text==place.label,
+                "海滨独立入口必须来自Environment.Points并接入真实Config")
+            tap(view,"career-map-coast-"..place.id)
+            assert(session.waypoint==place.id and view.phonePage=="" and Store.Get().revision==revision,
+                "海滨导航必须走生产actions且不传送/写档")
+            session:OpenPhone("map")
+        end
         local mapPage=tree(assert(view.phoneContent:GetChildAt(1)))
         choose(view,"west_garden")
         assert(#verifyRows(view,"west_garden",actor.x,actor.z)==4)
@@ -255,7 +258,7 @@ function Checks.Run(session)
                 verifyRows(view,d.id,actor.x,actor.z)
                 local count=#tree(assert(view.phoneContent:GetChildAt(1)))
                 maximum=math.max(maximum,count)
-                assert(count<=180 and #tree(view.root)<=baseCount+180,"地图活控件数无界增长")
+                assert(count<=260 and #tree(view.root)<=baseCount+260,"地图活控件数无界增长")
             end
             local stale=tree(assert(view.phoneContent:GetChildAt(1)))
             session:OpenPhone("apps"); freed(stale)
@@ -333,11 +336,7 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
     end
     local function settle(width,height)
         holder:SetStyle{width=width,height=height}
-        UI.Layout()
-        view.phoneArea:Update(0)
-        UI.Layout()
-        view.phoneContent:Update(0)
-        UI.Layout()
+        require("Career.PhoneKit").LayoutTree(view.phoneArea)
     end
     local function touch(widget)
         local r=widget:GetAbsoluteLayoutForHitTest()
@@ -354,7 +353,7 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
     end
     local ok,failure=pcall(function()
         -- 后两组额外模拟刘海/胶囊挤占空间；640x360还直接按基准像素验收，比默认密度缩放更紧。
-        for _,size in ipairs({{640,360,0,0},{960,540,0,0},{1280,720,0,0},{640,360,24,36},{960,540,32,48}}) do
+        for _,size in ipairs({{640,360,0,0},{960,540,0,0},{1280,720,0,0},{1568,994,0,0},{640,360,24,36},{960,540,32,48}}) do
             local width,height=size[1],size[2]
             holder:SetStyle{paddingLeft=size[3],paddingRight=size[3],paddingTop=size[4],paddingBottom=8}
             view:OpenPhone("apps",state,offer,active)
@@ -367,6 +366,7 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
                 w=body.w*476/576,h=body.h*880/1024}
             assert(inside(screen,aperture),"内容安全区不匹配硬件框图透明开孔")
             assert(view.phoneDesktop:IsVisible() and not view.phoneContent:IsVisible(),"主页不得使用纵向ScrollView")
+            require("Career.PhoneAppChecks").Audit(view,"桌面/"..width.."x"..height)
             local old=tree(assert(view.phoneDesktop:GetChildAt(1)))
             local grid=assert(holder:FindById("career-app-grid"))
             assert(grid:GetNumChildren()==2,"固定六应用必须是两行三列")

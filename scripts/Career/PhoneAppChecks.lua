@@ -15,7 +15,54 @@ local function isolated(session)
 end
 ---@param view CareerView
 local function layout(view)
-    UI.Layout(); view.phoneArea:Update(0); UI.Layout(); view.phoneContent:Update(0); UI.Layout()
+    require("Career.PhoneKit").LayoutTree(view.phoneArea)
+end
+-- 全树而非首屏：以真实字体/字号测自然行高，检查父内容框与按钮文字。
+-- ScrollView是有意的纵向裁剪；地图绘图内部的小标记不是手机文案卡片。
+---@param view CareerView
+function Checks.Audit(view,context)
+    layout(view)
+    local count=0
+    local function inspect(widget)
+        if not widget:IsVisible() or widget.props.visibility=="hidden" or widget.props.id=="career-phone-map" then return end
+        local p=widget.props
+        local kind=widget._className
+        if (kind=="Label" or kind=="Button") and type(p.text)=="string" and p.text~="" then
+            local r=widget:GetAbsoluteLayout()
+            local name=tostring(p.id or p.text:sub(1,60))
+            assert(r.w>0 and r.h>0,"文字布局为零 "..context.." / "..name)
+            local pl,pr,pt,pb=p.paddingLeft or 0,p.paddingRight or 0,p.paddingTop or 0,p.paddingBottom or 0
+            local width,height=r.w-pl-pr,r.h-pt-pb
+            local size=UI.Theme.FontSize(p.fontSize)
+            local multiline=kind=="Label" and p.whiteSpace=="normal"
+            local measured=UI.MeasureTextFit(p.text,{fontSize=size,minFontSize=size,
+                fontFace=UI.Theme.FontFace(p.fontFamily,p.fontWeight),width=math.max(1,width-2),
+                multiline=multiline,lineHeight=p.lineHeight or (kind=="Label" and 1.4 or 1),letterSpacing=p.letterSpacing or 0})
+            assert(measured.width>0 and measured.height>0,"字体测量未就绪 "..name)
+            if not multiline then
+                assert(measured.width<=width+1,"单行文案溢出 "..context.." / "..name.." measured="..measured.width.." available="..width)
+            else
+                -- NanoVG行断点bounds偶尔包含触发换行的一个字；不把它误认作实际越界。
+                assert(measured.width<=width+size+1,"多行文案不可换行 "..context.." / "..name)
+            end
+            assert(measured.height<=height+1,"文字高度裁切 "..context.." / "..name.." measured="..measured.height.." available="..height)
+            local parent=widget.parent
+            if parent and parent._className~="ScrollView" then
+                local b=parent:GetAbsoluteLayout()
+                local q=parent.props
+                assert(r.x>=b.x+(q.paddingLeft or 0)-1 and r.x+r.w<=b.x+b.w-(q.paddingRight or 0)+1,
+                    "文字超出父内容宽度 "..context.." / "..name)
+                assert(r.y>=b.y-1 and r.y+r.h<=b.y+b.h+1,"文字超出父高度 "..context.." / "..name)
+            end
+            if kind=="Button" then assert(r.w>=44 and r.h>=44,"动作真实尺寸不足44 "..name) end
+            count=count+1
+        end
+        for _,child in ipairs(widget:GetChildren()) do inspect(child) end
+    end
+    inspect(view.phonePage=="apps" and view.phoneDesktop or view.phoneContent)
+    inspect(assert(view.phoneBody:FindById("career-phone-toolbar")))
+    print(string.format("[手机全页文案验收] %s / %d项 / 真实字体测宽测高/父边界/无缩字",context,count))
+    return count
 end
 ---@param view CareerView
 ---@return Widget
@@ -121,16 +168,48 @@ function Checks.Run(session)
         session.online=false; session.space="city"; session:Refresh()
         local baseline=Store.Get()
         require("Career.MapPhoneChecks").RunLayout(view,session:State(),Delivery.GetOffer(),nil,function(page)
+            Checks.Audit(view,"多尺寸/"..page)
             if page=="wallet" then
                 tap(view,"career-wallet-filter-income")
                 assert(find(view,"career-wallet-empty"),"多分辨率筛选应保留真实开局空态")
+                Checks.Audit(view,"多尺寸/wallet-income")
                 tap(view,"career-wallet-filter-expense")
                 tap(view,"career-wallet-filter-all")
                 tap(view,"career-wallet-entry-1")
+                Checks.Audit(view,"多尺寸/wallet-detail")
                 tap(view,"career-phone-back")
                 assert(view.phonePage=="wallet" and view.phoneLedgerId=="","多分辨率详情返回没有回明细")
+            elseif page=="messages" then
+                for _,id in ipairs({"cousin","station_master","mechanic","journal"}) do
+                    tap(view,"career-chat-"..id); Checks.Audit(view,"多尺寸/chat-"..id)
+                    tap(view,"career-phone-back")
+                end
+            elseif page=="map" then
+                local World=require("Career.WorldData")
+                local districts={World.District(0,0)}
+                for _,d in ipairs(World.Districts) do districts[#districts+1]=d end
+                districts[#districts+1]=World.District(World.LIMIT-1,World.LIMIT-1)
+                for _,d in ipairs(districts) do
+                    tap(view,"career-map-region-toggle")
+                    Checks.Audit(view,"多尺寸/map-picker-"..d.id)
+                    tap(view,"career-map-region-"..d.id)
+                    Checks.Audit(view,"多尺寸/map-"..d.id)
+                    local nextPage=view.phoneBody:FindById("career-map-next")
+                    if nextPage and not nextPage.props.disabled then
+                        tap(view,"career-map-next"); Checks.Audit(view,"多尺寸/map-"..d.id.."-page2")
+                    end
+                end
+            elseif page=="progression" then
+                local before=Store.Get()
+                -- 最贵装备与最贵车辆都走真实按钮；人物远离车行，必须现场拒绝而不扣款。
+                tap(view,"career-equipment-battery")
+                tap(view,"career-motorcycle-rally_3")
+                assert(Store.Get().revision==before.revision and Store.Get().cashCents==before.cashCents,
+                    "远处装备/最贵车辆按钮不可绕过现场授权")
+                Checks.Audit(view,"多尺寸/progression-bottom")
             end
         end)
+        view.phoneReadThreads={}
         session:OpenPhone("wallet")
         assert(find(view,"career-wallet-balance").props.text=="¥50.00")
         tap(view,"career-wallet-filter-income")
@@ -168,6 +247,7 @@ function Checks.Run(session)
         tap(view,"career-chat-journal")
         assert(find(view,"career-chat-story-firstDeliveryStory"),"已有真实story log不可丢失")
         tap(view,"career-phone-back"); tap(view,"career-chat-station_master")
+        Checks.Audit(view,"联系人可接取长文")
         local before=Store.Get()
         tap(view,"career-engagement-breakfast_shift")
         assert(Store.Get().revision==before.revision and not Store.Get().engagements,"远处手机接取仍须现场再次授权")
@@ -178,6 +258,7 @@ function Checks.Run(session)
         tap(view,"career-accept")
         local active=assert(Delivery.GetActive())
         assert(find(view,"career-delivery-active") and active.status=="accepted")
+        Checks.Audit(view,"配送待取餐长文")
         -- 不改人物位置，真实按钮在远处不能代取餐或产生到账。
         local accepted=Store.Get()
         tap(view,"career-order-interact")
@@ -188,6 +269,7 @@ function Checks.Run(session)
         assert(Delivery.Pickup(active.id,p.x,p.z,{riding=false,speed=0}))
         session:OpenPhone("delivery")
         assert(find(view,"career-order-interact").props.text:find("交付",1,true),"已取餐必须切换送达状态")
+        Checks.Audit(view,"配送已取餐长文")
         tap(view,"career-phone-close")
         assert(view.phonePage=="" and view.phoneContent:GetNumChildren()==0 and cloud==0)
         print(string.format("[手机应用验收通过] 真触摸会话/已读/左右气泡/真实剧情/业务引导/钱包初始空态/收支筛选/账单详情/听单/接单/取送导航；现场二次授权；内存写入%d次，云0次",writes))
@@ -218,21 +300,38 @@ function Checks.Run(session)
     if not uiRestored then error(uiFailure,0) end
     return true
 end
--- page: apps/messages/chat/wallet/wallet-income/wallet-expense/wallet-detail/
--- delivery-offer/delivery-accepted/delivery-picked/life/progression；只用于主线程显式实拍入口。
+-- 原有page均支持-middle/-bottom后缀；另有chat-station/chat-mechanic/chat-journal、
+-- map-picker/map-region-<真实区ID>、progression-equipment/progression-expensive锚点。
+-- 参数直接复用主线程-careerappshot入口，不改Session或main。
 ---@param session CareerSession
 function Checks.Shot(session,page)
     isolated(session)
-    local allowed={apps=true,messages=true,chat=true,wallet=true,["wallet-income"]=true,["wallet-expense"]=true,
-        ["wallet-detail"]=true,["delivery-offer"]=true,["delivery-accepted"]=true,["delivery-picked"]=true,life=true,progression=true}
-    assert(allowed[page],"unknown phone shot "..tostring(page))
+    local requestedPage=page
+    local position="top"
+    local base,suffix=page:match("^(.-)%-(middle)$")
+    if not base then base,suffix=page:match("^(.-)%-(bottom)$") end
+    if base then page,position=base,suffix end
+    local allowed={apps=true,messages=true,chat=true,["chat-cousin"]=true,["chat-station"]=true,["chat-mechanic"]=true,["chat-journal"]=true,
+        wallet=true,["wallet-income"]=true,["wallet-expense"]=true,["wallet-detail"]=true,
+        ["delivery-offer"]=true,["delivery-accepted"]=true,["delivery-picked"]=true,life=true,progression=true,
+        ["progression-equipment"]=true,["progression-expensive"]=true,map=true,["map-coast"]=true,["map-picker"]=true}
+    local mapRegion=page:match("^map%-region%-(.+)$")
+    if mapRegion then
+        local World=require("Career.WorldData")
+        local regions={World.District(0,0),World.District(World.LIMIT-1,World.LIMIT-1)}
+        for _,d in ipairs(World.Districts) do regions[#regions+1]=d end
+        for _,d in ipairs(regions) do if d.id==mapRegion then allowed[page]=true end end
+    end
+    assert(allowed[page],"unknown phone shot "..tostring(requestedPage))
     local requested=false
-    for _,arg in ipairs(GetArguments()) do if arg=="-careerappshot="..page then requested=true end end
+    for _,arg in ipairs(GetArguments()) do if arg=="-careerappshot="..requestedPage then requested=true end end
     assert(requested,"phone shot requires explicit -careerappshot=<page>")
     local view,actor=session.view,assert(session.actor)
     view:CloseConversation(); view.overlay:SetVisible(false); view:ClosePhone(); view:ShowGame()
     fixture(); session.online=true; actor.speed=0
-    local app=page:match("^wallet") and "wallet" or page:match("^delivery") and "delivery" or page=="chat" and "messages" or page
+    local app=page:match("^wallet") and "wallet" or page:match("^delivery") and "delivery"
+        or page:match("^chat") and "messages" or page:match("^progression") and "progression"
+        or page:match("^map") and "map" or page
     if page=="delivery-accepted" or page=="delivery-picked" then
         local offer=assert(Delivery.GetOffer()); assert(Delivery.Accept(offer.id))
         if page=="delivery-picked" then
@@ -240,17 +339,37 @@ function Checks.Shot(session,page)
         end
     end
     session:Refresh(); session:OpenPhone(app); layout(view)
-    if page=="chat" then tap(view,"career-chat-cousin")
+    if app=="messages" and page~="messages" then
+        local contact=({chat="cousin",["chat-cousin"]="cousin",["chat-station"]="station_master",
+            ["chat-mechanic"]="mechanic",["chat-journal"]="journal"})[page]
+        tap(view,"career-chat-"..assert(contact))
     elseif page=="wallet-income" then tap(view,"career-wallet-filter-income")
     elseif page=="wallet-expense" then tap(view,"career-wallet-filter-expense")
-    elseif page=="wallet-detail" then tap(view,"career-wallet-entry-5") end
+    elseif page=="wallet-detail" then tap(view,"career-wallet-entry-5")
+    elseif page=="map-picker" then tap(view,"career-map-region-toggle")
+    elseif mapRegion then
+        tap(view,"career-map-region-toggle"); tap(view,"career-map-region-"..mapRegion)
+    end
+    Checks.Audit(view,"实拍/"..requestedPage)
     view.phoneContent:ScrollToTop(); layout(view)
-    if page=="chat" then visibleTextLayout(view,"career-chat-header-info") end
+    local anchor=page=="progression-equipment" and "career-equipment-battery-card"
+        or page=="progression-expensive" and "career-motorcycle-rally_3-card"
+        or page=="map-coast" and "career-map-coast" or nil
+    if anchor then
+        local r=find(view,anchor):GetAbsoluteLayoutForHitTest()
+        local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
+        view.phoneContent:SetScroll(0,math.max(0,r.y-area.y-4))
+    elseif position=="middle" then
+        local _,height=view.phoneContent:GetContentSize()
+        view.phoneContent:SetScroll(0,math.max(0,(height-view.phoneContent:GetAbsoluteLayout().h)/2))
+    elseif position=="bottom" then view.phoneContent:ScrollToBottom() end
+    layout(view)
+    if app=="messages" and page~="messages" then visibleTextLayout(view,"career-chat-header-info") end
     if app=="delivery" then visibleTextLayout(view,"career-delivery-online-label") end
     view.notice:SetText("")
     local state=Store.Get()
     local income,expense=Apps.Today(state)
     print(string.format("[手机应用实拍就绪] %s / 真实余额%.2f / %d笔真实流水 / 今日收入%.2f支出%.2f / completed=%d / story=%s / memory-only / 真组件与触摸可达",
-        page,state.cashCents/100,#state.ledger,income/100,expense/100,state.completedOrders,tostring(state.flags.firstDeliveryStory)))
+        requestedPage,state.cashCents/100,#state.ledger,income/100,expense/100,state.completedOrders,tostring(state.flags.firstDeliveryStory)))
 end
 return Checks

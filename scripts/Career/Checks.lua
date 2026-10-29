@@ -408,6 +408,9 @@ function Checks.RunWorld(session)
     require("Career.PhoneAppChecks").Run(session)
     require("Career.LocomotionChecks").Run(session)
     require("Career.CityExpansionChecks").Run(session)
+    require("Career.CollisionChecks").Run(session)
+    require("Career.CityEnvironmentChecks").Run(session)
+    require("Career.SoundCrowdChecks").Run(session)
     session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end

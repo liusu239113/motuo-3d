@@ -837,7 +837,9 @@ function Start()
         if arg == "-careerchecks" or arg=="-careertripchecks" then careerCheck, careerStart = true, true; legacyTest = false end
         -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
         if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
-            or arg:match("^%-careerappshot=") or arg:match("^%-careeranimshot=") or arg:match("^%-careercityshot=") then
+            or arg=="-careercollisionquality" or arg=="-careerenvironmentquality" or arg=="-careersoundcrowdquality"
+            or arg:match("^%-careerappshot=") or arg:match("^%-careeranimshot=") or arg:match("^%-careercityshot=")
+            or arg:match("^%-careercollisionshot=") or arg:match("^%-careerenvironmentshot=") or arg:match("^%-careercrowdshot=") then
             careerCheck,careerStart,legacyTest=true,true,false
         end
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end

@@ -286,21 +286,36 @@ function View:BuildMapPhone(content,state,active)
         if district.id==self.mapDistrictId then selected=district; break end
     end
     self.mapDistrictId=selected.id
-    content:AddChild(label("当前区 · "..current.label,12,C.cyan,{id="career-map-current",whiteSpace="normal"}))
+    local k=PhoneKit
+    content:AddChild(k.Heading("南城地图","按城市位置计距 · 导航不传送","career-map-heading"))
+    content:AddChild(k.Text("当前区 · "..current.label,12,k.C.green,{id="career-map-current"}))
     if state.currentSpace and state.currentSpace~="city" then
-        content:AddChild(label("室内 · 按城市入口定位与计距；请先到房门旁出门，再沿城市导航前往。",11,C.amber,
-            {id="career-map-indoor",whiteSpace="normal"}))
+        content:AddChild(k.Text("室内 · 按城市入口定位与计距；请先到房门旁出门，再沿城市导航前往。",11,k.C.orange,
+            {id="career-map-indoor"}))
     end
-    local chooser=btn("",function() end,false,{id="career-map-region-toggle",height=44,padding=4})
-    content:AddChild(chooser)
-    -- 有界折叠按钮组避免 Dropdown 浮层在窄手机屏上越界；每次仅创建14个真实区域按钮。
-    local picker=UI.Panel{id="career-map-regions",width="100%",padding=0,gap=4,visible=self.mapPickerOpen}
+    local selection=k.Card("career-map-selection-card")
+    local selectedName=k.Text("",13,k.C.ink,{id="career-map-selection-name",fontWeight="bold"})
+    selection:AddChild(selectedName)
+    local chooser=k.Button("选择区域",function() end,"career-map-region-toggle",false)
+    selection:AddChild(chooser); content:AddChild(selection)
+    local coast=k.Card("career-map-coast",{children={k.Text("海滨步道",13,k.C.ink,{fontWeight="bold"}),
+        k.Text("观景台、沙滩与栈桥 · 随时可查，不受区域分页影响。",10,k.C.muted)}})
+    for _,place in ipairs(require("Career.CityEnvironment").Points) do
+        local id=place.id
+        coast:AddChild(k.Text(place.label,12,k.C.ink,{id="career-map-coast-title-"..id,fontWeight="bold"}))
+        coast:AddChild(k.Text("直线 "..mapDistance(math.sqrt((place.x-pos.x)^2+(place.z-pos.z)^2)),10,k.C.muted))
+        coast:AddChild(k.Button("前往海滨",function() self.actions.setWaypoint(id); self.actions.closePhone() end,
+            "career-map-coast-"..id,false))
+    end
+    -- 12个外区加老街/绿带；标题可完整换行，动作只用短文字。
+    local picker=UI.Panel{id="career-map-regions",width="100%",padding=0,gap=7,visible=self.mapPickerOpen}
     content:AddChild(picker)
-    local points=UI.Panel{id="career-map-points",width="100%",padding=0,gap=7}
+    content:AddChild(coast)
+    local points=UI.Panel{id="career-map-points",width="100%",padding=0,gap=9}
     content:AddChild(points)
     local function updateChooser()
-        chooser:SetText((self.mapPickerOpen and "收起区域 · " or "选择区域 · ")..selected.label
-            ..(selected.id==current.id and "（当前区）" or ""))
+        selectedName:SetText("所选区域\n"..selected.label..(selected.id==current.id and " · 当前区" or ""))
+        chooser:SetText(self.mapPickerOpen and "收起区域" or "选择区域")
         picker:SetVisible(self.mapPickerOpen)
     end
     local function refreshPoints()
@@ -322,14 +337,14 @@ function View:BuildMapPhone(content,state,active)
         end
         local pages=math.max(1,math.ceil(#matches/MAP_PAGE_SIZE))
         self.mapPointPage=math.max(1,math.min(self.mapPointPage,pages))
-        points:AddChild(label(selected.label.." · "..#matches.."处"..(selected.id==current.id and " · 当前区" or ""),13,C.amber,
-            {id="career-map-selected",whiteSpace="normal"}))
-        points:AddChild(label(selected.id=="greenbelt"
+        points:AddChild(k.Text(selected.label.." · "..#matches.."处"..(selected.id==current.id and " · 当前区" or ""),13,k.C.green,
+            {id="career-map-selected",fontWeight="bold"}))
+        points:AddChild(k.Text(selected.id=="greenbelt"
             and "绿带无固定服务点：以下为距你最近的4处真实地点，按所属区标注。"
-            or "按距你远近排列；距离为直线参考，不是道路里程。",10,C.muted,
-            {id="career-map-distance-note",whiteSpace="normal"}))
+            or "按距你远近排列；距离为直线参考，不是道路里程。",10,k.C.muted,
+            {id="career-map-distance-note"}))
         if selected.id=="greenbelt" then
-            points:AddChild(label("跨区距离按你当前城市位置计算（室内按入口）；不代表绿带内有店。",10,C.muted,{whiteSpace="normal"}))
+            points:AddChild(k.Text("跨区距离按你当前城市位置计算（室内按入口）；不代表绿带内有店。",10,k.C.muted))
         end
         local first=(self.mapPointPage-1)*MAP_PAGE_SIZE+1
         for index=first,math.min(#matches,first+MAP_PAGE_SIZE-1) do
@@ -337,24 +352,25 @@ function View:BuildMapPhone(content,state,active)
             local id=point.id
             local district=World.District(point.x,point.z)
             local distance=math.sqrt((point.x-pos.x)^2+(point.z-pos.z)^2)
-            local row=btn("",function() self.actions.setWaypoint(id); self.actions.closePhone() end,false,
-                {id="career-map-poi-"..id,height=60,padding=5,gap=2,justifyContent="center",alignItems="stretch"})
-            row:AddChild(label(point.label,11,C.white,{whiteSpace="normal",maxLines=2}))
-            row:AddChild(label((district.id~=current.id and "跨区 · "..district.label.." · " or "本区 · ")
-                .."直线 "..mapDistance(distance),10,C.muted,{id="career-map-distance-"..id,whiteSpace="normal"}))
-            points:AddChild(row)
+            local card=k.Card("career-map-place-card-"..id)
+            card:AddChild(k.Text(point.label,13,k.C.ink,{id="career-map-place-title-"..id,fontWeight="bold"}))
+            card:AddChild(k.Text((district.id~=current.id and "跨区 · "..district.label.."\n" or "本区 · ")
+                .."直线 "..mapDistance(distance),10,k.C.muted,{id="career-map-distance-"..id}))
+            card:AddChild(k.Button("设为导航",function() self.actions.setWaypoint(id); self.actions.closePhone() end,
+                "career-map-poi-"..id,true))
+            points:AddChild(card)
         end
         if pages>1 then
-            points:AddChild(label(string.format("地点 %d/%d 页 · 每页最多%d处",self.mapPointPage,pages,MAP_PAGE_SIZE),10,C.muted,
+            points:AddChild(k.Text(string.format("地点 %d/%d 页 · 每页最多%d处",self.mapPointPage,pages,MAP_PAGE_SIZE),10,k.C.muted,
                 {id="career-map-pagination"}))
             local nav=UI.Row{width="100%",gap=5,padding=0}
             local function turn(delta)
                 self.mapPointPage=self.mapPointPage+delta
                 refreshPoints()
             end
-            nav:AddChild(btn("上一页",function() turn(-1) end,false,{id="career-map-prev",width="48%",height=44,
+            nav:AddChild(k.Button("上一页",function() turn(-1) end,"career-map-prev",false,{width="48%",
                 disabled=self.mapPointPage==1,padding=0}))
-            nav:AddChild(btn("下一页",function() turn(1) end,false,{id="career-map-next",width="48%",height=44,
+            nav:AddChild(k.Button("下一页",function() turn(1) end,"career-map-next",false,{width="48%",
                 disabled=self.mapPointPage==pages,padding=0}))
             points:AddChild(nav)
         end
@@ -365,20 +381,21 @@ function View:BuildMapPhone(content,state,active)
     end
     for _,district in ipairs(districts) do
         local choice=district
-        picker:AddChild(btn(choice.label..(choice.id==current.id and " · 当前区" or ""),function()
+        picker:AddChild(k.ActionCard("career-map-region-"..choice.id,choice.label,
+            choice.id==current.id and "当前区 · 你所在的城市区域" or "切换地点列表，不会移动人物",nil,"查看地点",function()
             selected=choice; self.mapDistrictId=choice.id; self.mapPointPage=1; self.mapPickerOpen=false
             updateChooser(); refreshPoints(); self.phoneContent:ScrollToTop()
-        end,false,{id="career-map-region-"..choice.id,height=44,padding=2,fontSize=11}))
+        end,false))
     end
     updateChooser(); refreshPoints()
-    content:AddChild(label("全城概览 · 30公里跨度",12,C.amber,{id="career-map-overview-title"}))
+    content:AddChild(k.Text("全城概览 · 30公里跨度",12,k.C.green,{id="career-map-overview-title"}))
     local map=Map.New("career-phone-map",true)
     map.root:SetStyle{width="100%",height=220}
     content:AddChild(map.root)
     local target=self.lastTarget
     if state.currentSpace and state.currentSpace~="city" then target=nil end
     map:SetTelemetry(pos,target,active)
-    content:AddChild(label("全城道路连通，亲自骑行探索；主屏小地图跟随当前位置。",11,C.muted,{whiteSpace="normal"}))
+    content:AddChild(k.Text("全城道路连通，亲自骑行探索；主屏小地图跟随当前位置。",11,k.C.muted))
 end
 function View:BuildPhone(state,offer,active)
     print("[生涯手机] 构建页面 "..self.phonePage)
@@ -397,12 +414,15 @@ function View:BuildPhone(state,offer,active)
     local a=self.actions
     self.phoneAppState,self.phoneAppOffer,self.phoneAppActive=state,offer,active
     self.phoneBack:SetText("首页")
-    local modern=page~="apps" and page~="map"
+    local modern=page~="apps"
     local target=content
     local function section(title)
-        target=PhoneKit.Card(nil)
+        target=UI.Panel{width="100%",padding=0,gap=9}
         content:AddChild(target)
         target:AddChild(PhoneKit.Text(title,13,PhoneKit.C.ink,{fontWeight="bold"}))
+    end
+    local function action(id,title,description,terms,caption,fn,primary)
+        target:AddChild(PhoneKit.ActionCard(id,title,description,terms,caption,fn,primary))
     end
     local function text(t,size,color)
         target:AddChild(modern and PhoneKit.Text(t,size and math.min(size,16) or 11,
@@ -415,7 +435,7 @@ function View:BuildPhone(state,offer,active)
     content:SetStyle{padding=desktop and 0 or modern and 8 or 9,borderRadius=10,
         backgroundColor=desktop and {0,0,0,0} or modern and PhoneKit.C.paper or {8,19,27,238}}
     self.phoneContent:SetStyle{backgroundColor=modern and PhoneKit.C.paper or {0,0,0,0},borderRadius=10}
-    self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
+    self.phoneTitle:SetText(({apps="手机桌面",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
         Phone.Desktop(content,state,a,self.phoneHeight)
@@ -436,14 +456,18 @@ function View:BuildPhone(state,offer,active)
         section("骑手装备")
         for _,item in ipairs(Progress.Equipment) do
             local id=item.id
-            text(item.description,10,C.muted)
-            button((state.equipment and state.equipment[id] and "已拥有 · " or "购入 · ")..item.name..string.format(" ¥%.0f / Lv.%d",item.price/100,item.level),function() a.buyEquipment(id) end,false)
+            local owned=state.equipment and state.equipment[id]
+            action("career-equipment-"..id,item.name,item.description,
+                string.format("价格 ¥%.0f\n要求 Lv.%d · %s",item.price/100,item.level,owned and "已拥有" or "到南城车行办理"),
+                owned and "已拥有" or "购入装备",function() a.buyEquipment(id) end,false)
         end
         section("改善住处 · 按晚付费")
         text("旅舍、出租屋、公寓各有入口和室内。进门不收费，到床边确认休息才支付一晚。",10,C.muted)
         for _,item in ipairs(Progress.Housing) do
             local id=item.id
-            button((state.accommodation==id and "当前 · " or "选择 · ")..item.name..string.format(" ¥%.0f/晚",item.price/100),function() a.housing(id) end,false)
+            action("career-housing-"..id,item.name,"选择后到对应入口入住；确认过夜才收费。",
+                string.format("¥%.0f / 晚 · %s",item.price/100,state.accommodation==id and "当前住处" or "可选择"),
+                "选择住处",function() a.housing(id) end,false)
         end
         local home=assert(Housing.Get(state.accommodation))
         button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
@@ -456,21 +480,30 @@ function View:BuildPhone(state,offer,active)
         text("现金达到5万元后首购二手训练版：46000元；另备2000元护具训练、2000元周转。",11,C.muted)
         for _,item in ipairs(Progress.Motorcycles) do
             local id=item.id
-            if state.ownedMotorcycles[id] then
-                button((state.raceVehicle==id and "当前参赛 · " or "选为参赛车 · ")..item.name,function() a.selectMotorcycle(id) end,false)
-            else button("购买 · "..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false) end
+            local owned=state.ownedMotorcycles[id]
+            action("career-motorcycle-"..id,item.name,
+                owned and (state.raceVehicle==id and "当前参赛车辆" or "已拥有 · 可选为参赛车")
+                    or "首辆摩托需先攒够5万元，并购买二手训练版。",
+                string.format("价格 ¥%.0f\n到南城车行停稳下车办理",item.price/100),
+                owned and "选为参赛车" or "购买车辆",function()
+                    if owned then a.selectMotorcycle(id) else a.buyMotorcycle(id) end
+                end,false)
         end
         section("城市车库 · 到车行取车")
         text("摩托城市限速60km/h，电动车35km/h。换车不召回：原车留在停车处；接单前需换回带箱9号。燃油独立于电量，摩托共享油量。",11,C.muted)
-        button("城市用车 · 9号电动车",function() a.cityVehicle("borrowed_ebike") end,false)
+        action("career-city-ebike","9号电动车","带保温箱的配送用车；需到车行切换。",nil,"切换用车",
+            function() a.cityVehicle("borrowed_ebike") end,false)
         for _,item in ipairs(Progress.Motorcycles) do
             if state.ownedMotorcycles[item.id] then
                 local id=item.id
-                button("城市用车 · "..item.name,function() a.cityVehicle(id) end,false)
+                action("career-city-"..id,item.name,"城市用车 · 原车留在停车处。",nil,"切换用车",function() a.cityVehicle(id) end,false)
             end
         end
-        button(string.format("车行摩托补给 · 20元（油量%.0f%%）",state.motorcycleFuel or 100),a.refuel,false)
-        button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
+        action("career-refuel","摩托燃油补给","到南城车行停稳下车补给。",
+            string.format("费用 ¥20\n当前油量 %.0f%%",state.motorcycleFuel or 100),"补给燃油",a.refuel,false)
+        action("career-training","封闭场地训练","护具课程；完成训练才获得职业资格。",
+            string.format("课程费用 ¥%.0f\n另需保留 ¥2000 生活周转金",state.equipment and state.equipment.helmet and 1550 or 2000),
+            "报名训练",a.train,true)
         section("车队与赞助 · 正式合同")
         local contract=Team.Status(state)
         text(contract.text,12,C.white)
@@ -488,7 +521,9 @@ function View:BuildPhone(state,offer,active)
         text(string.format("积分 %d · 冠军 %d · %s",state.career and state.career.points or 0,state.career and state.career.wins or 0,state.career and state.career.team or "尚未加入车队"),12)
         for index,series in ipairs(Progress.Series) do
             local n=index
-            button(series.name..string.format(" · 报名¥%.0f / 需%d积分",series.fee/100,series.required),function() a.race(n) end,false)
+            action("career-series-"..series.id,series.name,"到南城车行报名；职业资格与积分仍由现场核验。",
+                string.format("报名费 ¥%.0f\n要求 %d 积分 · %d 圈",series.fee/100,series.required,series.laps),
+                "报名赛事",function() a.race(n) end,false)
         end
         if state.career and state.career.pending then button("继续已报名的赛事",function() a.race(state.career.pending.series) end,true) end
         if state.flags.lifeWinner then
@@ -499,22 +534,24 @@ function View:BuildPhone(state,offer,active)
         text(string.format("饱腹 %.0f%% · 精力 %.0f%% · 电量 %.0f%%",state.hunger,state.energy,state.battery),13,C.amber)
         text("生活服务需要走到对应地点，停车下车。可从地图设置导航。",11,C.muted)
         section("吃饭与补给")
-        button("早餐店用餐 · 12元",a.eat,false)
-        button("桥下免费休息至次日",function() a.rest("bridge") end,false)
-        button("公园长椅免费休息至次日",function() a.rest("park") end,false)
+        action("career-life-meal","早餐店用餐","到早餐店停稳下车。","费用 ¥12","用餐",a.eat,false)
+        action("career-life-bridge","桥下落脚点","在桥下休息至次日。","免费","休息",function() a.rest("bridge") end,false)
+        action("career-life-park","公园长椅","在公园休息至次日。","免费","休息",function() a.rest("park") end,false)
         section("今晚住哪里")
         local home=assert(Housing.Get(state.accommodation))
         text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
         button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
         if state.currentSpace and state.currentSpace~="city" then button("到房门旁出门",a.leaveHousing,false)
         elseif home.width then button("到门口进入住处",a.enterHousing,false) end
-        button("走到床边 / 休息点过夜",a.sleepHousing,false)
-        button("街边充电 · 2元",a.charge,false)
-        button("低现金基础帮助（不发现金）",a.aid,false)
+        button("到点过夜",a.sleepHousing,false)
+        action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2","充电",a.charge,false)
+        action("career-life-aid","低现金基础帮助","满足条件才可领取基础补给，不发放现金。",nil,"申请帮助",a.aid,false)
         section("声音与偏好")
-        button("背景音乐 · "..(state.musicEnabled and "开启" or "关闭"),a.toggleMusic,false,"career-music")
-        button("车辆 / 脚步 / 环境音 · "..(state.effectsEnabled and "开启" or "关闭"),a.toggleEffects,false,"career-effects")
-        if a.progression then button("装备 / 住房 / 生涯发展",a.progression,true) end
+        action("career-music","背景音乐",state.musicEnabled and "当前开启" or "当前关闭",nil,
+            state.musicEnabled and "关闭音乐" or "开启音乐",a.toggleMusic,false)
+        action("career-effects","车辆 / 脚步 / 环境音",state.effectsEnabled and "当前开启" or "当前关闭",nil,
+            state.effectsEnabled and "关闭音效" or "开启音效",a.toggleEffects,false)
+        if a.progression then button("查看生涯发展",a.progression,true) end
     end
 end
 function View:Update(state,actor,target,active,offer,dt)

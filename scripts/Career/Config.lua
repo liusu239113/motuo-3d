@@ -47,6 +47,9 @@ for _, point in ipairs(World.Points) do
     local cityPoint=point --[[@as CareerPoint]]
     Config.pointList[#Config.pointList+1]=cityPoint
 end
+for _,point in ipairs(require("Career.CityEnvironment").Points) do
+    Config.pointList[#Config.pointList+1]=point
+end
 ---@type table<string, CareerPoint>
 Config.points = {}
 for _, point in ipairs(Config.pointList) do

@@ -20,6 +20,8 @@ local Engagements = require("Career.Engagements")
 local Team = require("Career.Team")
 local DeliveryPeople = require("Career.DeliveryPeople")
 local DeliveryMarkers = require("Career.DeliveryMarkers")
+local Environment = require("Career.CityEnvironment")
+local Crowd = require("Career.Crowd")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -86,8 +88,12 @@ function Session:Init(options)
     self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
+    ---@type Node?
+    self.shotCameraTarget=nil
     ---@type CityTraffic?
     self.traffic=nil
+    ---@type CareerCrowd?
+    self.crowd=nil
     ---@type CareerDeliveryPeople?
     self.deliveryPeople=nil
     ---@type CareerDeliveryMarkers?
@@ -190,7 +196,7 @@ function Session:StartCareer(fresh,confirmed)
     self.view.home:SetVisible(false)
     self.view:ShowLoading("准备南城老街","正在校验城市、人物、车辆和材质。",0)
     local resources,types={},{}
-    for _,module in ipairs({City,Actor,Traffic}) do
+    for _,module in ipairs({City,Actor,Traffic,Crowd}) do
         for _,path in ipairs(module.Resources) do resources[#resources+1]=path; types[path]=module.ResourceTypes[path] end
     end
     for _,path in ipairs(require("Career.Phone").Resources) do resources[#resources+1]=path; types[path]="Texture2D" end
@@ -245,6 +251,8 @@ function Session:BuildWorld()
     self:RestorePosition()
     self.traffic=assert(Traffic.New(self.city,self.actor))
     self.city.traffic=self.traffic
+    self.crowd=Crowd.New(self.city,self.city.root)
+    self.city.crowd=self.crowd
     self.deliveryPeople=DeliveryPeople.New(self.city)
     self.city.deliveryPeople=self.deliveryPeople
     self.deliveryPeople:Sync(Store.Get().activeOrders,self.actor)
@@ -256,6 +264,7 @@ function Session:BuildWorld()
     renderer:SetViewport(0,Viewport:new(self.scene,self.camera:GetCamera()))
     renderer.dynamicInstancing=true; renderer:SetShadowMapSize(1024)
     self.camera:Update(1,self.actor.node,self.yaw,self.pitch)
+    self.crowd:Prime(self.actor)
     self.loading,self.running=false,true
     self.view:ShowGame()
     self:Refresh()
@@ -265,7 +274,9 @@ function Session:BuildWorld()
         local storyChecks,optimizeChecks,streetChecks,handoffChecks=false,false,false,false
         local qualityChecks,beaconShot,phoneShot,motionShot=false,"","",""
         local appQuality,animQuality,cityQuality=false,false,false
+        local collisionQuality,environmentQuality,soundCrowdQuality=false,false,false
         local appShot,animShot,cityShot="","",""
+        local collisionShot,environmentShot,crowdShot="","",""
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
@@ -276,6 +287,15 @@ function Session:BuildWorld()
             if arg=="-careerappquality" then appQuality=true end
             if arg=="-careeranimquality" then animQuality=true end
             if arg=="-careercityquality" then cityQuality=true end
+            if arg=="-careercollisionquality" then collisionQuality=true end
+            if arg=="-careerenvironmentquality" then environmentQuality=true end
+            if arg=="-careersoundcrowdquality" then soundCrowdQuality=true end
+            local collision=arg:match("^%-careercollisionshot=(.+)$")
+            if collision then collisionShot=collision end
+            local environment=arg:match("^%-careerenvironmentshot=(.+)$")
+            if environment then environmentShot=environment end
+            local crowd=arg:match("^%-careercrowdshot=(.+)$")
+            if crowd then crowdShot=crowd end
             local app=arg:match("^%-careerappshot=(.+)$")
             if app then appShot=app end
             local anim=arg:match("^%-careeranimshot=(.+)$")
@@ -298,12 +318,18 @@ function Session:BuildWorld()
         if appShot~="" then require("Career.PhoneAppChecks").Shot(self,appShot)
         elseif animShot~="" then require("Career.LocomotionChecks").Shot(self,animShot)
         elseif cityShot~="" then require("Career.CityExpansionChecks").Shot(self,cityShot)
-        elseif appQuality or animQuality or cityQuality then
+        elseif collisionShot~="" then require("Career.CollisionChecks").Shot(self,collisionShot)
+        elseif environmentShot~="" then require("Career.CityEnvironmentChecks").Shot(self,environmentShot)
+        elseif crowdShot~="" then require("Career.SoundCrowdChecks").Shot(self,crowdShot)
+        elseif appQuality or animQuality or cityQuality or collisionQuality or environmentQuality or soundCrowdQuality then
             self.view:ClosePhone();self.view:ShowGame()
+            if collisionQuality then require("Career.CollisionChecks").Run(self) end
+            if environmentQuality then require("Career.CityEnvironmentChecks").Run(self) end
+            if soundCrowdQuality then require("Career.SoundCrowdChecks").Run(self) end
             if appQuality then require("Career.PhoneAppChecks").Run(self) end
             if animQuality then require("Career.LocomotionChecks").Run(self) end
             if cityQuality then require("Career.CityExpansionChecks").Run(self) end
-            print("[应用动作街区专项完成] 指定专项已执行；具体结果见各模块断言")
+            print("[城市体验专项完成] 指定专项已执行；具体结果见各模块断言")
         elseif phoneShot~="" then
             self.view:ClosePhone();self.view:ShowGame();self:OpenPhone(phoneShot)
             print("[手机实拍就绪] "..phoneShot.." / 隔离内存 / 真实页面")
@@ -415,7 +441,38 @@ function Session:Target()
     local key=id..":"..math.floor(self.actor.x/16)..":"..math.floor(self.actor.z/16)
     if self.navigation.key~=key then
         self.navigation.key=key
-        self.navigation.route=World.Route(self.actor.x,self.actor.z,point.x,point.z) or {}
+        local approach=Environment.ApproachRoute(id)
+        local localRoute=approach and Environment.NavigationRoute(id,self.actor.x,self.actor.z)
+        if localRoute then self.navigation.route=localRoute
+        elseif approach then
+            local tail=Environment.CityApproachRoute()
+            local entry=tail[1]
+            local route=World.Route(self.actor.x,self.actor.z,entry.x,entry.z) or {}
+            local function append(steps)
+                for _,step in ipairs(steps) do
+                    local previous=route[#route]
+                    if not previous or math.abs(previous.x-step.x)+math.abs(previous.z-step.z)>.001 then
+                        route[#route+1]={x=step.x,z=step.z}
+                    end
+                end
+            end
+            append(tail)
+            append(approach)
+            self.navigation.route=route
+        else
+            local exit=Environment.ExitRoute(self.actor.x,self.actor.z)
+            if exit then
+                local route=exit
+                local entry=route[#route]
+                for _,step in ipairs(World.Route(entry.x,entry.z,point.x,point.z) or {}) do
+                    local previous=route[#route]
+                    if not previous or math.abs(previous.x-step.x)+math.abs(previous.z-step.z)>.001 then
+                        route[#route+1]={x=step.x,z=step.z}
+                    end
+                end
+                self.navigation.route=route
+            else self.navigation.route=World.Route(self.actor.x,self.actor.z,point.x,point.z) or {} end
+        end
     end
     local route=self.navigation.route
     local directDistance=Config.DistanceTo(id,self.actor.x,self.actor.z)
@@ -537,13 +594,23 @@ function Session:Interact()
     if nearest=="breakfast" then
         local contact=self.city.contacts:Nearest(self.actor,3)
         if not contact or not self:TalkTo(contact.id) then self:OpenPhone("messages") end
-    elseif nearest=="bridge" then self:OpenPhone("messages")
+    elseif nearest=="bridge" then
+        self.view:ShowDialog("桥下落脚点","桥梁下方的纸板和睡袋可以临时过夜。\n免费休息至次日08:00；手头有未送完的餐时不能过夜。",{
+            {text="先不休息"},
+            {text="看看表哥的消息",onClick=function() self:OpenPhone("messages") end},
+            {text="确认在桥下休息",primary=true,onClick=function()
+                self:Service("bridge",function() return Store.Rest("bridge") end)
+            end}})
     elseif nearest=="park" then self:Service(nearest,function() return Store.Rest(nearest) end)
     elseif nearest=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif nearest=="home_old" then self:OpenPhone("life")
     elseif nearest=="dealer" then
         local contact=self.city.contacts:Nearest(self.actor,3)
         if not contact or not self:TalkTo(contact.id) then self:OpenPhone("progression") end
+    elseif Config.points[nearest].kind=="scenery" then
+        self.view:ShowDialog(Config.points[nearest].label,"海岸入口、沙滩与栈桥都可沿步道到达。\n可以下车步行看海；护栏外的深水不能通行。这里不会自动推进一天或收取费用。",{
+            {text="继续逛逛",primary=true},
+            {text="查看海滨地图",onClick=function() self:OpenPhone("map") end}})
     elseif Config.points[nearest].kind=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif Config.points[nearest].kind=="rest" then self:Service(nearest,function() return Store.Rest("park") end)
     elseif Config.points[nearest].kind=="merchant" then self:Service(nearest,function() return Store.Eat() end)
@@ -588,7 +655,8 @@ function Session:RestorePosition()
     a.mounted=p.mounted; a.visuals:SetMounted(p.mounted)
     self.cityX,self.cityZ,self.cityYaw=p.cityX or p.x,p.cityZ or p.z,p.cityYaw or p.yaw
     self:ApplySpace(p.space or "city")
-    local x,z=self.city:FindFree(p.x,p.z,p.mounted and a:VehicleRadius() or .32,p.mounted and "vehicle" or "walk",p.groundHeight)
+    local x,z=self.city:FindShapeFree(p.x,p.z,a:Footprint(p.mounted),p.yaw,
+        p.mounted and "vehicle" or "walk",p.groundHeight,a.vehicleId)
     assert(z,"存档恢复缺少Z坐标")
     a:Teleport(x,z,p.yaw,p.groundHeight); self.yaw=p.yaw
     if self.space=="city" then
@@ -649,7 +717,14 @@ function Session:Update(dt)
     self.view:UpdateSpeech(dt)
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
-    if self.audio then self.audio:Update(dt,self.actor,self.view:IsBlocking(),self.space~="city",self.view:GetInput(),self.online and Delivery.GetOffer() or nil) end
+    local blocked=self.view:IsBlocking()
+    if self.crowd and (blocked or self.space~="city" or self.options.test) then
+        self.crowd:Update(dt,self.actor,false,self.camera and self.camera:GetCamera())
+    end
+    if self.audio and (blocked or self.options.test) then
+        self.audio:Update(dt,self.actor,true,self.space~="city",self.view:GetInput(),nil,
+            Environment.AudioContext(self.actor.x,self.actor.z))
+    end
     if input:GetKeyPress(KEY_ESCAPE) then
         if self.view.phonePage~="" then self.view:ClosePhone()
         elseif self.view.conversation:IsVisible() then self.view:CloseConversation()
@@ -697,7 +772,14 @@ function Session:Update(dt)
         controls.throttle=0; controls.brake=true; controls.reverseBrake=false
     end
     self.actor:Update(dt,controls,self.yaw)
+    if self.crowd and self.space=="city" then
+        self.crowd:Update(dt,self.actor,true,self.camera and self.camera:GetCamera())
+    end
     if self.traffic then self.traffic:Update(dt) end
+    if self.audio then
+        self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.online and Delivery.GetOffer() or nil,
+            Environment.AudioContext(self.actor.x,self.actor.z))
+    end
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
     self:SavePosition()
     local ok,message=Delivery.Update(dt,distance)
@@ -707,6 +789,10 @@ function Session:Update(dt)
 end
 function Session:PostUpdate(dt)
     if not self.camera or not self.actor then return end
+    if self.options.test and self.shotCameraTarget then
+        self.camera:Update(dt,self.shotCameraTarget,self.yaw,self.pitch)
+        return
+    end
     self.camera:SetMode(self.space~="city" and "indoor" or self.actor.mounted and "ride" or "normal")
     self.camera:Update(dt,self.actor.node,self.yaw,self.pitch)
 end
@@ -720,9 +806,11 @@ function Session:DisposeWorld()
     self.view.controls:SetEnabled(false); self.view:ResetInput()
     if self.loader then self.loader:Cancel(); self.loader=nil end
     self.building=nil
+    self.shotCameraTarget=nil
     renderer:SetNumViewports(0)
+    if self.crowd then self.crowd:Dispose(); self.crowd=nil end
     if self.traffic then self.traffic:Dispose(); self.traffic=nil end
-    if self.city then self.city.traffic=nil; self.city.deliveryPeople=nil end
+    if self.city then self.city.traffic=nil; self.city.deliveryPeople=nil; self.city.crowd=nil end
     if self.deliveryPeople then self.deliveryPeople:Dispose(); self.deliveryPeople=nil end
     if self.deliveryMarkers then self.deliveryMarkers:Dispose(); self.deliveryMarkers=nil end
     if self.audio then self.audio:Stop(); self.audio=nil end
