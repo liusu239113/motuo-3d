@@ -22,9 +22,9 @@ local function direction(x,y,z)
 end
 -- 私有整数散列，不污染游戏的math.random序列；负时间也确定。
 local function hash(x,z)
-    local n=(x*73856093+z*19349663+104729)%2147483647
-    n=(n*48271)%2147483647
-    return n/2147483647
+    local n=(math.floor(x)*73856093 ~ math.floor(z)*19349663 ~ 104729)&0x7fffffff
+    local mixed=((n ~ (n>>13))*1274126177)&0x7fffffff
+    return (mixed ~ (mixed>>16))/2147483647
 end
 local function weatherAnchor(index)
     return .06+.92*hash(index,17)
@@ -158,7 +158,9 @@ local function cloudVertex(geometry,radius,ring,segment)
     local x,y,z=horizontal*math.cos(azimuth),math.sin(elevation),horizontal*math.sin(azimuth)
     geometry:DefineVertex(Vector3(x*radius,y*radius,z*radius))
     geometry:DefineNormal(Vector3(-x,-y,-z))
-    geometry:DefineTexCoord(Vector2(.5+x*1.15,.5+z*1.15))
+    -- 透视云平面投影：近地平线的云压扁而不是拉成竖条，顶部也没有经线接缝。
+    local projection=.72/(y+.25)
+    geometry:DefineTexCoord(Vector2(.5+x*projection,.5+z*projection))
     geometry:DefineColor(Color(1,1,1,smooth(.015,.18,y)))
 end
 local function makeLayer(root,technique,texture,radius,name)
@@ -200,6 +202,8 @@ end
 ---@field lastLabel string
 ---@field lastPart string
 ---@field state CareerAtmosphereSample?
+---@field Apply fun(self:CareerAtmosphere,day?:number,hour?:number,cameraPosition?:Vector3,indoor?:boolean):CareerAtmosphereSample
+---@field Dispose fun(self:CareerAtmosphere)
 local AtmosphereType={}
 
 ---@param scene Scene
@@ -281,7 +285,7 @@ function A:Apply(day,hour,cameraPosition,indoor)
     self.materials[1]:SetShaderParameter("MatDiffColor",Variant(color(s.cloudColor,s.cloudAlpha)))
     self.materials[2]:SetShaderParameter("MatDiffColor",Variant(color(s.cloudColor,s.overcastAlpha)))
     self.materials[1]:SetUVTransform(Vector2(s.cloudU,s.cloudV),0,Vector2(1,1))
-    self.materials[2]:SetUVTransform(Vector2(-s.cloudU*.61,s.cloudV*.73),19,Vector2(.73,.73))
+    self.materials[2]:SetUVTransform(Vector2((-s.absoluteHours*.01281)%1,(s.absoluteHours*.00584)%1),19,Vector2(.73,.73))
     if s.label~=self.lastLabel or s.part~=self.lastPart then
         print(string.format("[天气] 第%d天 %.2f时 · %s · %s（云量%.2f）",s.day,s.hour,s.part,s.label,s.cloudiness))
         self.lastLabel,self.lastPart=s.label,s.part

@@ -22,6 +22,7 @@ local DeliveryPeople = require("Career.DeliveryPeople")
 local DeliveryMarkers = require("Career.DeliveryMarkers")
 local Environment = require("Career.CityEnvironment")
 local Crowd = require("Career.Crowd")
+local Atmosphere = require("Career.Atmosphere")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -85,6 +86,8 @@ function Session:Init(options)
     self.moon=nil
     ---@type ProceduralSky?
     self.sky=nil
+    ---@type CareerAtmosphere?
+    self.atmosphere=nil
     self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
@@ -196,7 +199,7 @@ function Session:StartCareer(fresh,confirmed)
     self.view.home:SetVisible(false)
     self.view:ShowLoading("准备南城老街","正在校验城市、人物、车辆和材质。",0)
     local resources,types={},{}
-    for _,module in ipairs({City,Actor,Traffic,Crowd}) do
+    for _,module in ipairs({City,Actor,Traffic,Crowd,Atmosphere}) do
         for _,path in ipairs(module.Resources) do resources[#resources+1]=path; types[path]=module.ResourceTypes[path] end
     end
     for _,path in ipairs(require("Career.Phone").Resources) do resources[#resources+1]=path; types[path]="Texture2D" end
@@ -235,6 +238,7 @@ function Session:BuildWorld()
     local capture=lg:CreateComponent("SkyLightCapture")
     capture.resolution=64; capture.minCaptureInterval=2
     zone.envTextureDiffIntensity=1; zone.envTextureSpecIntensity=1
+    self.atmosphere=Atmosphere.New(self.scene,self.sky,light,moon,zone)
     renderer.hdrRendering=true
     self.environmentHour=-1
     self:UpdateEnvironment(Store.Get().time)
@@ -388,25 +392,12 @@ function Session:BuildWorld()
 end
 function Session:UpdateEnvironment(hour)
     if self.city then self.city:UpdateLights(hour) end
-    if not self.sky or not self.sun or not self.zone then return end
-    local step=math.floor(hour*12)/12
-    local cloudy=self.weatherCloudiness or 0
-    if step==self.environmentHour and cloudy==self.environmentCloudiness then return end
-    self.environmentHour,self.environmentCloudiness=step,cloudy
-    local a=(step-6)/12*math.pi
-    local height=math.sin(a)
-    local day=math.max(0,math.min(1,(height+.08)/.4))
-    local dusk=math.exp(-((height-.02)/.16)^2)
-    self.sun.node.direction=Vector3(-math.cos(a),-height,.35)
-    self.sun.color=Color(1,.55,.3):Lerp(Color(1,.94,.84),day):Lerp(Color(.78,.82,.86),cloudy*.42)
-    self.sun.brightness=3*day*(1-.68*cloudy)
-    if self.moon then self.moon.brightness=.65*(1-day) end
-    local horizon=Color(.16,.21,.32):Lerp(Color(.66,.77,.9),day):Lerp(Color(.92,.57,.35),dusk*.7)
-    horizon=horizon:Lerp(Color(.48,.53,.58),cloudy*.72)
-    self.sky.skyTopColor=Color(.08,.12,.24):Lerp(Color(.25,.47,.8),day):Lerp(Color(.37,.42,.49),cloudy*.78)
-    self.sky.skyHorizonColor=horizon; self.sky.groundHorizonColor=horizon
-    self.sky.groundBottomColor=Color(.1,.11,.15):Lerp(Color(.35,.33,.28),day):Lerp(Color(.31,.32,.32),cloudy*.65)
-    self.zone.fogColor=horizon
+    self.environmentHour=hour
+    if self.atmosphere then
+        local p=Store.Get()
+        local position=self.camera and self.camera:GetCamera().node.worldPosition
+        Atmosphere.Apply(self.atmosphere,p.day,hour,position,self.space~="city")
+    end
 end
 function Session:Intro()
     self.view:ShowDialog("第一章 · 兜里还剩50块","王二狗，工作没了，房租也续不起。\n表哥把一串旧钥匙塞进你手里：\n“这辆战损9号以前追对象留下的。车还能跑，外卖箱给你装好了。先吃上饭，再想别的。”\n今晚能睡的地方，是桥洞和公园长椅。",{
@@ -422,11 +413,8 @@ end
 ---@return CareerSessionState
 function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
-    -- 生涯天气按游戏日稳定轮换：晴朗、多云、阴天；读档/暂停后不会随机跳变。
-    local weatherCycle={{label="晴朗",cloudiness=0},{label="多云",cloudiness=.46},{label="阴天",cloudiness=.82}}
-    local weather=weatherCycle[(state.day-1)%#weatherCycle+1]
+    local weather=Atmosphere.Sample(state.day,state.time)
     state.weatherLabel,state.weatherCloudiness=weather.label,weather.cloudiness
-    self.weatherCloudiness=weather.cloudiness
     state.musicEnabled=self.audio and self.audio.musicEnabled
     state.effectsEnabled=self.audio and self.audio.effectsEnabled
     state.trafficHint=self.traffic and self.actor and self.space=="city" and self.traffic:Hint(self.actor.x,self.actor.z,self.actor.yaw) or nil
@@ -512,6 +500,7 @@ end
 function Session:Refresh()
     if not self.actor then return end
     local state=self:State()
+    self:UpdateEnvironment(state.time)
     if self.deliveryPeople then
         self.deliveryPeople:Sync(state.activeOrders,self.actor)
     end
@@ -817,6 +806,7 @@ function Session:PostUpdate(dt)
     end
     self.camera:SetMode(self.space~="city" and "indoor" or self.actor.mounted and "ride" or "normal")
     self.camera:Update(dt,self.actor.node,self.yaw,self.pitch)
+    if self.atmosphere then self.atmosphere.root.worldPosition=self.camera:GetCamera().node.worldPosition end
 end
 function Session:LeaveForLegacy()
     if self.running and not self.options.test then self:SavePosition(); Store.Save() end
@@ -838,6 +828,7 @@ function Session:DisposeWorld()
     if self.audio then self.audio:Stop(); self.audio=nil end
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.city then self.city:Dispose(); self.city=nil end
+    if self.atmosphere then self.atmosphere:Dispose(); self.atmosphere=nil end
     if self.scene then self.scene:Dispose(); self.scene=nil end
     self.city,self.camera,self.zone,self.sun,self.moon,self.sky=nil,nil,nil,nil,nil,nil
 end

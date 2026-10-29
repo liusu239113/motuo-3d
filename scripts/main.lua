@@ -1263,7 +1263,7 @@ function CaptureCareerReadyFrame()
     local saved=captured and image:SavePNG(careerReadyShot_)
     image:Dispose()
     assert(saved,"就绪场景实拍未写出图片："..careerReadyShot_)
-    print("[生涯就绪实拍完成] "..careerReadyShot_.." / ready后8渲染帧 / 内存档")
+    print("[生涯就绪实拍完成] "..careerReadyShot_.." / ready后"..required.."渲染帧 / 内存档")
     engine:Exit()
 end
 

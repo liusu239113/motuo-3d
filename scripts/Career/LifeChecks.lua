@@ -42,7 +42,8 @@ function Checks.Run(session,shot)
     assert(Store.Get().time==paused.time and Store.Get().energy==paused.energy,"手机暂停时间与精力")
     session.view:ClosePhone();session.view:ShowGame()
     local cases={day={day=1,time=12,hunger=65,energy=80},dusk={day=1,time=17.8,hunger=43,energy=47},
-        night={day=1,time=22,hunger=60,energy=24},cloudy={day=3,time=12,hunger=65,energy=80},
+        night={day=1,time=22,hunger=60,energy=24},cloudy={day=5,time=12,hunger=65,energy=80},
+        mixed={day=4,time=12,hunger=65,energy=80},cloudnight={day=5,time=23,hunger=60,energy=24},
         life={day=1,time=12,hunger=29,energy=48},low={day=1,time=23,hunger=24,energy=19}}
     local selected=cases[shot] or cases.day
     assert(Store.Transaction(function(d)

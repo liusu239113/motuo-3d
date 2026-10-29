@@ -38,6 +38,7 @@ function Actions:ApplySpace(space)
     if self.sun then self.sun.enabled=space=="city" end
     if self.moon then self.moon.enabled=space=="city" end
     if self.sky then self.sky.enabled=space=="city" end
+    self:UpdateEnvironment(Store.Get().time)
 end
 function Actions:ChooseHousing(id)
     local _,message=Progress.SetHousing(id)
