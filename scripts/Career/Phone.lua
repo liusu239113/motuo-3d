@@ -1,6 +1,7 @@
 -- 手机硬件、桌面与应用入口；真实功能仍由View/Session处理，不把整图当交互。
 local UI=require("urhox-libs/UI")
 local Theme=require("RacingTheme")
+local Kit=require("Career.PhoneKit")
 local Phone={}
 Phone.Frame="image/career_phone_hardware_frame_20261028190339.png"
 Phone.Wallpaper="image/career_phone_wallpaper_20261028185104.png"
@@ -38,11 +39,12 @@ function Phone.Create(view,actions)
         view.phoneClock,Theme.Label("4G · 86%",11,Theme.Colors.white,{height=18})}})
     view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,
         {fontWeight="bold",flexGrow=1,flexShrink=1,minWidth=0,maxLines=1})
+    local touchSize=Kit.TouchSize()
     view.phoneBack=Theme.Button("首页",function() require("Career.PhoneApps").Back(view) end,false,52,
-        {id="career-phone-back",height=44,minWidth=44,padding=0,fontSize=12,visible=false})
-    screen:AddChild(UI.Row{id="career-phone-toolbar",width="100%",height=44,padding=0,gap=4,alignItems="center",children={
+        {id="career-phone-back",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12,visible=false})
+    screen:AddChild(UI.Row{id="career-phone-toolbar",width="100%",height=touchSize,minHeight=touchSize,padding=0,gap=4,alignItems="center",children={
         view.phoneBack,view.phoneTitle,
-        Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=44,minWidth=44,padding=0,fontSize=12})}})
+        Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12})}})
     -- 首页不在任何 ScrollView 内。长订单/装备等内页共用一个有界滚动容器。
     view.phoneDesktop=UI.Panel{id="career-phone-desktop",width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0,overflow="hidden"}
     view.phoneContent=UI.ScrollView{id="career-phone-content",width="100%",flexGrow=1,flexBasis=0,minHeight=0,

@@ -79,6 +79,8 @@ World.Districts = {
 }
 local oldDistrict = {id="old_town",label="南城老街",x=0,z=0,radius=195,style="old",density=1,bridge=false}
 local greenDistrict = {id="greenbelt",label="城郊绿带",x=0,z=0,radius=15000,style="greenbelt",density=.06,bridge=false}
+-- 邻里只改变展示名称；id/样式/密度仍属绿带，不新增业务区或重算订单。
+local neighborhoodDistrict = {id="greenbelt",label="南城邻里",x=0,z=0,radius=15000,style="greenbelt",density=.06,bridge=false}
 ---@type table<string, CareerWorldCell>
 local cellCache = {}
 ---@type table<string, number>
@@ -118,6 +120,7 @@ function World.District(x,z)
     for _,d in ipairs(World.Districts) do
         if math.abs(x-d.x)<=d.radius and math.abs(z-d.z)<=d.radius then return d end
     end
+    if math.abs(x)<=424 and math.abs(z)<=424 then return neighborhoodDistrict end
     return greenDistrict
 end
 ---@param obstacles table[]
@@ -287,13 +290,16 @@ local function obstacle(cell,x,z,w,d,y1,y2,kind)
     cell.obstacles[#cell.obstacles+1]={x1=x-w/2,x2=x+w/2,z1=z-d/2,z2=z+d/2,
         y1=y1 or 0,y2=y2 or 30,kind=kind or "solid"}
 end
-local function building(cell,b)
+local function building(cell,b,cuts)
     cell.buildings[#cell.buildings+1]=b
     local w,d=b.w,b.d
     if b.yaw%180~=0 then w,d=d,w end
     -- 包含地基15cm外扩；高于人物的屋檐不算地面碰撞。
     obstacle(cell,b.x,b.z,w+(b.expansion and .1 or .3),d+(b.expansion and .1 or .3),0,b.h,"building")
-    if not b.expansion then
+    if b.expansion then
+        -- 真正的门前/侧院铺装，不让每栋矗立在整片棕土地上；裁掉所有机动车道。
+        ground(cell,{x1=b.x-w/2-2.1,x2=b.x+w/2+2.1,z1=b.z-d/2-2.1,z2=b.z+d/2+2.1},"concrete",.085,cuts)
+    else
         ground(cell,{x1=b.x-w/2-3,x2=b.x+w/2+3,z1=b.z-d/2-3,z2=b.z+d/2+3},"concrete",.085)
     end
 end
@@ -342,7 +348,7 @@ function World.DescribeCell(ix,iz)
         end
     end
     -- 新楼障碍与可见地基共用实测、正交旋转后的AABB；视觉块卸载不删碰撞。
-    for _,b in ipairs(Expansion.Buildings) do if owner(cell,b.x,b.z) then building(cell,b) end end
+    for _,b in ipairs(Expansion.Buildings) do if owner(cell,b.x,b.z) then building(cell,b,cuts) end end
     for _,p in ipairs(Expansion.Plazas) do
         ground(cell,{x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-p.d/2,z2=p.z+p.d/2},"concrete",.085,cuts)
         -- 3m入口接到真实共享巷道，不生成孤立广场。

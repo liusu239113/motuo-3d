@@ -6,6 +6,7 @@ local ROOT="model/b2849c2afd734d59aaf285fcb69b2b1a/"
 local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
 ---@class CareerRig : Rider
 ---@field soleVertices table<string, table[]>
+---@field fullSoleVertices table<string, table[]> 原始完整鞋顶点，仅用于等价性回归
 ---@field ground CareerCity?
 ---@field feet table<string, Vector3>
 ---@field soleOffsets table<string, number>
@@ -95,6 +96,23 @@ function Rig:InitCareer(parent,asset)
             end
         end
     end
+    -- 只合并position/四权重/四骨索引逐值完全相同的蒙皮点，保留全部不同点。
+    -- 二进制double键无十进制舍入，不按距离近似、不降采样；按首次出现顺序保留。
+    self.fullSoleVertices=self.soleVertices
+    self.soleVertices={L_Foot={},R_Foot={}}
+    for _,name in ipairs({"L_Foot","R_Foot"}) do
+        local seen={}
+        local unique=self.soleVertices[name]
+        for _,v in ipairs(self.fullSoleVertices[name]) do
+            local p=v.position
+            local key=string.pack("dddddddBBBB",p.x,p.y,p.z,v.weights[1],v.weights[2],v.weights[3],v.weights[4],
+                v.indices[1],v.indices[2],v.indices[3],v.indices[4])
+            if not seen[key] then
+                seen[key]=true
+                unique[#unique+1]=v
+            end
+        end
+    end
     -- 绑定态真实鞋底到踝点的距离，IK先给出接近正确的目标，再用蒙皮鞋底校正。
     self.soleOffsets={}
     for name,foot in pairs(self.feet) do self.soleOffsets[name]=foot.y-self:SoleHeight(name) end
@@ -102,11 +120,14 @@ function Rig:InitCareer(parent,asset)
     -- 只缓存鞋部顶点，不在每帧读回整个人物VB；矩阵按骨名在本次求值内复用。
     print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
 end
-function Rig:SoleHeight(name)
+---@param name string
+---@param complete? boolean 仅等价性检查使用未去重完整鞋列表
+function Rig:SoleHeight(name,complete)
     ---@type table<string, Matrix3x4>
     local matrices={}
     local lowest=math.huge
-    for _,v in ipairs(self.soleVertices[name]) do
+    local vertices=complete and self.fullSoleVertices[name] or self.soleVertices[name]
+    for _,v in ipairs(vertices) do
         local y=0
         for k=1,4 do
             if v.weights[k]>0 then

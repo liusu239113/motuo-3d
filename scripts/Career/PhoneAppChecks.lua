@@ -33,6 +33,9 @@ local function tap(view,id)
     layout(view)
     local widget=find(view,id)
     local r=widget:GetAbsoluteLayoutForHitTest()
+    local scale=UI.GetScale()
+    print(string.format("[手机触摸尺寸] %s hit=(%.9f,%.9f,%.9f,%.9f) physical=(%.9f,%.9f) scale=%.12f configuredH=%s minH=%s minW=%s",
+        id,r.x,r.y,r.w,r.h,r.w*scale,r.h*scale,scale,tostring(widget.props.height),tostring(widget.props.minHeight),tostring(widget.props.minWidth)))
     assert(r.w>=44 and r.h>=44,"触摸目标小于44px "..id)
     local fixed=id=="career-phone-back" or id=="career-phone-close"
     if not fixed and view.phonePage~="apps" then
@@ -42,7 +45,6 @@ local function tap(view,id)
         r=widget:GetAbsoluteLayoutForHitTest()
         assert(r.y+r.h/2>area.y and r.y+r.h/2<area.y+area.h,"触摸目标被裁剪 "..id)
     end
-    local scale=UI.GetScale()
     local function event(kind)
         return PointerEvent.new(kind,{pointerId=791210,pointerType="touch",isPrimary=true,
             x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
@@ -118,6 +120,17 @@ function Checks.Run(session)
         actor.x,actor.z,actor.speed,actor.mounted=300,-180,0,false
         session.online=false; session.space="city"; session:Refresh()
         local baseline=Store.Get()
+        require("Career.MapPhoneChecks").RunLayout(view,session:State(),Delivery.GetOffer(),nil,function(page)
+            if page=="wallet" then
+                tap(view,"career-wallet-filter-income")
+                assert(find(view,"career-wallet-empty"),"多分辨率筛选应保留真实开局空态")
+                tap(view,"career-wallet-filter-expense")
+                tap(view,"career-wallet-filter-all")
+                tap(view,"career-wallet-entry-1")
+                tap(view,"career-phone-back")
+                assert(view.phonePage=="wallet" and view.phoneLedgerId=="","多分辨率详情返回没有回明细")
+            end
+        end)
         session:OpenPhone("wallet")
         assert(find(view,"career-wallet-balance").props.text=="¥50.00")
         tap(view,"career-wallet-filter-income")

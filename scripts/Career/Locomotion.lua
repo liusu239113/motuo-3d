@@ -31,6 +31,7 @@ local V=Vector3
 ---@field rig CareerRig
 ---@field source Model
 ---@field bones CareerSourceBone[]
+---@field allBones CareerSourceBone[] 原始97骨，仅用于完整采样对照
 ---@field reference table<string, Matrix3x4>
 ---@field corrections table<string, Quaternion>
 ---@field clips table<string, CareerOfficialClip>
@@ -137,6 +138,29 @@ function Motion:Init(rig)
         self.reference[b.name]=transform
     end
     assert(skeleton:GetNumBones()==97 and rig.model:GetSkeleton():GetNumBones()==41,"检查过的官方97骨->王二狗41骨资源已变化，请重新审计")
+    -- 仅去掉映射骨骼祖先闭包以外的骨骼，不改父链、求值顺序或插值公式。
+    -- 原97骨描述仍保留供隔离检查逐相位对照，正常帧只求值24骨。
+    self.allBones=self.bones
+    ---@type table<string, CareerSourceBone>
+    local byName={}
+    for _,bone in ipairs(self.allBones) do byName[bone.name]=bone end
+    ---@type table<string, boolean>
+    local required={}
+    local mappings=0
+    for _,source in pairs(mapping) do
+        mappings=mappings+1
+        ---@type string?
+        local name=source
+        while name and not required[name] do
+            required[name]=true
+            name=assert(byName[name],"源骨架祖先链不完整").parent
+        end
+    end
+    self.bones={}
+    for _,bone in ipairs(self.allBones) do
+        if required[bone.name] then self.bones[#self.bones+1]=bone end
+    end
+    assert(mappings==23 and #self.allBones==97 and #self.bones==24,"官方动作23映射/24骨祖先闭包已变化，请重新审计")
     rig:Reset()
     rig.mesh.position=rig.standOffset
     for target,source in pairs(mapping) do
@@ -169,11 +193,13 @@ function Motion:Init(rig)
 end
 ---@param clip CareerOfficialClip
 ---@param time number
+---@param complete? boolean 仅隔离回归使用原始97骨求值
 ---@return table<string, Matrix3x4>
-function Motion:SampleSource(clip,time)
+function Motion:SampleSource(clip,time,complete)
     ---@type table<string, Matrix3x4>
     local pose={}
-    for _,b in ipairs(self.bones) do
+    local bones=complete and self.allBones or self.bones
+    for _,b in ipairs(bones) do
         local p,q,s=b.position,b.rotation,b.scale
         local track=clip.tracks[b.name]
         if track and #track.keys>0 then

@@ -15,6 +15,43 @@ local function measure(rig)
         leftKneeRatio=leftKnee.y/height,rightKneeRatio=rightKnee.y/height,leftSole=leftSole,rightSole=rightSole,
         leftContact=leftSole<.018,rightContact=rightSole<.018}
 end
+-- 同一插值时刻，分别走原始97骨与24骨祖先闭包，直接比较仿射矩阵所有列。
+-- 全部映射矩阵、髋位移及脚净空须相同；不是只比较最后截图或包围盒。
+---@param motion CareerLocomotion
+local function compareSourceSampling(motion)
+    assert(#motion.allBones==97 and #motion.bones==24,"源骨闭包数量必须保持97->24")
+    local report={samples=0,matrices=0,maxMatrixError=0,maxHipError=0,maxClearanceError=0}
+    local probes={Vector3.ZERO,Vector3.RIGHT,Vector3.UP,Vector3.FORWARD}
+    for _,name in ipairs({"idle","walk","run"}) do
+        local clip=motion.clips[name]
+        for phase=0,31 do
+            local time=phase/32*clip.length
+            local complete=motion:SampleSource(clip,time,true)
+            local cropped=motion:SampleSource(clip,time)
+            local count=0
+            for _,source in pairs(Locomotion.Mapping) do
+                count=count+1
+                for _,point in ipairs(probes) do
+                    local a=complete[source]*point
+                    local b=cropped[source]*point
+                    local error=(a-b):Length()
+                    report.maxMatrixError=math.max(report.maxMatrixError,error)
+                    assert(error<.0000001,"裁剪祖先闭包不能改变源矩阵: "..name.."/"..source)
+                end
+                report.matrices=report.matrices+1
+            end
+            assert(count==23,"官方动作必须保持23映射")
+            local hipError=(complete.Bip001:Translation()-cropped.Bip001:Translation()):Length()
+            local clearanceError=math.abs(motion:SourceClearance(complete)-motion:SourceClearance(cropped))
+            report.maxHipError=math.max(report.maxHipError,hipError)
+            report.maxClearanceError=math.max(report.maxClearanceError,clearanceError)
+            assert(hipError<.0000001 and clearanceError<.0000001,"源骨裁剪不能改变髋位移/脚净空")
+            report.samples=report.samples+1
+        end
+    end
+    assert(report.samples==96 and report.matrices==2208,"源采样等价回归必须覆盖三动作32相位全部映射")
+    return report
+end
 ---@param session table
 function Checks.Run(session)
     requireTest(session)
@@ -25,11 +62,14 @@ function Checks.Run(session)
     local motion=visuals.locomotion
     local saved={phase=motion.phase,idleTime=motion.idleTime,speed=motion.speed,moving=motion.moving,running=motion.running,paused=motion.paused,ground=rig.ground}
     local report={poses=0,maxLengthError=0,minWalkHip=math.huge,maxWalkHip=-math.huge,minRunHip=math.huge,maxRunHip=-math.huge,
-        flight=0,leftContacts=0,rightContacts=0,official=true}
+        flight=0,leftContacts=0,rightContacts=0,official=true,soleComparisons=0,maxSoleEquivalenceError=0}
     local ok,err=pcall(function()
         rig.ground=nil
         assert(motion.clips.idle.animation.numTracks==97 and motion.clips.walk.animation.numTracks==98 and motion.clips.run.animation.numTracks==88,"官方资源版本/轨道不符，必须重新检查兼容性")
         assert(motion.clips.idle.keyframes==4947 and motion.clips.walk.keyframes==3626 and motion.clips.run.keyframes==2200,"不能用静态pose冒充官动关键帧")
+        report.sourceEquivalence=compareSourceSampling(motion)
+        assert(#rig.fullSoleVertices.L_Foot==615 and #rig.fullSoleVertices.R_Foot==598,"原完整鞋顶点版本改变，请重新审计")
+        assert(#rig.soleVertices.L_Foot==286 and #rig.soleVertices.R_Foot==295,"精确鞋去重数量改变，请重新审计")
         motion.paused=false
         for _,speed in ipairs({0,.6,1.8,2.6,3.4}) do
             local firstHand=Vector3.ZERO
@@ -37,6 +77,14 @@ function Checks.Run(session)
             for i=0,31 do
                 motion:PoseNormalized(i/32,speed)
                 local data=measure(rig)
+                for _,name in ipairs({"L_Foot","R_Foot"}) do
+                    local original=rig:SoleHeight(name,true)
+                    local deduplicated=rig:SoleHeight(name)
+                    local error=math.abs(original-deduplicated)
+                    report.maxSoleEquivalenceError=math.max(report.maxSoleEquivalenceError,error)
+                    report.soleComparisons=report.soleComparisons+1
+                    assert(error<.0000001,"精确去重不得改变真实鞋底最小值: "..name)
+                end
                 assert(data.leftSole>-.001 and data.rightSole>-.001,"真实鞋底不可穿地")
                 if speed==0 or speed==1.8 then
                     assert(math.min(data.leftSole,data.rightSole)<.025,"Idle/Walk支撑鞋不应悬空")
@@ -78,6 +126,7 @@ function Checks.Run(session)
             end
             if speed>=1.8 then assert(handTravel>.12,"真实clip不同相位必须有可观测摆臂，不以load成功验收") end
         end
+        assert(report.soleComparisons==320,"原完整鞋与精确去重鞋必须覆盖160姿态双脚")
         assert(report.flight>0 and report.leftContacts>0 and report.rightContacts>0,"Run必须有双侧支撑及原clip腾空，而非原地蹲跳")
         assert(report.maxWalkHip-report.minWalkHip<.10,"Walk不可上下蹲跳")
         motion:Reset()
@@ -104,6 +153,10 @@ function Checks.Run(session)
     motion:Evaluate()
     visuals.phase,visuals.gaitWeight,visuals.runWeight=motion.phase*math.pi*2,motion.moving,motion.running
     assert(ok,tostring(err))
+    local equivalence=assert(report.sourceEquivalence)
+    print(string.format("[官动精确缓存等价] PASS 源97->24骨 %d采样/%d映射矩阵，矩阵误差%.9g 髋误差%.9g 净空误差%.9g；鞋615/598->286/295顶点，%d鞋底对照最大误差%.9g",
+        equivalence.samples,equivalence.matrices,equivalence.maxMatrixError,equivalence.maxHipError,equivalence.maxClearanceError,
+        report.soleComparisons,report.maxSoleEquivalenceError))
     print(string.format("[官方走跑数据验收] PASS %d姿态 骨长误差%.7fm Walk髋%.3f..%.3f Run髋%.3f..%.3f 腾空%d 左右支撑%d/%d；视觉必须另看多相位实拍",
         report.poses,report.maxLengthError,report.minWalkHip,report.maxWalkHip,report.minRunHip,report.maxRunHip,report.flight,report.leftContacts,report.rightContacts))
     return report

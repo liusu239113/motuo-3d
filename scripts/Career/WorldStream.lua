@@ -38,8 +38,9 @@ local Stream = {}
 Stream.__index = Stream
 Stream.CELL,Stream.LOAD_DISTANCE,Stream.UNLOAD_DISTANCE,Stream.VIEW_DISTANCE = 256,550,850,450
 Stream.MAX_ACTIVE=80
--- 每块最多10楼/16树，程序几何预算36k面，最多14个合并材质批次。
--- 真实模型每特色区复用1栋，资源只加载一次；Text3D只用于固定POI与少数店招。
+-- 原外区每块最多10楼/16树；邻里补街墙硬限24楼/格，另计真实模型LOD0预算。
+-- 程序几何仍限36k面；建筑/门面复用现有材质，最多约20个合批材质。
+-- 真实模型复用3套资源，按256m视觉块卸载；Text3D只用于POI和沿街店招。
 Stream.MAX_TRIANGLES=36000
 local architecture={
     {root="model/e799bc6c-0cef-5148-978f-9a41183cc268/",stem="c531d52ef7284ea8ae32f415bfe4b98e",material="c531d52ef7284ea8ae32f415bfe4b98e_00_tripo_material_55e20983-baca-4902-adac-b025ebed4e62.xml"},
@@ -350,6 +351,7 @@ local function expansionFront(d,b)
     local function box(mat,x,y,z,w,h,depth)
         local v=p(x,y,z);d:Box(mat,v.x,v.y,v.z,w,h,depth,b.yaw)
     end
+    local signMaterials={"street_teal","street_red","street_steel"}
     if b.shop then
         local bay=(b.w-1.2)/3
         box("street_brick",0,1.65,front+.12,b.w-.15,3.12,.20)
@@ -360,7 +362,7 @@ local function expansionFront(d,b)
             box("street_steel",x,1.48,front-.04,.045,2.37,.03)
             box("street_steel",x,.55,front-.04,bay-.40,.055,.03)
         end
-        box("street_teal",0,3.12,front-.07,b.w-.20,.62,.10)
+        box(signMaterials[(math.floor(b.x+b.z)%3)+1],0,3.12,front-.07,b.w-.20,.62,.10)
         box("street_steel",0,3.50,front-.35,b.w-.05,.12,.9)
         local sign=p(0,3.12,front-.13)
         d:Sign(b.name,sign.x,sign.y,sign.z,b.yaw,.32)
@@ -373,6 +375,30 @@ local function expansionFront(d,b)
         box("glass",0,1.30,front-.060,1.61,2.28,.02)
         box("street_steel",0,1.3,front-.08,.05,2.28,.03)
         box("street_steel",0,2.78,front-.3,3.5,.12,.8)
+    end
+    if b.infill then
+        -- 真实楼体侧/背面加窗、空调格栅、门边窄柜，不沿街展示整排裸山墙。
+        -- 低处细节全留在已有实体基座内；雨篷在2.7m以上，无新增地面障碍。
+        for _,side in ipairs({-1,1}) do
+            for floor=2,math.min(4,b.floors) do
+                local y=math.min(b.h-1.3,floor*2.7-1.1)
+                for col=-1,1 do
+                    local z=col*b.d*.25
+                    box("street_brick",side*(b.w/2+.005),y,z,.08,1.52,1.32)
+                    box("glass",side*(b.w/2+.055),y,z,.025,1.25,1.07)
+                    box("street_steel",side*(b.w/2+.075),y,z,.025,1.25,.045)
+                end
+            end
+        end
+        for col=-1,1 do
+            box("street_brick",col*b.w*.27,1.5,b.d/2-.03,1.65,2.5,.12)
+            box("glass",col*b.w*.27,1.5,b.d/2+.04,1.4,2.2,.03)
+        end
+        if b.shop then
+            box("street_steel",b.w*.32,.54,front+.08,.64,.9,.14)
+            for i=1,4 do box("street_wood",b.w*.32,.24+i*.17,front-.01,.59,.045,.035) end
+            box("street_teal",-b.w*.33,1.1,front+.03,.52,1.5,.10)
+        end
     end
 end
 
@@ -483,8 +509,17 @@ function Stream:Load(ix,iz)
         d.Batch=cellBatch
         for _,s in ipairs(data.grounds) do rect(d,s) end
         local markingQuads=roadMarkings(d,data)
-        local models=0
-        for _,b in ipairs(data.buildings) do if self:Building(d,root,b) then models=models+1 end end
+        local models,modelTriangles,expansionModels=0,0,0
+        for _,b in ipairs(data.buildings) do
+            if self:Building(d,root,b) then
+                models=models+1
+                modelTriangles=modelTriangles+Expansion.Models[b.asset].triangles
+                if b.expansion then expansionModels=expansionModels+1 end
+            end
+        end
+        if expansionModels>0 then
+            assert(expansionModels<=24 and modelTriangles<=200000,"邻里块真实模型预算超限")
+        end
         for _,t in ipairs(data.trees) do tree(d,t) end
         for _,p in ipairs(data.props) do
             if p.kind=="bench" then d:Bench(p.x,p.z,0)
@@ -518,6 +553,7 @@ function Stream:Load(ix,iz)
         end
         local stats=d:Finish()
         stats.buildings,stats.models,stats.obstacles=#data.buildings,models,#data.obstacles
+        stats.modelTriangles,stats.expansionModels=modelTriangles,expansionModels
         stats.markingQuads=markingQuads
         assert(stats.triangles<=Stream.MAX_TRIANGLES,"单块三角面预算超限")
         -- 释放Details持有的临时程序圆柱；本流式块未使用Bar/Lamp。
@@ -619,12 +655,14 @@ end
 ---@return table
 function Stream:Stats()
     local result={active=0,loaded=self.loaded,unloaded=self.unloaded,failed=self.failed,
-        batches=0,triangles=0,buildings=0,models=0,obstacles=0,signs=0,trees=0,markingQuads=0,
+        batches=0,triangles=0,buildings=0,models=0,modelTriangles=0,maxCellModelTriangles=0,expansionModels=0,
+        obstacles=0,signs=0,trees=0,markingQuads=0,
         cellSize=256,viewDistance=450,loadDistance=550,unloadDistance=850,maxActive=Stream.MAX_ACTIVE,
         visible=self.visible,disposed=self.disposed,pending=0,planBuilds=self.planBuilds,candidates=#self.plan}
     for _,c in pairs(self.chunks) do
         result.active=result.active+1
-        for _,field in ipairs({"batches","triangles","buildings","models","obstacles","signs","trees","markingQuads"}) do
+        result.maxCellModelTriangles=math.max(result.maxCellModelTriangles,c.stats.modelTriangles or 0)
+        for _,field in ipairs({"batches","triangles","buildings","models","modelTriangles","expansionModels","obstacles","signs","trees","markingQuads"}) do
             result[field]=result[field]+(c.stats[field] or 0)
         end
     end

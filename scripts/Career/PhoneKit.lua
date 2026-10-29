@@ -5,6 +5,9 @@ Kit.C={ink={30,43,45,255},muted={108,123,123,255},paper={244,247,246,255},
     white={255,255,255,255},line={224,231,228,255},green={29,120,87,255},
     pale={226,241,232,255},orange={166,98,27,255},blue={46,100,137,255},red={172,71,64,255}}
 local C=Kit.C
+-- Yoga按物理像素对两端取整；44逻辑px在scale<1时可能回读43.x。
+-- 多留一个物理像素，保证真实命中布局仍不小于44，而不是放宽验收阈值。
+function Kit.TouchSize() return 44+1/math.max(.1,UI.GetScale()) end
 function Kit.Text(text,size,color,props)
     props=props or {}
     props.text,props.fontSize,props.fontColor=text,size or 11,color or C.ink
@@ -23,8 +26,10 @@ end
 function Kit.Button(text,fn,id,primary,props)
     props=props or {}
     props.text,props.onClick,props.id=text,fn,id
-    props.width=props.width or "100%"; props.height=props.height or 44
-    props.minHeight=44; props.minWidth=44; props.fontSize=props.fontSize or 11
+    local touchSize=Kit.TouchSize()
+    props.width=props.width or "100%"; props.height=math.max(touchSize,props.height or 44)
+    props.minHeight=math.max(touchSize,props.minHeight or 44); props.minWidth=math.max(touchSize,props.minWidth or 44)
+    props.fontSize=props.fontSize or 11
     props.padding=props.padding or 4; props.borderRadius=9; props.borderWidth=0
     props.boxShadow=false; props.pressedBoxShadow=false
     local fill=primary and C.green or C.pale

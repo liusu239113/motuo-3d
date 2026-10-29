@@ -14,7 +14,8 @@ local INTRO={
 local KINDS={opening="初始生活现金",delivery="配送到账",meal="早餐用餐",charge="街边充电",lodging="住宿过夜",housing="住宿过夜",
     accommodation="住宿过夜",equipment="骑手装备",motorcycle="购入摩托",training="护具与训练",
     race_entry="赛事报名",career_race="赛事奖金",scheduled_delivery="排班配送",scheduled_living="排班生活支出",
-    engagement="联系人委托谢礼",team_sponsor="车队赞助",sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油"}
+    engagement="联系人委托谢礼",team_signing="车队首轮合同奖金",team_sponsor="车队赞助",payment="生活支出",
+    sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油"}
 function Apps.LedgerName(entry) return KINDS[entry.kind] or entry.kind end
 -- 今日真正发生的收支，不将开局本金包装为今天挣到的钱。
 function Apps.Today(state)
@@ -94,6 +95,40 @@ local function bubble(content,text,isSelf,id,name)
     if isSelf then row:AddChild(avatar(person,28)) end
     content:AddChild(row)
 end
+-- Label的maxLines目前只有声明，没有渲染截断实现；自动宽Label即使nowrap
+-- 被父级压窄也会走auto-wrap。列表专用显式宽+固定高，并用字体实测做UTF-8省略。
+local function listLine(text,size,color,id,weight)
+    local source=text:gsub("[\r\n]+"," ")
+    local label=K.Text(source,size,color,{id=id,width="100%",height=20,minHeight=20,maxHeight=20,
+        flexShrink=0,whiteSpace="nowrap",verticalAlign="middle",fontWeight=weight or "normal"})
+    local lastWidth=-1
+    label.Update=function(self)
+        local width=self:GetLayout().w
+        if width<=0 or math.abs(width-lastWidth)<.1 then return end
+        lastWidth=width
+        local fontSize=UI.Theme.FontSize(size)
+        local face=UI.Theme.FontFace("sans",weight or "normal")
+        local function measured(value) return UI.MeasureTextWidth(value,fontSize,face) end
+        local available=math.max(0,width-2) -- 保留字形边缘/像素取整余量。
+        if measured(source)<=available then self:SetText(source); return end
+        local stop=#source
+        while stop>0 do
+            local start=stop
+            while start>1 and source:byte(start)>=128 and source:byte(start)<192 do start=start-1 end
+            stop=start-1
+            local value=source:sub(1,stop).."…"
+            if measured(value)<=available then self:SetText(value); return end
+        end
+        self:SetText(measured("…")<=available and "…" or "")
+    end
+    return label
+end
+local function listTime(thread)
+    local last=thread.letters[#thread.letters]
+    if last then return "第"..last.day.."天" end
+    if thread.id=="cousin" then return "第1天" end
+    return thread.id=="journal" and "经历" or "驻点"
+end
 ---@param view CareerView
 function Apps.Messages(view,content,state)
     local threads=Apps.Threads(state)
@@ -107,11 +142,11 @@ function Apps.Messages(view,content,state)
             local item=thread
             local unread=view.phoneReadThreads[item.id]~=item.signature and item.unreadCount or 0
             -- 当前UI命中先递归子树，不能仅依赖父级box-only；装饰子容器显式穿透。
-            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,pointerEvents="none",children={
-                K.Text(item.name,12,C.ink,{maxLines=1,fontWeight="bold",whiteSpace="nowrap"}),
-                K.Text(item.summary,10,C.muted,{maxLines=1,whiteSpace="nowrap"})}}
-            local side=UI.Panel{width=48,padding=0,gap=4,alignItems="flex-end",pointerEvents="none",children={
-                K.Text(item.time,8,C.muted,{maxLines=1,whiteSpace="nowrap"})}}
+            local info=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=42,padding=0,gap=2,pointerEvents="none",children={
+                listLine(item.name,12,C.ink,"career-chat-name-"..item.id,"bold"),
+                listLine(item.summary,10,C.muted,"career-chat-summary-"..item.id)}}
+            local side=UI.Panel{width=34,minWidth=34,height=42,padding=0,gap=2,alignItems="flex-end",pointerEvents="none",children={
+                listLine(listTime(item),8,C.muted,"career-chat-time-"..item.id)}}
             if unread>0 then side:AddChild(UI.Badge{id="career-chat-unread-"..item.id,content=unread,size="sm",variant="error",pointerEvents="none"}) end
             list:AddChild(UI.Row{id="career-chat-"..item.id,width="100%",height=78,padding=8,gap=7,
                 alignItems="center",borderBottomWidth=1,borderBottomColor=C.line,pointerEvents="box-only",
@@ -189,7 +224,7 @@ function Apps.Wallet(view,content,state)
             K.Text(string.format("%+.2f",selected.deltaCents/100),26,selected.deltaCents>0 and C.green or C.ink,{fontWeight="bold"}),
             K.Text(K.Stamp(selected.day,selected.time),11,C.muted),
             K.Text("账后余额  "..K.Money(selected.balanceCents),12),
-            K.Text("流水类型  "..selected.kind,10,C.muted),K.Text("流水编号\n"..selected.id,10,C.muted,{id="career-wallet-detail-id"}),
+            K.Text("流水类型  "..Apps.LedgerName(selected),10,C.muted),K.Text("流水编号\n"..selected.id,10,C.muted,{id="career-wallet-detail-id"}),
             K.Text("来自本局真实现金流水；仅查看，不可转账、充值或修改。",10,C.muted)}}))
         content:AddChild(K.Button("返回收支明细",function() view.phoneLedgerId=""; rebuild(view) end,"career-wallet-detail-back",false))
         return

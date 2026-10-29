@@ -73,7 +73,28 @@ end
 function Checks.Plan()
     legacyOrders()
     local stats=Expansion.Stats()
-    assert(stats.roads==34 and stats.buildings==78 and stats.plazas==4 and stats.shops==28)
+    assert(stats.roads==34 and stats.baseBuildings==78 and stats.plazas==4)
+    assert(stats.infillBuildings>=150 and stats.infillBuildings<=220,"固定沿街补楼数量越界")
+    assert(stats.modelTriangles<=1800000 and stats.maxCellModelTriangles<=185000,"邻里真实模型LOD0预算超限")
+    assert(stats.assetCounts[2]>=stats.buildings*.8,"补楼必须以4492面低层真实资产为主")
+    assert(World.District(240,-44).id=="greenbelt" and World.District(240,-44).label=="南城邻里")
+    assert(World.District(24,240).label=="南城邻里" and World.District(0,0).id=="old_town")
+    -- 单个视野的几何不变量：两侧真实楼体形成街墙，不能用总数掩盖眼前空地。
+    for _,side in ipairs({-1,1}) do
+        for _,cross in ipairs({214,268}) do
+            local north,south=0,0
+            for _,b in ipairs(Expansion.Buildings) do
+                if b.x>=30 and b.x<=150 then
+                    if math.abs(b.z-side*cross)<.01 then north=north+1 end
+                end
+                if b.z>=-65 and b.z<=65 then
+                    if math.abs(b.x-side*cross)<.01 then south=south+1 end
+                end
+            end
+            assert(north>=2,"南北截图前方未形成双侧街墙")
+            assert(south>=2,"东西截图前方未形成双侧街墙")
+        end
+    end
     assert(World.ExpansionRoads==Expansion.Roads,"地图扩展几何非同源")
     local solids={}
     for _,b in ipairs(Expansion.Buildings) do
@@ -84,6 +105,13 @@ function Checks.Plan()
         solids[#solids+1]=b
         assert(not Expansion.Overlaps(b,{x1=-195,x2=195,z1=-195,z2=195}),"新楼侵入旧城")
     end
+    for _,a in ipairs(Expansion.Buildings) do if a.infill then
+        local envelope={x1=a.x1-1,x2=a.x2+1,z1=a.z1-1,z2=a.z2+1}
+        for _,b in ipairs(Expansion.Buildings) do if a~=b then
+            assert(not Expansion.Overlaps(envelope,{x1=b.x1-.99,x2=b.x2+.99,z1=b.z1-.99,z2=b.z2+.99}),
+                "补楼侧巷不足2m "..a.id.." / "..b.id)
+        end end
+    end end
     for _,p in ipairs(Expansion.Props) do solids[#solids+1]=rectangle(p) end
     for _,p in ipairs(Expansion.Plazas) do
         local horizontal={x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-2.5,z2=p.z+2.5}
@@ -109,6 +137,9 @@ function Checks.Plan()
     for ix=-2,1 do for iz=-2,1 do
         local c=World.DescribeCell(ix,iz)
         maxBuildings,maxProps=math.max(maxBuildings,#c.buildings),math.max(maxProps,#c.props)
+        local expansionCount=0
+        for _,b in ipairs(c.buildings) do if b.expansion then expansionCount=expansionCount+1 end end
+        assert(expansionCount<=24,"邻里每格硬限24栋失效")
         assert(#c.buildings<=Expansion.MAX_BUILDINGS_PER_CELL,"邻里单块楼数无界")
         assert(#c.props<=Expansion.MAX_PROPS_PER_CELL,"邻里单块小件无界")
         for _,b in ipairs(c.buildings) do if b.expansion then
@@ -239,11 +270,13 @@ function Checks.Run(session)
         local second=stream:Stats()
         assert(first.failed==0 and first.pending==0 and first.active<=80,"邻里流式未就绪/无界")
         assert(nodes==stream.root:GetNumChildren(true) and first.loaded==second.loaded,"重复预热节点增长")
-        assert(first.models>=78,"首屏550m未包含全部相邻真实模型")
+        assert(first.models>=#Expansion.Buildings,"首屏550m未包含全部相邻真实模型")
         stats.loadedModels,stats.loadedNodes=first.models,nodes
     end)
     city.traffic,city.deliveryPeople=traffic,people
     assert(ok,message)
+    print(string.format("[邻里模型预算] 原78+补%d=%d楼 / 4492面资产%d栋 / 最坏LOD0总%d面 / 每格最多%d面、%d楼；程序几何另限36k面/格",
+        stats.infillBuildings,stats.buildings,stats.assetCounts[2],stats.modelTriangles,stats.maxCellModelTriangles,stats.maxCellBuildings))
     print(string.format("[邻里验收通过] %d街段/%.0fm中心线/%d楼/%d商铺/%d小广场；单块最多%d楼；旧31单完整route/费保留",
         stats.roads,stats.roadMeters,stats.buildings,stats.shops,stats.plazas,stats.maxCellBuildings))
     return stats

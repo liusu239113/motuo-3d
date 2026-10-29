@@ -315,7 +315,7 @@ end
 -- 可单独验收手机：UI初始化后调用RunLayout(view,state,offer,active)。不建城、不读写档、不执行业务动作。
 -- 用真实Yoga/控件/命中测试，显式尺寸根模拟横屏与安全区；不更改UI.Scale.DEFAULT或graphics模式。
 ---@param view CareerView
-function Checks.RunLayout(view,state,offer,active)
+function Checks.RunLayout(view,state,offer,active,checkApp)
     assert(view.phonePage=="" and not view.blocked and UI.GetRoot()==view.root,"请在非手机/非弹窗的已挂载游戏态验收")
     local Phone=require("Career.Phone")
     local root=UI.GetRoot()
@@ -341,8 +341,10 @@ function Checks.RunLayout(view,state,offer,active)
     end
     local function touch(widget)
         local r=widget:GetAbsoluteLayoutForHitTest()
-        assert(r.w>=44 and r.h>=44,"手机触摸目标不得小于44逻辑像素："..tostring(widget.props.id))
         local scale=UI.GetScale()
+        print(string.format("[手机布局触摸尺寸] %s rect=(%.9f,%.9f,%.9f,%.9f) scale=%.12f",
+            tostring(widget.props.id),r.x,r.y,r.w,r.h,scale))
+        assert(r.w>=44 and r.h>=44,"手机触摸目标不得小于44逻辑像素："..tostring(widget.props.id))
         local down=PointerEvent.new("PointerDown",{pointerId=791202,pointerType="touch",isPrimary=true,
             x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
         UI.HandlePointerEvent(down)
@@ -352,7 +354,7 @@ function Checks.RunLayout(view,state,offer,active)
     end
     local ok,failure=pcall(function()
         -- 后两组额外模拟刘海/胶囊挤占空间；640x360还直接按基准像素验收，比默认密度缩放更紧。
-        for _,size in ipairs({{640,360,0,0},{960,540,0,0},{640,360,24,36},{960,540,32,48}}) do
+        for _,size in ipairs({{640,360,0,0},{960,540,0,0},{1280,720,0,0},{640,360,24,36},{960,540,32,48}}) do
             local width,height=size[1],size[2]
             holder:SetStyle{paddingLeft=size[3],paddingRight=size[3],paddingTop=size[4],paddingBottom=8}
             view:OpenPhone("apps",state,offer,active)
@@ -397,6 +399,7 @@ function Checks.RunLayout(view,state,offer,active)
                     local _,scroll=view.phoneContent:GetScroll()
                     assert(scroll>0,"长内页滚动失效")
                 end
+                if checkApp then checkApp(app[1]) end
                 local oldPage=tree(assert(view.phoneContent:GetChildAt(1)))
                 local back=assert(holder:FindById("career-phone-back"))
                 assert(inside(back:GetAbsoluteLayout(),screen),"固定返回超出屏幕")

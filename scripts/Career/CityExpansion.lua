@@ -4,7 +4,7 @@
 local Expansion = {}
 Expansion.LIMIT=424
 Expansion.RESERVED=440
-Expansion.MAX_BUILDINGS_PER_CELL=14
+Expansion.MAX_BUILDINGS_PER_CELL=26
 Expansion.MAX_PROPS_PER_CELL=24
 -- 用UrhoXCLI model-info实测，绝不猜测建筑尺寸。
 Expansion.Models={
@@ -65,8 +65,9 @@ local function building(id,x,z,index,yaw,shop,height)
     local w,h,depth=spec.size[1]*scale,spec.size[2]*scale,spec.size[3]*scale
     local ex,ez=w,depth
     if yaw%180~=0 then ex,ez=depth,w end
+    local floors=math.max(2,math.floor((h-1)/3.05))
     Expansion.Buildings[#Expansion.Buildings+1]={id="adjacent_"..id,x=x,z=z,w=w,d=depth,h=h,
-        floors=index==3 and 6 or 4,yaw=yaw,asset=index,scale=scale,expansion=true,
+        floors=floors,yaw=yaw,asset=index,scale=scale,expansion=true,
         style="plaster",name=shop and shopNames[(#Expansion.Buildings%#shopNames)+1] or "邻里住宅",
         shop=shop or false,x1=x-ex/2-.05,x2=x+ex/2+.05,z1=z-ez/2-.05,z2=z+ez/2+.05}
 end
@@ -131,6 +132,71 @@ end
 function Expansion.Reserved(rect)
     return Expansion.Overlaps(rect,{x1=-440,x2=440,z1=-440,z2=440})
 end
+-- 实拍后的第二轮固定街墙带：只填已规划街坊，不扩道路或世界范围。
+-- 新楼须避开完整人行道、旧城、既有楼体、设施、广场矩形及接近巷道。
+-- 24栋/格是本模块硬限；WorldData仍可在远区添加其原有最多10栋规则。
+Expansion.BASE_BUILDINGS=#Expansion.Buildings
+local function infill()
+    local cells={}
+    local function cellkey(x,z) return math.floor(x/256)..":"..math.floor(z/256) end
+    for _,b in ipairs(Expansion.Buildings) do
+        local key=cellkey(b.x,b.z);cells[key]=(cells[key] or 0)+1
+    end
+    local function expanded(b,margin)
+        return {x1=b.x1-margin,x2=b.x2+margin,z1=b.z1-margin,z2=b.z2+margin}
+    end
+    local function attempt(id,x,z,asset,yaw,height,shop)
+        local key=cellkey(x,z)
+        if (cells[key] or 0)>=24 then return end
+        building(id,x,z,asset,yaw,shop,height)
+        local b=assert(Expansion.Buildings[#Expansion.Buildings])
+        local clearance=expanded(b,1.0)
+        local free=not Expansion.Overlaps(clearance,{x1=-196,x2=196,z1=-196,z2=196})
+        for _,r in ipairs(Expansion.Roads) do
+            if Expansion.Overlaps(clearance,Expansion.RoadRect(r,r.sidewalk+.4)) then free=false;break end
+        end
+        if free then for i=1,#Expansion.Buildings-1 do
+            if Expansion.Overlaps(clearance,expanded(Expansion.Buildings[i],1.0)) then free=false;break end
+        end end
+        if free then for _,p in ipairs(Expansion.Props) do
+            local rect={x1=p.x-p.w/2-1,x2=p.x+p.w/2+1,z1=p.z-p.d/2-1,z2=p.z+p.d/2+1}
+            if Expansion.Overlaps(clearance,rect) then free=false;break end
+        end end
+        if free then for _,p in ipairs(Expansion.Plazas) do
+            if Expansion.Overlaps(clearance,{x1=p.x-p.w/2-2,x2=p.x+p.w/2+2,z1=p.z-p.d/2-2,z2=p.z+p.d/2+2}) then free=false;break end
+            -- 实际入口从共享巷到广场；保留与Run相同的3m接近通带。
+            local approach=(p.id=="east" or p.id=="west")
+                and {x1=math.min(p.x,312*(p.x>0 and 1 or -1))-2.5,x2=math.max(p.x,312*(p.x>0 and 1 or -1))+2.5,z1=p.z-2.5,z2=p.z+2.5}
+                or {x1=p.x-2.5,x2=p.x+2.5,z1=math.min(p.z,312*(p.z>0 and 1 or -1))-2.5,z2=math.max(p.z,312*(p.z>0 and 1 or -1))+2.5}
+            if Expansion.Overlaps(clearance,approach) then free=false;break end
+        end end
+        if free then b.infill=true;cells[key]=(cells[key] or 0)+1
+        else table.remove(Expansion.Buildings) end
+    end
+    -- 三条沿街带补足双侧街面；高度/模型交错，不把同一裸山墙整排朝街。
+    for _,side in ipairs({-1,1}) do
+        for row,cross in ipairs({214,268,360}) do
+            for n=0,39 do
+                local along=-351+n*18
+                local asset=n%11==0 and 1 or n%17==0 and 3 or 2
+                local h=10+(n+row)%4*2
+                local face=side*(row==2 and 90 or -90)
+                attempt("fill_x_"..side.."_"..row.."_"..n,side*cross,along,asset,face,h,n%3~=0)
+                attempt("fill_z_"..side.."_"..row.."_"..n,along,side*cross,asset,(side>0)==(row==2) and 0 or 180,h,n%3==0)
+            end
+        end
+    end
+    -- 横街另一侧的转角铺面，优先填相机前方90m空街坊，不往院中心随机撒楼。
+    for _,side in ipairs({-1,1}) do
+        for _,z in ipairs({-152,-20,20,80,120,152,192}) do
+            for n=0,4 do
+                local x=286+n*17
+                attempt("corner_"..side.."_"..z.."_"..n,side*x,z,n==0 and 1 or 2,z<0 and 180 or 0,10+n%3*2,true)
+            end
+        end
+    end
+end
+infill()
 -- 只构建[-195,195]内的出口接缝，并在Finish前登记原有Surface查询。
 -- 不在旧城添加任何落地实体，也不覆盖其余旧路面。
 function Expansion.BuildSeams(d)
@@ -154,10 +220,23 @@ function Expansion.BuildSeams(d)
     return count
 end
 function Expansion.Stats()
-    local length,shops=0,0
+    local length,shops,modelTriangles,maxCellModelTriangles=0,0,0,0
+    local cellTriangles={}
+    local assets={0,0,0}
     for _,r in ipairs(Expansion.Roads) do length=length+math.abs(r.x2-r.x1)+math.abs(r.z2-r.z1) end
-    for _,b in ipairs(Expansion.Buildings) do if b.shop then shops=shops+1 end end
+    for _,b in ipairs(Expansion.Buildings) do
+        if b.shop then shops=shops+1 end
+        local triangles=Expansion.Models[b.asset].triangles
+        local key=math.floor(b.x/256)..":"..math.floor(b.z/256)
+        modelTriangles=modelTriangles+triangles
+        cellTriangles[key]=(cellTriangles[key] or 0)+triangles
+        maxCellModelTriangles=math.max(maxCellModelTriangles,cellTriangles[key])
+        assets[b.asset]=assets[b.asset]+1
+    end
     return {roads=#Expansion.Roads,roadMeters=length,buildings=#Expansion.Buildings,shops=shops,
-        plazas=#Expansion.Plazas,props=#Expansion.Props,span=848,streamCell=256,residentGeometry=false}
+        plazas=#Expansion.Plazas,props=#Expansion.Props,span=848,streamCell=256,residentGeometry=false,
+        baseBuildings=Expansion.BASE_BUILDINGS,infillBuildings=#Expansion.Buildings-Expansion.BASE_BUILDINGS,
+        maxExpansionCellBuildings=24,modelTriangles=modelTriangles,maxCellModelTriangles=maxCellModelTriangles,
+        assetCounts=assets}
 end
 return Expansion
