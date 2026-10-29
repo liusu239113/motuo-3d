@@ -55,6 +55,7 @@ local Rig=require("Career.Rig")
 ---@field poseTime number
 ---@field recycled number
 ---@field Hint fun(self:CareerOuterTraffic,x:number,z:number,yaw:number):string?
+---@field Gap fun(self:CareerOuterTraffic,car:OuterTrafficCar,blockers:table[]):number
 ---@field Separate fun(self:CareerOuterTraffic,car:table):boolean
 ---@field IsFree fun(self:CareerOuterTraffic,x:number,z:number,r:number):boolean
 ---@field Update fun(self:CareerOuterTraffic,dt:number,blockers:table[])
