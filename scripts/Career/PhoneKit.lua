@@ -43,7 +43,7 @@ function Kit.Heading(title,subtitle,id)
         Kit.Text(title,17,C.ink,{fontWeight="bold"}),Kit.Text(subtitle,10,C.muted)}}
 end
 function Kit.Tag(text,color)
-    return Kit.Text(text,9,color or C.green,{alignSelf="flex-start",paddingHorizontal=6,paddingVertical=3,
+    return Kit.Text(text,9,color or C.green,{alignSelf="flex-start",whiteSpace="nowrap",paddingHorizontal=6,paddingVertical=3,
         borderRadius=5,backgroundColor=C.pale})
 end
 function Kit.Money(cents) return string.format("¥%.2f",cents/100) end

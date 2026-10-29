@@ -126,7 +126,8 @@ function Apps.Messages(view,content,state)
     view.phoneTitle:SetText(selected.name)
     view.phoneBack:SetText("会话")
     content:AddChild(UI.Row{id="career-chat-header",width="100%",padding=0,gap=8,alignItems="center",children={
-        avatar(selected,32),K.Text(selected.name.."\n剧情记录 · 非实时通讯",10,C.muted)}})
+        avatar(selected,32),K.Text(selected.name.."\n剧情记录 · 非实时通讯",10,C.muted,
+            {id="career-chat-header-info",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0})}})
     content:AddChild(K.Text(selected.time,9,C.muted,{textAlign="center"}))
     for index,message in ipairs(selected.messages) do
         bubble(content,message.text,message.self,"career-chat-bubble-"..index,selected.name)
@@ -228,7 +229,8 @@ function Apps.Wallet(view,content,state)
                         K.Text(Apps.LedgerName(entry),11,C.ink,{fontWeight="bold",maxLines=1}),
                         K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
                         K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",8,C.muted)}},
-                    K.Text(string.format("%+.2f",entry.deltaCents/100),12,entry.deltaCents>0 and C.green or C.ink,{fontWeight="bold"})}})
+                    K.Text(string.format("%+.2f",entry.deltaCents/100),12,entry.deltaCents>0 and C.green or C.ink,
+                        {id="career-wallet-entry-amount-"..i,whiteSpace="nowrap",flexShrink=0,fontWeight="bold"})}})
         end
     end
     if count==0 then list:AddChild(K.Text("暂无"..(view.phoneWalletFilter=="income" and "收入" or "支出").."记录\n完成配送或发生消费后会在这里显示。",11,C.muted,
@@ -242,7 +244,7 @@ function Apps.Wallet(view,content,state)
 end
 local function routeRow(number,title,point,highlight)
     return UI.Row{width="100%",padding=0,gap=7,alignItems="flex-start",children={
-        K.Text(number,10,highlight and C.green or C.muted,{width=22,height=22,textAlign="center",borderRadius=11,backgroundColor=C.pale}),
+        K.Text(number,10,highlight and C.green or C.muted,{width=22,height=22,whiteSpace="nowrap",flexShrink=0,textAlign="center",verticalAlign="middle",borderRadius=11,backgroundColor=C.pale}),
         UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=2,children={
             K.Text(title,9,highlight and C.green or C.muted),K.Text(Config.points[point].label,11,C.ink,{fontWeight="bold"})}}}}
 end
@@ -265,7 +267,8 @@ function Apps.Delivery(view,content,state,offer,active)
     local income=Apps.Today(state)
     content:AddChild(K.Card("career-delivery-status-card",{padding=8,gap=6,children={
         UI.Row{width="100%",padding=0,gap=5,alignItems="center",children={
-            K.Text(state.online and "正在听单" or "休息中",11,C.green,{flexGrow=1,fontWeight="bold"}),
+            K.Text(state.online and "正在听单" or "休息中",11,C.green,
+                {id="career-delivery-online-label",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,fontWeight="bold"}),
             K.Button(state.online and "停止听单" or "上线听单",function() view.actions.online(not state.online) end,"career-online",not state.online,{width=86})}},
         UI.Row{width="100%",padding=0,children={K.Stat("已完成",state.completedOrders.."单"),K.Stat("今日总收入",K.Money(income))}}}}))
     if active then

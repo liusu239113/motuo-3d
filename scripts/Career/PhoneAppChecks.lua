@@ -21,6 +21,14 @@ end
 ---@return Widget
 local function find(view,id) return assert(view.phoneBody:FindById(id),"缺少真实手机组件 "..id) end
 ---@param view CareerView
+local function visibleTextLayout(view,id)
+    layout(view)
+    local label=find(view,id)
+    local r=label:GetAbsoluteLayout()
+    print(string.format("[手机文字布局] %s rect=(%.1f,%.1f,%.1f,%.1f)",id,r.x,r.y,r.w,r.h))
+    assert(r.w>0 and r.h>0,"手机文字真实Yoga宽高必须大于0 "..id)
+end
+---@param view CareerView
 local function tap(view,id)
     layout(view)
     local widget=find(view,id)
@@ -123,6 +131,7 @@ function Checks.Run(session)
         assert(find(view,"career-chat-unread-cousin"))
         tap(view,"career-chat-cousin")
         assert(view.phoneChatId=="cousin" and find(view,"career-chat-bubble-1") and find(view,"career-chat-bubble-3"))
+        visibleTextLayout(view,"career-chat-header-info")
         local left=find(view,"career-chat-bubble-1").props.justifyContent
         local right=find(view,"career-chat-bubble-3").props.justifyContent
         assert(left=="flex-start" and right=="flex-end","既有剧情须有左右气泡")
@@ -152,6 +161,7 @@ function Checks.Run(session)
         view:ClosePhone(); session:OpenPhone("delivery")
         tap(view,"career-online")
         assert(session.online and find(view,"career-delivery-offer"))
+        visibleTextLayout(view,"career-delivery-online-label")
         tap(view,"career-accept")
         local active=assert(Delivery.GetActive())
         assert(find(view,"career-delivery-active") and active.status=="accepted")
@@ -222,6 +232,8 @@ function Checks.Shot(session,page)
     elseif page=="wallet-expense" then tap(view,"career-wallet-filter-expense")
     elseif page=="wallet-detail" then tap(view,"career-wallet-entry-5") end
     view.phoneContent:ScrollToTop(); layout(view)
+    if page=="chat" then visibleTextLayout(view,"career-chat-header-info") end
+    if app=="delivery" then visibleTextLayout(view,"career-delivery-online-label") end
     view.notice:SetText("")
     local state=Store.Get()
     local income,expense=Apps.Today(state)
