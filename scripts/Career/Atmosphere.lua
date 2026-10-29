@@ -73,7 +73,8 @@ function A.Sample(day,hour)
     local cloudy=lerp(weatherAnchor(slot),weatherAnchor(slot+1),smooth(0,1,(total-slot*18)/18))
     local angle=(normalizedHour-6)/12*PI
     local sun=direction(math.cos(angle),math.sin(angle),-.35)
-    local moon=direction(-sun.x,-sun.y,.35)
+    -- 月光兼作柔和夜间补光：黄昏也保持向下照明，避免太阳贴地时道路全黑。
+    local moon=direction(-sun.x,math.max(.45,-sun.y),-.5)
     local height=sun.y
     local daylight=smooth(-.10,.32,height)
     local night=1-smooth(-.18,-.02,height)
@@ -102,7 +103,7 @@ function A.Sample(day,hour)
         sunColor=mix(rgb(1,.40,.16),rgb(1,.95,.86),smooth(0,.5,height)),
         sunBrightness=3.1*smooth(-.035,.12,height)*(1-.82*grey),
         -- 夜间保留冷色月光供步行/骑行辨路；阴天减弱但不把人物压成剪影。
-        moonBrightness=.75*night*smooth(0,.20,moon.y)*(1-.5*grey),
+        moonBrightness=1.0*math.max(night,1-daylight)*smooth(0,.20,moon.y)*(1-.4*grey),
         sunEnergy=1-.93*smooth(.45,.94,cloudy),
         topColor=top,horizonColor=horizon,groundColor=ground,cloudColor=cloud,
         cloudAlpha=lerp(.12,.86,smooth(.08,.86,cloudy)),
