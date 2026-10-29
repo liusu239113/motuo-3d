@@ -108,6 +108,151 @@ end
 local function rect(d,s)
     d:Ground(s.material,(s.x1+s.x2)/2,(s.z1+s.z2)/2,s.x2-s.x1,s.z2-s.z1,s.y)
 end
+
+---@class CareerMarkRoad
+---@field vertical boolean
+---@field center number
+---@field lo number
+---@field hi number
+---@field width number
+---@field crossings table[]
+---@class CareerMarkGroup
+---@field vertical boolean
+---@field center number
+---@field roads table[]
+---@field ends table<number, boolean>
+---@type CareerMarkRoad[]
+local markingRoads={}
+-- 主干/支路同轴重叠时先切分取最大路宽，再合并连续段，避免重叠双黄线。
+do
+    ---@type table<string, CareerMarkGroup>
+    local groups={}
+    for _,r in ipairs(World.Roads) do
+        if not r.old then
+            local vertical=r.x1==r.x2
+            local center=vertical and r.x1 or r.z1
+            local id=(vertical and "x" or "z")..center
+            local g=groups[id] or {vertical=vertical,center=center,roads={},ends={}}
+            local lo=vertical and math.min(r.z1,r.z2) or math.min(r.x1,r.x2)
+            local hi=vertical and math.max(r.z1,r.z2) or math.max(r.x1,r.x2)
+            g.roads[#g.roads+1]={lo=lo,hi=hi,width=r.width}
+            g.ends[lo]=true;g.ends[hi]=true;groups[id]=g
+        end
+    end
+    for _,g in pairs(groups) do
+        ---@type number[]
+        local ends={}
+        for n in pairs(g.ends) do ends[#ends+1]=n end
+        table.sort(ends)
+        ---@type CareerMarkRoad?
+        local previous=nil
+        for i=2,#ends do
+            local lo,hi=assert(ends[i-1]),assert(ends[i])
+            local midpoint=(lo+hi)/2
+            local width=0
+            for _,r in ipairs(g.roads) do if midpoint>=r.lo and midpoint<=r.hi then width=math.max(width,r.width) end end
+            if width>0 then
+                if previous and previous.hi==lo and previous.width==width then previous.hi=hi
+                else
+                    previous={vertical=g.vertical,center=g.center,lo=lo,hi=hi,width=width,crossings={}}
+                    markingRoads[#markingRoads+1]=previous
+                end
+            end
+        end
+    end
+    for _,a in ipairs(markingRoads) do
+        for _,b in ipairs(markingRoads) do
+            if a.vertical~=b.vertical and b.center>=a.lo and b.center<=a.hi
+                and a.center>=b.lo and a.center<=b.hi then
+                a.crossings[#a.crossings+1]={along=b.center,half=b.width/2}
+            end
+        end
+    end
+end
+
+---@param d CityDetails
+---@param cell CareerWorldCell
+---@return integer
+local function roadMarkings(d,cell)
+    local quads=0
+    local seen={}
+    -- 只画贴花Quad，不登记Surface；每块上限1200个四边形/2400面，复用paint/yellow批次。
+    local function paint(material,x1,z1,x2,z2)
+        x1,x2=math.max(x1,cell.x1),math.min(x2,cell.x2)
+        z1,z2=math.max(z1,cell.z1),math.min(z2,cell.z2)
+        if x1>=x2 or z1>=z2 or quads>=1200 then return end
+        local pieces={}
+        local limit=World.OLD_LIMIT
+        if x1<limit and x2> -limit and z1<limit and z2> -limit then
+            local l,r=math.max(x1,-limit),math.min(x2,limit)
+            local bottom,top=math.max(z1,-limit),math.min(z2,limit)
+            if x1<l then pieces[#pieces+1]={x1,z1,l,z2} end
+            if r<x2 then pieces[#pieces+1]={r,z1,x2,z2} end
+            if z1<bottom then pieces[#pieces+1]={l,z1,r,bottom} end
+            if top<z2 then pieces[#pieces+1]={l,top,r,z2} end
+        else pieces[1]={x1,z1,x2,z2} end
+        for _,p in ipairs(pieces) do
+            local id=material..table.concat(p,":")
+            if not seen[id] and quads<1200 then
+                seen[id]=true
+                d:Quad(material,V(p[1],.073,p[2]),V(p[1],.073,p[4]),V(p[3],.073,p[2]),V(p[3],.073,p[4]))
+                quads=quads+1
+            end
+        end
+    end
+    for _,r in ipairs(markingRoads) do
+        local alongLo=r.vertical and cell.z1 or cell.x1
+        local alongHi=r.vertical and cell.z2 or cell.x2
+        local crossLo=r.vertical and cell.x1 or cell.z1
+        local crossHi=r.vertical and cell.x2 or cell.z2
+        local lo,hi=math.max(r.lo,alongLo),math.min(r.hi,alongHi)
+        if lo<hi and r.center+r.width/2>=crossLo and r.center-r.width/2<=crossHi then
+            local function strip(material,across,width,start,finish)
+                if r.vertical then paint(material,r.center+across-width/2,start,r.center+across+width/2,finish)
+                else paint(material,start,r.center+across-width/2,finish,r.center+across+width/2) end
+            end
+            -- 纵向线在路口+斑马线+停止线前断开；横穿步行带绝不被黄线贯穿。
+            local function lane(material,across,width,start,finish)
+                local intervals={{math.max(start,lo),math.min(finish,hi)}}
+                for _,c in ipairs(r.crossings) do
+                    local nextIntervals={}
+                    local cutLo,cutHi=c.along-c.half-7,c.along+c.half+7
+                    for _,p in ipairs(intervals) do
+                        if p[2]<=cutLo or p[1]>=cutHi then nextIntervals[#nextIntervals+1]=p
+                        else
+                            if p[1]<cutLo then nextIntervals[#nextIntervals+1]={p[1],cutLo} end
+                            if cutHi<p[2] then nextIntervals[#nextIntervals+1]={cutHi,p[2]} end
+                        end
+                    end
+                    intervals=nextIntervals
+                end
+                for _,p in ipairs(intervals) do if p[1]<p[2] then strip(material,across,width,p[1],p[2]) end end
+            end
+            for _,side in ipairs({-1,1}) do lane("paint",side*(r.width/2-.35),.12,lo,hi) end
+            if r.width>=16 then
+                for _,side in ipairs({-1,1}) do lane("yellow",side*.14,.10,lo,hi) end
+            else
+                for n=math.floor(lo/8),math.floor(hi/8) do lane("yellow",0,.12,n*8,n*8+3.5) end
+            end
+            for _,c in ipairs(r.crossings) do
+                for _,side in ipairs({-1,1}) do
+                    local crosswalk=c.along+side*(c.half+2.8)
+                    -- T形端点无出口的一侧不画悬空斑马线。
+                    if crosswalk-1.5>=r.lo and crosswalk+1.5<=r.hi
+                        and math.abs(crosswalk-(lo+hi)/2)<(hi-lo)/2+2 then
+                        local stripes=math.floor((r.width-1.2)/1.0)
+                        for n=1,stripes do
+                            strip("paint",(n-(stripes+1)/2),.5,crosswalk-1.45,crosswalk+1.45)
+                        end
+                        local stop=c.along+side*(c.half+5.6)
+                        if stop>=r.lo and stop<=r.hi then strip("paint",0,r.width-1.2,stop-.15,stop+.15) end
+                    end
+                end
+            end
+        end
+    end
+    return quads
+end
 local function facade(d,b)
     local angle=math.rad(b.yaw)
     local cs,sn=math.cos(angle),math.sin(angle)
@@ -142,6 +287,42 @@ local function facade(d,b)
     local canopy=p(0,3.2,-b.d/2-.65)
     d:Box("metal",canopy.x,3.2,canopy.z,math.min(b.w-2,13),.3,1.4,b.yaw)
 end
+local function detailedFront(d,b)
+    local angle=math.rad(b.yaw)
+    local cs,sn=math.cos(angle),math.sin(angle)
+    local function p(x,y,z) return V(b.x+x*cs+z*sn,y,b.z-x*sn+z*cs) end
+    local function box(mat,x,y,z,w,h,depth)
+        local pos=p(x,y,z)
+        d:Box(mat,pos.x,pos.y,pos.z,w,h,depth,b.yaw)
+    end
+    -- 模型原有贴图/屋顶保留；只加正面门厅幕墙，消除截图中的整面空白裙楼。
+    -- 所有落地构件在原碰撞AABB的15cm基座余量内，不另放挡路台阶。
+    local front=-b.d/2-.045
+    box("stone",0,1.75,front,b.w-.8,3.35,.09)
+    for _,side in ipairs({-1,1}) do
+        box("metal",side*(b.w/2-.8),1.8,front-.06,.24,3.5,.10)
+        box("frame",side*7,1.48,front-.055,7.5,2.55,.05)
+        box("glass",side*7,1.48,front-.09,7.15,2.25,.025)
+        box("trim",side*7,2.68,front-.11,7.4,.09,.04)
+        box("metal",side*7,1.48,front-.115,.07,2.3,.04)
+    end
+    box("frame",0,1.42,front-.055,3.4,2.8,.06)
+    box("glass",0,1.42,front-.095,3.05,2.6,.025)
+    box("metal",0,1.42,front-.115,.10,2.65,.04)
+    for _,side in ipairs({-1,1}) do box("lamp",side*.27,1.40,front-.135,.055,.5,.025) end
+    box("metal",0,3.55,front-.06,b.w-.5,.78,.12)
+    box("trim",0,4.06,front+.10,b.w+.25,.18,.55)
+    -- 上层采用真实窗洞组件：凹框、窗台、分格玻璃，不把楼顶/背面重做为方盒。
+    for floor=2,math.min(5,b.floors) do
+        for col=1,4 do
+            local x=(col-2.5)*(b.w-5)/4
+            local pos=p(x,floor*3.05-1.1,front)
+            d:Window(pos.x,pos.y,pos.z,b.yaw,1.75,1.8,(floor+col)%5==0)
+        end
+    end
+    local entrance=p(0,2.95,front-.16)
+    d:Sign("门厅接餐 · 请在入口等候",entrance.x,entrance.y,entrance.z,b.yaw,.24)
+end
 ---@param d CityDetails
 ---@param root Node
 ---@param b table
@@ -167,6 +348,7 @@ function Stream:Building(d,root,b)
             detailed=true
         end
     end
+    if detailed then detailedFront(d,b) end
     if not detailed then
         d:Box(b.style,b.x,b.h/2+.085,b.z,b.w,b.h,b.d,b.yaw)
         facade(d,b)
@@ -236,6 +418,7 @@ function Stream:Load(ix,iz)
         ---@diagnostic disable-next-line: assign-type-mismatch
         d.Batch=cellBatch
         for _,s in ipairs(data.grounds) do rect(d,s) end
+        local markingQuads=roadMarkings(d,data)
         local models=0
         for _,b in ipairs(data.buildings) do if self:Building(d,root,b) then models=models+1 end end
         for _,t in ipairs(data.trees) do tree(d,t) end
@@ -253,6 +436,7 @@ function Stream:Load(ix,iz)
         end
         local stats=d:Finish()
         stats.buildings,stats.models,stats.obstacles=#data.buildings,models,#data.obstacles
+        stats.markingQuads=markingQuads
         assert(stats.triangles<=Stream.MAX_TRIANGLES,"单块三角面预算超限")
         -- 释放Details持有的临时程序圆柱；本流式块未使用Bar/Lamp。
         if d.shapes.cylinder then d.shapes.cylinder:Dispose() end
@@ -335,12 +519,12 @@ end
 ---@return table
 function Stream:Stats()
     local result={active=0,loaded=self.loaded,unloaded=self.unloaded,failed=self.failed,
-        batches=0,triangles=0,buildings=0,models=0,obstacles=0,signs=0,trees=0,
+        batches=0,triangles=0,buildings=0,models=0,obstacles=0,signs=0,trees=0,markingQuads=0,
         cellSize=256,viewDistance=450,loadDistance=550,unloadDistance=850,maxActive=Stream.MAX_ACTIVE,
         visible=self.visible,disposed=self.disposed,pending=0}
     for _,c in pairs(self.chunks) do
         result.active=result.active+1
-        for _,field in ipairs({"batches","triangles","buildings","models","obstacles","signs","trees"}) do
+        for _,field in ipairs({"batches","triangles","buildings","models","obstacles","signs","trees","markingQuads"}) do
             result[field]=result[field]+(c.stats[field] or 0)
         end
     end

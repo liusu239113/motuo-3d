@@ -245,8 +245,10 @@ function Session:BuildWorld()
             if district then worldShot=district end
         end
         if storyChecks then
+            self.view:ClosePhone(); self.view:ShowGame()
             require("Career.TeamChecks").Run()
             require("Career.EngagementChecks").Run()
+            require("Career.StoryChecks").Run(self)
         elseif worldShot~="" then require("Career.WorldChecks").Shot(self,worldShot)
         elseif contact then require("Career.ContactChecks").Run(self)
         else require("Career.Checks").RunWorld(self) end

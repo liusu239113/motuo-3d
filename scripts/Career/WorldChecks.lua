@@ -387,7 +387,33 @@ function Checks.Shot(session,id)
     session.camera:SetMode("normal")
     session.camera:Update(2,a.node,session.yaw,session.pitch)
     session:Refresh()
-    session.view.overlay:SetVisible(false)
-    passed(string.format("实拍就绪 %s / 人物(%.1f,%.1f)停稳 / Ensure550 / 正午 / 第三人称真实街区 / 弹窗隐藏，仅隔离Session",id,a.x,a.z))
+    local view="street"
+    for _,arg in ipairs(GetArguments()) do
+        local selected=arg:match("^%-careerworldview=(.+)$")
+        if selected then view=selected end
+    end
+    if view=="bridge" then
+        local b=assert(World.Bridges[1])
+        for _,item in ipairs(World.Bridges) do if item.id==d.id.."_bridge" then b=item end end
+        a:Teleport(b.x,b.z,0,b.y); a:SyncVisuals(0)
+        session.yaw,session.pitch=120,18
+        session.camera:SetModeConfig("normal",{distance=8,offset=Vector3(0,1.2,0),fov=62})
+        session.camera:Update(2,a.node,session.yaw,session.pitch)
+        session:Refresh()
+    elseif view=="traffic" then
+        session.traffic.active=true
+        for _=1,300 do session.traffic:Update(.1) end
+        local stats=session.traffic.outer:Stats()
+        assert(stats.cars>0 and stats.people>0,"交通实拍必须有真实生成的车与行人")
+        session.traffic.active=false
+        session.yaw,session.pitch=180,18
+        session.camera:SetModeConfig("normal",{distance=15,offset=Vector3(0,1.5,0),fov=65})
+        session.camera:Update(2,a.node,session.yaw,session.pitch)
+        passed(string.format("外区交通实拍%d车/%d人，真实Update生成后冻结",stats.cars,stats.people))
+    elseif view=="map" or view=="messages" or view=="progression" then
+        session:OpenPhone(view)
+    elseif view~="street" then error("未知实拍视图："..view) end
+    if view~="map" and view~="messages" and view~="progression" then session.view.overlay:SetVisible(false) end
+    passed(string.format("实拍就绪 %s / %s / 人物(%.1f,%.1f)停稳 / Ensure550 / 正午 / 真实街区，仅隔离Session",id,view,a.x,a.z))
 end
 return Checks
