@@ -319,7 +319,7 @@ function Checks.Shot(session,view)
         local station=assert(contacts:Get("station"))
         local forward=Quaternion(0,station.homeYaw,0)*V.FORWARD
         x,z=station.x+forward.x*1.5,station.z+forward.z*1.5
-        yaw,pitch,distance=-120,8,4.8
+        yaw,pitch,distance=-30,8,4.8
     end
     assert(city:StaticFree(x,z,.32,"walk",0),"实拍人物fixture必须可达")
     actor:Teleport(x,z,yaw); actor.speed,actor.steer=0,0; actor:SyncVisuals(0)

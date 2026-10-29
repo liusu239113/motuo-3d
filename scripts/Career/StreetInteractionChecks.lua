@@ -74,6 +74,28 @@ local function idle(view)
         and not view.phone:IsVisible() and not view.conversation:IsVisible() and not view.overlay:IsVisible(),
         "closing an interaction must restore unblocked game input")
 end
+---@param view CareerView
+---@return table<string,number>
+local function branchCounts(view)
+    return {root=#tree(view.root),game=#tree(view.game),minimap=#tree(view.map.root),
+        minimapRoads=#tree(view.map.roads),minimapPoints=#tree(view.map.points),
+        minimapRoute=#tree(view.map.route),minimapOrderRoute=#tree(view.map.orderRoute),
+        dialogBody=#tree(view.dialogBody),conversationBody=#tree(view.conversationBody),
+        phoneContent=#tree(view.phoneContent),home=#tree(view.home)}
+end
+---@param before table<string,number>
+---@param after table<string,number>
+---@return string
+local function countDifference(before,after)
+    local changes={}
+    for key,count in pairs(after) do
+        if count~=before[key] then
+            changes[#changes+1]=string.format("%s:%d->%d (%+d)",key,before[key],count,count-before[key])
+        end
+    end
+    table.sort(changes)
+    return table.concat(changes,", ")
+end
 ---@param before CareerProfile
 ---@param writes number
 ---@param currentWrites number
@@ -142,7 +164,24 @@ function Checks.Run(session)
                 and not view.phone:IsVisible() and not view.overlay:IsVisible() and view.phonePage=="",
                 "conversation must be the exclusive blocking layer")
         end
-        local baseline=#tree(view.root)
+        -- Compare equivalent live trees, not different minimap telemetry. MapWidget
+        -- rebuilds road/POI/route children when its 32m cell or navigation changes.
+        -- dialogBody deliberately retains the last bounded hidden modal too: warm it
+        -- to the same two-label/one-button shape used at the end, not loading text.
+        local function normalizeTreeState()
+            session.waypoint,session.manualWaypoint="",false
+            session.navigation={key="",route={}}
+            near(station)
+            UI.Layout()
+            view.map.root:Update(0)
+            session:Refresh()
+            UI.Layout()
+        end
+        normalizeTreeState()
+        view:ShowDialog("隔离回归确认","等价树基线：两个标签，一个按钮。",{{text="继续街头回归"}})
+        tapDialog(view,"继续街头回归"); idle(view)
+        local baselineCounts=branchCounts(view)
+        local baseline=baselineCounts.root
         local before=Store.Get()
         local startWrites=writes
         near(station)
@@ -297,7 +336,15 @@ function Checks.Run(session)
             and not view.conversation:IsVisible() and not view.blocked and view:IsBlocking())
         view:ClosePhone(); idle(view)
         unchanged(delivered,deliveredWrites+1,writes)
-        assert(#tree(view.root)<=baseline+6,"UI descendants leaked across conversation/phone/modal switches")
+        local telemetryDifference=countDifference(baselineCounts,branchCounts(view))
+        if telemetryDifference~="" then
+            print("[街头UI树诊断] 归一化前（坐标/导航不同，不作为泄漏结论）："..telemetryDifference)
+        end
+        normalizeTreeState()
+        local finalCounts=branchCounts(view)
+        local differences=countDifference(baselineCounts,finalCounts)
+        assert(differences=="","UI tree differs at equivalent telemetry/modal state: "..differences)
+        assert(finalCounts.root==baseline,"UI descendants leaked at equivalent state (zero tolerance)")
         assert(cloudCalls==0 and reads==0,"test must not read a save or touch cloud")
         print("[街头交互验收通过] 真PointerDown/Up；交谈/离开/订单零收费；远距骑行桥上拒绝；按钮二次校验；原POI用餐单事务；真实早餐交接/重复拒奖/配送一次到账；旧树Destroy与手机弹窗互斥；内存禁云")
     end)

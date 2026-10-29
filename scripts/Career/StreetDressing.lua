@@ -225,7 +225,9 @@ end
 
 function Dressing:Sign(text,x,y,z,yaw,height,color)
     local node = self.root:CreateChild("StreetSign_"..text)
-    node.position, node.rotation = V(x,y,z),Quaternion(0,yaw,0)
+    -- Text3D 的正面与门面网格法线不同；北立面字朝街道 +Z。
+    local textYaw=yaw==180 and 0 or yaw
+    node.position, node.rotation = V(x,y,z),Quaternion(0,textYaw,0)
     node:SetScale(height*2)
     local label = node:CreateComponent("Text3D")
     assert(label:SetFont(self.details.font,64),"StreetDressing: sign font rejected")
@@ -286,8 +288,8 @@ function Dressing:Breakfast()
     -- Keep old sign behind a real new light-box fascia, instead of stacking floating text.
     self:Box("red",-25,3.28,-12.20,12.5,.85,.34)
     self:Box("steel",-25,3.72,-12.18,12.65,.055,.40)
-    self:Box("lamp",-25,3.24,-12.021,11.95,.62,.012)
-    self:Sign("老 街 早 餐",-25,3.26,-11.995,180,.46,Color(.34,.12,.06))
+    self:Box("red",-25,3.24,-12.021,11.95,.62,.012)
+    self:Sign("老 街 早 餐",-25,3.26,-11.94,180,.46,Color(.98,.89,.65))
     self:Box("teal",-16.45,3.28,-12.20,5.15,.85,.34)
     self:Sign("老 街 修 配",-16.45,3.28,-12.015,180,.32)
     self:Sign("补胎  ·  配件  ·  便民维修",-16.45,2.76,-12.014,180,.13)
@@ -320,16 +322,16 @@ function Dressing:Awning(x,z,w,depth)
         local l,r = x-w/2+(i-1)*strip,x-w/2+i*strip
         local mat = i%2==0 and "canvas" or "canvasLight"
         -- Both sides have correct normals; the real sloping cloth is not a flat box.
-        self:Quad(mat,V(l,3.07,z),V(l,2.94,z+depth),V(r,3.07,z),V(r,2.94,z+depth),2)
-        self:Quad(mat,V(r,3.067,z),V(r,2.937,z+depth),V(l,3.067,z),V(l,2.937,z+depth),2)
-        self:Box(mat,(l+r)/2,2.87,z+depth,strip,.14,.035)
+        self:Quad(mat,V(l,3.07,z),V(l,2.84,z+depth),V(r,3.07,z),V(r,2.84,z+depth),2)
+        self:Quad(mat,V(r,3.067,z),V(r,2.837,z+depth),V(l,3.067,z),V(l,2.837,z+depth),2)
+        self:Box(mat,(l+r)/2,2.80,z+depth,strip,.14,.035)
     end
-    self:Tube("steel",V(x-w/2,2.96,z+depth),V(x+w/2,2.96,z+depth),.04)
+    self:Tube("steel",V(x-w/2,2.85,z+depth),V(x+w/2,2.85,z+depth),.04)
     for _, side in ipairs({-1,1}) do
         local px = x+side*(w/2-.12)
-        self:Tube("steel",V(px,2.76,z-.025),V(px,2.97,z+depth),.035)
+        self:Tube("steel",V(px,2.76,z-.025),V(px,2.85,z+depth),.035)
     end
-    self:Volume("wall-mounted cloth awning","overhead",x,2.96,z+depth/2,w,.34,depth+.04,false)
+    self:Volume("wall-mounted cloth awning","overhead",x,2.925,z+depth/2,w,.39,depth+.04,false)
 end
 
 function Dressing:Charging()
