@@ -205,7 +205,9 @@ function Checks.Run(session)
         local blocked=assert(approach:Target())
         ---@type CareerRoutePoint[]
         local blockedPoints=assert(blocked.route)
-        near(blocked.distance,Config.RouteDistance(blockedPoints))
+        -- 楼体内部反例可能完全无路网接入；沿用原逻辑的无路线直线兜底，不伪造可走路线。
+        local blockedExpected=#blockedPoints>1 and Config.RouteDistance(blockedPoints) or 7
+        near(blocked.distance,blockedExpected)
         assert(same(Store.Get(),profile),"接近段显示不得改订单金额/档案")
         for _,kind in ipairs({"RigidBody","CollisionShape","RigidBody2D","CollisionShape2D"}) do
             assert(#p.root:GetChildrenWithComponent(kind,true)==0 and not p.root:HasComponent(kind),"marker acquired collision component")

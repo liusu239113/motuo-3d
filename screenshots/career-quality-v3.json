@@ -1,0 +1,177 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 16627,
+    "frames_completed": 160,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 451.888ms (threshold: 100ms)",
+                    "frame": 23
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 239.869ms (threshold: 100ms)",
+                    "frame": 24
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 218.845ms (threshold: 100ms)",
+                    "frame": 25
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 230.482ms (threshold: 100ms)",
+                    "frame": 30
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 442.716ms (threshold: 100ms)",
+                    "frame": 31
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 216.714ms (threshold: 100ms)",
+                    "frame": 33
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 430.035ms (threshold: 100ms)",
+                    "frame": 51
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 229.253ms (threshold: 100ms)",
+                    "frame": 52
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 209.108ms (threshold: 100ms)",
+                    "frame": 53
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 594.453ms (threshold: 100ms)",
+                    "frame": 68
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 619.775ms (threshold: 100ms)",
+                    "frame": 72
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 249.495ms (threshold: 100ms)",
+                    "frame": 73
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 546.401ms (threshold: 100ms)",
+                    "frame": 74
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 229.97ms (threshold: 100ms)",
+                    "frame": 78
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 455.191ms (threshold: 100ms)",
+                    "frame": 82
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 433.21ms (threshold: 100ms)",
+                    "frame": 86
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1908.3ms (threshold: 100ms)",
+                    "frame": 107
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-10-29 20_33_34_317][185] ERROR: Execute Lua function failed: [string \"Career/Session\"]:614: [string \"Career/DeliveryMarkerChecks\"]:24: 7.00000000 ~= 0.00000000\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"Career/Session\"]:614: in method 'Update'\n\t[string \"main\"]:959: in function 'HandleUpdate'",
+                    "frame": 107
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2663.9ms (threshold: 100ms)",
+                    "frame": 108
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 947.2249755859375
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.624000549316408
+        },
+        {
+            "frame": 80,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 25.097000122070314
+        },
+        {
+            "frame": 160,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.61400032043457
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 2663.90087890625,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 18,
+        "total_errors": 19
+    }
+}
