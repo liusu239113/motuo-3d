@@ -126,7 +126,8 @@ function Checks.Run(session)
                         local x1,x2=math.min(r.x1,r.x2),math.max(r.x1,r.x2)
                         local z1,z2=math.min(r.z1,r.z2),math.max(r.z1,r.z2)
                         if r.x1==r.x2 then x1,x2=x1-half,x2+half else z1,z2=z1-half,z2+half end
-                        assert(not(x+.24>x1 and x-.24<x2 and z+.24>z1 and z-.24<z2),"pole/base intrudes road or walking corridor")
+                        assert(not(x+.24>x1 and x-.24<x2 and z+.24>z1 and z-.24<z2),
+                            "pole/base intrudes road or walking corridor: "..j.id.." / "..arm.." / "..r.id)
                     end
                     assert(World.IsFree(x,z,.25,"walk",0),"pole overlaps static building/bridge/prop")
                 end

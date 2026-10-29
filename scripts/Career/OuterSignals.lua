@@ -70,20 +70,22 @@ local function key(x,z) return x..":"..z end
 -- 红/黄/全红禁止新增入场；车头真正越线后允许清空；刚好贴线仍须等灯。
 -- 绿灯先让异向已越线车辆清空，再由原有OBB/SAT兜底；掉头弧不投影为直行。
 
--- 同轴主干/支路重叠取最大宽度/步道；必须真正穿过中心，排除端点T口。
+-- 同轴主干/支路重叠取最大宽度/步道，包含在中心结束的环路。
+-- 是否具备穿过中心的道路单独判断，不能为排除T口而漏掉端点主干的实际路宽。
 local function dimensions(x,z,axis)
-    local width,sidewalk=0,0
+    local width,sidewalk,through=0,0,false
     for _,r in ipairs(World.Roads) do
         local ns=r.x1==r.x2
         local onAxis=axis=="ns" and ns and r.x1==x or axis=="ew" and not ns and r.z1==r.z2 and r.z1==z
         local along=axis=="ns" and z or x
         local lo=axis=="ns" and math.min(r.z1,r.z2) or math.min(r.x1,r.x2)
         local hi=axis=="ns" and math.max(r.z1,r.z2) or math.max(r.x1,r.x2)
-        if not r.old and onAxis and along>lo+24 and along<hi-24 then
+        if not r.old and onAxis and along>=lo and along<=hi then
             width=math.max(width,r.width); sidewalk=math.max(sidewalk,r.sidewalk or 4)
+            through=through or (along>lo+24 and along<hi-24)
         end
     end
-    return width,sidewalk
+    return through and width or 0,sidewalk
 end
 for _,d in ipairs(World.Districts) do
     local nw,ns=dimensions(d.x,d.z,"ns")
