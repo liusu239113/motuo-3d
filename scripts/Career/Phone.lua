@@ -34,11 +34,11 @@ function Phone.Create(view,actions)
     -- 与框图一样采用百分比缩放，不能把外壳高度当作屏幕可用高度。
     local screen=UI.Panel{id="career-phone-screen",position="absolute",left="9.2%",right="9.2%",top="8%",bottom="7.6%",
         padding=6,gap=6,backgroundImage=Phone.Wallpaper,backgroundFit="cover",overflow="hidden",borderRadius=10}
-    view.phoneClock=Theme.Label("08:00",11,Theme.Colors.white,{height=18})
-    screen:AddChild(UI.Row{id="career-phone-status",width="100%",height=18,padding=0,justifyContent="space-between",children={
-        view.phoneClock,Theme.Label("4G · 86%",11,Theme.Colors.white,{height=18})}})
+    view.phoneClock=Kit.Text("08:00",11,Theme.Colors.white,{width="48%"})
+    screen:AddChild(UI.Row{id="career-phone-status",width="100%",padding=0,justifyContent="space-between",children={
+        view.phoneClock,Kit.Text("4G · 86%",11,Theme.Colors.white,{width="48%",textAlign="right"})}})
     view.phoneTitle=Kit.Text("手机桌面",13,Theme.Colors.white,
-        {fontWeight="bold",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,whiteSpace="nowrap",height=28})
+        {fontWeight="bold",flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0})
     local touchSize=Kit.TouchSize()
     view.phoneBack=Theme.Button("首页",function() require("Career.PhoneApps").Back(view) end,false,52,
         {id="career-phone-back",height=touchSize,minHeight=touchSize,minWidth=touchSize,padding=0,fontSize=12,visible=false})
@@ -72,7 +72,7 @@ function Phone.Desktop(content,state,actions,height)
                 pointerEvents="box-only",onClick=function() actions.phone(id) end,
                 children={UI.Panel{width=44,height=44,borderRadius=10,backgroundImage="image/career_phone/"..id..".png",
                     backgroundFit="contain",pointerEvents="none"},
-                    Theme.Label(app[2],11,Theme.Colors.white,{width="100%",height=24,textAlign="center",pointerEvents="none"})}})
+                    Kit.Text(app[2],11,Theme.Colors.white,{width="100%",textAlign="center",pointerEvents="none"})}})
         end
         grid:AddChild(line)
     end
