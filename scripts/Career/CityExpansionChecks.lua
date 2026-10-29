@@ -85,6 +85,14 @@ function Checks.Plan()
         assert(not Expansion.Overlaps(b,{x1=-195,x2=195,z1=-195,z2=195}),"新楼侵入旧城")
     end
     for _,p in ipairs(Expansion.Props) do solids[#solids+1]=rectangle(p) end
+    for _,p in ipairs(Expansion.Plazas) do
+        local horizontal={x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-2.5,z2=p.z+2.5}
+        local vertical={x1=p.x-2.5,x2=p.x+2.5,z1=p.z-p.d/2,z2=p.z+p.d/2}
+        for _,prop in ipairs(Expansion.Props) do
+            assert(not Expansion.Overlaps(rectangle(prop),horizontal)
+                and not Expansion.Overlaps(rectangle(prop),vertical),"广场十字5m入口被家具堵塞 "..p.id.." / "..prop.id)
+        end
+    end
     for _,o in ipairs(solids) do
         for _,r in ipairs(Expansion.Roads) do
             assert(not Expansion.Overlaps(o,Expansion.RoadRect(r,r.sidewalk)),"新障碍侵占道路/步道 "..r.id)
@@ -124,21 +132,62 @@ Checks.Paths={
     north={{0,-20},{0,240},{52,240},{52,312},{72,312},{72,338}},
     south={{0,-20},{0,-240},{52,-240},{52,-312},{72,-312},{72,-338}},
 }
-local function movePath(city,path,radius)
+local function hit(rect,x,z,r)
+    return x>rect.x1-r and x<rect.x2+r and z>rect.z1-r and z<rect.z2+r
+end
+-- 查询失败时只读完整阻挡来源，不移除静态几何，不将路径跳到终点。
+local function obstruction(city,x,z,r,mode)
+    local report={string.format("StaticFree=%s IsFree=%s WorldFree=%s old=%s traffic=%s deliveryPeople=%s",
+        tostring(city:StaticFree(x,z,r,mode,0)),tostring(city:IsFree(x,z,r,mode,0)),
+        tostring(World.IsFree(x,z,r,mode,0)),tostring(World.IsOld(x,z)),
+        tostring(city.traffic~=nil),tostring(city.deliveryPeople~=nil))}
+    for i,o in ipairs(city.obstacles) do
+        if hit(o,x,z,r) then
+            report[#report+1]=string.format("city.obstacles[%d] kind=%s rect=[%.6f,%.6f,%.6f,%.6f]",
+                i,tostring(o.kind or "legacy solid"),o.x1,o.x2,o.z1,o.z2)
+        end
+    end
+    for ix=math.floor((x-r-32)/256),math.floor((x+r+32)/256) do
+        for iz=math.floor((z-r-32)/256),math.floor((z+r+32)/256) do
+            for i,o in ipairs(World.DescribeCell(ix,iz).obstacles) do
+                if hit(o,x,z,r) then
+                    report[#report+1]=string.format("WorldCell(%d,%d).obstacles[%d] kind=%s rect=[%.6f,%.6f,%.6f,%.6f]",
+                        ix,iz,i,tostring(o.kind),o.x1,o.x2,o.z1,o.z2)
+                end
+            end
+        end
+    end
+    for _,p in ipairs(city.contacts.people) do
+        if (p.x-x)^2+(p.z-z)^2<(r+1)^2 then
+            report[#report+1]=string.format("nearContact=%s at(%.6f,%.6f),独立联系人不直接参与City.IsFree",
+                tostring(p.id),p.x,p.z)
+        end
+    end
+    return table.concat(report," ; ")
+end
+local function movePath(city,path,radius,name)
     local x,z=path[1][1],path[1][2]
     local meters=0
+    local mode=radius<1 and "walk" or "vehicle"
+    print(string.format("[邻里路径开始] name=%s mode=%s r=%.2f start=(%.6f,%.6f) segments=%d",
+        name,mode,radius,x,z,#path-1))
     for i=2,#path do
         local b=path[i]
         local dx,dz=b[1]-x,b[2]-z
         local length=math.sqrt(dx*dx+dz*dz)
         local count=math.max(1,math.ceil(length/.18))
         local sx,sz=dx/count,dz/count
-        for _=1,count do
-            local nx,nz=city:Move(x,z,sx,sz,radius,radius<1 and "walk" or "vehicle",0)
-            near(nx,x+sx,"连续移动X被挡");near(nz,z+sz,"连续移动Z被挡")
+        for step=1,count do
+            local nx,nz=city:Move(x,z,sx,sz,radius,mode,0)
+            if math.abs(nx-(x+sx))>=.00001 or math.abs(nz-(z+sz))>=.00001 then
+                local detail=string.format("[邻里移动被挡] path=%s mode=%s r=%.2f segment=%d step=%d/%d from=(%.9f,%.9f) delta=(%.9f,%.9f) expected=(%.9f,%.9f) actual=(%.9f,%.9f) goal=(%.6f,%.6f) %s",
+                    name,mode,radius,i,step,count,x,z,sx,sz,x+sx,z+sz,nx,nz,b[1],b[2],
+                    obstruction(city,x+sx,z+sz,radius,mode))
+                print(detail);error(detail)
+            end
             x,z=nx,nz
             local y=city:Surface(x,z)
-            assert(y>=.05 and y<=.11,"道路/巷口/广场地面断层")
+            assert(y>=.05 and y<=.11,string.format("道路地面断层 path=%s segment=%d point=(%.6f,%.6f) y=%.9f",name,i,x,z,y))
         end
         meters=meters+length
     end
@@ -164,9 +213,10 @@ function Checks.Run(session)
                 assert(gap(b,p[1],p[2])>=.45,"旧联系人净空改变")
             end
         end
-        for name,path in pairs(Checks.Paths) do
-            local walk=movePath(city,path,.32)
-            local ride=movePath(city,path,1.2)
+        for _,name in ipairs({"east","west","north","south"}) do
+            local path=assert(Checks.Paths[name])
+            local walk=movePath(city,path,.32,name)
+            local ride=movePath(city,path,1.2,name)
             near(walk,ride)
             print(string.format("[邻里验收] %s 开局连续走/骑各 %.1fm，City.Move全子步，无传送",name,walk))
         end

@@ -101,12 +101,16 @@ for _,p in ipairs({
 }) do
     p.w,p.d=28,24
     Expansion.Plazas[#Expansion.Plazas+1]=p
-    -- 广场四向至少留出5m贯通空间。
-    for _,q in ipairs({{p.x,p.z-8},{p.x,p.z+8}}) do
+    -- 俯视净空：水平/竖直各5m十字通带；长椅、树池均移到四角。
+    -- 不减碰撞尺寸：避免树池堵东西入口、长椅堵南北入口。
+    --     椅       |5m|      树
+    --  ========= 开放十字 =========
+    --     树       |5m|      椅
+    for _,q in ipairs({{p.x-7,p.z-8},{p.x+7,p.z+8}}) do
         Expansion.Props[#Expansion.Props+1]={id=p.id.."_bench"..q[2],kind="bench",x=q[1],z=q[2],w=2.3,d=.81,h=1.2}
     end
     for _,side in ipairs({-1,1}) do
-        Expansion.Props[#Expansion.Props+1]={id=p.id.."_tree"..side,kind="tree",x=p.x+side*10,z=p.z,w=1.8,d=1.8,h=5.4}
+        Expansion.Props[#Expansion.Props+1]={id=p.id.."_tree"..side,kind="tree",x=p.x+side*10,z=p.z-side*6,w=1.8,d=1.8,h=5.4}
     end
 end
 -- 街边细节放在人行通带之后；树池与障碍同源，不把杆子隐藏在路口。
