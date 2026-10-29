@@ -50,11 +50,14 @@ function Checks.Run(session)
             assert(not session.sun.enabled and not session.moon.enabled,"室内必须关闭城市日月方向光")
             session:OpenPhone("map")
             local map=assert(session.view.phoneContent:FindById("career-phone-map"))
-            local roads=map:GetChildren()[1]
-            local children=roads:GetChildren()
-            local player=children[#children]
-            assert(player.props.left==string.format("%.4f%%",(home.x+180)/360*100)
-                and player.props.top==string.format("%.4f%%",(180-home.z)/360*100),"室内手机地图必须标记城市入口，不能拿房间局部坐标当城市位置")
+            UI.Layout()
+            map:Update(0)
+            local viewport=map:GetChildren()[1]
+            local layout=viewport:GetLayout()
+            local player=assert(map:FindById("career-phone-map-player"))
+            local scale=math.min(layout.w,layout.h)/30000
+            assert(player.props.visible~=false and math.abs(player.props.left-(layout.w/2+home.x*scale))<.001
+                and math.abs(player.props.top-(layout.h/2-home.z*scale))<.001,"室内全城地图必须标记城市入口，不能拿房间局部坐标当城市位置")
             session.view:ClosePhone()
             assert(not session:Allowed("breakfast"),"室内不能用城市坐标远程吃饭")
             session.view.actions.mount(); assert(not a.mounted)

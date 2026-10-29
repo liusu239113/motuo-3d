@@ -144,7 +144,7 @@ function MapWidget:Init(id, overview)
         marginLeft = -6, marginTop = -6, visible = false, pointerEvents = "none"}
     self.heading = UI.Panel {position = "absolute", left = 3, top = -5, width = 2, height = 7,
         backgroundColor = C.cyan, pointerEvents = "none", padding = 0}
-    self.player = UI.Panel {position = "absolute", width = 8, height = 8,
+    self.player = UI.Panel {id = self.id .. "-player", position = "absolute", width = 8, height = 8,
         marginLeft = -4, marginTop = -4, padding = 0, backgroundColor = C.cyan,
         borderWidth = 1, borderColor = {8, 15, 18, 255}, visible = false,
         pointerEvents = "none", children = {self.heading}}
