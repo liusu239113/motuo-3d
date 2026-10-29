@@ -21,7 +21,7 @@ local function same(a,b)
     for k in pairs(b) do if a[k]==nil then return false end end
     return true
 end
-local function near(a,b) assert(math.abs(a-b)<.00001,string.format("%.8f ~= %.8f",a,b)) end
+local function near(a,b,tolerance) assert(math.abs(a-b)<(tolerance or .00001),string.format("%.8f ~= %.8f",a,b)) end
 ---@param session CareerSession
 local function isolated(session)
     assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function",
@@ -158,7 +158,9 @@ function Checks.Run(session)
             p:Sync({},{pointId=point.id}); p:Update(0,viewer(point.x,point.z),false)
             local first=slots[1]
             assert(first.visible and first.root.enabledSelf,"configured target invisible: "..point.id)
-            near(first.root.position.x,point.x); near(first.root.position.z,point.z)
+            -- 引擎坐标为float32；公里级坐标采用两倍相对ULP，颜色/动画仍用原绝对精度。
+            near(first.root.position.x,point.x,math.max(1,math.abs(point.x))*2^-22)
+            near(first.root.position.z,point.z,math.max(1,math.abs(point.z))*2^-22)
             near(first.root.position.y,city:WalkSurface(point.x,point.z,0))
         end
         -- 只替身无关依赖；真实Session方法 -> 临时真实Markers -> 原City节点/地表。
