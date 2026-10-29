@@ -1,5 +1,6 @@
 -- 独立王二狗骨架适配，复用已验证的两段IK算法，不改动旧赛车骑手。
 local Rider=require("Rider")
+local Locomotion=require("Career.Locomotion")
 local V=Vector3
 local ROOT="model/b2849c2afd734d59aaf285fcb69b2b1a/"
 local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
@@ -11,6 +12,8 @@ local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
 ---@field walkPhase number
 ---@field walkWeight number
 ---@field walkRun number
+---@field locomotion? CareerLocomotion
+---@field EnableOfficialLocomotion fun(self: CareerRig): CareerLocomotion
 local Rig={}
 Rig.__index=Rig
 setmetatable(Rig,{__index=Rider})
@@ -168,7 +171,19 @@ function Rig.FootCycle(phase,weight,run,side)
     return stride*(-1+2*smooth),lift,false,t,pitch
 end
 
+-- 只为主角启用；普通NPC仍走原有入口。不能让不兼容clip直接占用AnimatedModel。
+-- 主角只旋转重定向，普通NPC仍保留原程序化入口。
+---@return CareerLocomotion
+function Rig:EnableOfficialLocomotion()
+    if not self.locomotion then self.locomotion=Locomotion.New(self) end
+    return self.locomotion
+end
 function Rig:PoseWalk(phase,weight,run)
+    if self.locomotion then
+        local speed=weight>0 and (.65+(1.8-.65)*unit(weight)+(3.4-1.8)*unit(run)) or 0
+        self.locomotion:PoseNormalized(phase/(math.pi*2),speed)
+        return
+    end
     self:Reset()
     local w,r=unit(weight),unit(run)
     self.walkPhase,self.walkWeight,self.walkRun=phase,w,r

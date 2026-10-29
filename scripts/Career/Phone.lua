@@ -38,7 +38,7 @@ function Phone.Create(view,actions)
         view.phoneClock,Theme.Label("4G · 86%",11,Theme.Colors.white,{height=18})}})
     view.phoneTitle=Theme.Label("王二狗的手机",13,Theme.Colors.white,
         {fontWeight="bold",flexGrow=1,flexShrink=1,minWidth=0,maxLines=1})
-    view.phoneBack=Theme.Button("首页",function() actions.phone("apps") end,false,52,
+    view.phoneBack=Theme.Button("首页",function() require("Career.PhoneApps").Back(view) end,false,52,
         {id="career-phone-back",height=44,minWidth=44,padding=0,fontSize=12,visible=false})
     screen:AddChild(UI.Row{id="career-phone-toolbar",width="100%",height=44,padding=0,gap=4,alignItems="center",children={
         view.phoneBack,view.phoneTitle,

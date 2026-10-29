@@ -1,0 +1,215 @@
+-- 邻里街区验收：只读规划/城市静态查询；不读写档案，不创建第二套城市。
+-- Run由主线程-careercityquality调用；Shot由-careercityshot=<方向>显式调用。
+local Expansion=require("Career.CityExpansion")
+local World=require("Career.WorldData")
+local Config=require("Career.Config")
+local Checks={}
+local function near(a,b,label)
+    assert(math.abs(a-b)<.00001,label or "数值不一致")
+end
+local function routeHash()
+    local entries={}
+    for _,t in ipairs(World.Orders) do
+        entries[#entries+1]=t.id;entries[#entries+1]=t.timeLimitHours
+        for _,p in ipairs(t.route) do entries[#entries+1]=string.format("%.6f,%.6f",p.x,p.z) end
+    end
+    local text=table.concat(entries,"|")
+    local hash=2166136261
+    for i=1,#text do hash=((hash ~ text:byte(i))*16777619)&0xffffffff end
+    return hash
+end
+local function rectangle(p)
+    return {x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-p.d/2,z2=p.z+p.d/2}
+end
+local function gap(rect,x,z)
+    return math.sqrt((x-math.max(rect.x1,math.min(rect.x2,x)))^2+(z-math.max(rect.z1,math.min(rect.z2,z)))^2)
+end
+local function swept(v,ax,az,bx,bz,r)
+    local lo,hi=0,1
+    for _,s in ipairs({{ax,bx-ax,v.x1-r,v.x2+r},{az,bz-az,v.z1-r,v.z2+r}}) do
+        if math.abs(s[2])<1e-9 then
+            if s[1]<=s[3] or s[1]>=s[4] then return false end
+        else
+            local a,b=(s[3]-s[1])/s[2],(s[4]-s[1])/s[2]
+            lo,hi=math.max(lo,math.min(a,b)),math.min(hi,math.max(a,b))
+        end
+    end
+    return lo<hi and hi>0 and lo<1
+end
+-- 准确保留七张旧城单的折线和报价，以及24张既有外区单完整坐标签名。
+-- 签名来自修改前git HEAD的WorldData，在独立Lua解释器中逐点比较过。
+local function legacyOrders()
+    local expected={
+        {"tutorial",171,500,1.5,{{-25,-8},{-25,0},{-100,0},{-100,80},{-108,80}}},
+        {"old_home",171,276,1,{{-25,-8},{-25,0},{-100,0},{-100,80},{-108,80}}},
+        {"dealer_lunch",221,283,1,{{-25,-8},{-25,0},{100,0},{100,80},{108,80}}},
+        {"park_lunch",166,275,1,{{-25,-8},{-25,0},{100,0},{100,-25},{108,-25}}},
+        {"noodle_office",168,275,1,{{-70,9},{-70,0},{0,0},{0,44},{-45,44}}},
+        {"shop_old",250,288,1,{{53,9},{53,0},{-100,0},{-100,80},{-108,80}}},
+        {"noodle_dealer",267,290,1,{{-70,9},{-70,0},{100,0},{100,80},{108,80}}},
+    }
+    for i,e in ipairs(expected) do
+        local t=assert(Config.orderTemplates[i]);assert(t.id==e[1] and #t.route==#e[5],"旧单顺序/节点改变")
+        near(Config.RouteDistance(t.route),e[2]);near(t.timeLimitHours,e[4])
+        near(i==1 and 500 or Config.FeeCents(e[2]),e[3],"旧单报价改变")
+        for n,p in ipairs(e[5]) do near(t.route[n].x,p[1]);near(t.route[n].z,p[2]) end
+    end
+    assert(#World.Orders==24 and routeHash()==61976824,"既有外区单完整route/时限改变")
+    for _,t in ipairs(World.Orders) do
+        local length=Config.RouteDistance(t.route)
+        assert(Config.FeeCents(length)==math.floor(math.max(250,math.min(1000,250+150*length/1000))+.5))
+        for i=2,#t.route do assert(World.SegmentFree(t.route[i-1],t.route[i],1.2),"旧外区单被挡 "..t.id) end
+    end
+end
+function Checks.Plan()
+    legacyOrders()
+    local stats=Expansion.Stats()
+    assert(stats.roads==34 and stats.buildings==78 and stats.plazas==4 and stats.shops==28)
+    assert(World.ExpansionRoads==Expansion.Roads,"地图扩展几何非同源")
+    local solids={}
+    for _,b in ipairs(Expansion.Buildings) do
+        ---@type number[]
+        local size=Expansion.Models[b.asset].size
+        near(b.w/size[1],b.h/size[2],"模型非等比X/Y")
+        near(b.h/size[2],b.d/size[3],"模型非等比Y/Z")
+        solids[#solids+1]=b
+        assert(not Expansion.Overlaps(b,{x1=-195,x2=195,z1=-195,z2=195}),"新楼侵入旧城")
+    end
+    for _,p in ipairs(Expansion.Props) do solids[#solids+1]=rectangle(p) end
+    for _,o in ipairs(solids) do
+        for _,r in ipairs(Expansion.Roads) do
+            assert(not Expansion.Overlaps(o,Expansion.RoadRect(r,r.sidewalk)),"新障碍侵占道路/步道 "..r.id)
+        end
+        for _,p in ipairs(Config.pointList) do assert(gap(o,p.x,p.z)>=2,"新障碍侵占旧POI "..p.id) end
+        for _,t in ipairs(Config.orderTemplates) do
+            for i=2,#t.route do
+                local a,b=t.route[i-1],t.route[i]
+                assert(not swept(o,a.x,a.z,b.x,b.z,1.5),"新障碍侵占订单 "..t.id)
+            end
+        end
+    end
+    local maxBuildings,maxProps=0,0
+    for ix=-2,1 do for iz=-2,1 do
+        local c=World.DescribeCell(ix,iz)
+        maxBuildings,maxProps=math.max(maxBuildings,#c.buildings),math.max(maxProps,#c.props)
+        assert(#c.buildings<=Expansion.MAX_BUILDINGS_PER_CELL,"邻里单块楼数无界")
+        assert(#c.props<=Expansion.MAX_PROPS_PER_CELL,"邻里单块小件无界")
+        for _,b in ipairs(c.buildings) do if b.expansion then
+            local found=false
+            for _,o in ipairs(c.obstacles) do
+                if o.kind=="building" and math.abs(o.x1-b.x1)<.00001 and math.abs(o.x2-b.x2)<.00001
+                    and math.abs(o.z1-b.z1)<.00001 and math.abs(o.z2-b.z2)<.00001 then found=true end
+            end
+            assert(found,"新楼可见地基/逻辑障碍不同源 "..b.id)
+        end end
+    end end
+    stats.maxCellBuildings,stats.maxCellProps=maxBuildings,maxProps
+    stats.worldOrderHash=routeHash()
+    return stats
+end
+-- 从开局坐标出发的四个实际可达线路，不用传送代替路程。
+-- 主线程Run通过City.Move每子步0.1m检验：走r=.32，骑r=1.2。
+Checks.Paths={
+    east={{0,-20},{0,0},{240,0},{240,-86},{312,-86},{312,-116},{338,-116}},
+    west={{0,-20},{0,0},{-240,0},{-240,-86},{-312,-86},{-312,-116},{-338,-116}},
+    north={{0,-20},{0,240},{52,240},{52,312},{72,312},{72,338}},
+    south={{0,-20},{0,-240},{52,-240},{52,-312},{72,-312},{72,-338}},
+}
+local function movePath(city,path,radius)
+    local x,z=path[1][1],path[1][2]
+    local meters=0
+    for i=2,#path do
+        local b=path[i]
+        local dx,dz=b[1]-x,b[2]-z
+        local length=math.sqrt(dx*dx+dz*dz)
+        local count=math.max(1,math.ceil(length/.18))
+        local sx,sz=dx/count,dz/count
+        for _=1,count do
+            local nx,nz=city:Move(x,z,sx,sz,radius,radius<1 and "walk" or "vehicle",0)
+            near(nx,x+sx,"连续移动X被挡");near(nz,z+sz,"连续移动Z被挡")
+            x,z=nx,nz
+            local y=city:Surface(x,z)
+            assert(y>=.05 and y<=.11,"道路/巷口/广场地面断层")
+        end
+        meters=meters+length
+    end
+    return meters
+end
+local function isolated(session)
+    assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function",
+        "邻里验收/实拍只允许持有隔离内存存储的Session")
+end
+function Checks.Run(session)
+    isolated(session)
+    local city=assert(session.city)
+    local stats=Checks.Plan()
+    local traffic,people,space=city.traffic,city.deliveryPeople,city.space
+    city.traffic,city.deliveryPeople=nil,nil
+    local ok,message=pcall(function()
+        assert(space=="city","请在城市空间执行邻里验收")
+        local peds=require("Career.Pedestrians")
+        for _,b in ipairs(Expansion.Buildings) do
+            for _,p in ipairs(peds.Paths) do assert(not swept(b,p[1],p[2],p[3],p[4],.45),"旧8path被侵占") end
+            for _,p in ipairs({{-28.6,-10.9},{-9.9,-73.3},{110.5,83.2},{-22,-11.1},
+                {-19.1,-10.9},{-10,-66.5},{-11,-65.4},{-72.7,10.9}}) do
+                assert(gap(b,p[1],p[2])>=.45,"旧联系人净空改变")
+            end
+        end
+        for name,path in pairs(Checks.Paths) do
+            local walk=movePath(city,path,.32)
+            local ride=movePath(city,path,1.2)
+            near(walk,ride)
+            print(string.format("[邻里验收] %s 开局连续走/骑各 %.1fm，City.Move全子步，无传送",name,walk))
+        end
+        for _,r in ipairs(Expansion.Roads) do
+            local count=math.ceil((math.abs(r.x2-r.x1)+math.abs(r.z2-r.z1))/.5)
+            for i=0,count do
+                local t=i/count
+                local x,z=r.x1+(r.x2-r.x1)*t,r.z1+(r.z2-r.z1)*t
+                assert(city:StaticFree(x,z,1.2,"vehicle",0),"街段骑行净空 "..r.id)
+                local y=city:Surface(x,z)
+                assert(y>=.05 and y<=.11,"街段地面断层 "..r.id)
+                if not World.IsOld(x,z) then near(y,World.Surface(x,z),"地面视觉/逻辑高度不一致") end
+            end
+        end
+        local stream=city.stream
+        stream:Ensure(0,-20,550)
+        local first=stream:Stats()
+        local nodes=stream.root:GetNumChildren(true)
+        stream:Ensure(0,-20,550)
+        local second=stream:Stats()
+        assert(first.failed==0 and first.pending==0 and first.active<=80,"邻里流式未就绪/无界")
+        assert(nodes==stream.root:GetNumChildren(true) and first.loaded==second.loaded,"重复预热节点增长")
+        assert(first.models>=78,"首屏550m未包含全部相邻真实模型")
+        stats.loadedModels,stats.loadedNodes=first.models,nodes
+    end)
+    city.traffic,city.deliveryPeople=traffic,people
+    assert(ok,message)
+    print(string.format("[邻里验收通过] %d街段/%.0fm中心线/%d楼/%d商铺/%d小广场；单块最多%d楼；旧31单完整route/费保留",
+        stats.roads,stats.roadMeters,stats.buildings,stats.shops,stats.plazas,stats.maxCellBuildings))
+    return stats
+end
+function Checks.Shot(session,id)
+    isolated(session)
+    local allowed=false
+    for _,arg in ipairs(GetArguments()) do if arg=="-careercityshot="..id then allowed=true end end
+    assert(allowed,"必须显式-careercityshot=<方向>")
+    local positions={east={240,-44,0},west={-240,-44,0},north={24,240,90},south={24,-240,90},
+        start={0,-20,25},plaza={338,-116,155}}
+    local p=assert(positions[id],"街区实拍方向不存在")
+    local a,city=assert(session.actor),assert(session.city)
+    session:ApplySpace("city");session.online=false;session.waypoint=""
+    session.traffic.active=false
+    city.stream:Ensure(p[1],p[2],550)
+    a.mounted=false;a.visuals:SetMounted(false)
+    a.bikeX,a.bikeZ,a.bikeYaw=p[1]-2,p[2]-2,p[3]
+    a:Teleport(p[1],p[2],p[3]);a.speed,a.steer=0,0;a:SyncVisuals(0)
+    session:UpdateEnvironment(12)
+    session.yaw,session.pitch=p[3],12
+    session.camera:SetModeConfig("normal",{distance=7.8,offset=Vector3(0,1.4,0),fov=60})
+    session.camera:SetMode("normal");session.camera:Update(2,a.node,session.yaw,session.pitch)
+    session.view:ClosePhone();session.view:ShowGame();session.view:ResetInput();session:Refresh()
+    session.view.overlay:SetVisible(false)
+    print(string.format("[邻里实拍就绪] %s (%.1f,%.1f) 当前城市真实街面/正午/450m视距，无假背景",id,p[1],p[2]))
+end
+return Checks

@@ -312,6 +312,19 @@ function Checks.RunMobile(session)
     assert(view.phonePage=="apps" and not c.enabled and view.walkStick.y==0,"手机必须清空摇杆")
     up(760001,sx,sy); view:ClosePhone()
     assert(c.enabled and not c.gas,"关手机不能恢复旧油门")
+    session:Refresh(); UI.Layout()
+    local mapEntry=assert(view.root:FindById("career-minimap-open"))
+    local mapBounds=mapEntry:GetAbsoluteLayout()
+    assert(mapBounds.w>=44 and mapBounds.h>=44,"局部地图快捷入口不得过小")
+    actor.speed=.36
+    local qx,qy=down(mapEntry,760003);up(760003,qx,qy)
+    assert(view.phonePage=="","移动中点地图不得绕过停车限制")
+    actor.speed=0
+    qx,qy=down(mapEntry,760003);up(760003,qx,qy)
+    assert(view.phonePage=="map" and not c.enabled and view.walkStick.x==0 and view.walkStick.y==0,
+        "局部地图应通过生产actions直接打开全城地图并清输入")
+    view:ClosePhone(); UI.Layout()
+    assert(c.enabled and not c.gas,"收起快捷地图不可恢复残留油门")
     local lx,ly=down(view.lookArea,760005,.5)
     send("PointerMove",760005,lx+24,ly+12)
     local dx,dy=view:ConsumeLook()
@@ -392,6 +405,9 @@ function Checks.RunWorld(session)
     require("Career.DeliveryMarkerChecks").Run(session)
     require("Career.NavigationChecks").Run(session)
     require("Career.MapPhoneChecks").RunLayout(session.view,session:State(),Delivery.GetOffer(),Delivery.GetActive())
+    require("Career.PhoneAppChecks").Run(session)
+    require("Career.LocomotionChecks").Run(session)
+    require("Career.CityExpansionChecks").Run(session)
     session.traffic.active=false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-careertripchecks" then Checks.RunDeliveryTrip(session) end

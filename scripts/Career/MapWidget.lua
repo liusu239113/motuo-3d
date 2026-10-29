@@ -2,6 +2,7 @@
 local UI = require("urhox-libs/UI")
 local Theme = require("RacingTheme")
 local World = require("Career.WorldData")
+local Expansion = require("Career.CityExpansion")
 local Config = require("Career.Config")
 local C = Theme.Colors
 local GRID = 32 -- metres; geometry/routing are cached between window cells.
@@ -232,6 +233,13 @@ function MapWidget:RebuildGeometry()
             self:Segment(self.roads, road.a, road.b, ROAD_COLOR, thickness)
         end
     end
+    if not self.overview then
+        -- 邻里接续道路只补局部可见几何；历史订单路线仍来自原共享路网。
+        for _,road in ipairs(Expansion.Roads) do
+            local thickness=clamp(road.width*self.scale,2,7)
+            self:Segment(self.roads,{x=road.x1,z=road.z1},{x=road.x2,z=road.z2},ROAD_COLOR,thickness)
+        end
+    end
     local padding = self.overview and 0 or GRID * self.scale
     if not self.overview then
         -- Config merges the original street/house entrances with World.Points.
@@ -334,7 +342,7 @@ function MapWidget:UpdateMarkers()
             rotate = math.atan(dy, dx) * 180 / math.pi})
         self.edge:SetVisible(true)
         local distance = math.sqrt((target.x - self.actorX)^2 + (target.z - self.actorZ)^2)
-        self.edgeDistance:SetText("图外目标 · " .. distanceText(distance))
+        self.edgeDistance:SetText("图外 · 直线 " .. distanceText(distance))
         self.edgeDistance:SetVisible(true)
     end
 end

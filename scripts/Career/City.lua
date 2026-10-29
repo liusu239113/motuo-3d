@@ -10,6 +10,7 @@ local World = require("Career.WorldData")
 local Stream = require("Career.WorldStream")
 local StreetDressing = require("Career.StreetDressing")
 local Footprints = require("Career.BuildingFootprints")
+local Expansion = require("Career.CityExpansion")
 ---@class CareerCity
 ---@field contacts CareerContacts
 ---@field deliveryPeople? CareerDeliveryPeople
@@ -82,6 +83,7 @@ function City:Init(scene)
     self.details = Details.New(self.root, self.mats)
     -- 所有静态装饰统一交由分块批次构建。
     self:BuildRoads()
+    self.expansionSeams=Expansion.BuildSeams(self.details)
     self:BuildBlocks()
     self:BuildPlaces()
     self.streetDressing=StreetDressing.New(self)

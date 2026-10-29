@@ -45,6 +45,16 @@ function Checks.Run(session)
         assert(bounds.y>=area.y and bounds.y+bounds.h<=area.y+area.h+1,"底部应用必须一屏完整显示")
         tap(icon)
         assert(view.phonePage==app[1],"应用未打开："..app[1])
+        if app[1]=="messages" then
+            local conversations=assert(view.phoneBody:FindById("career-message-conversations"),"消息不是会话列表")
+            assert(conversations:GetNumChildren()==4 and view.phoneBody:FindById("career-chat-cousin"),"真实联系人会话缺失")
+        elseif app[1]=="wallet" then
+            assert(view.phoneBody:FindById("career-wallet-balance-card") and view.phoneBody:FindById("career-wallet-filters"),
+                "钱包必须有余额卡与可交互明细筛选")
+        elseif app[1]=="delivery" then
+            assert(view.phoneBody:FindById("career-delivery-status-card") and view.phoneBody:FindById("career-online"),
+                "外卖工作台必须保留真实听单操作")
+        end
         session:OpenPhone("apps"); UI.Layout()
     end
     local music,effects=sound.musicEnabled,sound.effectsEnabled

@@ -3,6 +3,7 @@
 -- 世界逻辑只来自WorldData；卸载只释放独立节点，不向city.details/obstacles/markers追加。
 local World = require("Career.WorldData")
 local Details = require("Career.CityDetails")
+local Expansion = require("Career.CityExpansion")
 local V = Vector3
 ---@class CareerWorldChunk
 ---@field root Node
@@ -141,7 +142,10 @@ local markingRoads={}
 do
     ---@type table<string, CareerMarkGroup>
     local groups={}
-    for _,r in ipairs(World.Roads) do
+    local allRoads={}
+    for _,r in ipairs(World.Roads) do allRoads[#allRoads+1]=r end
+    for _,r in ipairs(Expansion.Roads) do allRoads[#allRoads+1]=r end
+    for _,r in ipairs(allRoads) do
         if not r.old then
             local vertical=r.x1==r.x2
             local center=vertical and r.x1 or r.z1
@@ -337,6 +341,41 @@ local function detailedFront(d,b)
     local entrance=p(0,2.95,front-.16)
     d:Sign("门厅接餐 · 请在入口等候",entrance.x,entrance.y,entrance.z,b.yaw,.24)
 end
+-- 邻里门面收在实测地基以内，使用现有砖/金属贴图和分格玻璃。
+-- 保留真实楼体比例，不叠加巨大统一空白裙楼。
+local function expansionFront(d,b)
+    local a=math.rad(b.yaw)
+    local function p(x,y,z) return V(b.x+x*math.cos(a)+z*math.sin(a),y,b.z-x*math.sin(a)+z*math.cos(a)) end
+    local front=-b.d/2+.10
+    local function box(mat,x,y,z,w,h,depth)
+        local v=p(x,y,z);d:Box(mat,v.x,v.y,v.z,w,h,depth,b.yaw)
+    end
+    if b.shop then
+        local bay=(b.w-1.2)/3
+        box("street_brick",0,1.65,front+.12,b.w-.15,3.12,.20)
+        for i=-1,1 do
+            local x=i*bay
+            box("frame",x,1.48,front+.005,bay-.22,2.58,.10)
+            box("glass",x,1.48,front-.015,bay-.40,2.37,.035)
+            box("street_steel",x,1.48,front-.04,.045,2.37,.03)
+            box("street_steel",x,.55,front-.04,bay-.40,.055,.03)
+        end
+        box("street_teal",0,3.12,front-.07,b.w-.20,.62,.10)
+        box("street_steel",0,3.50,front-.35,b.w-.05,.12,.9)
+        local sign=p(0,3.12,front-.13)
+        d:Sign(b.name,sign.x,sign.y,sign.z,b.yaw,.32)
+        -- 底层服务细节不超出可见实体地基。
+        box("street_steel",b.w/2-.42,1.55,front-.03,.40,.62,.08)
+        for i=1,5 do box("frame",b.w/2-.42,1.32+i*.075,front-.08,.31,.018,.02) end
+    else
+        box("street_brick",0,1.42,front+.06,3.0,2.60,.12)
+        box("frame",0,1.30,front-.025,1.85,2.44,.055)
+        box("glass",0,1.30,front-.060,1.61,2.28,.02)
+        box("street_steel",0,1.3,front-.08,.05,2.28,.03)
+        box("street_steel",0,2.78,front-.3,3.5,.12,.8)
+    end
+end
+
 ---@param d CityDetails
 ---@param root Node
 ---@param b table
@@ -351,6 +390,14 @@ function Stream:Building(d,root,b)
             local bounds=model.boundingBox
             -- 精确包围盒填满同一描述中的预留AABB；碰撞不依赖模型是否已下载/显示。
             local sx,sy,sz=b.w/bounds.size.x,b.h/bounds.size.y,b.d/bounds.size.z
+            if b.expansion then
+                assert(math.abs(sx-sy)<.00001 and math.abs(sy-sz)<.00001,"neighbourhood model proportions changed")
+                ---@type number[]
+                local measured=Expansion.Models[b.asset].size
+                assert(math.abs(bounds.size.x-measured[1])<.000001
+                    and math.abs(bounds.size.y-measured[2])<.000001
+                    and math.abs(bounds.size.z-measured[3])<.000001,"neighbourhood MDL bounds replaced")
+            end
             local holder=root:CreateChild(b.id)
             holder.position=V(b.x,.085,b.z);holder.rotation=Quaternion(0,b.yaw,0)
             local mesh=holder:CreateChild("复用写实建筑")
@@ -362,7 +409,9 @@ function Stream:Building(d,root,b)
             detailed=true
         end
     end
-    if detailed then detailedFront(d,b) end
+    if detailed then
+        if b.expansion then expansionFront(d,b) else detailedFront(d,b) end
+    end
     if not detailed then
         d:Box(b.style,b.x,b.h/2+.085,b.z,b.w,b.h,b.d,b.yaw)
         facade(d,b)
@@ -370,8 +419,9 @@ function Stream:Building(d,root,b)
         d:Box("recess",b.x,b.h+.31,b.z,b.w-.7,.16,b.d-.7,b.yaw)
         d:Box("metal",b.x+b.w*.2,b.h+.75,b.z+b.d*.2,2,1.0,1.4,b.yaw)
     end
-    d:Box("concrete",b.x,.18,b.z,b.w+.3,.4,b.d+.3,b.yaw)
-    if b.asset or b.floors<=3 then
+    local lip=b.expansion and .1 or .3
+    d:Box("concrete",b.x,b.expansion and .0 or .18,b.z,b.w+lip,b.expansion and .24 or .4,b.d+lip,b.yaw)
+    if not b.expansion and (b.asset or b.floors<=3) then
         local a=math.rad(b.yaw)
         local x,z=b.x-math.sin(a)*(b.d/2+.4),b.z-math.cos(a)*(b.d/2+.4)
         d:Sign(b.name,x,3.35,z,b.yaw,.4)
@@ -438,6 +488,24 @@ function Stream:Load(ix,iz)
         for _,t in ipairs(data.trees) do tree(d,t) end
         for _,p in ipairs(data.props) do
             if p.kind=="bench" then d:Bench(p.x,p.z,0)
+            elseif p.kind=="tree" then
+                -- 1.8m可见树池与碰撞同尺寸，树干/树冠合批并投近景阴影。
+                d:Box("concrete",p.x,.30,p.z,p.w,.60,p.d)
+                d:Box("recess",p.x,.606,p.z,p.w-.20,.025,p.d-.20)
+                d:Box("wood",p.x,2.05,p.z,.26,3.0,.26)
+                for _,c in ipairs({{-.65,3.6,0,1.15,.9,1.05},{.60,4.2,.25,1.25,1.0,1.15},{0,4.9,-.3,1.0,.8,1.05}}) do
+                    -- 合批椭球树冠，避免以方盒假装绿化；每层80面，无额外节点。
+                    for row=0,4 do for sector=0,7 do
+                        local function point(v,u)
+                            local phi=-math.pi/2+v*math.pi/5
+                            local theta=u*math.pi/4
+                            return V(p.x+c[1]+c[4]*math.cos(phi)*math.cos(theta),c[2]+c[5]*math.sin(phi),
+                                p.z+c[3]+c[6]*math.cos(phi)*math.sin(theta))
+                        end
+                        d:Quad("foliage",point(row,sector),point(row+1,sector),point(row,sector+1),point(row+1,sector+1))
+                    end end
+                end
+                d.trees=d.trees+1
             else
                 d:Box("metal",p.x,p.h/2,p.z,p.w,p.h,p.d)
                 d:Box("lamp",p.x,1.1,p.z-.36,.4,.35,.04)

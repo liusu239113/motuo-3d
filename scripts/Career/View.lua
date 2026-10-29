@@ -9,6 +9,8 @@ local ControlSettings = require("ControlSettings")
 local Housing = require("Career.HousingData")
 local WalkStick = require("Career.WalkStick")
 local Phone = require("Career.Phone")
+local PhoneApps = require("Career.PhoneApps")
+local PhoneKit = require("Career.PhoneKit")
 local Engagements = require("Career.Engagements")
 local Team = require("Career.Team")
 local World = require("Career.WorldData")
@@ -53,6 +55,13 @@ local MAP_PAGE_SIZE=6
 ---@field phoneBack Button
 ---@field phoneTitle Label
 ---@field phoneClock Label
+---@field phoneChatId string
+---@field phoneLedgerId string
+---@field phoneWalletFilter string
+---@field phoneReadThreads table<string,string>
+---@field phoneAppState table
+---@field phoneAppOffer table?
+---@field phoneAppActive table?
 local View = {}
 View.__index = View
 function View.New(actions)
@@ -70,6 +79,7 @@ function View:Init(actions)
             end
         end
     end
+    PhoneApps.Reset(self)
     self.phonePage=""
     -- 只属于本次手机会话，不写入 Store/云档；切页保留，收起后重新定位。
     self.mapDistrictId=""
@@ -97,9 +107,15 @@ function View:Init(actions)
     self.objective=label("",13,C.amber,{whiteSpace="normal",maxLines=3})
     self.hint=label("",11,C.white,{whiteSpace="normal",maxLines=2})
     self.map=Map.New("career-minimap")
-    self.map.root:SetStyle{width=165,height=145}
-    safe:AddChild(UI.Panel{width=300,maxWidth="48%",padding=10,gap=6,backgroundColor={10,16,21,210},pointerEvents="none",
-        children={self.status,self.objective,self.hint,self.map.root}})
+    self.map.root:SetStyle{width=148,height=112}
+    self.mapCaption=label("附近街区 · 南城老街",11,C.white,{id="career-minimap-caption",width="100%",maxLines=1})
+    self.mapOpenHint=label("局部地图 · 点此查看全城",10,C.amber,{width="100%",maxLines=1})
+    self.mapOpen=UI.Panel{id="career-minimap-open",width=170,minHeight=44,padding=6,gap=3,
+        backgroundColor={8,14,18,155},pointerEvents="box-only",onClick=function()
+            if not self:IsBlocking() then actions.phone("map") end
+        end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
+    safe:AddChild(UI.Panel{width=270,maxWidth="44%",padding=8,gap=5,backgroundColor={10,16,21,210},pointerEvents="box-none",
+        children={self.status,self.objective,self.hint,self.mapOpen}})
     self.speed=label("步行",14,C.white)
     safe:AddChild(UI.Panel{position="absolute",right=12,top=12,width=155,gap=8,padding=8,backgroundColor={10,16,21,210},
         children={self.speed,btn("暂停",actions.pause,false)}})
@@ -247,6 +263,7 @@ function View:ClosePhone()
     destroyChildren(self.phoneDesktop)
     self.phoneContent:ScrollToTop()
     self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
+    PhoneApps.Reset(self)
     self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
 function View:OpenPhone(page,state,offer,active)
@@ -378,106 +395,51 @@ function View:BuildPhone(state,offer,active)
         self.phoneDesktop:AddChild(content)
     else self.phoneContent:AddChild(content) end
     local a=self.actions
-    local function text(t,size,color) content:AddChild(label(t,size,color,{whiteSpace="normal"})) end
-    local function button(t,fn,primary,id) content:AddChild(btn(t,fn,primary,{id=id,minHeight=44})) end
-    content:SetStyle{padding=desktop and 0 or 9,borderRadius=10,
-        backgroundColor=desktop and {0,0,0,0} or {8,19,27,238}}
+    self.phoneAppState,self.phoneAppOffer,self.phoneAppActive=state,offer,active
+    self.phoneBack:SetText("首页")
+    local modern=page~="apps" and page~="map"
+    local target=content
+    local function section(title)
+        target=PhoneKit.Card(nil)
+        content:AddChild(target)
+        target:AddChild(PhoneKit.Text(title,13,PhoneKit.C.ink,{fontWeight="bold"}))
+    end
+    local function text(t,size,color)
+        target:AddChild(modern and PhoneKit.Text(t,size and math.min(size,16) or 11,
+            color==C.amber and PhoneKit.C.green or color==C.muted and PhoneKit.C.muted or PhoneKit.C.ink)
+            or label(t,size,color,{whiteSpace="normal"}))
+    end
+    local function button(t,fn,primary,id)
+        target:AddChild(modern and PhoneKit.Button(t,fn,id,primary) or btn(t,fn,primary,{id=id,minHeight=44}))
+    end
+    content:SetStyle{padding=desktop and 0 or modern and 8 or 9,borderRadius=10,
+        backgroundColor=desktop and {0,0,0,0} or modern and PhoneKit.C.paper or {8,19,27,238}}
+    self.phoneContent:SetStyle{backgroundColor=modern and PhoneKit.C.paper or {0,0,0,0},borderRadius=10}
     self.phoneTitle:SetText(({apps="王二狗的手机",delivery="外卖骑手",map="南城地图",wallet="钱包",messages="消息",life="生活",progression="生涯发展"})[page] or "手机")
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
         Phone.Desktop(content,state,a,self.phoneHeight)
     elseif page=="delivery" then
-        local pos=self.lastActor or state.position
-        text(World.District(pos.x,pos.z).label.."站 · "..(state.online and "正在听单" or "尚未上线"),14,C.amber)
-        text("配送费2.50～10.00元，接单时报价锁定。绕路不会多拿钱；长途单预留更多时间，来不及当日完成则不派发。",11,C.muted)
-        button(state.online and "停止听单" or "上线听单",function() a.online(not state.online) end,not state.online,"career-online")
-        if active then
-            text(active.status=="accepted" and "1 / 2 · 待取餐（先到店）" or "2 / 2 · 配送中（送到顾客）",14,
-                active.status=="accepted" and C.amber or C.cyan)
-            text(active.title,18)
-            text((active.status=="accepted" and "取餐点：" or "送达点：")..Config.points[active.status=="accepted" and active.pickupId or active.dropoffId].label,13)
-            text(active.status=="accepted" and "到取餐点停稳、下车后取餐；取餐完成才开始送达阶段。"
-                or "已取餐，请前往送达点；停稳下车后交付。",12,C.muted)
-            text("报酬 "..money(active.feeCents)..string.format(" · 剩余 %.0f 游戏分钟",math.max(0,active.remainingHours*60)),12,C.amber)
-            if Progress.Capacity(state)>#state.activeOrders and state.online and offer then
-                text("可叠加配送："..offer.title.." · "..money(offer.feeCents),12,C.amber)
-                button("再接一单（独立结算）",a.accept,true)
-            end
-            for _,order in ipairs(state.activeOrders) do
-                local id=order.id
-                button("切换任务 · "..order.title.." / "..(order.status=="accepted" and "待取餐" or "待送达"),function() a.selectOrder(id) end,false)
-            end
-            text("地点导航可临时切换去补给，配送仍计时；下面可切回当前订单导航。",11,C.muted)
-            button("导航到当前任务",function() a.setWaypoint(active.status=="accepted" and active.pickupId or active.dropoffId); a.closePhone() end,true,"career-order-navigation")
-            button(active.status=="accepted" and "到店取餐（需下车到点）" or "交付外卖（需下车到点）",a.interact,false)
-        elseif state.online and offer then
-            text(offer.title,18)
-            text(Config.points[offer.pickupId].label.." → "..Config.points[offer.dropoffId].label,13)
-            text(money(offer.feeCents)..string.format(" · 路线 %.0f 米",offer.distanceMeters),17,C.amber)
-            if offer.tutorial then text("新手教学单 · 固定5元，不是普通距离报价。",11,C.muted) end
-            button("抢单 / 接单",a.accept,true,"career-accept")
-        else text("上线后接收本地城市配送订单。",12,C.muted) end
+        PhoneApps.Delivery(self,content,state,offer,active)
     elseif page=="map" then
         self:BuildMapPhone(content,state,active)
     elseif page=="wallet" then
-        text(money(state.cashCents),28,C.amber)
-        text("生活现金 · 不与独立竞速金币兑换",11,C.muted)
-        text(string.format("已完成%d单 · 首辆摩托目标 ¥50,000",state.completedOrders),12)
-        for i=#state.ledger,math.max(1,#state.ledger-15),-1 do
-            local e=state.ledger[i]
-            text(string.format("第%d天  %s  %+.2f元",e.day,e.kind,e.deltaCents/100),11,e.deltaCents>=0 and C.green or C.muted)
-        end
-        button("保存本地并同步账号云档",a.save,true)
-        button("读取账号云档（需确认）",a.loadCloud,false)
-        text(a.saveStatus and a.saveStatus() or "本地保存不等于云端确认。",10,C.muted)
+        PhoneApps.Wallet(self,content,state)
     elseif page=="messages" then
-        text("表哥",18,C.amber)
-        text("二狗，车钥匙给你了。那辆9号以前是我追对象时留下的，壳子磕过，电池还能用。后架我给你装了保温箱。",13)
-        text("先把饭吃上，晚上桥下或者公园能落脚。送餐别急，停稳下车再拿。等你真攒够五万，咱去车行看看。",13)
-        text("王二狗：这回，先把生活跑顺。",13,C.cyan)
-        button("用餐 / 休息 / 充电",function() a.phone("life") end,false)
-        local events=Engagements.State(state)
-        text("街区联系人 · 现场委托",17,C.amber)
-        text("到联系人驻点接受，亲自行动后返回交付；模拟排班不计入委托。",11,C.muted)
-        for _,item in ipairs(events.list) do
-            local id,instanceId=item.id,item.instanceId
-            text(item.npcName.." · "..item.title,14,C.cyan)
-            text(item.description,11,C.muted)
-            text(item.progressText,12,C.white)
-            if item.status=="available" then
-                button("现场接取 · "..item.title,function() a.acceptEngagement(id) end,true,"career-engagement-"..id)
-            elseif item.status=="locked" then text(item.prerequisiteText,10,C.muted)
-            elseif item.status=="ready" then
-                button("返回交付 · 奖励"..money(item.rewardCents),function() a.claimEngagement(instanceId) end,true,"career-claim-"..id)
-            elseif item.status=="claimed" then text("已交付 · 回信已保存",11,C.green) end
-            if item.status~="claimed" then
-                local point=item.nextPointId or item.acceptPointId
-                button("导航到"..Config.points[point].label,function() a.setWaypoint(point); a.closePhone() end,false)
-                if item.status=="active" and point~=item.returnPointId then
-                    button("到场联系 / 确认访问",function() a.visitEngagement(point) end,false)
-                end
-            end
-        end
-        for _,letter in ipairs(events.letters) do
-            text(letter.npcName.." · "..letter.title,14,C.amber)
-            text(letter.text,12,C.white)
-        end
-        local journal=Progress.StoryLog(state)
-        if #journal>0 then text("王二狗的路 · 已读经历",17,C.amber) end
-        for _,story in ipairs(journal) do text(story.title,14,C.cyan); text(story.text,12,C.white) end
+        PhoneApps.Messages(self,content,state)
     elseif page=="progression" then
         text(Progress.Chapter(state),17,C.amber)
         local level,name=Progress.Level(state)
         text(string.format("%s Lv.%d · 携带容量%d份",name,level,Progress.Capacity(state)),13)
         text("装备、买车与职业报名需到南城车行；住房可在手机选择，再去对应入口入住。",11,C.muted)
         button("导航到南城车行",function() a.setWaypoint("dealer"); a.closePhone() end,true)
-        text("骑手装备",16,C.cyan)
+        section("骑手装备")
         for _,item in ipairs(Progress.Equipment) do
             local id=item.id
             text(item.description,10,C.muted)
             button((state.equipment and state.equipment[id] and "已拥有 · " or "购入 · ")..item.name..string.format(" ¥%.0f / Lv.%d",item.price/100,item.level),function() a.buyEquipment(id) end,false)
         end
-        text("改善住处 · 按晚付费",16,C.cyan)
+        section("改善住处 · 按晚付费")
         text("旅舍、出租屋、公寓各有入口和室内。进门不收费，到床边确认休息才支付一晚。",10,C.muted)
         for _,item in ipairs(Progress.Housing) do
             local id=item.id
@@ -487,10 +449,10 @@ function View:BuildPhone(state,offer,active)
         button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
         if home.width then button("到门口进入住处",a.enterHousing,false) end
         button("到休息点过夜",a.sleepHousing,false)
-        text("工作周 · 解锁后可选",16,C.cyan)
+        section("工作周 · 解锁后可选")
         text("第10天起开放，每周需重新亲送10单并活动15分钟。亲送与模拟收入不重复，房费按7晚另算。",11,C.muted)
         button("查看并确认7天排班",a.workWeek,false)
-        text("人生第一辆摩托",16,C.cyan)
+        section("人生第一辆摩托")
         text("现金达到5万元后首购二手训练版：46000元；另备2000元护具训练、2000元周转。",11,C.muted)
         for _,item in ipairs(Progress.Motorcycles) do
             local id=item.id
@@ -498,7 +460,7 @@ function View:BuildPhone(state,offer,active)
                 button((state.raceVehicle==id and "当前参赛 · " or "选为参赛车 · ")..item.name,function() a.selectMotorcycle(id) end,false)
             else button("购买 · "..item.name..string.format(" ¥%.0f",item.price/100),function() a.buyMotorcycle(id) end,false) end
         end
-        text("城市车库 · 到车行取车",16,C.cyan)
+        section("城市车库 · 到车行取车")
         text("摩托城市限速60km/h，电动车35km/h。换车不召回：原车留在停车处；接单前需换回带箱9号。燃油独立于电量，摩托共享油量。",11,C.muted)
         button("城市用车 · 9号电动车",function() a.cityVehicle("borrowed_ebike") end,false)
         for _,item in ipairs(Progress.Motorcycles) do
@@ -509,7 +471,7 @@ function View:BuildPhone(state,offer,active)
         end
         button(string.format("车行摩托补给 · 20元（油量%.0f%%）",state.motorcycleFuel or 100),a.refuel,false)
         button("报名并进入封闭训练 · 护具课程2000元",a.train,true)
-        text("车队与赞助 · 正式合同",16,C.cyan)
+        section("车队与赞助 · 正式合同")
         local contract=Team.Status(state)
         text(contract.text,12,C.white)
         if contract.signed then
@@ -522,7 +484,7 @@ function View:BuildPhone(state,offer,active)
                 button("到车行查看并签约",function() a.signTeam(id) end,false,"career-team-sign")
             end
         end
-        text("职业赛事",16,C.cyan)
+        section("职业赛事")
         text(string.format("积分 %d · 冠军 %d · %s",state.career and state.career.points or 0,state.career and state.career.wins or 0,state.career and state.career.team or "尚未加入车队"),12)
         for index,series in ipairs(Progress.Series) do
             local n=index
@@ -533,11 +495,14 @@ function View:BuildPhone(state,offer,active)
             text("王二狗：从桥洞到自己的住处，从战损电动车到冠军发车格。人生没有白跑的路。\n年度冠军达成，仍可继续配送、改善生活、收藏车辆和参加比赛。",14,C.amber)
         end
     elseif page=="life" then
+        section("今天的身体状态")
         text(string.format("饱腹 %.0f%% · 精力 %.0f%% · 电量 %.0f%%",state.hunger,state.energy,state.battery),13,C.amber)
         text("生活服务需要走到对应地点，停车下车。可从地图设置导航。",11,C.muted)
+        section("吃饭与补给")
         button("早餐店用餐 · 12元",a.eat,false)
         button("桥下免费休息至次日",function() a.rest("bridge") end,false)
         button("公园长椅免费休息至次日",function() a.rest("park") end,false)
+        section("今晚住哪里")
         local home=assert(Housing.Get(state.accommodation))
         text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
         button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
@@ -546,6 +511,7 @@ function View:BuildPhone(state,offer,active)
         button("走到床边 / 休息点过夜",a.sleepHousing,false)
         button("街边充电 · 2元",a.charge,false)
         button("低现金基础帮助（不发现金）",a.aid,false)
+        section("声音与偏好")
         button("背景音乐 · "..(state.musicEnabled and "开启" or "关闭"),a.toggleMusic,false,"career-music")
         button("车辆 / 脚步 / 环境音 · "..(state.effectsEnabled and "开启" or "关闭"),a.toggleEffects,false,"career-effects")
         if a.progression then button("装备 / 住房 / 生涯发展",a.progression,true) end
@@ -558,6 +524,8 @@ function View:Update(state,actor,target,active,offer,dt)
     local indoor=state.currentSpace and state.currentSpace~="city"
     self.mountButton:SetVisible(not indoor)
     self.map.root:SetVisible(not indoor)
+    self.mapOpen:SetVisible(not indoor)
+    self.mapCaption:SetText("附近街区 · "..World.District(actor.x,actor.z).label)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.status:SetText(string.format("王二狗  %s  第%d天 %02d:%02d\n饱腹 %.0f · 精力 %.0f · 电量 %.0f%%",money(state.cashCents),state.day,

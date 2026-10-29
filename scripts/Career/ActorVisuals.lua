@@ -1,5 +1,6 @@
 -- 人、战损电动车、保温箱各自独立。尺寸由MDL包围盒校准，不套用赛车比例。
 local Rig=require("Career.Rig")
+local Locomotion=require("Career.Locomotion")
 local Parts=require("Parts")
 local Assets=require("VehicleAssets")
 local Vehicles=require("Career.VehicleData")
@@ -14,13 +15,19 @@ local scooterMaterial=SCOOTER.."Materials/873a3764f21f49e4b717387160d13d19_00_tr
 local boxModel=BOX.."Meshes/8c4f0f26f9ee4d3eac2eec49a497852f.mdl"
 local boxMaterial=BOX.."Materials/8c4f0f26f9ee4d3eac2eec49a497852f_00_tripo_material_da86ec09-2a15-4a63-a371-538bf705b4fa.xml"
 ---@class CareerActorVisuals
+---@field walker CareerRig
+---@field locomotion CareerLocomotion
 local Visuals={}
 Visuals.__index=Visuals
 Visuals.ProxyLabel="战损9号 · 独立外卖箱"
-Visuals.AnimationLabel="王二狗 · 骨骼IK骑姿与慢走/步行/跑步"
+Visuals.AnimationLabel="王二狗 · 官方Idle/Walk/Run关键帧重定向 · 独立骑姿IK"
 Visuals.Resources={scooterModel,scooterMaterial,boxModel,boxMaterial,Rig.ModelPath,Rig.MaterialPath,Rig.DiffusePath,Rig.NormalPath,"Techniques/DiffNormal.xml"}
 Visuals.ResourceTypes={[scooterModel]="Model",[scooterMaterial]="Material",[boxModel]="Model",[boxMaterial]="Material",
     [Rig.ModelPath]="Model",[Rig.MaterialPath]="Material",[Rig.DiffusePath]="Texture2D",[Rig.NormalPath]="Texture2D",["Techniques/DiffNormal.xml"]="Technique"}
+for _,path in ipairs(Locomotion.Resources) do
+    Visuals.Resources[#Visuals.Resources+1]=path
+    Visuals.ResourceTypes[path]=Locomotion.ResourceTypes[path]
+end
 function Visuals.New(scene,target,city)
     local self=setmetatable({},Visuals); self:Init(scene,target,city); return self
 end
@@ -59,6 +66,8 @@ function Visuals:Init(scene,target,city)
     self.walkNode=target:CreateChild("王二狗步行根")
     self.walker=Rig.New(self.walkNode)
     self.walker.ground=city
+    self.locomotion=Locomotion.New(self.walker)
+    self.walker.locomotion=self.locomotion
     self.mountedRider=Rig.New(self.bikeVisual)
     self.phase,self.gaitWeight,self.runWeight,self.lean=0,0,0,0
     self.mounted,self.disposed=false,false
@@ -125,7 +134,7 @@ function Visuals:UpdateParking(parking,city)
 end
 function Visuals:ResetGait()
     self.phase,self.gaitWeight,self.runWeight,self.stopTime=0,0,0,0
-    self.walker:PoseWalk(0,0,0)
+    self.locomotion:Reset()
 end
 function Visuals:SetMounted(mounted)
     if self.mounted~=mounted then self:ResetGait() end
@@ -136,26 +145,9 @@ end
 -- 纯步态入口，回归可直接驱动；不处理输入/相机/存档/车辆。
 -- distance是Actor子步累计的真实移动距离（撞墙=0），省略时兼容既有速度驱动。
 function Visuals:UpdateGait(dt,speed,distance)
-    -- 子步末段可能已撞墙，但本帧前段仍实际移动；混合权重和相位都用整帧路程。
-    local velocity=distance~=nil and dt>0 and math.abs(distance)/dt or math.abs(speed)
-    local target=math.sqrt(math.min(1,velocity/1.8))
-    local run=math.max(0,math.min(1,(velocity-1.8)/1.6))
-    local stopped=velocity<.025
-    self.stopTime=stopped and (self.stopTime or 0)+dt or 0
-    local blend=1-math.exp(-dt*(stopped and 24 or 16))
-    self.gaitWeight=self.gaitWeight+((stopped and 0 or target)-self.gaitWeight)*blend
-    self.runWeight=self.runWeight+((stopped and 0 or run)-self.runWeight)*blend
-    -- 松手后不再推进步态，也不等一秒才复位；约.28秒内精确回到同一个站姿。
-    if stopped and ((self.stopTime or 0)>=.28 or self.gaitWeight<.001) then
-        self.phase,self.gaitWeight,self.runWeight=0,0,0
-    else
-        local travel=distance or velocity*dt
-        if travel>.000001 then
-            local cycle=Rig.CycleLength(self.gaitWeight,self.runWeight)
-            self.phase=(self.phase+travel*math.pi*2/cycle)%(math.pi*2)
-        end
-    end
-    self.walker:PoseWalk(self.phase,self.gaitWeight,self.runWeight)
+    self.locomotion:Update(dt,speed,distance)
+    self.phase=self.locomotion.phase*math.pi*2
+    self.gaitWeight,self.runWeight=self.locomotion.moving,self.locomotion.running
 end
 function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw,distance)
     if self.disposed then return end

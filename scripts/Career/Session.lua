@@ -264,6 +264,8 @@ function Session:BuildWorld()
         local contact,worldShot,streetShot,handoffShot=false,"","",""
         local storyChecks,optimizeChecks,streetChecks,handoffChecks=false,false,false,false
         local qualityChecks,beaconShot,phoneShot,motionShot=false,"","",""
+        local appQuality,animQuality,cityQuality=false,false,false
+        local appShot,animShot,cityShot="","",""
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careeroptimize" then optimizeChecks=true end
             if arg=="-careerstorychecks" then storyChecks=true end
@@ -271,6 +273,15 @@ function Session:BuildWorld()
             if arg=="-careerstreet" then streetChecks=true end
             if arg=="-careerhandoff" then handoffChecks=true end
             if arg=="-careerquality" then qualityChecks=true end
+            if arg=="-careerappquality" then appQuality=true end
+            if arg=="-careeranimquality" then animQuality=true end
+            if arg=="-careercityquality" then cityQuality=true end
+            local app=arg:match("^%-careerappshot=(.+)$")
+            if app then appShot=app end
+            local anim=arg:match("^%-careeranimshot=(.+)$")
+            if anim then animShot=anim end
+            local expansion=arg:match("^%-careercityshot=(.+)$")
+            if expansion then cityShot=expansion end
             local motion=arg:match("^%-contactmotion=(.+)$")
             if motion then motionShot=motion end
             local beacon=arg:match("^%-careerbeaconshot=(.+)$")
@@ -284,7 +295,16 @@ function Session:BuildWorld()
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if phoneShot~="" then
+        if appShot~="" then require("Career.PhoneAppChecks").Shot(self,appShot)
+        elseif animShot~="" then require("Career.LocomotionChecks").Shot(self,animShot)
+        elseif cityShot~="" then require("Career.CityExpansionChecks").Shot(self,cityShot)
+        elseif appQuality or animQuality or cityQuality then
+            self.view:ClosePhone();self.view:ShowGame()
+            if appQuality then require("Career.PhoneAppChecks").Run(self) end
+            if animQuality then require("Career.LocomotionChecks").Run(self) end
+            if cityQuality then require("Career.CityExpansionChecks").Run(self) end
+            print("[应用动作街区专项完成] 指定专项已执行；具体结果见各模块断言")
+        elseif phoneShot~="" then
             self.view:ClosePhone();self.view:ShowGame();self:OpenPhone(phoneShot)
             print("[手机实拍就绪] "..phoneShot.." / 隔离内存 / 真实页面")
         elseif motionShot~="" then require("Career.ContactChecks").Shot(self)

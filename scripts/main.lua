@@ -832,8 +832,14 @@ function Start()
             or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
         if arg == "-career" then careerStart = true end
         if arg == "-careerchecks" or arg=="-careertripchecks" then careerCheck, careerStart = true, true; legacyTest = false end
+        -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
+        if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
+            or arg:match("^%-careerappshot=") or arg:match("^%-careeranimshot=") or arg:match("^%-careercityshot=") then
+            careerCheck,careerStart,legacyTest=true,true,false
+        end
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
     end
+    if careerCheck then legacyTest=false end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
         careerMode_,careerRace_=false,false
         hud_:SetCareerRace(false)

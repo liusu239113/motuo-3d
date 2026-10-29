@@ -47,6 +47,10 @@
 ---@field bridges table[]
 ---@field points CareerWorldPoint[]
 local World = {}
+local Expansion = require("Career.CityExpansion")
+-- 仅用于渲染与地图的接续几何；不插入既有订单使用的固定导航图。
+---@type table[]
+World.ExpansionRoads=Expansion.Roads
 World.LIMIT, World.OLD_LIMIT, World.CELL = 15000, 195, 256
 World.VIEW_DISTANCE, World.LOAD_DISTANCE, World.UNLOAD_DISTANCE = 450, 550, 850
 World.CACHE_LIMIT, World.MAX_BUILDINGS, World.MAX_TREES = 128, 10, 16
@@ -168,7 +172,12 @@ local function overlap(a,b)
     return a.x1<b.x2 and a.x2>b.x1 and a.z1<b.z2 and a.z2>b.z1
 end
 local function contains(r,x,z) return x>=r.x1 and x<=r.x2 and z>=r.z1 and z<=r.z2 end
-for _,r in ipairs(World.Roads) do
+for _,r in ipairs((function()
+    local all={}
+    for _,v in ipairs(World.Roads) do all[#all+1]=v end
+    for _,v in ipairs(Expansion.Roads) do all[#all+1]=v end
+    return all
+end)()) do
     local rect=roadRect(r,r.sidewalk)
     for ix=math.floor(rect.x1/256),math.floor(rect.x2/256) do
         for iz=math.floor(rect.z1/256),math.floor(rect.z2/256) do
@@ -283,8 +292,10 @@ local function building(cell,b)
     local w,d=b.w,b.d
     if b.yaw%180~=0 then w,d=d,w end
     -- 包含地基15cm外扩；高于人物的屋檐不算地面碰撞。
-    obstacle(cell,b.x,b.z,w+.3,d+.3,0,b.h,"building")
-    ground(cell,{x1=b.x-w/2-3,x2=b.x+w/2+3,z1=b.z-d/2-3,z2=b.z+d/2+3},"concrete",.085)
+    obstacle(cell,b.x,b.z,w+(b.expansion and .1 or .3),d+(b.expansion and .1 or .3),0,b.h,"building")
+    if not b.expansion then
+        ground(cell,{x1=b.x-w/2-3,x2=b.x+w/2+3,z1=b.z-d/2-3,z2=b.z+d/2+3},"concrete",.085)
+    end
 end
 local function owner(cell,x,z) return math.floor(x/256)==cell.ix and math.floor(z/256)==cell.iz end
 local function reserved(rect)
@@ -317,6 +328,9 @@ function World.DescribeCell(ix,iz)
     if cell.x1>=cell.x2 or cell.z1>=cell.z2 then return cell end
     -- 完全空旷的块也必须具有连续、已裁剪的地面。
     ground(cell,cell,"grass",0)
+    -- 邻里内院先铺连续石地，外街后保留植栽过渡。
+    -- 不再出现195..384m草地护城河，也不增加全城常驻几何。
+    ground(cell,{x1=-368,x2=368,z1=-368,z2=368},"stone",.025)
     local list=roadCells[k] or {}
     local cuts={}
     for _,r in ipairs(list) do if not r.old then cuts[#cuts+1]=roadRect(r,0) end end
@@ -325,6 +339,25 @@ function World.DescribeCell(ix,iz)
             local outer,inner=roadRect(r,r.sidewalk),roadRect(r,0)
             for _,strip in ipairs(subtract(outer,inner)) do ground(cell,strip,"concrete",.085,cuts) end
             ground(cell,inner,"road",.055)
+        end
+    end
+    -- 新楼障碍与可见地基共用实测、正交旋转后的AABB；视觉块卸载不删碰撞。
+    for _,b in ipairs(Expansion.Buildings) do if owner(cell,b.x,b.z) then building(cell,b) end end
+    for _,p in ipairs(Expansion.Plazas) do
+        ground(cell,{x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-p.d/2,z2=p.z+p.d/2},"concrete",.085,cuts)
+        -- 3m入口接到真实共享巷道，不生成孤立广场。
+        if p.id=="east" or p.id=="west" then
+            ground(cell,{x1=math.min(p.x,312*(p.x>0 and 1 or -1)),x2=math.max(p.x,312*(p.x>0 and 1 or -1)),
+                z1=p.z-1.5,z2=p.z+1.5},"concrete",.085,cuts)
+        else
+            ground(cell,{x1=p.x-1.5,x2=p.x+1.5,z1=math.min(p.z,312*(p.z>0 and 1 or -1)),
+                z2=math.max(p.z,312*(p.z>0 and 1 or -1))},"concrete",.085,cuts)
+        end
+    end
+    for _,p in ipairs(Expansion.Props) do
+        if owner(cell,p.x,p.z) then
+            cell.props[#cell.props+1]=p
+            obstacle(cell,p.x,p.z,p.w,p.d,0,p.h,p.kind)
         end
     end
     for _,b in ipairs(fixedBuildings) do if owner(cell,b.x,b.z) then building(cell,b) end end
@@ -364,7 +397,7 @@ function World.DescribeCell(ix,iz)
             local depth=22+math.floor(hash(gx,gz,23)*9)
             local rect={x1=x-18,x2=x+18,z1=z-18,z2=z+18}
             if d.id~="old_town" and nearRoad and value<density and #cell.buildings<World.MAX_BUILDINGS
-                and not reserved(rect) and clearRoad(rect,list)
+                and not Expansion.Reserved(rect) and not reserved(rect) and clearRoad(rect,list)
                 and rect.x1>=-14998 and rect.x2<=14998 and rect.z1>=-14998 and rect.z2<=14998 then
                 local floors=d.style=="industrial" and 2 or d.style=="office" and 6 or 2+math.floor(hash(gx,gz,31)*4)
                 local yaw=hash(gx,gz,37)<.5 and 0 or 180
@@ -377,7 +410,7 @@ function World.DescribeCell(ix,iz)
                 local tx=x+(hash(gx,gz,40+t)*2-1)*21
                 local tz=z+(hash(gx,gz,50+t)*2-1)*21
                 local tr={x1=tx-2.5,x2=tx+2.5,z1=tz-2.5,z2=tz+2.5}
-                local free=not reserved(tr) and clearRoad(tr,list)
+                local free=not Expansion.Reserved(tr) and not reserved(tr) and clearRoad(tr,list)
                 for _,o in ipairs(cell.obstacles) do if overlap(tr,o) then free=false;break end end
                 if free and #cell.trees<World.MAX_TREES and hash(gx,gz,60+t)<(d.id=="greenbelt" and .34 or .48)
                     and tr.x1>=cell.x1 and tr.x2<=cell.x2 and tr.z1>=cell.z1 and tr.z2<=cell.z2 then

@@ -36,6 +36,8 @@ function Checks.SkinBounds(rig)
 end
 -- 只操作已有Rig/Visuals并原样恢复；可单独从早期-careercontact调用，不访问档案/云。
 function Checks.Motion(session)
+    -- 主角已经换成官方关键帧；旧FootCycle支撑占比/正弦IK目标不再是主角真值。
+    if session.actor.visuals.walker.locomotion then return require("Career.LocomotionChecks").Run(session) end
     local Rig=require("Career.Rig")
     local visuals=session.actor.visuals
     ---@type CareerRig
@@ -146,6 +148,18 @@ function Checks.Run(session)
     for _,arg in ipairs(GetArguments()) do
         if arg=="-contactshot" then Checks.Shot(session);return end
         if arg=="-vehiclechecks" then Checks.Vehicles(session);Checks.Shot(session);return end
+    end
+    if session.actor.visuals.walker.locomotion then
+        -- 官动独立验收真实骨长/鞋底/相位/实际速度，不能继续拿旧IK的FootCycle断言它。
+        Checks.Motion(session)
+        Checks.Vehicles(session)
+        local rider=session.actor.visuals.mountedRider
+        rider:PoseRide(0)
+        local pose=rider:ReadPose()
+        assert(pose.leftGripError<.005 and pose.rightGripError<.005,"官方步态改动不能破坏骑姿握把")
+        print("[接触验收] 官方走跑数据/原始骨长与鞋底/逐车轮胎/独立骑姿通过；自然度另看多相位实拍")
+        Checks.Shot(session)
+        return
     end
     Checks.Motion(session)
     local actor=session.actor
