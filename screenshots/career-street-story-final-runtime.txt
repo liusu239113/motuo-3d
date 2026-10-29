@@ -1,0 +1,406 @@
+[2026-10-29 18_52_37_234][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_37_234][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_37_234][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_37_234][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_55_743][1112] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_55_743][1112] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_55_743][1112] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-29 18_52_36_818][0] INFO: DownloadManager initialized
+[2026-10-29 18_52_36_819][0] INFO: a couple of Subsystems registered finish.
+[2026-10-29 18_52_36_820][0] INFO: Engine construct finish.
+[2026-10-29 18_52_37_188][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-29 18_52_37_204][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-29 18_52_37_205][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 18_52_55_720][1112] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 18_52_57_575][1203]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-29 18_52_57_580][1203]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-29 18_52_57_581][1203]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-29 18_52_57_583][1203] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-29 18_52_59_204][1229] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-29 18_52_59_209][1229][Script] IsNetworkMode:    false
+[2026-10-29 18_52_59_225][1229][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-29 18_52_59_225][1229][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-29 18_52_59_225][1229][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-29 18_52_59_225][1229][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-29 18_52_59_228][1229][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-29 18_52_59_678][1229][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-29 18_53_00_001][1229][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 18_53_00_004][1229][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-29 18_53_00_012][1229][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-29 18_53_00_012][1229][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-29 18_53_00_020][1229][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_00_147][1229][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-29 18_53_00_148][1229][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-29 18_53_00_149][1230][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-29 18_53_02_652][1269] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_53_02_652][1269] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_53_02_652][1269] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_02_652][1269] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_02_652][1269] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_03_023][1270] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_53_03_023][1270] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-29 18_53_03_061][1271] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_53_03_062][1271] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_03_062][1271] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_03_087][1272] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-29 18_53_03_087][1272] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-29 18_53_07_925][1332][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-29 18_53_07_925][1332][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-29 18_53_08_577][1332][Script] [老街街面] 门面2 / 0..1UV图层3 / 合批29 / 实体碰撞17 / 排水细节6；路面/导航未改
+[2026-10-29 18_53_08_583][1332][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_08_723][1332][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_08_727][1332][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_08_854][1332][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_08_857][1332][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_08_972][1332][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_08_976][1332][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_09_124][1332][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_09_127][1332][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_09_239][1332][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_09_242][1332][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_09_368][1332][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_09_371][1332][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_09_484][1332][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_09_488][1332][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_09_651][1332][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_09_653][1332][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-29 18_53_09_692][1332][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-29 18_53_09_694][1332][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-29 18_53_09_696][1332][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-29 18_53_09_697][1332][Script] [生涯城市] 33栋建筑 / 508批次 / 147870三角面 / 47招牌 / 65碰撞区域
+[2026-10-29 18_53_09_706][1333][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 18_53_10_138][1333][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 18_53_10_140][1333][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-29 18_53_10_510][1333][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-29 18_53_10_514][1333][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-29 18_53_10_519][1333][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 steps audio/sfx/career_step_single.wav
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-29 18_53_10_519][1333][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-29 18_53_10_524][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 18_53_10_529][1333][Script] [WorldStream] 加载 -1:-1 / 2楼 / 722面 / 14批
+[2026-10-29 18_53_10_530][1333][Script] [WorldStream] 加载 0:-1 / 0楼 / 80面 / 7批
+[2026-10-29 18_53_10_532][1333][Script] [WorldStream] 加载 -1:0 / 0楼 / 160面 / 7批
+[2026-10-29 18_53_10_533][1333][Script] [WorldStream] 加载 0:0 / 0楼 / 140面 / 7批
+[2026-10-29 18_53_10_542][1333][Script] [WorldStream] 加载 -1:-2 / 5楼 / 1456面 / 15批
+[2026-10-29 18_53_10_630][1333][Script] [WorldStream] 加载 0:-2 / 6楼 / 1646面 / 14批
+[2026-10-29 18_53_10_643][1333][Script] [WorldStream] 加载 -2:-1 / 6楼 / 2348面 / 14批
+[2026-10-29 18_53_10_656][1333][Script] [WorldStream] 加载 1:-1 / 7楼 / 2674面 / 14批
+[2026-10-29 18_53_10_667][1333][Script] [WorldStream] 加载 -2:0 / 6楼 / 2132面 / 14批
+[2026-10-29 18_53_10_684][1333][Script] [WorldStream] 加载 1:0 / 10楼 / 3500面 / 14批
+[2026-10-29 18_53_10_693][1333][Script] [WorldStream] 加载 -1:1 / 4楼 / 1686面 / 14批
+[2026-10-29 18_53_10_702][1333][Script] [WorldStream] 加载 0:1 / 5楼 / 1702面 / 14批
+[2026-10-29 18_53_10_729][1333][Script] [WorldStream] 加载 -2:-2 / 6楼 / 2094面 / 15批
+[2026-10-29 18_53_10_742][1333][Script] [WorldStream] 加载 1:-2 / 9楼 / 2558面 / 15批
+[2026-10-29 18_53_10_754][1333][Script] [WorldStream] 加载 -2:1 / 6楼 / 2256面 / 14批
+[2026-10-29 18_53_10_767][1333][Script] [WorldStream] 加载 1:1 / 7楼 / 2718面 / 14批
+[2026-10-29 18_53_10_776][1333][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-29 18_53_10_794][1333][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-29 18_53_10_818][1333][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-29 18_53_10_834][1333][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-29 18_53_10_855][1333][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-29 18_53_10_872][1333][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-29 18_53_10_887][1333][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-29 18_53_10_897][1333][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-29 18_53_10_899][1333][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_11_017][1333][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_11_021][1333][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_11_151][1333][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_11_154][1333][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_11_275][1333][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_11_279][1333][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_11_440][1333][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_11_443][1333][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_11_559][1333][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_11_562][1333][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_11_683][1333][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_11_686][1333][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-29 18_53_11_803][1333][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-29 18_53_11_806][1333][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-29 18_53_11_925][1333][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-29 18_53_11_927][1333][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_53_11_928][1333][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_53_11_928][1333][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_53_11_929][1333][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_53_11_933][1333][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_53_11_933][1333][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_53_11_934][1333][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_53_11_938][1333][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_53_11_939][1333][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_53_11_939][1333][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_53_11_943][1333][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_53_11_944][1333][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_53_11_944][1333][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_53_11_945][1333][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_53_11_945][1333][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_53_11_946][1333][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_53_11_950][1333][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-29 18_53_11_951][1333][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-29 18_53_11_951][1333][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-29 18_53_11_956][1333][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-29 18_53_11_956][1333][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-29 18_53_11_956][1333][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-29 18_53_11_965][1333][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_11_965][1333][Script] [Career.Store] loaded revision=0 day=1 cashCents=5000 orders=0
+[2026-10-29 18_53_11_966][1333][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_11_968][1333][Script] [Career.Team] 显式签约；首轮履约后才发签约奖金
+[2026-10-29 18_53_11_968][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_11_968][1333][Script] [Career.Team] 显式签约；首轮履约后才发签约奖金
+[2026-10-29 18_53_11_969][1333][Script] [Career.Store] loaded revision=9 day=1 cashCents=20080000 orders=0
+[2026-10-29 18_53_11_971][1333][Script] [Career.Store] loaded revision=12 day=1 cashCents=20065000 orders=0
+[2026-10-29 18_53_11_975][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_11_976][1333][Script] [Career.Store] loaded revision=20 day=1 cashCents=20275000 orders=0
+[2026-10-29 18_53_11_977][1333][Script] [Career.Team] 第1轮奖金150000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_11_977][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_11_977][1333][Script] [Career.Store] loaded revision=20 day=1 cashCents=20275000 orders=0
+[2026-10-29 18_53_11_978][1333][Script] [Career.Team] 第1轮奖金150000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_11_979][1333][Script] [Career.Store] loaded revision=21 day=1 cashCents=20425000 orders=0
+[2026-10-29 18_53_11_985][1333][Script] [Career.Team] 第2轮奖金240000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_11_991][1333][Script] [Career.Team] 第3轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_11_998][1333][Script] [Career.Team] 第4轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_12_017][1333][Script] [Career.Team] 第5轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_12_025][1333][Script] [Career.Team] 第6轮奖金360000分已申请；落盘失败由Store整笔回滚
+[2026-10-29 18_53_12_028][1333][Script] [Career.Store] loaded revision=59 day=1 cashCents=28870000 orders=0
+[2026-10-29 18_53_12_030][1333][Script] [车队合同验收通过] 旧档无自动签约/9积分与训练/车行显式签约/签字零现金/3完赛+领奖台/DNF与赛事ID去重/赛后与领奖失败回滚/整数分固定奖金/晋升续约封顶/存读档及历史流水一致性
+[2026-10-29 18_53_12_038][1333][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_12_038][1333][Script] [Career.Store] loaded revision=0 day=1 cashCents=5000 orders=0
+[2026-10-29 18_53_12_038][1333][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 18_53_12_039][1333][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 18_53_12_043][1333][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 18_53_12_044][1333][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 18_53_12_044][1333][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=3
+[2026-10-29 18_53_12_044][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_12_044][1333][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=3
+[2026-10-29 18_53_12_045][1333][Script] [Career.Store] loaded revision=9 day=2 cashCents=5776 orders=0
+[2026-10-29 18_53_12_049][1333][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 18_53_12_049][1333][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 18_53_12_053][1333][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 18_53_12_054][1333][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 18_53_12_055][1333][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_055][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_12_055][1333][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_056][1333][Script] [Career.Engagements] credited career-v1-3 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_060][1333][Script] [Career.Delivery] accepting career-v1-5 feeCents=275
+[2026-10-29 18_53_12_061][1333][Script] [Career.Delivery] picked up career-v1-5
+[2026-10-29 18_53_12_065][1333][Script] [Career.Delivery] accepting career-v1-6 feeCents=288
+[2026-10-29 18_53_12_066][1333][Script] [Career.Delivery] picked up career-v1-6
+[2026-10-29 18_53_12_070][1333][Script] [Career.Delivery] accepting career-v1-7 feeCents=290
+[2026-10-29 18_53_12_070][1333][Script] [Career.Delivery] picked up career-v1-7
+[2026-10-29 18_53_12_075][1333][Script] [Career.Delivery] accepting career-v1-8 feeCents=276
+[2026-10-29 18_53_12_075][1333][Script] [Career.Delivery] picked up career-v1-8
+[2026-10-29 18_53_12_081][1333][Script] [Career.Delivery] accepting career-v1-9 feeCents=283
+[2026-10-29 18_53_12_081][1333][Script] [Career.Delivery] picked up career-v1-9
+[2026-10-29 18_53_12_086][1333][Script] [Career.Delivery] accepting career-v1-10 feeCents=275
+[2026-10-29 18_53_12_087][1333][Script] [Career.Delivery] picked up career-v1-10
+[2026-10-29 18_53_12_087][1333][Script] [Career.Engagements] credited career-v1-10 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_088][1333][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 18_53_12_088][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_12_089][1333][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 18_53_12_090][1333][Script] [Career.Store] loaded revision=38 day=2 cashCents=9521 orders=0
+[2026-10-29 18_53_12_090][1333][Script] [Career.Engagements] accepted engagement:v1:cousin_reply orderWatermark=11
+[2026-10-29 18_53_12_091][1333][Script] [Career.Engagements] visited park
+[2026-10-29 18_53_12_091][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_12_091][1333][Script] [Career.Engagements] visited convenience
+[2026-10-29 18_53_12_093][1333][Script] [Career.Store] loaded revision=40 day=2 cashCents=9521 orders=0
+[2026-10-29 18_53_12_093][1333][Script] [Career.Engagements] visited park
+[2026-10-29 18_53_12_094][1333][Script] [Career.Engagements] claimed engagement:v1:cousin_reply rewardCents=800
+[2026-10-29 18_53_12_095][1333][Script] [Career.Engagements] accepted engagement:v1:mechanic_balance orderWatermark=11
+[2026-10-29 18_53_12_099][1333][Script] [Career.Delivery] accepting career-v1-11 feeCents=275
+[2026-10-29 18_53_12_099][1333][Script] [Career.Delivery] picked up career-v1-11
+[2026-10-29 18_53_12_106][1333][Script] [Career.Delivery] accepting career-v1-12 feeCents=288
+[2026-10-29 18_53_12_107][1333][Script] [Career.Delivery] picked up career-v1-12
+[2026-10-29 18_53_12_113][1333][Script] [Career.Delivery] accepting career-v1-13 feeCents=290
+[2026-10-29 18_53_12_113][1333][Script] [Career.Delivery] picked up career-v1-13
+[2026-10-29 18_53_12_118][1333][Script] [Career.Delivery] accepting career-v1-14 feeCents=276
+[2026-10-29 18_53_12_119][1333][Script] [Career.Delivery] picked up career-v1-14
+[2026-10-29 18_53_12_119][1333][Script] [Career.Engagements] credited career-v1-14 -> engagement:v1:mechanic_balance
+[2026-10-29 18_53_12_120][1333][Script] [Career.Engagements] credited career-v1-13 -> engagement:v1:mechanic_balance
+[2026-10-29 18_53_12_127][1333][Script] [Career.Delivery] accepting career-v1-15 feeCents=283
+[2026-10-29 18_53_12_128][1333][Script] [Career.Delivery] picked up career-v1-15
+[2026-10-29 18_53_12_129][1333][Script] [Career.Engagements] credited career-v1-15 -> engagement:v1:mechanic_balance
+[2026-10-29 18_53_12_134][1333][Script] [Career.Delivery] accepting career-v1-16 feeCents=275
+[2026-10-29 18_53_12_134][1333][Script] [Career.Delivery] picked up career-v1-16
+[2026-10-29 18_53_12_135][1333][Script] [Career.Engagements] credited career-v1-16 -> engagement:v1:mechanic_balance
+[2026-10-29 18_53_12_141][1333][Script] [Career.Engagements] claimed engagement:v1:mechanic_balance rewardCents=2000
+[2026-10-29 18_53_12_143][1333][Script] [Career.Store] loaded revision=71 day=5 cashCents=3200 orders=0
+[2026-10-29 18_53_12_146][1333][Script] [Career.Store] loaded revision=72 day=5 cashCents=1200 orders=0
+[2026-10-29 18_53_12_146][1333][Script] [Career.Engagements] accepted engagement:v1:mechanic_balance orderWatermark=17
+[2026-10-29 18_53_12_148][1333][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_12_148][1333][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 18_53_12_148][1333][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 18_53_12_148][1333][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 18_53_12_149][1333][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=2
+[2026-10-29 18_53_12_152][1333][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 18_53_12_153][1333][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-29 18_53_12_153][1333][Script] [Career.Engagements] credited career-v1-2 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_153][1333][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 18_53_12_153][1333][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-29 18_53_12_154][1333][Script] [Career.Engagements] credited career-v1-2 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_154][1333][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 18_53_12_158][1333][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 18_53_12_158][1333][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 18_53_12_158][1333][Script] [Career.Engagements] credited career-v1-3 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_158][1333][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 18_53_12_164][1333][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 18_53_12_164][1333][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 18_53_12_165][1333][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_165][1333][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-29 18_53_12_173][1333][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 18_53_12_174][1333][Script] [Career.Store] loaded revision=14 day=1 cashCents=7834 orders=0
+[2026-10-29 18_53_12_174][1333][Script] [生活委托验收通过] 三条前置人物链/现场授权/新亲送与倒序来源去重/旧单模拟单迟到拒计/回访回信/训练后维生/整数分一次奖信/写失败原子回滚/旧档兼容/生产Deliver接线/全内存无云
+[2026-10-29 18_53_12_184][1333][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-29 18_53_12_184][1333][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-29 18_53_12_184][1333][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-29 18_53_12_185][1333][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-29 18_53_12_190][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_190][1333][Script] [生涯提示] 请先前往老街早餐店（2米内）
+[2026-10-29 18_53_12_204][1333][Script] [CareerActor] 仅测试/恢复 Teleport(-25.00,-8.00,0.0)，mounted=false
+[2026-10-29 18_53_12_210][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_210][1333][Script] [生涯提示] 请靠近老街早餐店（2米内）
+[2026-10-29 18_53_12_220][1333][Script] [CareerActor] 仅测试/恢复 Teleport(-25.00,-8.00,0.0)，mounted=false
+[2026-10-29 18_53_12_220][1333][Script] [Career.Engagements] accepted engagement:v1:breakfast_shift orderWatermark=2
+[2026-10-29 18_53_12_221][1333][Script] [生涯提示] 已接取：热早餐，要趁热送。接取委托后新接3份早餐店订单，亲自取送且未迟到；旧已接单、教学单和排班模拟单不计。最后回早餐店交付。
+[2026-10-29 18_53_12_226][1333][Script] [生涯提示] 此固定人物委托已接取，不能重复领取
+[2026-10-29 18_53_12_231][1333][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-29 18_53_12_232][1333][Script] [Career.Delivery] picked up car[2026-10-29 18_53_12_414][1333] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_415][1333] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_416][1333] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_416][1333] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_416][1333] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_458][1333] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_458][1333] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_458][1333] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_458][1333] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-29 18_53_12_459][1333] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+eer-v1-2
+[2026-10-29 18_53_12_232][1333][Script] [Career.Engagements] credited career-v1-2 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_232][1333][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-29 18_53_12_236][1333][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-29 18_53_12_236][1333][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-29 18_53_12_237][1333][Script] [Career.Engagements] credited career-v1-3 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_237][1333][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-29 18_53_12_241][1333][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-29 18_53_12_241][1333][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-29 18_53_12_241][1333][Script] [Career.Engagements] credited career-v1-4 -> engagement:v1:breakfast_shift
+[2026-10-29 18_53_12_241][1333][Script] [Career.Delivery] delivering career-v1-4 feeCents=275
+[2026-10-29 18_53_12_246][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_247][1333][Script] [生涯提示] 请先前往老街早餐店（2米内）
+[2026-10-29 18_53_12_258][1333][Script] [CareerActor] 仅测试/恢复 Teleport(-25.00,-8.00,0.0)，mounted=false
+[2026-10-29 18_53_12_258][1333][Script] [Career.Engagements] claimed engagement:v1:breakfast_shift rewardCents=1500
+[2026-10-29 18_53_12_259][1333][Script] [生涯提示] 已向早餐店站长交付；一次性谢礼15.00元，收到《站长的常跑名单》
+[2026-10-29 18_53_12_264][1333][Script] [生涯提示] 此委托已交付，奖金和信件只发一次
+[2026-10-29 18_53_12_271][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_271][1333][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-29 18_53_12_275][1333][Script] [CareerActor] 仅测试/恢复 Teleport(108.00,80.00,0.0)，mounted=false
+[2026-10-29 18_53_12_281][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_281][1333][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-29 18_53_12_287][1333][Script] [CareerActor] 仅测试/恢复 Teleport(108.00,80.00,0.0)，mounted=false
+[2026-10-29 18_53_12_288][1333][Script] [Career.Team] 显式签约；首轮履约后才发签约奖金
+[2026-10-29 18_53_12_288][1333][Script] [生涯提示] 已签约南城极速：新报名赛事完赛3场且至少1次领奖台，回车行领取1500元签约奖金。
+[2026-10-29 18_53_12_293][1333][Script] [生涯提示] 已有正式合同，请先履约领取赞助奖
+[2026-10-29 18_53_12_300][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-29 18_53_12_300][1333][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-29 18_53_12_311][1333][Script] [CareerActor] 仅测试/恢复 Teleport(108.00,80.00,0.0)，mounted=false
+[2026-10-29 18_53_12_312][1333][Script] [生涯提示] 本轮未达标：需3场符合等级的完赛、至少1次领奖台并完成合同积分目标
+[2026-10-29 18_53_12_316][1333][Script] [剧情UI入口验收通过] 生产Session actions/真实触摸取消确认/确认时现场重检/一次委托奖信/车队取消零副作用/签约位置snapshot桥接/未履约拒奖/内存禁云
+[2026-10-29 18_53_12_321][1333][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-29 18_53_12_323][1333][Script] [生涯] 场景与主流程已接通
+[2026-10-29 18_53_13_378][1389]INFO__VALIDATE_UPDATE__:false
+[2026-10-29 18_53_13_388][1389][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-29 18_53_13_388][1389][Script] [WorldStream] 卸载 -2:-1
+[2026-10-29 18_53_13_388][1389][Script] [WorldStream] 卸载 -1:-1
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 0:2
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 1:1
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 -1:-3
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 0:1
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 1:0
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 -2:-2
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 1:-1
+[2026-10-29 18_53_13_389][1389][Script] [WorldStream] 卸载 0:0
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 -1:2
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 2:0
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 -2:1
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 2:-1
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 -3:0
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 -1:1
+[2026-10-29 18_53_13_390][1389][Script] [WorldStream] 卸载 -3:-1
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 1:-2
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 0:-2
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 0:-3
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 -1:-2
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 -2:0
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 0:-1
+[2026-10-29 18_53_13_391][1389][Script] [WorldStream] 卸载 -1:0
