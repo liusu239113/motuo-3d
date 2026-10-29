@@ -429,8 +429,31 @@ function Checks.Shot(session,id)
         session.camera:SetModeConfig("normal",{distance=15,offset=Vector3(0,1.5,0),fov=65})
         session.camera:Update(2,a.node,session.yaw,session.pitch)
         passed(string.format("外区交通实拍%d车/%d人，真实Update生成后冻结",stats.cars,stats.people))
+    elseif view=="signal_red" or view=="signal_green" then
+        local Signals=require("Career.OuterSignals")
+        local junction=assert(Signals.Find(d.x,d.z),"信号实拍必须位于受控中心")
+        local seconds=((view=="signal_green" and 5 or 24)-junction.offset)%Signals.CYCLE
+        local signals=session.traffic.outer.signals --[[@as OuterSignalSystem]]
+        signals:Update(seconds,d.x,d.z,true)
+        a:Teleport(d.x+3,d.z-29,0); a:SyncVisuals(0)
+        session.yaw,session.pitch=0,12
+        session.camera:SetModeConfig("normal",{distance=12,offset=Vector3(0,1.5,0),fov=62})
+        session.camera:Update(2,a.node,session.yaw,session.pitch)
+        session:Refresh()
+        passed("实体信号受控实拍 "..view.." / 南北"..Signals.Signal(seconds,"ns",junction)
+            .." / 东西"..Signals.Signal(seconds,"ew",junction).." / 非墙钟猜帧")
     elseif view=="map" or view=="messages" or view=="progression" then
         session:OpenPhone(view)
+        if view=="map" then
+            for _,arg in ipairs(GetArguments()) do
+                local region=arg:match("^%-careerworldmap=(.+)$")
+                if region then
+                    session.view.mapDistrictId=region
+                    session.view.mapPickerOpen=region=="picker"
+                    session:RefreshPhone()
+                end
+            end
+        end
     elseif view~="street" then error("未知实拍视图："..view) end
     if view~="map" and view~="messages" and view~="progression" then session.view.overlay:SetVisible(false) end
     passed(string.format("实拍就绪 %s / %s / 人物(%.1f,%.1f)停稳 / Ensure550 / 正午 / 真实街区，仅隔离Session",id,view,a.x,a.z))
