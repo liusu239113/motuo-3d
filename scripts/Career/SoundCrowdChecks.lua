@@ -3,6 +3,7 @@ local Audio=require("Career.Audio")
 local Crowd=require("Career.Crowd")
 local Rig=require("Career.Rig")
 local Motion=require("Career.Locomotion")
+local Environment=require("Career.CityEnvironment")
 local C=require("Career.FootprintCollision")
 local Routes=require("Career.TrafficRoutes")
 local Checks={}
@@ -238,7 +239,11 @@ function Checks.Shot(session,name)
     local x,z,yaw=0,-20,0
     if name=="bridge" then x,z,yaw=-9,-89,0 end
     if name=="coast" then x,z,yaw=-548,-590,180 end
-    actor.mounted=false; actor.visuals:SetMounted(false); actor:Teleport(x,z,yaw); actor:SyncVisuals(0)
+    -- test Update不推进流式；摄影定位必须先加载与EnvironmentShot相同的实际地形。
+    session.city.stream:Ensure(x,z,550)
+    local height=Environment.Surface(x,z) or session.city:WalkSurface(x,z,0)
+    actor.mounted=false; actor.visuals:SetMounted(false)
+    actor:Teleport(x,z,yaw,height); actor:SyncVisuals(0)
     session.yaw,session.pitch=yaw,10
     session.camera:Update(2,actor.node,yaw,10)
     session.view:ClosePhone(); session.view:ShowGame(); session.view.overlay:SetVisible(false)

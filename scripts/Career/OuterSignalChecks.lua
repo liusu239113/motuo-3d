@@ -29,16 +29,16 @@ local function routeAt(j,axis)
 end
 ---@param outer table
 ---@param route table
----@param length number
+---@param id string
 ---@param sign number
 ---@param gap number
 ---@param j OuterSignalJunction
 ---@return OuterTrafficCar
-local function carAt(outer,route,length,sign,gap,j)
+local function carAt(outer,route,id,sign,gap,j)
     -- 真实Step必须使用真实车型ID与Assets归一化后的尺寸；不能把虚构
     -- signal_fixture或任意10m长度交给同源模型占地查询。10m×4m极限
     -- 包络仍由下方verifyScanTurns逐角点验证，不冒充一辆实际存在的车。
-    local id=length>6 and "truck" or "sedan"
+    assert(id=="sedan" or id=="truck","信号夹具车型必须显式指定真实sedan/truck")
     local node=Assets.Add(outer.root,id,nil,"distant")
     if id=="truck" then require("Career.VehicleContact").CompleteTruck(node) end
     local size=node:GetVar("VehicleSize"):GetVector3()
@@ -206,7 +206,7 @@ function Checks.Run(session)
                 local cross=route.axis=="ns" and junction.z or junction.x
                 assert(cross<route.start or cross>route.finish,"endpoint regression must stay a non-through route")
                 local sign=cross>route.finish and 1 or -1
-                local car=carAt(outer,route,10,sign,0,junction)
+                local car=carAt(outer,route,"truck",sign,0,junction)
                 local straight=route.finish-route.start
                 local arc=math.pi*route.radius
                 car.s=sign==1 and straight-1 or 2*straight+arc-1
@@ -246,7 +246,7 @@ function Checks.Run(session)
             local through=scannedRoute(outer,"equator")
             local centre=assert(Signals.Find(768,0))
             for _,sign in ipairs({1,-1}) do
-                local car=carAt(outer,through,10,sign,18,centre)
+                local car=carAt(outer,through,"truck",sign,18,centre)
                 outer.cars={car}; car.speed=6
                 outer.time=phaseTime(centre,"ew",21); signals:SetTime(outer.time)
                 advance(outer,6)
@@ -263,8 +263,8 @@ function Checks.Run(session)
             for _,axis in ipairs({"ns","ew"}) do
                 local route=routeAt(j,axis)
                 for _,sign in ipairs({1,-1}) do
-                    for _,length in ipairs({4.8,10}) do
-                        local car=carAt(outer,route,length,sign,18,j)
+                    for _,id in ipairs({"sedan","truck"}) do
+                        local car=carAt(outer,route,id,sign,18,j)
                         outer.cars={car}
                         assert(Outer.StaticFree(city,car),"fixture must be on a real unobstructed road")
                         outer.time=phaseTime(j,axis,21); signals:SetTime(outer.time)
@@ -298,14 +298,30 @@ function Checks.Run(session)
                 end
             end
             local ns,ew=routeAt(j,"ns"),routeAt(j,"ew")
-            local waiting=carAt(outer,ns,4.8,1,0,j)
-            local clearing=carAt(outer,ew,10,1,-1,j)
+            -- 停车余量内1个数值epsilon，StopGap仍必须钳到严格0，避免坐标
+            -- 相减得到8e-16正值让下面严格==0断言成为浮点假失败。
+            local waiting=carAt(outer,ns,"sedan",1,-Signals.EPSILON,j)
+            local clearing=carAt(outer,ew,"truck",1,-1,j)
             outer.cars={waiting,clearing}
             outer.time=phaseTime(j,"ns",0); signals:SetTime(outer.time)
             near(signals:Gap(waiting,outer.cars),0,"green must yield to committed cross traffic")
-            moveTo(clearing,j,1,-(Signals.StopOffset(j,"ew")+clearing.length/2+1))
+            -- 以真实车壳尾端布置：车头已过冲突框，但可见尾部仍压框内25cm。
+            -- moveTo的gap参是相对『停止线+半车长』，不是车心世界坐标。
+            local shell=require("Career.TrafficMotion").Shape(clearing)
+            local rearOffset=shell.x1-clearing.x -- 当前真实EW正向，车尾在-X
+            local conflictHalf=j.nsWidth/2
+            local tailAlong=conflictHalf-.25
+            local centreAlong=tailAlong-rearOffset
+            moveTo(clearing,j,1,-(Signals.StopOffset(j,"ew")+clearing.length/2+centreAlong))
+            local actualShell=require("Career.TrafficMotion").Shape(clearing)
+            near(actualShell.x1-j.x,tailAlong,"真实货车尾部夹具未压入冲突框25cm")
+            assert(actualShell.x2-j.x>conflictHalf and actualShell.x1-j.x<conflictHalf,
+                "真实货车应为车头已出框但可见车尾仍在框内")
             assert(signals:Gap(waiting,outer.cars)==0,"long tail still occupies conflict box")
-            moveTo(clearing,j,1,-(Signals.StopOffset(j,"ew")+clearing.length+30))
+            local clearedTail=conflictHalf+1
+            local clearedCentre=clearedTail-rearOffset
+            moveTo(clearing,j,1,-(Signals.StopOffset(j,"ew")+clearing.length/2+clearedCentre))
+            near(require("Career.TrafficMotion").Shape(clearing).x1-j.x,clearedTail,"真实车尾应离开冲突框1米")
             assert(signals:Gap(waiting,outer.cars)==math.huge,"cleared tail keeps intersection locked")
             local hint=signals:Hint(j.x+3,j.z-30,0)
             assert(hint and hint:find("绿灯"),"hint does not match current light")
