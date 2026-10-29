@@ -1,0 +1,1013 @@
+[2026-10-30 00_37_26_124][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_124][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_124][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_124][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_756][38] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_756][38] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_26_756][38] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_25_819][0] INFO: DownloadManager initialized
+[2026-10-30 00_37_25_820][0] INFO: a couple of Subsystems registered finish.
+[2026-10-30 00_37_25_821][0] INFO: Engine construct finish.
+[2026-10-30 00_37_26_086][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-30 00_37_26_102][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-30 00_37_26_102][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_37_26_738][38] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_37_28_009][97]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-30 00_37_28_013][97]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-30 00_37_28_013][97]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-30 00_37_28_015][97] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_37_29_390][123] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_37_29_395][123][Script] IsNetworkMode:    false
+[2026-10-30 00_37_29_412][123][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-30 00_37_29_412][123][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-30 00_37_29_412][123][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-30 00_37_29_412][123][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-30 00_37_29_415][123][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-30 00_37_29_936][123][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-30 00_37_30_301][123][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_37_30_305][123][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-30 00_37_30_312][123][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-30 00_37_30_312][123][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_37_30_320][123][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_37_30_451][123][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-30 00_37_30_452][123][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-30 00_37_30_453][124][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-30 00_37_33_143][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_37_33_143][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_37_33_143][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_33_143][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_33_143][168] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_33_174][169] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_37_33_174][169] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-30 00_37_33_205][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_37_33_205][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_33_205][170] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_33_236][171] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_37_33_236][171] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_37_38_384][245][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-30 00_37_38_384][245][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-30 00_37_38_384][245][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-30 00_37_38_384][245][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-30 00_37_38_384][245][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-30 00_37_38_384][245][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-30 00_37_38_384][245][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-30 00_37_38_431][245][Script] [City footprint] model/e799bc6c-0cef-5148-978f-9a41183cc268/Meshes/c531d52ef7284ea8ae32f415bfe4b98e.mdl / 18 low-wall strips
+[2026-10-30 00_37_38_433][245][Script] [City footprint] model/62f2b98b-631d-5438-94ed-5ed78d3984b0/Meshes/94b007f45c784751825b3e1b8e1e624a.mdl / 1 low-wall strips
+[2026-10-30 00_37_38_488][245][Script] [City footprint] model/ea4b7cae-42e1-5651-8edf-6ccadbbd2046/Meshes/863a459ef93647c88fe260263a9b2a1d.mdl / 3 low-wall strips
+[2026-10-30 00_37_39_063][245][Script] [老街街面] 门面5 / 0..1UV图层6 / 合批72 / 实体碰撞40 / 排水细节21；路面/导航未改
+[2026-10-30 00_37_39_275][245][Script] [海岸导航预热] 114固定节点 / 2535固定边 / 4目标反向树 / CPU 0.211586s；动态仅连起点
+[2026-10-30 00_37_39_279][245][Script] [城市环境] 桥下原点(0,-70)不动 / 岸丘4m / 27件海岸设施 / 开放海湾752m / 分块8m地形
+[2026-10-30 00_37_39_284][245][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_39_420][245][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_39_424][245][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_39_542][245][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_39_545][245][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_39_655][245][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_39_659][245][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_39_826][245][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_39_830][245][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_39_940][245][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_39_946][245][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_40_073][245][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_40_076][245][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_40_190][245][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_40_194][245][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_40_326][245][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_40_328][245][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-30 00_37_40_376][245][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-30 00_37_40_378][245][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-30 00_37_40_380][245][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-30 00_37_40_381][245][Script] [生涯城市] 33栋建筑 / 570批次 / 153884三角面 / 65招牌 / 130碰撞区域
+[2026-10-30 00_37_40_384][246][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_37_40_822][246][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_37_40_836][246][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_37_40_846][246][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_37_40_852][246][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_37_40_854][246][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_37_40_856][246][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_37_41_210][246][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_37_41_213][246][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_37_41_213][246][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_37_41_213][246][Script] [生涯音频] 已加载 traffic audio/sfx/career_distant_traffic_bed.ogg
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 bridge audio/sfx/career_bridge_wind_bed.ogg
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 sand audio/sfx/career_step_sand_natural.wav
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 sea audio/sfx/career_coastal_surf_bed.ogg
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 wood audio/sfx/career_step_wood_natural.wav
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 steps audio/sfx/career_step_concrete_natural.wav
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-30 00_37_41_214][246][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-30 00_37_42_160][246][Script] [VehicleFootprint] borrowed_ebike 25 referenced-triangle strips, local X[-0.462,0.496] Z[-1.010,0.964] (no enclosing-disc collision)
+[2026-10-30 00_37_42_164][246][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-30 00_37_42_194][246][Script] [WorldStream] 加载 -1:-1 / 13楼 / 6142面 / 12批
+[2026-10-30 00_37_42_239][246][Script] [WorldStream] 加载 0:-1 / 13楼 / 6252面 / 13批
+[2026-10-30 00_37_42_266][246][Script] [WorldStream] 加载 -1:0 / 12楼 / 5158面 / 13批
+[2026-10-30 00_37_42_295][246][Script] [WorldStream] 加载 0:0 / 12楼 / 5940面 / 13批
+[2026-10-30 00_37_42_344][246][Script] [WorldStream] 加载 -1:-2 / 16楼 / 11062面 / 15批
+[2026-10-30 00_37_42_393][246][Script] [WorldStream] 加载 0:-2 / 14楼 / 10452面 / 17批
+[2026-10-30 00_37_42_493][246][Script] [WorldStream] 加载 -2:-1 / 24楼 / 16464面 / 17批
+[2026-10-30 00_37_42_578][246][Script] [WorldStream] 加载 1:-1 / 24楼 / 16404面 / 17批
+[2026-10-30 00_37_42_655][246][Script] [WorldStream] 加载 -2:0 / 24楼 / 17682面 / 16批
+[2026-10-30 00_37_42_756][246][Script] [WorldStream] 加载 1:0 / 24楼 / 17534面 / 16批
+[2026-10-30 00_37_42_805][246][Script] [WorldStream] 加载 -1:1 / 16楼 / 10810面 / 15批
+[2026-10-30 00_37_42_853][246][Script] [WorldStream] 加载 0:1 / 14楼 / 10202面 / 17批
+[2026-10-30 00_37_42_920][246][Script] [WorldStream] 加载 -2:-2 / 14楼 / 10148面 / 18批
+[2026-10-30 00_37_42_967][246][Script] [WorldStream] 加载 1:-2 / 15楼 / 9686面 / 15批
+[2026-10-30 00_37_43_011][246][Script] [WorldStream] 加载 -2:1 / 15楼 / 9318面 / 16批
+[2026-10-30 00_37_43_057][246][Script] [WorldStream] 加载 1:1 / 15楼 / 9978面 / 16批
+[2026-10-30 00_37_43_067][246][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-30 00_37_43_085][246][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-30 00_37_43_102][246][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-30 00_37_43_136][246][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-30 00_37_43_159][246][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-30 00_37_43_178][246][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-30 00_37_43_195][246][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-30 00_37_43_206][246][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-30 00_37_43_208][246][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_43_331][246][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_43_335][246][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_43_467][246][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_43_470][246][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_43_599][246][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_43_603][246][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_43_743][246][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_43_746][246][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_43_874][246][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_43_877][246][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_44_016][246][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_44_019][246][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_37_44_144][246][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_37_44_148][246][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_37_44_289][246][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_37_44_292][246][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_37_44_459][246][Script] [VehicleFootprint] sedan 12 referenced-triangle strips, local X[-1.103,1.103] Z[-2.300,2.300] (no enclosing-disc collision)
+[2026-10-30 00_37_44_460][246][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_37_45_143][246][Script] [VehicleFootprint] suv 12 referenced-triangle strips, local X[-1.228,1.228] Z[-2.350,2.350] (no enclosing-disc collision)
+[2026-10-30 00_37_45_143][246][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_37_45_144][246][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_37_45_936][246][Script] [VehicleFootprint] truck 16 referenced-triangle strips, local X[-1.379,1.379] Z[-2.700,2.700] (no enclosing-disc collision)
+[2026-10-30 00_37_45_936][246][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_37_45_937][246][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_37_45_938][246][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_37_45_945][246][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_37_45_946][246][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_37_45_947][246][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_37_45_955][246][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_37_45_957][246][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_37_45_958][246][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_37_45_960][246][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_37_45_962][246][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_37_45_963][246][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_37_45_969][246][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_37_45_970][246][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_37_45_971][246][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_37_45_976][246][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_37_45_977][246][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-30 00_37_45_984][246][Script] [街道人群] 官方成人同骨架Idle/Walk；增量池20/硬上限24，无新大资产
+[2026-10-30 00_37_45_986][246][Script] [任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；6米光柱与地环，无碰撞
+[2026-10-30 00_37_45_986][246][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-30 00_37_46_009][246][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_37_46_012][246][Script] [UI] Root widget pointerEvents auto-set to "box-none" (prevents root from blocking game input). Set pointerEvents explicitly to suppress this message.
+[2026-10-30 00_37_46_012][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_018][246][Script] [手机全页文案验收] 桌面/640x360 / 9项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_018][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(410.000000000,142.000000000,63.000000000,85.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_019][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_46_025][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_025][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_026][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_028][246][Script] [手机布局触摸尺寸] career-app-map rect=(479.000000000,142.000000000,62.000000000,85.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_028][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_46_047][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_076][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_090][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_093][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(428.000000000,361.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_103][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_106][246][Script] [手机触摸尺寸] career-map-next hit=(511.000000000,1890.000000000,89.000000000,45.000000000) physical=(89.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_115][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_117][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,-1389.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_128][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_132][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(428.000000000,524.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_140][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_142][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_153][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_157][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(428.000000000,687.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_186][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_189][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_198][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_201][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(428.000000000,850.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_208][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_210][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_220][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_223][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(428.000000000,1013.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_231][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_233][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_243][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_246][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(428.000000000,1176.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_254][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_256][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_278][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_281][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(428.000000000,1339.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_295][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_297][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_308][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_311][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(428.000000000,1502.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_319][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_321][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_331][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_334][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(428.000000000,1665.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_341][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_344][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_354][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_357][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(428.000000000,1828.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_364][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_377][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_388][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_391][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(428.000000000,1991.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_403][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_406][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_46_406][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(428.000000000,307.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_416][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_419][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(428.000000000,2154.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_426][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_438][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_441][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(428.000000000,2317.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_448][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_460][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_475][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(428.000000000,2480.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_490][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_490][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_490][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_493][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(547.000000000,142.000000000,63.000000000,85.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_493][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_504][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_506][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(481.000000000,522.000000000,58.000000000,45.000000000) physical=(58.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_506][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_511][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_512][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(543.000000000,522.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_513][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_516][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(418.000000000,522.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_516][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_519][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(418.000000000,578.000000000,184.000000000,119.000000000) physical=(184.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_46_520][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_523][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_524][246][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,63.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_524][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_46_526][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_526][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_528][246][Script] [手机布局触摸尺寸] career-app-messages rect=(410.000000000,235.000000000,63.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_528][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_536][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_537][246][Script] [手机触摸尺寸] career-chat-cousin hit=(418.000000000,194.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_46_537][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_544][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_545][246][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,63.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_545][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_549][246][Script] [手机触摸尺寸] career-chat-station_master hit=(418.000000000,299.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_46_549][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_553][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_554][246][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,63.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_554][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_557][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(418.000000000,404.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_46_557][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_561][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_562][246][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,63.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_562][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_566][246][Script] [手机触摸尺寸] career-chat-journal hit=(418.000000000,509.000000000,184.000000000,125.000000000) physical=(184.000000000,125.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_46_566][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_569][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_569][246][Script] [手机触摸尺寸] career-phone-back hit=(410.000000000,63.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_569][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_46_571][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_572][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_574][246][Script] [手机布局触摸尺寸] career-app-life rect=(479.000000000,235.000000000,62.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_574][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_46_586][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_586][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_586][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_606][246][Script] [手机布局触摸尺寸] career-app-progression rect=(547.000000000,235.000000000,63.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_606][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_46_645][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_650][246][Script] [手机触摸尺寸] career-equipment-battery hit=(428.000000000,-6847.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_652][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_46_660][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(428.000000000,4496.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_660][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_46_677][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_678][246][Script] [手机布局触摸尺寸] career-phone-back rect=(410.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_678][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_680][246][Script] [手机布局触摸尺寸] career-phone-close rect=(558.000000000,63.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_681][246][Script] [手机布局验收通过] 640x360 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_46_681][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_685][246][Script] [手机全页文案验收] 桌面/960x540 / 9项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_685][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(685.000000000,220.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_685][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_46_690][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_690][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_690][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_46_692][246][Script] [手机布局触摸尺寸] career-app-map rect=(767.000000000,220.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_46_692][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_46_729][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_731][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_742][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_745][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(703.000000000,425.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_755][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_757][246][Script] [手机触摸尺寸] career-map-next hit=(805.000000000,1905.000000000,108.000000000,45.000000000) physical=(108.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_766][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_769][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,-1295.400000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_780][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_784][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(703.000000000,561.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_792][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_794][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_822][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_826][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(703.000000000,697.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_841][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_844][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_854][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_858][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(703.000000000,833.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_866][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_868][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_878][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_881][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(703.000000000,969.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_889][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_891][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_902][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_905][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(703.000000000,1105.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_932][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_935][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_945][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_948][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(703.000000000,1241.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_956][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_958][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_969][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_972][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(703.000000000,1377.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_979][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_982][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_46_992][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_46_995][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(703.000000000,1513.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_003][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_005][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_027][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_030][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(703.000000000,1649.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_045][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_047][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_058][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_061][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(703.000000000,1785.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_069][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_071][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_47_071][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(703.000000000,322.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_082][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_089][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(703.000000000,1921.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_101][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_114][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_118][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(703.000000000,2057.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_125][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_149][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_153][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(703.000000000,2193.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_166][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_166][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_167][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_47_169][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(849.000000000,220.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_169][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_47_176][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_177][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(769.000000000,491.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_178][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_47_186][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_188][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(845.000000000,491.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_189][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_47_192][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(693.000000000,491.000000000,72.000000000,45.000000000) physical=(72.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_192][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_47_196][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(693.000000000,547.000000000,224.000000000,119.000000000) physical=(224.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_47_196][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_47_196][246][Script] [生涯手机] 构建页面 wallet
+[2026-10-30 00_37_47_199][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_200][246][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,78.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_201][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_202][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_47_202][246][Script] [生涯手机] 构建页面 apps
+[2026-10-30 00_37_47_204][246][Script] [手机布局触摸尺寸] career-app-messages rect=(685.000000000,326.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_204][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_47_215][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_216][246][Script] [手机触摸尺寸] career-chat-cousin hit=(693.000000000,209.000000000,224.000000000,81.000000000) physical=(224.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_216][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_47_216][246][Script] [生涯手机] 构建页面 messages
+[2026-10-30 00_37_47_221][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_222][246][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,78.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_226][246][Script] [手机触摸尺寸] career-chat-station_master hit=(693.000000000,290.000000000,224.000000000,81.000000000) physical=(224.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_229][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_230][246][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,78.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_234][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(693.000000000,371.000000000,224.000000000,81.000000000) physical=(224.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_238][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_238][246][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,78.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_242][246][Script] [手机触摸尺寸] career-chat-journal hit=(693.000000000,452.000000000,224.000000000,105.000000000) physical=(224.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_244][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_245][246][Script] [手机触摸尺寸] career-phone-back hit=(685.000000000,78.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_247][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_271][246][Script] [手机布局触摸尺寸] career-app-life rect=(767.000000000,326.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_271][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_47_280][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_280][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_283][246][Script] [手机布局触摸尺寸] career-app-progression rect=(849.000000000,326.000000000,76.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_283][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_47_315][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_320][246][Script] [手机触摸尺寸] career-equipment-battery hit=(703.000000000,-6020.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_322][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_47_327][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(703.000000000,4200.000000000,204.000000000,45.000000000) physical=(204.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_328][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_47_346][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_346][246][Script] [手机布局触摸尺寸] career-phone-back rect=(685.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_349][246][Script] [手机布局触摸尺寸] career-phone-close rect=(873.000000000,78.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_350][246][Script] [手机布局验收通过] 960x540 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_47_353][246][Script] [手机全页文案验收] 桌面/1280x720 / 9项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_354][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(992.000000000,310.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_354][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_47_360][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_360][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_387][246][Script] [手机布局触摸尺寸] career-app-map rect=(1078.000000000,310.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_388][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_47_405][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_408][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_419][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_422][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(1010.000000000,515.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_432][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_435][246][Script] [手机触摸尺寸] career-map-next hit=(1118.000000000,1958.000000000,114.000000000,45.000000000) physical=(114.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_444][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_446][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,-1201.700000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_458][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_462][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(1010.000000000,651.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_470][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_473][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_496][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_501][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(1010.000000000,787.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_515][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_517][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_527][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_531][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(1010.000000000,923.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_538][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_541][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_550][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_554][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(1010.000000000,1059.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_562][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_564][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_575][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_578][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(1010.000000000,1195.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_603][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_605][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_615][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_619][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(1010.000000000,1331.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_626][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_628][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_638][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_642][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(1010.000000000,1467.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_649][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_651][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_661][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_665][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(1010.000000000,1603.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_673][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_675][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_697][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_700][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(1010.000000000,1739.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_715][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_717][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_728][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_731][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(1010.000000000,1875.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_738][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_741][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_47_741][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1010.000000000,375.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_750][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_754][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(1010.000000000,2011.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_762][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_775][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_778][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(1010.000000000,2147.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_786][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_812][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_815][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(1010.000000000,2283.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_830][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_830][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_833][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(1164.000000000,310.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_840][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_842][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1080.000000000,544.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_847][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_848][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(1160.000000000,544.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_852][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(1000.000000000,544.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_855][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(1000.000000000,600.000000000,236.000000000,119.000000000) physical=(236.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_47_858][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_859][246][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,131.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_861][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_863][246][Script] [手机布局触摸尺寸] career-app-messages rect=(992.000000000,416.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_872][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_874][246][Script] [手机触摸尺寸] career-chat-cousin hit=(1000.000000000,262.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_885][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_887][246][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,131.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_894][246][Script] [手机触摸尺寸] career-chat-station_master hit=(1000.000000000,343.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_900][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_902][246][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,131.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_912][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(1000.000000000,424.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_921][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_923][246][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,131.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_932][246][Script] [手机触摸尺寸] career-chat-journal hit=(1000.000000000,505.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_47_935][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_936][246][Script] [手机触摸尺寸] career-phone-back hit=(992.000000000,131.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_47_940][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_944][246][Script] [手机布局触摸尺寸] career-app-life rect=(1078.000000000,416.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_944][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_47_978][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_47_978][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_980][246][Script] [手机布局触摸尺寸] career-app-progression rect=(1164.000000000,416.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_47_980][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_48_013][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_019][246][Script] [手机触摸尺寸] career-equipment-battery hit=(1010.000000000,-5786.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_020][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_48_025][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(1010.000000000,4239.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_026][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_48_043][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_044][246][Script] [手机布局触摸尺寸] career-phone-back rect=(992.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_047][246][Script] [手机布局触摸尺寸] career-phone-close rect=(1192.000000000,131.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_048][246][Script] [手机布局验收通过] 1280x720 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_48_051][246][Script] [手机全页文案验收] 桌面/1568x994 / 9项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_052][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(1280.000000000,447.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_052][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_48_056][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_056][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_058][246][Script] [手机布局触摸尺寸] career-app-map rect=(1366.000000000,447.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_059][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_48_093][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_096][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_107][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_110][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(1298.000000000,652.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_122][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_126][246][Script] [手机触摸尺寸] career-map-next hit=(1406.000000000,2095.000000000,114.000000000,45.000000000) physical=(114.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_142][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_146][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,-1064.700000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_166][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_173][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(1298.000000000,788.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_188][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_191][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_219][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_226][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(1298.000000000,924.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_247][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_249][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_260][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_263][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(1298.000000000,1060.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_271][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_274][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_284][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_287][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(1298.000000000,1196.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_295][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_297][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_308][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_311][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(1298.000000000,1332.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_330][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_332][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_344][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_350][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(1298.000000000,1468.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_365][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_367][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_378][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_383][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(1298.000000000,1604.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_391][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_393][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_403][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_407][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(1298.000000000,1740.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_415][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_417][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_427][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_442][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(1298.000000000,1876.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_458][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_461][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_471][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_475][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(1298.000000000,2012.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_482][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_485][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_48_485][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(1298.000000000,512.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_495][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_500][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(1298.000000000,2148.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_508][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_520][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_524][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(1298.000000000,2284.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_531][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_559][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_563][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(1298.000000000,2420.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_580][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_580][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_583][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(1452.000000000,447.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_591][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_593][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1368.000000000,681.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_599][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_600][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(1448.000000000,681.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_604][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(1288.000000000,681.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_608][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(1288.000000000,737.000000000,236.000000000,119.000000000) physical=(236.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_48_611][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_612][246][Script] [手机触摸尺寸] career-phone-back hit=(1280.000000000,268.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_614][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_616][246][Script] [手机布局触摸尺寸] career-app-messages rect=(1280.000000000,553.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_623][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_624][246][Script] [手机触摸尺寸] career-chat-cousin hit=(1288.000000000,399.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_48_629][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_630][246][Script] [手机触摸尺寸] career-phone-back hit=(1280.000000000,268.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_634][246][Script] [手机触摸尺寸] career-chat-station_master hit=(1288.000000000,480.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_48_638][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_639][246][Script] [手机触摸尺寸] career-phone-back hit=(1280.000000000,268.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_643][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(1288.000000000,561.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_48_647][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_648][246][Script] [手机触摸尺寸] career-phone-back hit=(1280.000000000,268.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_652][246][Script] [手机触摸尺寸] career-chat-journal hit=(1288.000000000,642.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_48_654][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_655][246][Script] [手机触摸尺寸] career-phone-back hit=(1280.000000000,268.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_657][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_659][246][Script] [手机布局触摸尺寸] career-app-life rect=(1366.000000000,553.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_659][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_48_669][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_669][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_672][246][Script] [手机布局触摸尺寸] career-app-progression rect=(1452.000000000,553.000000000,80.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_672][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_48_725][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_731][246][Script] [手机触摸尺寸] career-equipment-battery hit=(1298.000000000,-5649.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_732][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_48_738][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(1298.000000000,4376.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_738][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_48_756][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_757][246][Script] [手机布局触摸尺寸] career-phone-back rect=(1280.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_760][246][Script] [手机布局触摸尺寸] career-phone-close rect=(1480.000000000,268.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_760][246][Script] [手机布局验收通过] 1568x994 安全边距0/0；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_48_761][246][Script] [Layout Warning] Overflow in 'Panel': children=252x182, container=252x175. Consider: flexShrink=1 on children, or increase container size.
+[2026-10-30 00_37_48_764][246][Script] [手机全页文案验收] 桌面/640x360 / 8项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_764][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(386.000000000,147.000000000,63.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_764][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_48_769][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_769][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_771][246][Script] [手机布局触摸尺寸] career-app-map rect=(455.000000000,147.000000000,62.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_48_771][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_48_807][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_809][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_819][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_823][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(404.000000000,379.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_832][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_835][246][Script] [手机触摸尺寸] career-map-next hit=(487.000000000,1923.000000000,89.000000000,45.000000000) physical=(89.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_844][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_846][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,-1371.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_858][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_861][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(404.000000000,542.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_870][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_872][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_882][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_885][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(404.000000000,705.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_911][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_913][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_923][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_927][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(404.000000000,868.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_934][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_936][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_946][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_950][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(404.000000000,1031.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_957][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_960][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_970][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_973][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(404.000000000,1194.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_981][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_983][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_48_993][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_48_996][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(404.000000000,1357.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_023][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_025][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_036][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_040][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(404.000000000,1520.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_047][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_049][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_059][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_062][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(404.000000000,1683.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_070][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_072][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_082][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_086][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(404.000000000,1846.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_093][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_095][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_105][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_119][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(404.000000000,2009.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_133][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_135][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_49_135][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(404.000000000,340.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_145][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_148][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(404.000000000,2172.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_155][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_167][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_171][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(404.000000000,2335.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_178][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_191][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_194][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(404.000000000,2498.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_202][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_202][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_205][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(523.000000000,147.000000000,63.000000000,84.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_212][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_231][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(457.000000000,555.000000000,58.000000000,45.000000000) physical=(58.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_237][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_238][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(519.000000000,555.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_241][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(394.000000000,555.000000000,59.000000000,45.000000000) physical=(59.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_244][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(394.000000000,611.000000000,184.000000000,119.000000000) physical=(184.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_49_247][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_248][246][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,96.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_250][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_252][246][Script] [手机布局触摸尺寸] career-app-messages rect=(386.000000000,238.000000000,63.000000000,83.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_258][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_259][246][Script] [手机触摸尺寸] career-chat-cousin hit=(394.000000000,227.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_264][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_265][246][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,96.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_269][246][Script] [手机触摸尺寸] career-chat-station_master hit=(394.000000000,332.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_273][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_273][246][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,96.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_277][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(394.000000000,437.000000000,184.000000000,105.000000000) physical=(184.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_281][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_281][246][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,96.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_285][246][Script] [手机触摸尺寸] career-chat-journal hit=(394.000000000,542.000000000,184.000000000,125.000000000) physical=(184.000000000,125.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_287][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_288][246][Script] [手机触摸尺寸] career-phone-back hit=(386.000000000,96.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_290][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_292][246][Script] [手机布局触摸尺寸] career-app-life rect=(455.000000000,238.000000000,62.000000000,83.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_292][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_49_302][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_302][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_305][246][Script] [手机布局触摸尺寸] career-app-progression rect=(523.000000000,238.000000000,63.000000000,83.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_305][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_49_356][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_367][246][Script] [手机触摸尺寸] career-equipment-battery hit=(404.000000000,-6844.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_370][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_49_377][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(404.000000000,4514.000000000,164.000000000,45.000000000) physical=(164.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_378][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_49_396][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_397][246][Script] [手机布局触摸尺寸] career-phone-back rect=(386.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_401][246][Script] [手机布局触摸尺寸] career-phone-close rect=(534.000000000,96.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_402][246][Script] [手机布局验收通过] 640x360 安全边距24/36；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_49_407][246][Script] [手机全页文案验收] 桌面/960x540 / 9项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_408][246][Script] [手机布局触摸尺寸] career-app-delivery rect=(679.000000000,243.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_408][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_49_412][246][Script] [手机全页文案验收] 多尺寸/delivery / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_412][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_415][246][Script] [手机布局触摸尺寸] career-app-map rect=(753.000000000,243.000000000,69.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_415][246][Script] [生涯手机] 构建页面 map
+[2026-10-30 00_37_49_433][246][Script] [手机全页文案验收] 多尺寸/map / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_435][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_446][246][Script] [手机全页文案验收] 多尺寸/map-picker-old_town / 78项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_450][246][Script] [手机触摸尺寸] career-map-region-old_town hit=(697.000000000,475.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_478][246][Script] [手机全页文案验收] 多尺寸/map-old_town / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_482][246][Script] [手机触摸尺寸] career-map-next hit=(789.000000000,1949.000000000,96.000000000,45.000000000) physical=(96.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_494][246][Script] [手机全页文案验收] 多尺寸/map-old_town-page2 / 44项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_498][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,-1273.950000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_510][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_market / 86项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_517][246][Script] [手机触摸尺寸] career-map-region-east_market hit=(697.000000000,638.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_526][246][Script] [手机全页文案验收] 多尺寸/map-east_market / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_530][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_543][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_garden / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_548][246][Script] [手机触摸尺寸] career-map-region-west_garden hit=(697.000000000,801.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_556][246][Script] [手机全页文案验收] 多尺寸/map-west_garden / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_559][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_571][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_campus / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_575][246][Script] [手机触摸尺寸] career-map-region-north_campus hit=(697.000000000,964.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_582][246][Script] [手机全页文案验收] 多尺寸/map-north_campus / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_585][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_610][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_yards / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_614][246][Script] [手机触摸尺寸] career-map-region-south_yards hit=(697.000000000,1127.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_628][246][Script] [手机全页文案验收] 多尺寸/map-south_yards / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_630][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_640][246][Script] [手机全页文案验收] 多尺寸/map-picker-canal_quarter / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_644][246][Script] [手机触摸尺寸] career-map-region-canal_quarter hit=(697.000000000,1290.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_651][246][Script] [手机全页文案验收] 多尺寸/map-canal_quarter / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_653][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_663][246][Script] [手机全页文案验收] 多尺寸/map-picker-cedar_town / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_667][246][Script] [手机触摸尺寸] career-map-region-cedar_town hit=(697.000000000,1453.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_674][246][Script] [手机全页文案验收] 多尺寸/map-cedar_town / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_677][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_686][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_tech / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_690][246][Script] [手机触摸尺寸] career-map-region-east_tech hit=(697.000000000,1616.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_698][246][Script] [手机全页文案验收] 多尺寸/map-east_tech / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_711][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_722][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_works / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_726][246][Script] [手机触摸尺寸] career-map-region-west_works hit=(697.000000000,1779.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_740][246][Script] [手机全页文案验收] 多尺寸/map-west_works / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_742][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_752][246][Script] [手机全页文案验收] 多尺寸/map-picker-north_lake / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_756][246][Script] [手机触摸尺寸] career-map-region-north_lake hit=(697.000000000,1942.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_763][246][Script] [手机全页文案验收] 多尺寸/map-north_lake / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_765][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_780][246][Script] [手机全页文案验收] 多尺寸/map-picker-south_station / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_785][246][Script] [手机触摸尺寸] career-map-region-south_station hit=(697.000000000,2105.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_793][246][Script] [手机全页文案验收] 多尺寸/map-south_station / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_795][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_49_795][246][Script] [手机触摸尺寸] career-map-region-toggle hit=(697.000000000,366.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_805][246][Script] [手机全页文案验收] 多尺寸/map-picker-east_orchard / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_808][246][Script] [手机触摸尺寸] career-map-region-east_orchard hit=(697.000000000,2268.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_833][246][Script] [手机全页文案验收] 多尺寸/map-east_orchard / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_845][246][Script] [手机全页文案验收] 多尺寸/map-picker-west_village / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_848][246][Script] [手机触摸尺寸] career-map-region-west_village hit=(697.000000000,2431.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_855][246][Script] [手机全页文案验收] 多尺寸/map-west_village / 35项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_867][246][Script] [手机全页文案验收] 多尺寸/map-picker-greenbelt / 77项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_871][246][Script] [手机触摸尺寸] career-map-region-greenbelt hit=(697.000000000,2594.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_878][246][Script] [手机全页文案验收] 多尺寸/map-greenbelt / 36项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_878][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_881][246][Script] [手机布局触摸尺寸] career-app-wallet rect=(828.000000000,243.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_889][246][Script] [手机全页文案验收] 多尺寸/wallet / 27项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_890][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(755.000000000,557.000000000,65.000000000,45.000000000) physical=(65.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_896][246][Script] [手机全页文案验收] 多尺寸/wallet-income / 24项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_897][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(824.000000000,557.000000000,64.000000000,45.000000000) physical=(64.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_900][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(687.000000000,557.000000000,64.000000000,45.000000000) physical=(64.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_904][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(687.000000000,613.000000000,201.000000000,119.000000000) physical=(201.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_49_907][246][Script] [手机全页文案验收] 多尺寸/wallet-detail / 13项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_907][246][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,122.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_909][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_911][246][Script] [手机布局触摸尺寸] career-app-messages rect=(679.000000000,349.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_918][246][Script] [手机全页文案验收] 多尺寸/messages / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_919][246][Script] [手机触摸尺寸] career-chat-cousin hit=(687.000000000,253.000000000,201.000000000,81.000000000) physical=(201.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_924][246][Script] [手机全页文案验收] 多尺寸/chat-cousin / 18项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_925][246][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,122.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_948][246][Script] [手机触摸尺寸] career-chat-station_master hit=(687.000000000,334.000000000,201.000000000,81.000000000) physical=(201.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_951][246][Script] [手机全页文案验收] 多尺寸/chat-station_master / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_952][246][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,122.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_955][246][Script] [手机触摸尺寸] career-chat-mechanic hit=(687.000000000,415.000000000,201.000000000,105.000000000) physical=(201.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_958][246][Script] [手机全页文案验收] 多尺寸/chat-mechanic / 14项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_959][246][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,122.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_962][246][Script] [手机触摸尺寸] career-chat-journal hit=(687.000000000,520.000000000,201.000000000,105.000000000) physical=(201.000000000,105.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_49_965][246][Script] [手机全页文案验收] 多尺寸/chat-journal / 7项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_965][246][Script] [手机触摸尺寸] career-phone-back hit=(679.000000000,122.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_49_967][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_969][246][Script] [手机布局触摸尺寸] career-app-life rect=(753.000000000,349.000000000,69.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_969][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_49_979][246][Script] [手机全页文案验收] 多尺寸/life / 38项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_49_979][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_981][246][Script] [手机布局触摸尺寸] career-app-progression rect=(828.000000000,349.000000000,68.000000000,98.000000000) scale=1.000000000000
+[2026-10-30 00_37_49_981][246][Script] [生涯手机] 构建页面 progression
+[2026-10-30 00_37_50_015][246][Script] [手机全页文案验收] 多尺寸/progression / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_50_020][246][Script] [手机触摸尺寸] career-equipment-battery hit=(697.000000000,-6216.000000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_022][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_50_022][246][Script] [生涯提示] 请先前往车行前台（2米内）
+[2026-10-30 00_37_50_027][246][Script] [手机触摸尺寸] career-motorcycle-rally_3 hit=(697.000000000,4339.500000000,181.000000000,45.000000000) physical=(181.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_057][246][Script] [手机全页文案验收] 多尺寸/progression-bottom / 137项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_50_064][246][Script] [手机布局触摸尺寸] career-phone-back rect=(679.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_50_067][246][Script] [手机布局触摸尺寸] career-phone-close rect=(844.000000000,122.000000000,52.000000000,45.000000000) scale=1.000000000000
+[2026-10-30 00_37_50_067][246][Script] [手机布局验收通过] 960x540 安全边距32/48；六应用无滚动/44px真实命中/框孔包含/固定返回/Destroy
+[2026-10-30 00_37_50_072][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1828.000000000,728.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_075][246][Script] [手机触摸尺寸] career-wallet-filter-all hit=(1748.000000000,728.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_079][246][Script] [手机触摸尺寸] career-wallet-entry-1 hit=(1748.000000000,784.000000000,236.000000000,119.000000000) physical=(236.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_50_081][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_085][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_088][246][Script] [手机触摸尺寸] career-app-messages hit=(1740.000000000,600.000000000,80.000000000,98.000000000) physical=(80.000000000,98.000000000) scale=1.000000000000 configuredH=nil minH=74 minW=44
+[2026-10-30 00_37_50_092][246][Script] [手机触摸尺寸] career-chat-cousin hit=(1748.000000000,446.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_50_096][246][Script] [手机文字布局] career-chat-header-info rect=(1788.0,374.0,196.0,44.0)
+[2026-10-30 00_37_50_097][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_101][246][Script] [手机触摸尺寸] career-chat-cousin hit=(1748.000000000,446.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_50_105][246][Script] [手机触摸尺寸] career-chat-quick-life hit=(1748.000000000,1330.000000000,236.000000000,45.000000000) physical=(236.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_105][246][Script] [生涯手机] 构建页面 life
+[2026-10-30 00_37_50_108][246][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_37_50_109][246][Script] [Career.Delivery] accepting career-v1-1 feeCents=500
+[2026-10-30 00_37_50_109][246][Script] [Career.Delivery] picked up career-v1-1
+[2026-10-30 00_37_50_109][246][Script] [Career.Delivery] delivering career-v1-1 feeCents=500
+[2026-10-30 00_37_50_114][246][Script] [Career.Delivery] accepting career-v1-2 feeCents=276
+[2026-10-30 00_37_50_114][246][Script] [Career.Delivery] picked up career-v1-2
+[2026-10-30 00_37_50_115][246][Script] [Career.Delivery] delivering career-v1-2 feeCents=276
+[2026-10-30 00_37_50_119][246][Script] [Career.Delivery] accepting career-v1-3 feeCents=283
+[2026-10-30 00_37_50_119][246][Script] [Career.Delivery] picked up career-v1-3
+[2026-10-30 00_37_50_120][246][Script] [Career.Delivery] delivering career-v1-3 feeCents=283
+[2026-10-30 00_37_50_137][246][Script] [手机触摸尺寸] career-wallet-filter-income hit=(1828.000000000,728.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_142][246][Script] [手机触摸尺寸] career-wallet-filter-expense hit=(1908.000000000,728.000000000,76.000000000,45.000000000) physical=(76.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_147][246][Script] [手机触摸尺寸] career-wallet-entry-5 hit=(1748.000000000,784.000000000,236.000000000,119.000000000) physical=(236.000000000,119.000000000) scale=1.000000000000 configuredH=nil minH=86 minW=nil
+[2026-10-30 00_37_50_150][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_155][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_160][246][Script] [手机触摸尺寸] career-app-messages hit=(1740.000000000,600.000000000,80.000000000,98.000000000) physical=(80.000000000,98.000000000) scale=1.000000000000 configuredH=nil minH=74 minW=44
+[2026-10-30 00_37_50_167][246][Script] [手机触摸尺寸] career-chat-journal hit=(1748.000000000,689.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) sca[2026-10-30 00_37_50_379][246] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_379][246] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT FLOAT_TEXTURE INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL METALLIC NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z ROUGHNESS SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIRLIGHT ENVCUBE PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_380][246] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_416][246] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_417][246] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_417][246] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_417][246] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_417][246] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_37_50_417][246] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+le=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_50_170][246][Script] [手机触摸尺寸] career-phone-back hit=(1740.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_192][246][Script] [手机触摸尺寸] career-chat-station_master hit=(1748.000000000,527.000000000,236.000000000,81.000000000) physical=(236.000000000,81.000000000) scale=1.000000000000 configuredH=nil minH=78 minW=nil
+[2026-10-30 00_37_50_199][246][Script] [手机全页文案验收] 联系人可接取长文 / 15项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_50_200][246][Script] [手机触摸尺寸] career-engagement-breakfast_shift hit=(1758.000000000,833.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_200][246][Script] [生涯提示] 请先前往老街早餐店（2米内）
+[2026-10-30 00_37_50_209][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_50_212][246][Script] [手机触摸尺寸] career-online hit=(1890.000000000,454.000000000,86.000000000,45.000000000) physical=(86.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_214][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_50_222][246][Script] [手机文字布局] career-delivery-online-label rect=(1756.0,464.0,129.0,25.0)
+[2026-10-30 00_37_50_224][246][Script] [手机触摸尺寸] career-accept hit=(1758.000000000,842.000000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_226][246][Script] [Career.Delivery] accepting career-v1-4 feeCents=275
+[2026-10-30 00_37_50_226][246][Script] [生涯提示] 已接单，请到老街早餐店取餐
+[2026-10-30 00_37_50_227][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_50_237][246][Script] [手机全页文案验收] 配送待取餐长文 / 26项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_50_239][246][Script] [手机触摸尺寸] career-order-interact hit=(1758.000000000,674.630000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_240][246][Script] [生涯提示] 请靠近交互点（2米内）
+[2026-10-30 00_37_50_240][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_50_245][246][Script] [手机触摸尺寸] career-order-navigation hit=(1758.000000000,520.930000000,216.000000000,45.000000000) physical=(216.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_246][246][Script] [Career.Delivery] picked up career-v1-4
+[2026-10-30 00_37_50_247][246]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_37_50_247][246][Script] [生涯手机] 构建页面 delivery
+[2026-10-30 00_37_50_254][246][Script] [手机全页文案验收] 配送已取餐长文 / 26项 / 真实字体测宽测高/父边界/无缩字
+[2026-10-30 00_37_50_256][246][Script] [手机触摸尺寸] career-phone-close hit=(1940.000000000,315.000000000,52.000000000,45.000000000) physical=(52.000000000,45.000000000) scale=1.000000000000 configuredH=45.0 minH=45.0 minW=45.0
+[2026-10-30 00_37_50_256][246][Script] [手机应用验收通过] 真触摸会话/已读/左右气泡/真实剧情/业务引导/钱包初始空态/收支筛选/账单详情/听单/接单/取送导航；现场二次授权；内存写入16次，云0次
+[2026-10-30 00_37_50_259][246][Script] [城市体验专项完成] 指定专项已执行；具体结果见各模块断言
+[2026-10-30 00_37_50_259][246][Script] [生涯] 场景与主流程已接通
+[2026-10-30 00_37_52_350][363]INFO__VALIDATE_UPDATE__:false
+[2026-10-30 00_37_52_362][363][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_37_52_362][363][Script] [WorldStream] 卸载 0:-1
+[2026-10-30 00_37_52_363][363][Script] [WorldStream] 卸载 1:-1
+[2026-10-30 00_37_52_363][363][Script] [WorldStream] 卸载 1:-2
+[2026-10-30 00_37_52_363][363][Script] [WorldStream] 卸载 0:-2
+[2026-10-30 00_37_52_364][363][Script] [WorldStream] 卸载 0:-3
+[2026-10-30 00_37_52_364][363][Script] [WorldStream] 卸载 -1:-2
+[2026-10-30 00_37_52_364][363][Script] [WorldStream] 卸载 -2:-2
+[2026-10-30 00_37_52_364][363][Script] [WorldStream] 卸载 -1:1
+[2026-10-30 00_37_52_365][363][Script] [WorldStream] 卸载 -2:1
+[2026-10-30 00_37_52_365][363][Script] [WorldStream] 卸载 -2:0
+[2026-10-30 00_37_52_365][363][Script] [WorldStream] 卸载 -1:0
+[2026-10-30 00_37_52_366][363][Script] [WorldStream] 卸载 1:0
+[2026-10-30 00_37_52_366][363][Script] [WorldStream] 卸载 0:0
+[2026-10-30 00_37_52_366][363][Script] [WorldStream] 卸载 2:0
+[2026-10-30 00_37_52_366][363][Script] [WorldStream] 卸载 -1:-3
+[2026-10-30 00_37_52_366][363][Script] [WorldStream] 卸载 -1:2
+[2026-10-30 00_37_52_367][363][Script] [WorldStream] 卸载 0:2
+[2026-10-30 00_37_52_367][363][Script] [WorldStream] 卸载 -3:0
+[2026-10-30 00_37_52_367][363][Script] [WorldStream] 卸载 0:1
+[2026-10-30 00_37_52_367][363][Script] [WorldStream] 卸载 1:1
+[2026-10-30 00_37_52_367][363][Script] [WorldStream] 卸载 2:-1
+[2026-10-30 00_37_52_368][363][Script] [WorldStream] 卸载 -3:-1
+[2026-10-30 00_37_52_368][363][Script] [WorldStream] 卸载 -2:-1
+[2026-10-30 00_37_52_368][363][Script] [WorldStream] 卸载 -1:-1

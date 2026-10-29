@@ -1,0 +1,195 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 251304,
+    "frames_completed": 240,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 231.901ms (threshold: 100ms)",
+                    "frame": 28
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 447.829ms (threshold: 100ms)",
+                    "frame": 29
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 213.711ms (threshold: 100ms)",
+                    "frame": 30
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 215.182ms (threshold: 100ms)",
+                    "frame": 35
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 218.623ms (threshold: 100ms)",
+                    "frame": 37
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 448.097ms (threshold: 100ms)",
+                    "frame": 38
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 257.072ms (threshold: 100ms)",
+                    "frame": 47
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 137.022ms (threshold: 100ms)",
+                    "frame": 48
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 435.467ms (threshold: 100ms)",
+                    "frame": 56
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 215.111ms (threshold: 100ms)",
+                    "frame": 57
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 206.374ms (threshold: 100ms)",
+                    "frame": 58
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 581.672ms (threshold: 100ms)",
+                    "frame": 74
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 630.994ms (threshold: 100ms)",
+                    "frame": 78
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 274.213ms (threshold: 100ms)",
+                    "frame": 79
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 364.739ms (threshold: 100ms)",
+                    "frame": 80
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 444.888ms (threshold: 100ms)",
+                    "frame": 92
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 432.339ms (threshold: 100ms)",
+                    "frame": 96
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2064.85ms (threshold: 100ms)",
+                    "frame": 123
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 235579ms (threshold: 100ms)",
+                    "frame": 124
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 119.123ms (threshold: 100ms)",
+                    "frame": 135
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 5411,
+            "component_count": 2301,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1059.1519775390626
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.61400032043457
+        },
+        {
+            "frame": 120,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.617000579833986
+        },
+        {
+            "frame": 240,
+            "phase": "run",
+            "nodes": 524,
+            "components": 432,
+            "hash": 2938864324,
+            "frame_time_ms": 16.610000610351564
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 235578.578125,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 4,
+        "SkyLightCapture": 1,
+        "Light": 24,
+        "ProceduralSky": 1,
+        "Skybox": 1,
+        "CustomGeometry": 1125,
+        "StaticModel": 800,
+        "Text3D": 292,
+        "AnimatedModel": 38,
+        "SoundSource": 13
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 20,
+        "total_errors": 20
+    }
+}

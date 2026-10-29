@@ -1,0 +1,392 @@
+[2026-10-30 00_41_28_996][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_28_996][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_28_996][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_28_996][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_29_429][26] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_29_429][26] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_29_429][26] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_41_28_657][0] INFO: DownloadManager initialized
+[2026-10-30 00_41_28_658][0] INFO: a couple of Subsystems registered finish.
+[2026-10-30 00_41_28_659][0] INFO: Engine construct finish.
+[2026-10-30 00_41_28_954][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-30 00_41_28_969][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-30 00_41_28_970][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_41_29_411][26] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_41_30_063][47]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-30 00_41_30_067][47]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-30 00_41_30_067][47]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-30 00_41_30_070][47] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_41_31_423][73] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_41_31_427][73][Script] IsNetworkMode:    false
+[2026-10-30 00_41_31_443][73][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-30 00_41_31_443][73][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-30 00_41_31_443][73][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-30 00_41_31_443][73][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-30 00_41_31_446][73][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-30 00_41_31_872][73][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-30 00_41_32_327][73][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_41_32_331][73][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-30 00_41_32_338][73][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-30 00_41_32_338][73][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_41_32_345][73][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_32_480][73][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-30 00_41_32_481][73][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-30 00_41_32_482][74][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-30 00_41_35_035][118] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_41_35_035][118] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_41_35_035][118] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_35_035][118] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_35_035][118] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_35_292][119] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_41_35_292][119] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-30 00_41_35_429][120] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_41_35_429][120] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_35_429][120] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_35_449][121] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_41_35_449][121] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_41_40_437][195][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-30 00_41_40_437][195][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-30 00_41_40_437][195][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-30 00_41_40_437][195][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-30 00_41_40_437][195][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-30 00_41_40_437][195][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-30 00_41_40_437][195][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-30 00_41_40_484][195][Script] [City footprint] model/e799bc6c-0cef-5148-978f-9a41183cc268/Meshes/c531d52ef7284ea8ae32f415bfe4b98e.mdl / 18 low-wall strips
+[2026-10-30 00_41_40_485][195][Script] [City footprint] model/62f2b98b-631d-5438-94ed-5ed78d3984b0/Meshes/94b007f45c784751825b3e1b8e1e624a.mdl / 1 low-wall strips
+[2026-10-30 00_41_40_542][195][Script] [City footprint] model/ea4b7cae-42e1-5651-8edf-6ccadbbd2046/Meshes/863a459ef93647c88fe260263a9b2a1d.mdl / 3 low-wall strips
+[2026-10-30 00_41_41_116][195][Script] [老街街面] 门面5 / 0..1UV图层6 / 合批72 / 实体碰撞40 / 排水细节21；路面/导航未改
+[2026-10-30 00_41_41_306][195][Script] [海岸导航预热] 114固定节点 / 2535固定边 / 4目标反向树 / CPU 0.189462s；动态仅连起点
+[2026-10-30 00_41_41_311][195][Script] [城市环境] 桥下原点(0,-70)不动 / 岸丘4m / 27件海岸设施 / 开放海湾752m / 分块8m地形
+[2026-10-30 00_41_41_316][195][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_41_458][195][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_41_462][195][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_41_623][195][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_41_627][195][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_41_734][195][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_41_738][195][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_41_899][195][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_41_903][195][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_42_010][195][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_42_014][195][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_42_151][195][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_42_155][195][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_42_267][195][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_42_271][195][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_42_393][195][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_42_395][195][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-30 00_41_42_443][195][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-30 00_41_42_445][195][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-30 00_41_42_448][195][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-30 00_41_42_448][195][Script] [生涯城市] 33栋建筑 / 570批次 / 153884三角面 / 65招牌 / 130碰撞区域
+[2026-10-30 00_41_42_452][196][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_41_42_902][196][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_41_42_916][196][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_41_42_926][196][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_41_42_932][196][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_41_42_934][196][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_41_42_936][196][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_41_43_290][196][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_41_43_293][196][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_41_43_294][196][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 wood audio/sfx/career_step_wood_natural.wav
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 bridge audio/sfx/career_bridge_wind_bed.ogg
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 sea audio/sfx/career_coastal_surf_bed.ogg
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 traffic audio/sfx/career_distant_traffic_bed.ogg
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 sand audio/sfx/career_step_sand_natural.wav
+[2026-10-30 00_41_43_294][196][Script] [生涯音频] 已加载 steps audio/sfx/career_step_concrete_natural.wav
+[2026-10-30 00_41_44_200][196][Script] [VehicleFootprint] borrowed_ebike 25 referenced-triangle strips, local X[-0.462,0.496] Z[-1.010,0.964] (no enclosing-disc collision)
+[2026-10-30 00_41_44_205][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-30 00_41_44_240][196][Script] [WorldStream] 加载 -1:-1 / 13楼 / 6142面 / 12批
+[2026-10-30 00_41_44_284][196][Script] [WorldStream] 加载 0:-1 / 13楼 / 6252面 / 13批
+[2026-10-30 00_41_44_310][196][Script] [WorldStream] 加载 -1:0 / 12楼 / 5158面 / 13批
+[2026-10-30 00_41_44_340][196][Script] [WorldStream] 加载 0:0 / 12楼 / 5940面 / 13批
+[2026-10-30 00_41_44_390][196][Script] [WorldStream] 加载 -1:-2 / 16楼 / 11062面 / 15批
+[2026-10-30 00_41_44_437][196][Script] [WorldStream] 加载 0:-2 / 14楼 / 10452面 / 17批
+[2026-10-30 00_41_44_529][196][Script] [WorldStream] 加载 -2:-1 / 24楼 / 16464面 / 17批
+[2026-10-30 00_41_44_605][196][Script] [WorldStream] 加载 1:-1 / 24楼 / 16404面 / 17批
+[2026-10-30 00_41_44_706][196][Script] [WorldStream] 加载 -2:0 / 24楼 / 17682面 / 16批
+[2026-10-30 00_41_44_821][196][Script] [WorldStream] 加载 1:0 / 24楼 / 17534面 / 16批
+[2026-10-30 00_41_44_873][196][Script] [WorldStream] 加载 -1:1 / 16楼 / 10810面 / 15批
+[2026-10-30 00_41_44_924][196][Script] [WorldStream] 加载 0:1 / 14楼 / 10202面 / 17批
+[2026-10-30 00_41_44_992][196][Script] [WorldStream] 加载 -2:-2 / 14楼 / 10148面 / 18批
+[2026-10-30 00_41_45_039][196][Script] [WorldStream] 加载 1:-2 / 15楼 / 9686面 / 15批
+[2026-10-30 00_41_45_083][196][Script] [WorldStream] 加载 -2:1 / 15楼 / 9318面 / 16批
+[2026-10-30 00_41_45_129][196][Script] [WorldStream] 加载 1:1 / 15楼 / 9978面 / 16批
+[2026-10-30 00_41_45_139][196][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-30 00_41_45_158][196][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-30 00_41_45_175][196][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-30 00_41_45_209][196][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-30 00_41_45_231][196][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-30 00_41_45_250][196][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-30 00_41_45_266][196][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-30 00_41_45_278][196][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-30 00_41_45_279][196][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_45_400][196][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_45_404][196][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_45_532][196][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_45_535][196][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_45_659][196][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_45_663][196][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_45_790][196][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_45_793][196][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_45_913][196][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_45_917][196][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_46_054][196][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_46_059][196][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_41_46_193][196][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_41_46_197][196][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_41_46_316][196][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_41_46_318][196][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_41_46_547][196][Script] [VehicleFootprint] sedan 12 referenced-triangle strips, local X[-1.103,1.103] Z[-2.300,2.300] (no enclosing-disc collision)
+[2026-10-30 00_41_46_548][196][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_41_47_268][196][Script] [VehicleFootprint] suv 12 referenced-triangle strips, local X[-1.228,1.228] Z[-2.350,2.350] (no enclosing-disc collision)
+[2026-10-30 00_41_47_269][196][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_41_47_270][196][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_41_47_909][196][Script] [VehicleFootprint] truck 16 referenced-triangle strips, local X[-1.379,1.379] Z[-2.700,2.700] (no enclosing-disc collision)
+[2026-10-30 00_41_47_910][196][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_41_47_911][196][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_41_47_911][196][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_41_47_917][196][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_41_47_917][196][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_41_47_918][196][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_41_47_924][196][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_41_47_926][196][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_41_47_927][196][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_41_47_929][196][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_41_47_930][196][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_41_47_931][196][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_41_47_953][196][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_41_47_955][196][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_41_47_955][196][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_41_47_960][196][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_41_47_961][196][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-30 00_41_47_968][196][Script] [街道人群] 官方成人同骨架Idle/Walk；增量池20/硬上限24，无新大资产
+[2026-10-30 00_41_47_970][196][Script] [任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；6米光柱与地环，无碰撞
+[2026-10-30 00_41_47_970][196][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-30 00_41_47_996][196][Script] [邻里订单签名] Lua=Lua 5.4 templates=24 got=2567365835 expected=2567365835 bytes=3803 expectedBytes=3803
+[2026-10-30 00_41_49_560][196][Script] [海岸导航缓存验收] 首建CPU 0.189462s / 114固定节点 / 2535边 / 100次动态查询及全路径复核CPU 0.428546s（非手机性能结论）
+[2026-10-30 00_41_49_588][196][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_49_592][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,-180.0)，mounted=false
+[2026-10-30 00_41_50_075][196][Script] [环境phase开始] walk-out 起点(0.00,-20.00)，全程Actor.Update/真实视觉，不传送跨段
+[2026-10-30 00_41_50_075][196][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_42_02_032][196][Script] [环境连续行进] 步 segment2 到(0.00,-384.00) y=0.055
+[2026-10-30 00_42_15_257][196][Script] [环境连续行进] 步 segment3 到(-383.97,-384.00) y=0.055
+[2026-10-30 00_42_16_036][196][Script] [环境连续行进] 步 segment4 到(-400.00,-400.00) y=0.055
+[2026-10-30 00_42_18_460][196][Script] [环境连续行进] 步 segment5 到(-450.00,-450.00) y=4.000
+[2026-10-30 00_42_23_318][196][Script] [环境连续行进] 步 segment6 到(-548.00,-548.00) y=0.420
+[2026-10-30 00_42_27_090][196][Script] [环境连续行进] 步 segment7 到(-548.00,-659.97) y=0.420
+[2026-10-30 00_42_31_460][196][Script] [环境连续行进] 步 segment8 到(-676.00,-660.00) y=0.800
+[2026-10-30 00_42_31_460][196][Script] [环境phase通过] walk-out / 连续1219.90m / CPU 41.216s / Plan与31单不变；仅本phase，不代表其余phase通过
+[2026-10-30 00_42_31_463][196][Script] [CareerActor] 仅测试/恢复 Teleport(-676.00,-660.00,90.0)，mounted=false
+[2026-10-30 00_42_31_972][196][Script] [环境phase开始] walk-back 起点(-676.00,-660.00)，全程Actor.Update/真实视觉，不传送跨段
+[2026-10-30 00_42_36_318][196][Script] [环境连续行进] 步 segment2 到(-548.00,-660.00) y=0.420
+[2026-10-30 00_42_40[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader Shadow(FLOAT_TEXTURE RENDER_QUALITY=2 SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT FLOAT_TEXTURE INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL METALLIC NORMALMAP PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z ROUGHNESS SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE INSTANCED NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIRLIGHT ENVCUBE PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_961][196] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_9480dca3_6E8E8A3C(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL PBR PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile vertex shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_37_962][196] ERROR: Failed to compile pixel shader Generated/Surface/surface_sky_CFTWuV6aGwwQ9edqajji3xsF_a9acdf28_7427287C(ENVCUBE RENDER_QUALITY=2 REVERSED_Z VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_024][196] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_024][196] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-10-30 00_45_38_025][196] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT):
+shader compile skipped (graphics headless)
+_070][196][Script] [环境连续行进] 步 segment3 到(-548.00,-548.03) y=0.420
+[2026-10-30 00_42_44_740][196][Script] [环境连续行进] 步 segment4 到(-450.00,-450.00) y=4.000
+[2026-10-30 00_42_47_117][196][Script] [环境连续行进] 步 segment5 到(-400.00,-400.00) y=0.055
+[2026-10-30 00_42_47_838][196][Script] [环境连续行进] 步 segment6 到(-384.00,-384.00) y=0.055
+[2026-10-30 00_43_01_078][196][Script] [环境连续行进] 步 segment7 到(-0.03,-384.00) y=0.055
+[2026-10-30 00_43_13_795][196][Script] [环境连续行进] 步 segment8 到(-0.00,-20.00) y=0.055
+[2026-10-30 00_43_13_795][196][Script] [环境phase通过] walk-back / 连续1219.90m / CPU 41.706s / Plan与31单不变；仅本phase，不代表其余phase通过
+[2026-10-30 00_43_13_803][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,-180.0)，mounted=true
+[2026-10-30 00_43_14_380][196][Script] [环境phase开始] ride-out 起点(0.00,-20.00)，全程Actor.Update/真实视觉，不传送跨段
+[2026-10-30 00_43_14_384][196][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_43_36_261][196][Script] [环境连续行进] 骑 segment2 到(-0.00,-384.00) y=0.055
+[2026-10-30 00_44_01_388][196][Script] [环境连续行进] 骑 segment3 到(-384.00,-384.00) y=0.055
+[2026-10-30 00_44_02_758][196][Script] [环境连续行进] 骑 segment4 到(-399.99,-399.99) y=0.055
+[2026-10-30 00_44_06_350][196][Script] [环境连续行进] 骑 segment5 到(-450.00,-450.00) y=4.000
+[2026-10-30 00_44_13_827][196][Script] [环境连续行进] 骑 segment6 到(-548.00,-548.00) y=0.420
+[2026-10-30 00_44_19_691][196][Script] [环境连续行进] 骑 segment7 到(-548.00,-660.00) y=0.420
+[2026-10-30 00_44_26_888][196][Script] [环境连续行进] 骑 segment8 到(-676.00,-660.00) y=0.800
+[2026-10-30 00_44_26_888][196][Script] [环境phase通过] ride-out / 连续1219.93m / CPU 72.023s / Plan与31单不变；仅本phase，不代表其余phase通过
+[2026-10-30 00_44_26_893][196][Script] [CareerActor] 仅测试/恢复 Teleport(-676.00,-660.00,90.0)，mounted=true
+[2026-10-30 00_44_27_391][196][Script] [环境phase开始] ride-back 起点(-676.00,-660.00)，全程Actor.Update/真实视觉，不传送跨段
+[2026-10-30 00_44_33_794][196][Script] [环境连续行进] 骑 segment2 到(-548.00,-660.00) y=0.420
+[2026-10-30 00_44_39_539][196][Script] [环境连续行进] 骑 segment3 到(-548.00,-548.00) y=0.420
+[2026-10-30 00_44_46_550][196][Script] [环境连续行进] 骑 segment4 到(-450.00,-450.00) y=4.000
+[2026-10-30 00_44_50_123][196][Script] [环境连续行进] 骑 segment5 到(-400.02,-400.02) y=0.057
+[2026-10-30 00_44_51_229][196][Script] [环境连续行进] 骑 segment6 到(-384.00,-384.00) y=0.055
+[2026-10-30 00_45_15_864][196][Script] [环境连续行进] 骑 segment7 到(-0.00,-384.00) y=0.055
+[2026-10-30 00_45_37_270][196][Script] [环境连续行进] 骑 segment8 到(-0.00,-20.00) y=0.055
+[2026-10-30 00_45_37_270][196][Script] [环境phase通过] ride-back / 连续1219.93m / CPU 69.784s / Plan与31单不变；仅本phase，不代表其余phase通过
+[2026-10-30 00_45_37_270][196][Script] [环境phase开始] bridge-stream / 水域栈桥、坡上恢复、桥下交互、流式重载
+[2026-10-30 00_45_37_449][196][Script] [CareerActor] 仅测试/恢复 Teleport(-450.00,-450.00,0.0)，mounted=false
+[2026-10-30 00_45_37_461][196][Script] [WorldStream] 卸载 2:0
+[2026-10-30 00_45_37_461][196][Script] [WorldStream] 卸载 -1:2
+[2026-10-30 00_45_37_461][196][Script] [WorldStream] 卸载 2:-1
+[2026-10-30 00_45_37_462][196][Script] [WorldStream] 卸载 1:1
+[2026-10-30 00_45_37_462][196][Script] [WorldStream] 卸载 0:2
+[2026-10-30 00_45_37_480][196][Script] [WorldStream] 加载 -2:-3 / 4楼 / 2208面 / 15批
+[2026-10-30 00_45_37_495][196][Script] [WorldStream] 加载 -3:-2 / 4楼 / 2700面 / 15批
+[2026-10-30 00_45_37_529][196][Script] [WorldStream] 加载 -3:-3 / 0楼 / 6448面 / 11批
+[2026-10-30 00_45_37_540][196][Script] [WorldStream] 加载 -2:-4 / 2楼 / 1722面 / 15批
+[2026-10-30 00_45_37_553][196][Script] [WorldStream] 加载 -4:-2 / 3楼 / 2218面 / 15批
+[2026-10-30 00_45_37_571][196][Script] [WorldStream] 加载 -3:-4 / 0楼 / 2634面 / 5批
+[2026-10-30 00_45_37_585][196][Script] [WorldStream] 加载 -4:-3 / 0楼 / 2242面 / 2批
+[2026-10-30 00_45_37_624][196][Script] [WorldStream] 加载 -1:-4 / 6楼 / 1856面 / 16批
+[2026-10-30 00_45_37_638][196][Script] [WorldStream] 加载 -4:-1 / 7楼 / 2892面 / 16批
+[2026-10-30 00_45_37_652][196][Script] [WorldStream] 加载 -4:-4 / 0楼 / 2050面 / 2批
+[2026-10-30 00_45_37_660][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-30 00_45_37_664][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-85.00,0.0)，mounted=false
+[2026-10-30 00_45_37_665][196][Script] [生涯提示] 请先前往桥下落脚点（2米内）
+[2026-10-30 00_45_37_677][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-70.00,0.0)，mounted=false
+[2026-10-30 00_45_37_688][196][Script] [生涯提示] 免费休息至次日08:00，已本地保存
+[2026-10-30 00_45_37_691][196][Script] [WorldStream] 卸载 -1:1
+[2026-10-30 00_45_37_691][196][Script] [WorldStream] 卸载 1:0
+[2026-10-30 00_45_37_692][196][Script] [WorldStream] 卸载 1:-1
+[2026-10-30 00_45_37_692][196][Script] [WorldStream] 卸载 0:1
+[2026-10-30 00_45_37_700][196][Script] [WorldStream] 加载 -3:-5 / 0楼 / 1264面 / 5批
+[2026-10-30 00_45_37_709][196][Script] [WorldStream] 加载 -5:-3 / 0楼 / 1264面 / 5批
+[2026-10-30 00_45_37_716][196][Script] [WorldStream] 加载 -2:-5 / 1楼 / 1062面 / 15批
+[2026-10-30 00_45_37_726][196][Script] [WorldStream] 加载 -5:-2 / 3楼 / 1724面 / 15批
+[2026-10-30 00_45_37_733][196][Script] [WorldStream] 加载 -4:-5 / 0楼 / 1128面 / 5批
+[2026-10-30 00_45_37_766][196][Script] [WorldStream] 加载 -5:-4 / 0楼 / 1088面 / 5批
+[2026-10-30 00_45_37_767][196][Script] [WorldStream] 卸载 -3:-3
+[2026-10-30 00_45_37_799][196][Script] [WorldStream] 加载 -3:-3 / 0楼 / 6448面 / 11批
+[2026-10-30 00_45_37_799][196][Script] [环境phase通过] bridge-stream / 岸丘4m恢复、水域阻挡、桥下真实确认取消与免费过夜、流式重载 / 地形19602面、每块最多2450面；仅本phase
+[2026-10-30 00_45_37_799][196][Script] [环境全部phase通过] 步出1219.90m/步返1219.90m/骑出1219.93m/骑返1219.93m + bridge-stream / 31单不变 / 内存禁云
+[2026-10-30 00_45_37_805][196][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-30 00_45_37_807][196][Script] [城市体验专项完成] 指定专项已执行；具体结果见各模块断言
+[2026-10-30 00_45_37_807][196][Script] [生涯] 场景与主流程已接通
+[2026-10-30 00_45_38_029][197][Script] [WorldStream] 卸载 -5:-4
+[2026-10-30 00_45_38_045][198][Script] [WorldStream] 卸载 -4:-5
+[2026-10-30 00_45_38_062][199][Script] [WorldStream] 卸载 -5:-3
+[2026-10-30 00_45_38_078][200][Script] [WorldStream] 卸载 -3:-5
+[2026-10-30 00_45_38_095][201][Script] [WorldStream] 卸载 -4:-4
+[2026-10-30 00_45_38_112][202][Script] [WorldStream] 卸载 -5:-2
+[2026-10-30 00_45_38_128][203][Script] [WorldStream] 卸载 -2:-5
+[2026-10-30 00_45_38_145][204][Script] [WorldStream] 卸载 -4:-3
+[2026-10-30 00_45_38_161][205][Script] [WorldStream] 卸载 -3:-4
+[2026-10-30 00_45_38_265][206][Script] [WorldStream] 加载 1:-1 / 24楼 / 16404面 / 17批
+[2026-10-30 00_45_38_385][207][Script] [WorldStream] 加载 1:0 / 24楼 / 17534面 / 16批
+[2026-10-30 00_45_38_447][208][Script] [WorldStream] 加载 0:1 / 14楼 / 10202面 / 17批
+[2026-10-30 00_45_38_500][209][Script] [WorldStream] 加载 -1:1 / 16楼 / 10810面 / 15批
+[2026-10-30 00_45_38_572][210][Script] [WorldStream] 加载 1:1 / 15楼 / 9978面 / 16批
+[2026-10-30 00_45_38_594][211][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-30 00_45_38_617][212][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-30 00_45_38_635][213][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-30 00_45_38_655][214][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-30 00_45_40_289][313]INFO__VALIDATE_UPDATE__:false
+[2026-10-30 00_45_40_300][313][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_45_40_300][313][Script] [WorldStream] 卸载 -2:1
+[2026-10-30 00_45_40_300][313][Script] [WorldStream] 卸载 -1:1
+[2026-10-30 00_45_40_300][313][Script] [WorldStream] 卸载 0:-2
+[2026-10-30 00_45_40_301][313][Script] [WorldStream] 卸载 -1:2
+[2026-10-30 00_45_40_301][313][Script] [WorldStream] 卸载 -1:-4
+[2026-10-30 00_45_40_301][313][Script] [WorldStream] 卸载 -2:-3
+[2026-10-30 00_45_40_301][313][Script] [WorldStream] 卸载 -2:-4
+[2026-10-30 00_45_40_302][313][Script] [WorldStream] 卸载 -2:0
+[2026-10-30 00_45_40_302][313][Script] [WorldStream] 卸载 2:-1
+[2026-10-30 00_45_40_302][313][Script] [WorldStream] 卸载 -1:-3
+[2026-10-30 00_45_40_302][313][Script] [WorldStream] 卸载 -1:-2
+[2026-10-30 00_45_40_303][313][Script] [WorldStream] 卸载 2:0
+[2026-10-30 00_45_40_303][313][Script] [WorldStream] 卸载 1:-2
+[2026-10-30 00_45_40_303][313][Script] [WorldStream] 卸载 0:0
+[2026-10-30 00_45_40_304][313][Script] [WorldStream] 卸载 1:0
+[2026-10-30 00_45_40_304][313][Script] [WorldStream] 卸载 -1:0
+[2026-10-30 00_45_40_304][313][Script] [WorldStream] 卸载 -4:-1
+[2026-10-30 00_45_40_304][313][Script] [WorldStream] 卸载 -3:0
+[2026-10-30 00_45_40_304][313][Script] [WorldStream] 卸载 -1:-1
+[2026-10-30 00_45_40_305][313][Script] [WorldStream] 卸载 1:-1
+[2026-10-30 00_45_40_305][313][Script] [WorldStream] 卸载 0:-1
+[2026-10-30 00_45_40_305][313][Script] [WorldStream] 卸载 0:1
+[2026-10-30 00_45_40_306][313][Script] [WorldStream] 卸载 1:1
+[2026-10-30 00_45_40_306][313][Script] [WorldStream] 卸载 -3:-1
+[2026-10-30 00_45_40_306][313][Script] [WorldStream] 卸载 -3:-3
+[2026-10-30 00_45_40_306][313][Script] [WorldStream] 卸载 -2:-2
+[2026-10-30 00_45_40_306][313][Script] [WorldStream] 卸载 -3:-2
+[2026-10-30 00_45_40_307][313][Script] [WorldStream] 卸载 -4:-2
+[2026-10-30 00_45_40_307][313][Script] [WorldStream] 卸载 0:-3
+[2026-10-30 00_45_40_307][313][Script] [WorldStream] 卸载 -2:-1
+[2026-10-30 00_45_40_307][313][Script] [WorldStream] 卸载 0:2

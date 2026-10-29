@@ -1,0 +1,572 @@
+[2026-10-30 00_38_58_125][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_126][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_126][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_126][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_496][22] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_496][22] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_58_496][22] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-10-30 00_38_57_727][0] INFO: DownloadManager initialized
+[2026-10-30 00_38_57_729][0] INFO: a couple of Subsystems registered finish.
+[2026-10-30 00_38_57_729][0] INFO: Engine construct finish.
+[2026-10-30 00_38_58_085][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-10-30 00_38_58_100][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-10-30 00_38_58_101][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_38_58_474][22] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_38_59_085][41]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-10-30 00_38_59_089][41]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-10-30 00_38_59_089][41]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-10-30 00_38_59_092][41] WARNING: DownloadManager: no resources resolved for batch download
+[2026-10-30 00_39_00_361][67] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-10-30 00_39_00_366][67][Script] IsNetworkMode:    false
+[2026-10-30 00_39_00_381][67][Script] [InputAdaptor] Loading input event adaptor...
+[2026-10-30 00_39_00_381][67][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-10-30 00_39_00_381][67][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-10-30 00_39_00_381][67][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-10-30 00_39_00_384][67][Script] Check Transition.lua SimpleGrid.lua
+[2026-10-30 00_39_00_818][67][Script] [Tracks] lake selected: 4122.2m / 15.0m full width / 3 roads
+[2026-10-30 00_39_01_179][67][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_39_01_182][67][Script] [赛道排版] 2040x1080 / 3列 / 自然卡高+纵向滚动
+[2026-10-30 00_39_01_190][67][Script] [竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控
+[2026-10-30 00_39_01_190][67][Script] [赛道界面] 选择 circuit / 同步
+[2026-10-30 00_39_01_197][67][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_39_01_269][67][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-10-30 00_39_01_269][67][Script] [公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯
+[2026-10-30 00_39_01_271][68][Script] [ScrollView Warning] Zero height (0) with flex/flexGrow=1. Parent may be using maxHeight/maxWidth instead of height/width. flexGrow needs a parent with definite size (height/width, not maxHeight/maxWidth).
+[2026-10-30 00_39_03_836][112] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_39_03_836][112] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_39_03_836][112] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_03_836][112] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_03_836][112] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-bc9b5ade.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_03_866][113] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_39_03_866][113] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-10-30 00_39_03_886][114] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_39_03_886][114] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_03_886][114] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_04_019][115] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-10-30 00_39_04_019][115] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-9480dca3.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-10-30 00_39_09_152][189][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-10-30 00_39_09_152][189][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-10-30 00_39_09_152][189][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-10-30 00_39_09_152][189][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-10-30 00_39_09_152][189][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-10-30 00_39_09_153][189][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-10-30 00_39_09_153][189][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_bc9b5ade_48A1CB3B.glsl
+[2026-10-30 00_39_09_200][189][Script] [City footprint] model/e799bc6c-0cef-5148-978f-9a41183cc268/Meshes/c531d52ef7284ea8ae32f415bfe4b98e.mdl / 18 low-wall strips
+[2026-10-30 00_39_09_201][189][Script] [City footprint] model/62f2b98b-631d-5438-94ed-5ed78d3984b0/Meshes/94b007f45c784751825b3e1b8e1e624a.mdl / 1 low-wall strips
+[2026-10-30 00_39_09_257][189][Script] [City footprint] model/ea4b7cae-42e1-5651-8edf-6ccadbbd2046/Meshes/863a459ef93647c88fe260263a9b2a1d.mdl / 3 low-wall strips
+[2026-10-30 00_39_10_081][189][Script] [老街街面] 门面5 / 0..1UV图层6 / 合批72 / 实体碰撞40 / 排水细节21；路面/导航未改
+[2026-10-30 00_39_10_280][189][Script] [海岸导航预热] 114固定节点 / 2535固定边 / 4目标反向树 / CPU 0.198968s；动态仅连起点
+[2026-10-30 00_39_10_285][189][Script] [城市环境] 桥下原点(0,-70)不动 / 岸丘4m / 27件海岸设施 / 开放海湾752m / 分块8m地形
+[2026-10-30 00_39_10_289][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_10_427][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_10_431][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_10_545][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_10_548][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_10_658][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_10_662][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_10_836][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_10_841][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_10_956][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_10_960][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_11_087][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_11_090][189][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_11_205][189][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_11_209][189][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_11_332][189][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_11_335][189][Script] [街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip
+[2026-10-30 00_39_11_383][189][Script] [生涯住房] 室内构建完成：hostel，独立家具碰撞与暖灯
+[2026-10-30 00_39_11_385][189][Script] [生涯住房] 室内构建完成：room，独立家具碰撞与暖灯
+[2026-10-30 00_39_11_388][189][Script] [生涯住房] 室内构建完成：apartment，独立家具碰撞与暖灯
+[2026-10-30 00_39_11_388][189][Script] [生涯城市] 33栋建筑 / 570批次 / 153884三角面 / 65招牌 / 130碰撞区域
+[2026-10-30 00_39_11_391][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_11_853][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_11_868][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_11_878][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_11_883][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_11_886][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_11_887][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_12_267][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_12_270][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_12_271][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 traffic audio/sfx/career_distant_traffic_bed.ogg
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 sand audio/sfx/career_step_sand_natural.wav
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 bridge audio/sfx/career_bridge_wind_bed.ogg
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 sea audio/sfx/career_coastal_surf_bed.ogg
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 steps audio/sfx/career_step_concrete_natural.wav
+[2026-10-30 00_39_12_271][190][Script] [生涯音频] 已加载 wood audio/sfx/career_step_wood_natural.wav
+[2026-10-30 00_39_13_193][190][Script] [VehicleFootprint] borrowed_ebike 25 referenced-triangle strips, local X[-0.462,0.496] Z[-1.010,0.964] (no enclosing-disc collision)
+[2026-10-30 00_39_13_198][190][Script] [CareerActor] 仅测试/恢复 Teleport(0.00,-20.00,0.0)，mounted=false
+[2026-10-30 00_39_13_232][190][Script] [WorldStream] 加载 -1:-1 / 13楼 / 6142面 / 12批
+[2026-10-30 00_39_13_276][190][Script] [WorldStream] 加载 0:-1 / 13楼 / 6252面 / 13批
+[2026-10-30 00_39_13_302][190][Script] [WorldStream] 加载 -1:0 / 12楼 / 5158面 / 13批
+[2026-10-30 00_39_13_331][190][Script] [WorldStream] 加载 0:0 / 12楼 / 5940面 / 13批
+[2026-10-30 00_39_13_379][190][Script] [WorldStream] 加载 -1:-2 / 16楼 / 11062面 / 15批
+[2026-10-30 00_39_13_426][190][Script] [WorldStream] 加载 0:-2 / 14楼 / 10452面 / 17批
+[2026-10-30 00_39_13_517][190][Script] [WorldStream] 加载 -2:-1 / 24楼 / 16464面 / 17批
+[2026-10-30 00_39_13_590][190][Script] [WorldStream] 加载 1:-1 / 24楼 / 16404面 / 17批
+[2026-10-30 00_39_13_684][190][Script] [WorldStream] 加载 -2:0 / 24楼 / 17682面 / 16批
+[2026-10-30 00_39_13_769][190][Script] [WorldStream] 加载 1:0 / 24楼 / 17534面 / 16批
+[2026-10-30 00_39_13_818][190][Script] [WorldStream] 加载 -1:1 / 16楼 / 10810面 / 15批
+[2026-10-30 00_39_13_867][190][Script] [WorldStream] 加载 0:1 / 14楼 / 10202面 / 17批
+[2026-10-30 00_39_13_933][190][Script] [WorldStream] 加载 -2:-2 / 14楼 / 10148面 / 18批
+[2026-10-30 00_39_13_980][190][Script] [WorldStream] 加载 1:-2 / 15楼 / 9686面 / 15批
+[2026-10-30 00_39_14_023][190][Script] [WorldStream] 加载 -2:1 / 15楼 / 9318面 / 16批
+[2026-10-30 00_39_14_079][190][Script] [WorldStream] 加载 1:1 / 15楼 / 9978面 / 16批
+[2026-10-30 00_39_14_089][190][Script] [WorldStream] 加载 -1:-3 / 5楼 / 1700面 / 15批
+[2026-10-30 00_39_14_110][190][Script] [WorldStream] 加载 0:-3 / 6楼 / 3820面 / 16批
+[2026-10-30 00_39_14_127][190][Script] [WorldStream] 加载 -3:-1 / 8楼 / 3374面 / 15批
+[2026-10-30 00_39_14_161][190][Script] [WorldStream] 加载 2:-1 / 9楼 / 3156面 / 16批
+[2026-10-30 00_39_14_184][190][Script] [WorldStream] 加载 -3:0 / 7楼 / 4600面 / 16批
+[2026-10-30 00_39_14_203][190][Script] [WorldStream] 加载 2:0 / 10楼 / 3632面 / 16批
+[2026-10-30 00_39_14_234][190][Script] [WorldStream] 加载 -1:2 / 8楼 / 3118面 / 16批
+[2026-10-30 00_39_14_254][190][Script] [WorldStream] 加载 0:2 / 5楼 / 2134面 / 15批
+[2026-10-30 00_39_14_255][190][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_14_385][190][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_14_389][190][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_14_523][190][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_14_526][190][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_14_678][190][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_14_681][190][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_14_815][190][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_14_819][190][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_14_946][190][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_14_949][190][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_15_084][190][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_15_087][190][Script] [人物朝向校正] 原左肩Vector3(-0.191715, 1.34918, 0.01201) 右肩Vector3(0.167533, 1.3335, -0.0114437) yaw -3.7；校正脚尖Vector3(-0.00978659, 0.00117841, 0.0528684)
+[2026-10-30 00_39_15_215][190][Script] [城市角色] 羽绒服路人 41骨，原始尺寸Vector3(0.224609, 0.998047, 0.341797)，等比身高1.73m
+[2026-10-30 00_39_15_234][190][Script] [人物朝向校正] 原左肩Vector3(-0.229088, 1.41628, 0.0866362) 右肩Vector3(0.22946, 1.37975, 0.070336) yaw -2.0；校正脚尖Vector3(-0.00403991, -0.0226792, 0.0308153)
+[2026-10-30 00_39_15_355][190][Script] [城市角色] 夹克路人 41骨，原始尺寸Vector3(0.330078, 0.998047, 0.447266)，等比身高1.79m
+[2026-10-30 00_39_15_358][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_15_538][190][Script] [VehicleFootprint] sedan 12 referenced-triangle strips, local X[-1.103,1.103] Z[-2.300,2.300] (no enclosing-disc collision)
+[2026-10-30 00_39_15_539][190][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_39_16_175][190][Script] [VehicleFootprint] suv 12 referenced-triangle strips, local X[-1.228,1.228] Z[-2.350,2.350] (no enclosing-disc collision)
+[2026-10-30 00_39_16_176][190][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_39_16_176][190][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_39_16_980][190][Script] [VehicleFootprint] truck 16 referenced-triangle strips, local X[-1.379,1.379] Z[-2.700,2.700] (no enclosing-disc collision)
+[2026-10-30 00_39_16_981][190][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_39_16_982][190][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_39_16_982][190][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_39_16_988][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_16_989][190][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_39_16_989][190][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_39_16_994][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_16_995][190][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_39_16_996][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_16_996][190][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_39_16_997][190][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_39_16_998][190][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_39_17_003][190][Script] [车型] suv bbox 0.521/0.381/0.998 -> 4.70m, yaw -90
+[2026-10-30 00_39_17_004][190][Script] [车型] truck bbox 0.510/0.498/0.998 -> 5.40m, yaw -90
+[2026-10-30 00_39_17_005][190][Script] [货车轮组] 原车壳无轮资源；按真实轮拱补4条轮胎/轮毂/双轴，直径1.12m
+[2026-10-30 00_39_17_010][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_17_011][190][Script] [老街交通] 15辆贴图车辆 / 8位独立便服行人 / 6个实体信号路口；不改玩家存档
+[2026-10-30 00_39_17_018][190][Script] [街道人群] 官方成人同骨架Idle/Walk；增量池20/硬上限24，无新大资产
+[2026-10-30 00_39_17_021][190][Script] [任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；6米光柱与地环，无碰撞
+[2026-10-30 00_39_17_021][190][Script] [ThirdPersonCamera] Created with 3 modes, initial mode: normal
+[2026-10-30 00_39_17_050][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_17_514][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_17_532][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_17_544][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_17_550][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_17_553][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_17_554][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_18_094][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_18_097][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_18_097][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_18_098][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_18_103][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_18_628][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_18_631][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_19_064][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_19_206][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_19_220][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_19_227][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_19_230][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_19_232][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_19_681][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_19_684][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_19_684][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_19_684][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_19_685][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_20_238][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_20_240][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_20_680][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_20_733][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_20_742][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_20_747][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_20_750][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_20_752][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_21_283][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_21_286][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_21_286][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_21_286][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_21_292][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_21_331][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_24_239][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_24_246][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_24_673][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_24_689][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_24_699][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_24_706][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_24_708][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_24_710][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_25_284][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_25_287][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_25_287][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_25_288][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_25_288][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_25_311][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_25_448][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_25_450][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_25_450][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_39_25_896][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_25_896][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_39_25_911][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_25_921][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_25_927][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_25_929][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_26_320][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_26_321][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_26_321][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_26_500][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_26_540][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_28_151][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_28_663][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_28_674][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_28_679][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_28_682][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_29_287][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_29_287][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_29_287][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_29_287][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_39_29_288][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_29_315][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_29_392][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_29_878][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_29_891][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_29_902][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_29_907][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_30_408][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_30_409][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_30_413][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_30_448][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_32_277][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_32_825][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_32_834][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_32_840][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_32_843][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_33_266][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_33_266][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_33_267][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_33_293][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_33_585][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_34_085][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_34_094][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_34_101][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_34_104][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_34_546][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_34_547][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_34_553][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_37_865][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_38_560][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_38_560][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_39_38_571][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_38_571][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_39_38_578][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_38_578][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_39_38_581][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_38_581][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_39_39_063][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_39_063][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_39_39_063][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_39_063][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_39_39_064][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_39_565][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_40_699][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_40_820][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_43_807][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_43_807][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_39_44_775][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_44_803][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_46_137][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_46_184][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_49_141][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_49_170][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_50_196][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_50_309][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_39_50_309][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_39_53_182][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_54_262][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_39_55_818][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_39_57_507][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_01_704][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_02_949][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_02_949][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_05_773][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_05_773][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_28_831][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_28_833][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_29_350][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_29_365][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_29_375][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_29_381][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_29_383][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_29_385][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_29_940][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_29_943][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_29_944][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_29_944][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_29_944][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_29_972][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_30_089][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_30_091][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_30_631][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_30_647][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_30_658][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_30_665][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_30_667][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_30_669][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_31_198][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_31_201][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_31_201][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_31_202][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_31_202][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_31_207][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_31_845][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_31_847][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_32_381][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_32_398][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_32_408][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_32_414][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_32_417][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_32_418][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_32_819][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_32_822][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_32_822][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_32_823][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_32_823][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_32_823][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_33_811][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_33_813][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_34_326][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_34_341][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_34_351][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_34_358][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_34_360][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_34_362][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_34_734][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_34_736][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_34_737][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_34_737][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_34_742][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_34_948][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_38_138][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_38_140][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_38_671][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_38_688][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_38_703][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_38_709][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_38_712][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_38_715][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_39_236][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_39_239][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_39_239][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_39_239][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_39_240][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_39_265][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_39_370][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_39_372][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_39_372][190][Script] [人物朝向校正] 原左肩Vector3(-0.207534, 1.35666, -0.0022654) 右肩Vector3(0.191563, 1.35664, 0.018171) yaw 2.9；校正脚尖Vector3(-0.010859, 0.00359657, 0.0503269)
+[2026-10-30 00_40_40_111][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_40_111][190][Script] [城市角色] 王二狗 41骨，原始尺寸Vector3(0.189453, 0.998047, 0.443359)，等比身高1.76m
+[2026-10-30 00_40_40_128][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_40_139][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_40_145][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_40_148][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_40_679][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_40_680][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_40_680][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_40_685][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_40_728][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_42_345][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_42_913][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_42_927][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_42_933][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_42_936][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_43_471][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_43_471][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_43_471][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_43_471][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_43_498][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_43_573][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_44_135][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_44_145][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_44_151][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_44_154][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_44_726][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_44_727][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_44_727][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_44_732][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_44_774][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_46_297][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_46_846][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_46_856][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_46_862][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_46_865][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_47_385][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_47_385][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_47_386][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_47_386][190][Script] [车型] sedan bbox 0.479/0.342/0.998 -> 4.60m, yaw -90
+[2026-10-30 00_40_47_386][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_47_413][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_47_487][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_48_094][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_48_106][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_48_113][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_48_116][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_48_523][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_48_523][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_48_528][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_49_131][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_49_131][190][Script] [CareerActor] 已释放人物、独立停放车与配送装备
+[2026-10-30 00_40_49_733][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_49_733][190][Script] [官方动作] uuid://HIPCWSBd61v8PRI972Yksxzh 1.666667s 97轨 4947真实关键帧
+[2026-10-30 00_40_49_743][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_49_743][190][Script] [官方动作] uuid://HhyjGZvHN9uF8lRsGnN_J7jc 1.200000s 98轨 3626真实关键帧
+[2026-10-30 00_40_49_749][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_49_749][190][Script] [官方动作] uuid://FshxoWge4mzIJ-wmBu0GK6Vs 0.800000s 88轨 2200真实关键帧
+[2026-10-30 00_40_49_751][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_49_751][190][Script] [官方动作兼容] 97->41骨，显式23映射/绑定轴校准/原骨长FK；世界髋比例0.918785；骑姿IK独立
+[2026-10-30 00_40_50_290][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_50_290][190][Script] [配送装备] 电动车原尺寸Vector3(0.966797, 0.998047, 0.951172) 缩放1.4510；箱原尺寸Vector3(0.791016, 0.689453, 0.998047) 缩放0.5811；独立挂点(0,.88,-.72)
+[2026-10-30 00_40_50_290][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_50_290][190][Script] [CareerActor] 初始步行 x=0.0 z=-20.0 yaw=0；车独立停在(1.5,-20.0)，限速35km/h
+[2026-10-30 00_40_50_291][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_51_814][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_51_860][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_56_061][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_56_086][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_57_302][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_40_57_342][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_40_59_833][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_40_59_860][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_40_59_860][190][Script] [CareerActor] 城市碰撞/地图边界阻挡：子步扫段生效，保留切向移动
+[2026-10-30 00_41_01_159][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_41_03_827][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_41_04_981][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_41_07_920][190][Script] [CareerActor] 步行输入已驱动；相机相对移动，骨骼步态跟随实际速度
+[2026-10-30 00_41_08_675][190][Script] [CareerActor] 上车成功(0.00,0.00)；9号电动车
+[2026-10-30 00_41_08_678][190][Script] [CareerActor] 下车成功 人(-0.86,0.00)，车留在(0.00,0.00)
+[2026-10-30 00_41_09_712][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_41_10_736][190]WARNINGNext log has been output too many times and will not be output again.
+[2026-10-30 00_41_10_736][190][Script] [CareerActor] 9号电动车城市动力2.8m/s²，限速35km/h，独立于赛道
+[2026-10-30 00_41_17_919][190][Script] [VehicleFootprint] sport 12 referenced-triangle strips, local X[-0.499,0.499] Z[-1.075,1.075] (no enclosing-disc collision)
+[2026-10-30 00_41_17_922][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_923][190][Script] [城市换车] sport；真实模型占地校验通过，原停车位保留，未自动骑乘
+[2026-10-30 00_41_17_924][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_925][190][Script] [城市换车] sport；真实模型占地校验通过，原停车位保留，未自动骑乘
+[2026-10-30 00_41_17_925][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_927][190][Script] [城市换车] sport；真实模型占地校验通过，原停车位保留，未自动骑乘
+[2026-10-30 00_41_17_927][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_928][190][Script] [城市换车] sport；真实模型占地校验通过，原停车位保留，未自动骑乘
+[2026-10-30 00_41_17_928][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_929][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_930][190][Script] [Career.Store] transaction save failed; wallet/order/flags unchanged
+[2026-10-30 00_41_17_930][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_930][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_931][190][Script] [城市换车] sport；真实模型占地校验通过，原停车位保留，未自动骑乘
+[2026-10-30 00_41_17_932][190][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
+[2026-10-30 00_41_17_932][190][Script] [生产换车碰撞验收通过] 窄交车位/原车占位/玩家占位/保留旧停车与朝向/被占拒绝/写失败原子/下载前零形状查询/下载失败原子/下载后新快照/回调幂等/所有权重验；内存档隔离
+[2026-10-30 00_41_17_932][190][Script] [CollisionChecks PASS] 52 isolated real-input fixtures; visible white-car 5cm-per-side gap / walking circle / 6 yaw / fore-aft-side contact / cargo+mirror rejection / parked bike / mount / high-speed swept static post; no save writes
+[2026-10-30 00_41_18_577][190][Script] [官动落足事件] Pose 1.8m/s phase=0.2000 left L=0.0141 R=0.0131
+[2026-10-30 00_41_18_746][190][Script] [官动落足事件] Pose 1.8m/s phase=0.6875 right L=0.0101 R=0.0176
+[2026-10-30 00_41_18_906][190][Script] [官动落足事件] Pose 1.8m/s phase=1.2000 left L=0.0141 R=0.0131
+[2026-10-30 00_41_19_052][190][Script] [官动落足事件] Pose 1.8m/s phase=1.6875 right L=0.0101 R=0.0176
+[2026-10-30 00_41_19_145][190][Script] [官动支撑曲线] 1.8m/s left 接地[0.0000..0.0375]谷0.0107@0.0125峰0.0162@0.0375; 过渡[0.0500..0.0875]谷0.0224@0.0500峰0.0270@0.0875; 抬脚[0.1000..0.1375]谷0.0283@0.1375峰0.0318@0.1000; 过渡[0.1500..0.1875]谷0.0186@0.1875峰0.0271@0.1500; 接地[0.2000..0.3500]谷0.0084@0.3125峰0.0180@0.3500; 过渡[0.3625..0.3625]谷0.0278@0.3625峰0.0278@0.3625; 抬脚[0.3750..0.5000]谷0.0292@0.5000峰0.0466@0.4500; 过渡[0.5125..0.5125]谷0.0225@0.5125峰0.0225@0.5125; 接地[0.5250..0.7125]谷0.0057@0.5500峰0.0147@0.7125; 过渡[0.7250..0.7375]谷0.0208@0.7250峰0.0255@0.7375; 抬脚[0.7500..0.8375]谷0.0318@0.7500峰0.0451@0.8125; 过渡[0.8500..0.8625]谷0.0186@0.8625峰0.0248@0.8500; 接地[0.8750..1.0375]谷0.0096@0.9875峰0.0162@1.0375; 过渡[1.0500..1.0875]谷0.0224@1.0500峰0.0270@1.0875; 抬脚[1.1000..1.1375]谷0.0283@1.1375峰0.0318@1.1000; 过渡[1.1500..1.1875]谷0.0186@1.1875峰0.0271@1.1500; 接地[1.2000..1.3500]谷0.0084@1.3125峰0.0180@1.3500; 过渡[1.3625..1.3625]谷0.0278@1.3625峰0.0278@1.3625; 抬脚[1.3750..1.5000]谷0.0292@1.5000峰0.0466@1.4500; 过渡[1.5125..1.5125]谷0.0225@1.5125峰0.0225@1.5125; 接地[1.5250..1.7125]谷0.0057@1.5500峰0.0147@1.7125; 过渡[1.7250..1.7375]谷0.0208@1.7250峰0.0255@1.7375; 抬脚[1.7500..1.8375]谷0.0318@1.7500峰0.0451@1.8125; 过渡[1.8500..1.8625]谷0.0186@1.8625峰0.0248@1.8500; 接地[1.8750..2.0000]谷0.0096@1.9875峰0.0156@1.8750
+[2026-10-30 00_41_19_145][190][Script] [官动支撑曲线] 1.8m/s right 过渡[0.0000..0.0000]谷0.0231@0.0000峰0.0231@0.0000; 接地[0.0125..0.2125]谷0.0101@0.0500峰0.0177@0.0125; 过渡[0.2250..0.2250]谷0.0229@0.2250峰0.0229@0.2250; 抬脚[0.2375..0.3250]谷0.0295@0.2375峰0.0561@0.2875; 接地[0.3375..0.5625]谷0.0057@0.5375峰0.0171@0.3375; 过渡[0.5750..0.6000]谷0.0188@0.5750峰0.0241@0.6000; 抬脚[0.6125..0.6125]谷0.0288@0.6125峰0.0288@0.6125; 过渡[0.6250..0.6750]谷0.0227@0.6750峰0.0276@0.6375; 接地[0.6875..0.8875]谷0.0018@0.8000峰0.0176@0.6875; 过渡[0.9000..0.9125]谷0.0198@0.9000峰0.0248@0.9125; 抬脚[0.9250..0.9875]谷0.0294@0.9875峰0.0403@0.9625; 过渡[1.0000..1.0000]谷0.0231@1.0000峰0.0231@1.0000; 接地[1.0125..1.2125]谷0.0101@1.0500峰0.0177@1.0125; 过渡[1.2250..1.2250]谷0.0229@1.2250峰0.0229@1.2250; 抬脚[1.2375..1.3250]谷0.0295@1.2375峰0.0561@1.2875; 接地[1.3375..1.5625]谷0.0057@1.5375峰0.0171@1.3375; 过渡[1.5750..1.6000]谷0.0188@1.5750峰0.0241@1.6000; 抬脚[1.6125..1.6125]谷0.0288@1.6125峰0.0288@1.6125; 过渡[1.6250..1.6750]谷0.0227@1.6750峰0.0276@1.6375; 接地[1.6875..1.8875]谷0.0018@1.8000峰0.0176@1.6875; 过渡[1.9000..1.9125]谷0.0198@1.9000峰0.0248@1.9125; 抬脚[1.9250..1.9875]谷0.0294@1.9875峰0.0403@1.9625; 过渡[2.0000..2.0000]谷0.0231@2.0000峰0.0231@2.0000
+[2026-10-30 00_41_19_145][190][Script] [官动支撑曲线] 1.8m/s sourceLeft 接地[0.0000..0.0250]谷0.0121@0.0000峰0.0157@0.0250; 过渡[0.0375..0.0875]谷0.0183@0.0375峰0.0264@0.0875; 抬脚[0.1000..0.2375]谷0.0305@0.2375峰0.0473@0.1625; 过渡[0.2500..0.2625]谷0.0219@0.2625峰0.0266@0.2500; 接地[0.2750..0.8125]谷0.0018@0.8000峰0.0174@0.2750; 过渡[0.8250..0.8250]谷0.0191@0.8250峰0.0191@0.8250; 抬脚[0.8375..0.9375]谷0.0314@0.9375峰0.0701@0.8875; 过渡[0.9500..0.9500]谷0.0218@0.9500峰0.0218@0.9500; 接地[0.9625..1.0250]谷0.0096@0.9875峰0.0157@1.0250; 过渡[1.0375..1.0875]谷0.0183@1.0375峰0.0264@1.0875; 抬脚[1.1000..1.2375]谷0.0305@1.2375峰0.0473@1.1625; 过渡[1.2500..1.2625]谷0.0219@1.2625峰0.0266@1.2500; 接地[1.2750..1.8125]谷0.0018@1.8000峰0.0174@1.2750; 过渡[1.8250..1.8250]谷0.0191@1.8250峰0.0191@1.8250; 抬脚[1.8375..1.9375]谷0.0314@1.9375峰0.0701@1.8875; 过渡[1.9500..1.9500]谷0.0218@1.9500峰0.0218@1.9500; 接地[1.9625..2.0000]谷0.0096@1.9875峰0.0142@1.9625
+[2026-10-30 00_41_19_145][190][Script] [官动支撑曲线] 1.8m/s sourceRight 接地[0.0000..0.3250]谷0.0101@0.0500峰0.0174@0.3250; 过渡[0.3375..0.3375]谷0.0247@0.3375峰0.0247@0.3375; 抬脚[0.3500..0.4625]谷0.0306@0.4625峰0.0725@0.3875; 过渡[0.4750..0.5000]谷0.0189@0.5000峰0.0253@0.4750; 接地[0.5125..0.5125]谷0.0171@0.5125峰0.0171@0.5125; 过渡[0.5250..0.5875]谷0.0184@0.5250峰0.0262@0.5875; 抬脚[0.6000..0.7500]谷0.0302@0.7500峰0.0455@0.6625; 过渡[0.7625..0.7875]谷0.0207@0.7875峰0.0271@0.7625; 接地[0.8000..1.3250]谷0.0101@1.0500峰0.0175@0.8000; 过渡[1.3375..1.3375]谷0.0247@1.3375峰0.0247@1.3375; 抬脚[1.3500..1.4625]谷0.0306@1.4625峰0.0725@1.3875; 过渡[1.4750..1.5000]谷0.0189@1.5000峰0.0253@1.4750; 接地[1.5125..1.5125]谷0.0171@1.5125峰0.0171@1.5125; 过渡[1.5250..1.5875]谷0.0184@1.5250峰0.0262@1.5875; 抬脚[1.6000..1.7500]谷0.0302@1.7500峰0.0455@1.6625; 过渡[1.7625..1.7875]谷0.0207@1.7875峰0.0271@1.7625; 接地[1.8000..2.0000]谷0.0113@2.0000峰0.0175@1.8000
+[2026-10-30 00_41_19_145][190][Script] [真实官动足音] 1.8m/s 161相位 两周期 支撑帧161 事件4
+[2026-10-30 00_41_19_815][190][Script] [官动落足事件] Update 1.8m/s frame=16 phase=0.2000 left L=0.0141 R=0.0131
+[2026-10-30 00_41_19_972][190][Script] [官动落足事件] Update 1.8m/s frame=55 phase=0.6875 right L=0.0101 R=0.0176
+[2026-10-30 00_41_20_126][190][Script] [官动落足事件] Update 1.8m/s frame=96 phase=0.2000 left L=0.0141 R=0.0131
+[2026-10-30 00_41_20_273][190][Script] [官动落足事件] Update 1.8m/s frame=135 phase=0.6875 right L=0.0101 R=0.0176
+[2026-10-30 00_41_20_365][190][Script] [真实官动足音] Motion.Update 1.8m/s 两周期 事件4
+[2026-10-30 00_41_20_456][190][Script] [官动落足事件] Pose 3.4m/s phase=0.2875 left L=0.0154 R=0.3637
+[2026-10-30 00_41_20_605][190][Script] [官动落足事件] Pose 3.4m/s phase=0.7875 right L=0.3691 R=0.0167
+[2026-10-30 00_41_20_757][190][Script] [官动落足事件] Pose 3.4m/s phase=1.2875 left L=0.0154 R=0.3637
+[2026-10-30 00_41_20_909][190][Script] [官动落足事件] Pose 3.4m/s phase=1.7875 right L=0.3691 R=0.0167
+[2026-10-30 00_41_20_984][190][Script] [官动支撑曲线] 3.4m/s left 抬脚[0.0000..0.2625]谷0.0317@0.2625峰0.3388@0.0000; 过渡[0.2750..0.2750]谷0.0224@0.2750峰0.0224@0.2750; 接地[0.2875..0.5250]谷0.0055@0.4375峰0.0162@0.5250; 抬脚[0.5375..1.2625]谷0.0288@0.5375峰0.4007@0.9500; 过渡[1.2750..1.2750]谷0.0224@1.2750峰0.0224@1.2750; 接地[1.2875..1.5250]谷0.0055@1.4375峰0.0162@1.5250; 抬脚[1.5375..2.0000]谷0.0288@1.5375峰0.4007@1.9500
+[2026-10-30 00_41_20_984][190][Script] [官动支撑曲线] 3.4m/s right 接地[0.0000..0.0375]谷-0.0000@0.0125峰0.0068@0.0375; 过渡[0.0500..0.0500]谷0.0213@0.0500峰0.0213@0.0500; 抬脚[0.0625..0.7625]谷0.0352@0.7625峰0.4149@0.4125; 过渡[0.7750..0.7750]谷0.0250@0.7750峰0.0250@0.7750; 接地[0.7875..1.0375]谷-0.0000@0.9875峰0.0167@0.7875; 过渡[1.0500..1.0500]谷0.0213@1.0500峰0.0213@1.0500; 抬脚[1.0625..1.7625]谷0.0352@1.7625峰0.4149@1.4125; 过渡[1.7750..1.7750]谷0.0250@1.7750峰0.0250@1.7750; 接地[1.7875..2.0000]谷-0.0000@1.9875峰0.0167@1.7875
+[2026-10-30 00_41_20_984][190][Script] [官动支撑曲线] 3.4m/s sourceLeft 抬脚[0.0000..0.2625]谷0.0317@0.2625峰0.4015@0.0000; 过渡[0.2750..0.2750]谷0.0224@0.2750峰0.0224@0.2750; 接地[0.2875..0.5250]谷0.0055@0.4375峰0.0162@0.5250; 抬脚[0.5375..1.2625]谷0.0288@0.5375峰0.4146@0.9625; 过渡[1.2750..1.2750]谷0.0224@1.2750峰0.0224@1.2750; 接地[1.2875..1.5250]谷0.0055@1.4375峰0.0162@1.5250; 抬脚[1.5375..2.0000]谷0.0288@1.5375峰0.4146@1.9625
+[2026-10-30 00_41_20_984][190][Script] [官动支撑曲线] 3.4m/s sourceRight 接地[0.0000..0.0375]谷-0.0101@0.0000峰0.0068@0.0375; 过渡[0.0500..0.0500]谷0.0213@0.0500峰0.0213@0.0500; 抬脚[0.0625..0.7625]谷0.0352@0.7625峰0.4181@0.4125; 过渡[0.7750..0.7750]谷0.0250@0.7750峰0.0250@0.7750; 接地[0.7875..1.0375]谷-0.0137@0.9875峰0.0167@0.7875; 过渡[1.0500..1.0500]谷0.0213@1.0500峰0.0213@1.0500; 抬脚[1.0625..1.7625]谷0[2026-10-30 00_41_26_198][190] ERROR: Execute Lua function failed: [string "Career/Session"]:712: [string "Career/CityExpansionChecks"]:277: [string "Career/CityExpansionChecks"]:217: [邻里移动被挡] path=east mode=vehicle r=1.20 segment=2 step=1/112 from=(0.000000000,-20.000000000) delta=(0.000000000,0.178571429) expected=(0.000000000,-19.821428571) actual=(0.000000000,-20.000000000) goal=(0.000000,0.000000) StaticFree=true IsFree=false WorldFree=true old=true traffic=false deliveryPeople=false
+stack traceback:
+	[C]: in function 'error'
+	[string "Career/Session"]:712: in method 'Update'
+	[string "main"]:976: in function 'HandleUpdate'
+.0352@1.7625峰0.4181@1.4125; 过渡[1.7750..1.7750]谷0.0250@1.7750峰0.0250@1.7750; 接地[1.7875..2.0000]谷-0.0137@1.9875峰0.0167@1.7875
+[2026-10-30 00_41_20_984][190][Script] [真实官动足音] 3.4m/s 161相位 两周期 支撑帧161 事件4
+[2026-10-30 00_41_21_445][190][Script] [官动落足事件] Update 3.4m/s frame=22 phase=0.2894 left L=0.0134 R=0.3649
+[2026-10-30 00_41_21_592][190][Script] [官动落足事件] Update 3.4m/s frame=62 phase=0.7894 right L=0.3680 R=0.0155
+[2026-10-30 00_41_21_989][190][Script] [官动落足事件] Update 3.4m/s frame=102 phase=0.2894 left L=0.0134 R=0.3649
+[2026-10-30 00_41_22_156][190][Script] [官动落足事件] Update 3.4m/s frame=142 phase=0.7894 right L=0.3680 R=0.0155
+[2026-10-30 00_41_22_225][190][Script] [真实官动足音] Motion.Update 3.4m/s 两周期 事件4
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 traffic audio/sfx/career_distant_traffic_bed.ogg
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 electric audio/sfx/career_ebike_motor.mp3
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 brake audio/sfx/motorcycle_brake_loop.mp3
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 tap audio/sfx/career_ui_tap.mp3
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 music audio/night_ride.ogg
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 order audio/sfx/career_order_chime.mp3
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 sand audio/sfx/career_step_sand_natural.wav
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 engine audio/sfx/motorcycle_engine_loop.mp3
+[2026-10-30 00_41_22_225][190][Script] [生涯音频] 已加载 city audio/sfx/career_city_ambience.mp3
+[2026-10-30 00_41_22_226][190][Script] [生涯音频] 已加载 bridge audio/sfx/career_bridge_wind_bed.ogg
+[2026-10-30 00_41_22_226][190][Script] [生涯音频] 已加载 sea audio/sfx/career_coastal_surf_bed.ogg
+[2026-10-30 00_41_22_226][190][Script] [生涯音频] 已加载 steps audio/sfx/career_step_concrete_natural.wav
+[2026-10-30 00_41_22_226][190][Script] [生涯音频] 已加载 wood audio/sfx/career_step_wood_natural.wav
+[2026-10-30 00_41_22_586][190][Script] [街道人群] 官方成人同骨架Idle/Walk；增量池12/硬上限24，无新大资产
+[2026-10-30 00_41_22_648][190][Script] [声音人群专项通过] 真官动鞋底支撑/停站空中骑行暂停室内/独立表面音色/近场池预算/薄墙车体/遵灯/节点复用；未代替手机实际听感与GPU截图验收
+[2026-10-30 00_41_22_663][190][Script] [邻里订单签名] Lua=Lua 5.4 templates=24 got=2567365835 expected=2567365835 bytes=3803 expectedBytes=3803
+[2026-10-30 00_41_25_266][190][Script] [邻里路径开始] name=east mode=walk r=0.32 start=(0.000000,-20.000000) segments=6
+[2026-10-30 00_41_26_144][190][Script] [邻里路径开始] name=east mode=vehicle r=1.20 start=(0.000000,-20.000000) segments=6
+[2026-10-30 00_41_26_149][190][Script] [邻里移动被挡] path=east mode=vehicle r=1.20 segment=2 step=1/112 from=(0.000000000,-20.000000000) delta=(0.000000000,0.178571429) expected=(0.000000000,-19.821428571) actual=(0.000000000,-20.000000000) goal=(0.000000,0.000000) StaticFree=true IsFree=false WorldFree=true old=true traffic=false deliveryPeople=false
+[2026-10-30 00_41_26_188][190][Script] [WorldStream] 卸载 -2:-1
+[2026-10-30 00_41_26_189][190][Script] [WorldStream] 卸载 -1:-1
+[2026-10-30 00_41_26_189][190][Script] [WorldStream] 卸载 0:-2
+[2026-10-30 00_41_26_189][190][Script] [WorldStream] 卸载 1:-2
+[2026-10-30 00_41_26_189][190][Script] [WorldStream] 卸载 0:2
+[2026-10-30 00_41_26_190][190][Script] [WorldStream] 卸载 0:-3
+[2026-10-30 00_41_26_190][190][Script] [WorldStream] 卸载 1:1
+[2026-10-30 00_41_26_190][190][Script] [WorldStream] 卸载 0:1
+[2026-10-30 00_41_26_190][190][Script] [WorldStream] 卸载 -1:-2
+[2026-10-30 00_41_26_190][190][Script] [WorldStream] 卸载 -2:-2
+[2026-10-30 00_41_26_191][190][Script] [WorldStream] 卸载 -1:0
+[2026-10-30 00_41_26_191][190][Script] [WorldStream] 卸载 -2:0
+[2026-10-30 00_41_26_191][190][Script] [WorldStream] 卸载 1:-1
+[2026-10-30 00_41_26_192][190][Script] [WorldStream] 卸载 0:-1
+[2026-10-30 00_41_26_192][190][Script] [WorldStream] 卸载 0:0
+[2026-10-30 00_41_26_192][190][Script] [WorldStream] 卸载 1:0
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 2:0
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 -1:1
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 -3:0
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 2:-1
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 -3:-1
+[2026-10-30 00_41_26_193][190][Script] [WorldStream] 卸载 -1:-3
+[2026-10-30 00_41_26_194][190][Script] [WorldStream] 卸载 -1:2
+[2026-10-30 00_41_26_194][190][Script] [WorldStream] 卸载 -2:1
+[2026-10-30 00_41_26_198][190][Script] [生涯错误] [string "Career/CityExpansionChecks"]:277: [string "Career/CityExpansionChecks"]:217: [邻里移动被挡] path=east mode=vehicle r=1.20 segment=2 step=1/112 from=(0.000000000,-20.000000000) delta=(0.000000000,0.178571429) expected=(0.000000000,-19.821428571) actual=(0.000000000,-20.000000000) goal=(0.000000,0.000000) StaticFree=true IsFree=false WorldFree=true old=true traffic=false deliveryPeople=false
+[2026-10-30 00_41_28_185][307]INFO__VALIDATE_UPDATE__:false

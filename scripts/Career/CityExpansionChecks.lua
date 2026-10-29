@@ -3,6 +3,7 @@
 local Expansion=require("Career.CityExpansion")
 local World=require("Career.WorldData")
 local Config=require("Career.Config")
+local FootprintCollision=require("Career.FootprintCollision")
 local Checks={}
 local function near(a,b,label)
     assert(math.abs(a-b)<.00001,label or "数值不一致")
@@ -156,7 +157,8 @@ function Checks.Plan()
     return stats
 end
 -- 从开局坐标出发的四个实际可达线路，不用传送代替路程。
--- 主线程Run通过City.Move每子步0.1m检验：走r=.32，骑r=1.2。
+-- 主线程Run验证生产扫掠：行人r=.32圆，车辆用可见模型同源分条轮廓。
+-- 这是几何移动验收，不是Actor.Update动力输入；后者由环境完整步骑专项覆盖。
 Checks.Paths={
     east={{0,-20},{0,0},{240,0},{240,-86},{312,-86},{312,-116},{338,-116}},
     west={{0,-20},{0,0},{-240,0},{-240,-86},{-312,-86},{-312,-116},{-338,-116}},
@@ -196,24 +198,37 @@ local function obstruction(city,x,z,r,mode)
     end
     return table.concat(report," ; ")
 end
-local function movePath(city,path,radius,name)
+local function movePath(city,path,actor,vehicle,name)
     local x,z=path[1][1],path[1][2]
     local meters=0
-    local mode=radius<1 and "walk" or "vehicle"
-    print(string.format("[邻里路径开始] name=%s mode=%s r=%.2f start=(%.6f,%.6f) segments=%d",
-        name,mode,radius,x,z,#path-1))
+    local mode=vehicle and "vehicle" or "walk"
+    local shape=vehicle and require("Career.VehicleFootprints").Get(actor.vehicleId) or FootprintCollision.Circle(0,0,.32)
+    local ignoreId=vehicle and actor.vehicleId or nil
+    ---@type number?
+    local previousYaw=nil
+    print(string.format("[邻里路径开始] name=%s mode=%s footprint=%s ignoreOnly=%s start=(%.6f,%.6f) segments=%d",
+        name,mode,vehicle and "模型同源轮廓" or "行人圆r.32",tostring(ignoreId),x,z,#path-1))
     for i=2,#path do
         local b=path[i]
         local dx,dz=b[1]-x,b[2]-z
         local length=math.sqrt(dx*dx+dz*dz)
+        local yaw=math.deg(math.atan(dx,dz))
+        if vehicle and previousYaw~=nil then
+            local accepted,blocked=actor:TurnTo(x,z,previousYaw,yaw)
+            assert(not blocked and math.abs((accepted-yaw+180)%360-180)<.00001,
+                string.format("邻里真实轮廓转角被挡 path=%s segment=%d at(%.6f,%.6f)",name,i,x,z))
+        end
+        previousYaw=yaw
         local count=math.max(1,math.ceil(length/.18))
         local sx,sz=dx/count,dz/count
         for step=1,count do
-            local nx,nz=city:Move(x,z,sx,sz,radius,mode,0)
+            local nx,nz=city:MoveShape(x,z,sx,sz,shape,yaw,mode,0,ignoreId)
             if math.abs(nx-(x+sx))>=.00001 or math.abs(nz-(z+sz))>=.00001 then
-                local detail=string.format("[邻里移动被挡] path=%s mode=%s r=%.2f segment=%d step=%d/%d from=(%.9f,%.9f) delta=(%.9f,%.9f) expected=(%.9f,%.9f) actual=(%.9f,%.9f) goal=(%.6f,%.6f) %s",
-                    name,mode,radius,i,step,count,x,z,sx,sz,x+sx,z+sz,nx,nz,b[1],b[2],
-                    obstruction(city,x+sx,z+sz,radius,mode))
+                local detail=string.format("[邻里移动被挡] path=%s mode=%s footprint=%s ignoreOnly=%s segment=%d step=%d/%d from=(%.9f,%.9f) delta=(%.9f,%.9f) expected=(%.9f,%.9f) actual=(%.9f,%.9f) goal=(%.6f,%.6f) StaticShapeFree=%s IsShapeFree=%s %s",
+                    name,mode,vehicle and "模型同源轮廓" or "行人圆r.32",tostring(ignoreId),i,step,count,x,z,sx,sz,x+sx,z+sz,nx,nz,b[1],b[2],
+                    tostring(city:StaticShapeFree(x+sx,z+sz,shape,yaw,mode,0)),
+                    tostring(city:IsShapeFree(x+sx,z+sz,shape,yaw,mode,0,ignoreId)),
+                    obstruction(city,x+sx,z+sz,vehicle and shape.reach or .32,mode))
                 print(detail);error(detail)
             end
             x,z=nx,nz
@@ -231,9 +246,11 @@ end
 function Checks.Run(session)
     isolated(session)
     local city=assert(session.city)
+    local actor=assert(session.actor)
+    local vehicleShape=require("Career.VehicleFootprints").Get(actor.vehicleId)
     local stats=Checks.Plan()
-    local traffic,people,space=city.traffic,city.deliveryPeople,city.space
-    city.traffic,city.deliveryPeople=nil,nil
+    local traffic,people,crowd,space=city.traffic,city.deliveryPeople,city.crowd,city.space
+    city.traffic,city.deliveryPeople,city.crowd=nil,nil,nil
     local ok,message=pcall(function()
         assert(space=="city","请在城市空间执行邻里验收")
         local peds=require("Career.Pedestrians")
@@ -246,17 +263,18 @@ function Checks.Run(session)
         end
         for _,name in ipairs({"east","west","north","south"}) do
             local path=assert(Checks.Paths[name])
-            local walk=movePath(city,path,.32,name)
-            local ride=movePath(city,path,1.2,name)
+            local walk=movePath(city,path,actor,false,name)
+            local ride=movePath(city,path,actor,true,name)
             near(walk,ride)
-            print(string.format("[邻里验收] %s 开局连续走/骑各 %.1fm，City.Move全子步，无传送",name,walk))
+            print(string.format("[邻里验收] %s 行人/模型同源车辆轮廓连续扫掠各 %.1fm，City.MoveShape全子步及真实转角，仅ignore目标车；非Actor.Update动力输入",name,walk))
         end
         for _,r in ipairs(Expansion.Roads) do
             local count=math.ceil((math.abs(r.x2-r.x1)+math.abs(r.z2-r.z1))/.5)
             for i=0,count do
                 local t=i/count
                 local x,z=r.x1+(r.x2-r.x1)*t,r.z1+(r.z2-r.z1)*t
-                assert(city:StaticFree(x,z,1.2,"vehicle",0),"街段骑行净空 "..r.id)
+                local yaw=math.deg(math.atan(r.x2-r.x1,r.z2-r.z1))
+                assert(city:StaticShapeFree(x,z,vehicleShape,yaw,"vehicle",0),"街段同源车辆轮廓净空 "..r.id)
                 local y=city:Surface(x,z)
                 assert(y>=.05 and y<=.11,"街段地面断层 "..r.id)
                 if not World.IsOld(x,z) then near(y,World.Surface(x,z),"地面视觉/逻辑高度不一致") end
@@ -273,7 +291,7 @@ function Checks.Run(session)
         assert(first.models>=#Expansion.Buildings,"首屏550m未包含全部相邻真实模型")
         stats.loadedModels,stats.loadedNodes=first.models,nodes
     end)
-    city.traffic,city.deliveryPeople=traffic,people
+    city.traffic,city.deliveryPeople,city.crowd=traffic,people,crowd
     assert(ok,message)
     print(string.format("[邻里模型预算] 原78+补%d=%d楼 / 4492面资产%d栋 / 最坏LOD0总%d面 / 每格最多%d面、%d楼；程序几何另限36k面/格",
         stats.infillBuildings,stats.buildings,stats.assetCounts[2],stats.modelTriangles,stats.maxCellModelTriangles,stats.maxCellBuildings))
