@@ -27,6 +27,10 @@ function Start()
         local reference=source and motion.reference[source]
         print(string.format("[骨架探针] %s 目标%s 源绑定%s",name,rig_:GetBonePosition(name):ToString(),reference and reference:Translation():ToString() or "无"))
     end
+    local sourcePose=motion:SampleSource(speed>=3.4 and motion.clips.run or speed>0 and motion.clips.walk or motion.clips.idle,phase*(speed>=3.4 and motion.clips.run.length or speed>0 and motion.clips.walk.length or motion.clips.idle.length))
+    local sourceTorso=sourcePose["Bip001 Neck"]:Translation()-sourcePose.Bip001:Translation()
+    local targetTorso=rig_:GetBonePosition("NeckTwist01")-rig_:GetBonePosition("Hip")
+    print(string.format("[躯干倾角] 源%.2f 目标%.2f",math.deg(math.atan(sourceTorso.z,sourceTorso.y)),math.deg(math.atan(targetTorso.z,targetTorso.y))))
     local cameraNode=scene_:CreateChild("验收相机")
     cameraNode.position=view=="side" and Vector3(3,.95,0) or view=="threequarter" and Vector3(2,.95,2.6) or Vector3(0,.95,3.3)
     cameraNode:LookAt(Vector3(0,.88,0))

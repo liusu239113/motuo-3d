@@ -58,11 +58,11 @@ local function color(slot,expected)
         local diffuse=mat:GetShaderParameter("MatDiffColor"):GetColor()
         local emissive=mat:GetShaderParameter("MatEmissiveColor"):GetColor()
         near(diffuse.r,expected.r); near(diffuse.g,expected.g); near(diffuse.b,expected.b)
-        near(diffuse.a,n==slot.beam and .19 or 1)
+        near(diffuse.a,n==slot.beam and .34 or 1)
         near(emissive.r,expected.r*1.8); near(emissive.g,expected.g*1.8); near(emissive.b,expected.b*1.8)
     end
 end
--- 碰撞不变性设计：光柱r=.42/高6m、地环r=1.12、箭头均为纯视觉。
+-- 碰撞不变性设计：光柱r=.68/高12m、地环r=1.35、箭头均为纯视觉。
 -- 俯视 [中心]--.32m步行探针--1.2m车辆探针；地面/高层6m均不得新增阻挡。
 -- 同时覆盖旧城墙中心、各外区实际障碍中心和所有POI；不要求原本被挡的点可走。
 ---@param city CareerCity

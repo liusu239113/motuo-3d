@@ -1,5 +1,5 @@
 -- 近场增量人群：基于3D角色脚手架的Node/AnimatedModel所有权；不接管主角/交通。
--- 官方成人DefaultMale + 同骨架Idle/Walk，固定24槽上限；旧8+4人保持独立。
+-- 写实便服41骨 + 共享官动相位表，固定24槽上限；旧8+4人保持独立。
 local World=require("Career.WorldData")
 local Routes=require("Career.TrafficRoutes")
 local C=require("Career.FootprintCollision")
@@ -8,7 +8,19 @@ local TrafficMotion=require("Career.TrafficMotion")
 local Pedestrians=require("Career.Pedestrians")
 local Motion=require("Career.Locomotion")
 local Environment=require("Career.CityEnvironment")
+---@class CareerCrowdFrame
+---@field position Vector3
+---@field rotations table<string,Quaternion>
+---@class CareerCrowdPoseBank
+---@field walk CareerCrowdFrame[]
+---@field idle CareerCrowdFrame[]
+---@field names string[]
+---@field rotation Quaternion
+---@field scale number
+---@field resource Model
+---@field material Material
 ---@class CareerCrowdPerson
+---@field bank CareerCrowdPoseBank
 ---@field node Node
 ---@field mesh Node
 ---@field model AnimatedModel
@@ -53,12 +65,13 @@ Crowd.__index=Crowd
 Crowd.BUDGET,Crowd.HARD_LIMIT=20,24
 Crowd.RANGE,Crowd.RECYCLE,Crowd.SPAWN_MIN=92,125,24
 Crowd.MAX_POSES,Crowd.MAX_CREATES,Crowd.MAX_MOVES=6,2,12
-Crowd.Model=Motion.SourceModel
-Crowd.Materials={"uuid://BQF4wWjBvjY4TsZh53ezlKUM","uuid://E4GryXPNMuGD-2u7wAwFQebl","uuid://HbD52dlRsMYzDBO4bfvfQQbv",
-    "uuid://CXttCS34r1_vg7WG1elr38Cn","uuid://GBrsmUidST48V3cxKKRDcYgU","uuid://GqhbqUfCbcb_WXJak0v1HVzU"}
-Crowd.Resources={Crowd.Model,Motion.Paths.idle,Motion.Paths.walk}
-Crowd.ResourceTypes={[Crowd.Model]="Model",[Motion.Paths.idle]="Animation",[Motion.Paths.walk]="Animation"}
-for _,path in ipairs(Crowd.Materials) do Crowd.Resources[#Crowd.Resources+1]=path; Crowd.ResourceTypes[path]="Material" end
+Crowd.Resources,Crowd.ResourceTypes={},{}
+for _,path in ipairs(Motion.Resources) do
+    Crowd.Resources[#Crowd.Resources+1]=path;Crowd.ResourceTypes[path]=Motion.ResourceTypes[path]
+end
+for _,path in ipairs(Pedestrians.Resources) do
+    Crowd.Resources[#Crowd.Resources+1]=path;Crowd.ResourceTypes[path]=Pedestrians.ResourceTypes[path]
+end
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.huge end
 local function d2(x,z,p) return (x-p.x)^2+(z-p.z)^2 end
 local function wrap(yaw) return (yaw+180)%360-180 end
@@ -66,40 +79,39 @@ local function point(route,s,offset)
     local ux,uz=(route.path[3]-route.path[1])/route.length,(route.path[4]-route.path[2])/route.length
     return route.path[1]+ux*s-uz*(offset or 0),route.path[2]+uz*s+ux*(offset or 0)
 end
-local function clip(path)
-    local resource=assert(cache:GetResource("Animation",path),"Crowd动作未预热："..path)
-    local tracks={}
-    -- 同骨架只取躯干/四肢的24骨，手指保持绑定，不逐人重复复制关键帧。
-    local required={Root=true,Bip001=true}
-    for _,name in pairs(Motion.Mapping) do required[name]=true end
-    for i=0,resource.numTracks-1 do
-        local track=resource:GetTrack(i)
-        if required[track.name] then
-            local keys={}
-            for k=0,track:GetNumKeyFrames()-1 do
-                local key=track:GetKeyFrame(k)
-                keys[#keys+1]={time=key.time,position=key.position,rotation=Quaternion(key.rotation),scale=key.scale}
+local Rig=require("Career.Rig")
+---@type table<number,CareerCrowdPoseBank>
+local poseBanks={}
+-- 两套便服共享离线相位表；运行中只插值骨骼，不逐人重复蒙皮鞋底与IK。
+---@return CareerCrowdPoseBank
+local function poseBank(index,parent)
+    if poseBanks[index] then return poseBanks[index] end
+    local rig=Rig.New(parent,Pedestrians.Specs[index])
+    local motion=rig:EnableOfficialLocomotion()
+    ---@type CareerCrowdPoseBank
+    local bank={walk={},idle={},names=rig.boneNames,rotation=Quaternion(rig.mesh.rotation),
+        scale=rig.heightScale,resource=rig.model.model,material=rig.material:Clone()}
+    for _,mode in ipairs({"idle","walk"}) do
+        local count=mode=="walk" and 16 or 8
+        for i=1,count do
+            motion:PoseNormalized((i-1)/count,mode=="walk" and Motion.WalkSpeed or 0)
+            local frame={position=rig.mesh.position,rotations={}}
+            for _,name in ipairs(bank.names) do
+                frame.rotations[name]=Quaternion(rig.model:GetSkeleton():GetBone(name).node.rotation)
             end
-            tracks[track.name]={mask=track.channelMask,keys=keys}
+            bank[mode][i]=frame
         end
     end
-    return {animation=resource,length=resource.length,tracks=tracks}
+    rig:Dispose();poseBanks[index]=bank
+    return bank
 end
----@param track CareerClipTrack?
----@param t number
----@param bind CareerCrowdBind
----@return Vector3,Quaternion,Vector3
-local function sample(track,t,bind)
-    local keys=track and track.keys
-    if not keys or #keys==0 then return bind.position,bind.rotation,bind.scale end
-    local lo,hi=1,#keys
-    while hi-lo>1 do local mid=(lo+hi)//2; if keys[mid].time<=t then lo=mid else hi=mid end end
-    local a,b=keys[lo],keys[hi]
-    local u=b.time>a.time and math.max(0,math.min(1,(t-a.time)/(b.time-a.time))) or 0
-    local p=(track.mask & CHANNEL_POSITION)~=0 and a.position+(b.position-a.position)*u or bind.position
-    local q=(track.mask & CHANNEL_ROTATION)~=0 and a.rotation:Slerp(b.rotation,u) or bind.rotation
-    local s=(track.mask & CHANNEL_SCALE)~=0 and a.scale+(b.scale-a.scale)*u or bind.scale
-    return p,q,s
+---@param frames CareerCrowdFrame[]
+---@param phase number
+---@return CareerCrowdFrame,CareerCrowdFrame,number
+local function bankFrames(frames,phase)
+    local t=(phase%1)*#frames
+    local index=math.floor(t)+1
+    return assert(frames[index]),assert(frames[index%#frames+1]),t-math.floor(t)
 end
 
 -- 俯视，米；半径.30仅代表可见成年躯干，不将玩家/车辆包成整圈大空气墙。
@@ -123,59 +135,54 @@ function Crowd:Init(city,parent,options)
     self.disposed,self.enabled,self.primed=false,false,false
     self.elapsed,self.scanElapsed,self.moveCursor,self.poseCursor=0,1,1,1
     self.created,self.reused,self.retired,self.poseCount,self.moveCount,self.waitCount=0,0,0,0,0,0
-    self.clips={idle=clip(Motion.Paths.idle),walk=clip(Motion.Paths.walk)}
-    self.resource=assert(cache:GetResource("Model",Crowd.Model),"Crowd官方成人模型未预热")
-    self.reference={}
-    local skeleton=self.resource:GetSkeleton()
-    for i=0,skeleton:GetNumBones()-1 do
-        local b=skeleton:GetBone(i)
-        if self.clips.walk.tracks[b.name] or self.clips.idle.tracks[b.name] then
-            self.reference[b.name]={position=b.initialPosition,rotation=Quaternion(b.initialRotation),scale=b.initialScale}
-        end
-    end
-    assert(self.resource.boundingBox.size.y>1 and self.resource.boundingBox.size.y<2.5,"官方成人模型单位发生变化")
-    print(string.format("[街道人群] 官方成人同骨架Idle/Walk；增量池%d/硬上限%d，无新大资产",self.budget,Crowd.HARD_LIMIT))
+    self.clips={walk={length=1.2},idle={length=3.6}}
+    self.roads={}
+    for _,road in ipairs(World.Roads) do self.roads[#self.roads+1]=road end
+    for _,road in ipairs(World.ExpansionRoads) do self.roads[#self.roads+1]=road end
+    self.spawnElapsed,self.spawnCursor=0,0
+    print(string.format("[街道人群] 写实便服41骨/共享官动相位表；增量池%d/硬上限%d",self.budget,Crowd.HARD_LIMIT))
 end
 function Crowd:Create()
     if #self.pool>=self.budget then return nil end
-    local node=self.root:CreateChild("官方便服成人"..(#self.pool+1))
-    local mesh=node:CreateChild("官方成人原骨架")
+    local bank=poseBank(#self.pool%#Pedestrians.Specs+1,self.root)
+    local node=self.root:CreateChild("写实便服成人"..(#self.pool+1))
+    local mesh=node:CreateChild("便服原骨架")
     local model=mesh:CreateComponent("AnimatedModel")
-    model.model=self.resource
-    for i,path in ipairs(Crowd.Materials) do model:SetMaterial(i-1,cache:GetResource("Material",path)) end
-    model.castShadows=false; model.drawDistance=Crowd.RANGE+5; model.updateInvisible=false
-    local height=1.68+(#self.pool%5)*.035
-    local scale=height/self.resource.boundingBox.size.y
-    mesh:SetScale(scale)
-    mesh.position=Vector3(0,-self.resource.boundingBox.min.y*scale,0)
+    model.model=bank.resource;model:SetMaterial(bank.material)
+    model.castShadows=false;model.drawDistance=Crowd.RANGE+5;model.updateInvisible=false
+    mesh:SetScale(bank.scale);mesh.rotation=bank.rotation
     local bones={}
-    for name in pairs(self.reference) do
+    for _,name in ipairs(bank.names) do
         local bone=model:GetSkeleton():GetBone(name)
-        if bone and bone.node then bones[name]=bone.node end
+        if bone and bone.node then bones[name]=bone.node;bone.animated=false end
     end
-    for i=0,model:GetSkeleton():GetNumBones()-1 do model:GetSkeleton():GetBone(i).animated=false end
     ---@type CareerCrowdPerson
-    local p={node=node,mesh=mesh,model=model,bones=bones,x=0,z=0,radius=.30,height=0,yaw=0,s=0,speed=1.13+(#self.pool%4)*.075,
+    local p={bank=bank,node=node,mesh=mesh,model=model,bones=bones,x=0,z=0,radius=.30,height=0,yaw=0,s=0,speed=1.13+(#self.pool%4)*.075,
         direction=1,phase=(#self.pool*.381)%1,idle=0,blend=0,moved=0,poseElapsed=0,active=false,pending=false,
         localWalk={points={},index=1,cooldown=0}}
+    p.bank=bank
     node:SetEnabledRecursive(false)
     self.pool[#self.pool+1]=p; self.created=self.created+1
     return p
 end
 ---@param p CareerCrowdPerson
 function Crowd:Pose(p)
-    local walk,idle=self.clips.walk,self.clips.idle
-    for name,bind in pairs(self.reference) do
+    local bank=p.bank
+    local wa,wb,wt=bankFrames(bank.walk,p.phase)
+    local ia,ib,it=bankFrames(bank.idle,p.idle/self.clips.idle.length)
+    for _,name in ipairs(bank.names) do
         local bone=p.bones[name]
         if bone then
-            local wp,wq,ws=sample(walk.tracks[name],p.phase*walk.length,bind)
-            local ip,iq,is=sample(idle.tracks[name],p.idle%idle.length,bind)
-            ---@type Vector3
-            local pos=ip+(wp-ip)*p.blend
-            if name=="Root" or name=="Bip001" then pos=Vector3(bind.position.x,pos.y,bind.position.z) end
-            bone:SetTransform(pos,iq:Slerp(wq,p.blend),is+(ws-is)*p.blend)
+            local walk=wa.rotations[name]:Slerp(wb.rotations[name],wt)
+            local idle=ia.rotations[name]:Slerp(ib.rotations[name],it)
+            bone.rotation=idle:Slerp(walk,p.blend)
         end
     end
+    ---@type Vector3
+    local wp=wa.position+(wb.position-wa.position)*wt
+    ---@type Vector3
+    local ip=ia.position+(ib.position-ia.position)*it
+    p.mesh.position=ip+(wp-ip)*p.blend
     p.poseElapsed=0; self.poseCount=self.poseCount+1
 end
 -- 相机缺失时不补人；保守的包围球必须完整离开视锥，不能在玩家转头时贴脸刷出。
@@ -213,9 +220,7 @@ function Crowd:Scan(actor)
             end
         end
     end
-    local roads={}
-    for _,r in ipairs(World.Roads) do roads[#roads+1]=r end
-    for _,r in ipairs(World.ExpansionRoads) do roads[#roads+1]=r end
+    local roads=self.roads
     local candidates={}
     for _,r in ipairs(roads) do
         local ns=r.x1==r.x2
@@ -329,10 +334,12 @@ function Crowd:Acquire(actor,camera,prime)
     for _,slot in ipairs(self.pool) do if not slot.active then p=slot; break end end
     if not p then p=self:Create() end
     if not p then return false end
-    for attempt=1,math.min(64,#self.routes*3) do
-        local route=self.routes[(attempt+self.created*7+self.reused*3-1)%#self.routes+1]
+    for attempt=1,math.min(prime and 64 or 12,#self.routes*3) do
+        self.spawnCursor=self.spawnCursor+1
+        local candidate=self.spawnCursor
+        local route=self.routes[(candidate+self.created*7+self.reused*3-1)%#self.routes+1]
         do
-            local s=route.length*((attempt*.381966)%1)
+            local s=route.length*((candidate*.381966)%1)
             if route.crossing then s=attempt%2==0 and 4 or route.length-4 end
             local x,z=point(route,s)
             p.height=self.city:WalkSurface(x,z,0)
@@ -456,8 +463,12 @@ function Crowd:Update(dt,actor,enabled,camera)
             if d2(p.x,p.z,actor)>Crowd.RECYCLE^2 and self:Hidden(p.x,p.z,actor,camera) then self:Retire(i) end
         end
     end
-    -- 每帧最多新建2个永久槽；激活也最多2个，镜头内永不回收/重定位。
-    for _=1,Crowd.MAX_CREATES do if not self:Acquire(actor,camera) then break end end
+    -- 失败补人每半秒才重试，每次最多12候选；不每帧重复64次碰撞查询。
+    self.spawnElapsed=self.spawnElapsed+dt
+    if self.spawnElapsed>=.5 then
+        self.spawnElapsed=0
+        for _=1,Crowd.MAX_CREATES do if not self:Acquire(actor,camera) then break end end
+    end
     local count=#self.people
     for _,p in ipairs(self.people) do p.poseElapsed=math.min(.2,p.poseElapsed+dt); p.idle=p.idle+dt end
     for _=1,math.min(Crowd.MAX_MOVES,count) do

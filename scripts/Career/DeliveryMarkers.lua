@@ -65,18 +65,20 @@ function Markers:Init(city)
     self.city=city;self.root=city.root:CreateChild("取送餐任务光柱")
     self.slots,self.materials,self.meshes={},{},{}
     self.clock=0;self.disposed=false
-    -- 精确米制网格：6米高半透明柱，1.2米半径地环，向下箭头不阻挡视线。
-    local beam=CylinderGeometry(.42,.42,6,20):ToModel()
-    local ring=TorusGeometry(1.12,.065,8,32):ToModel()
-    local arrow=ConeGeometry(.3,.55,4):ToModel()
-    self.meshes={beam,ring,arrow}
-    local font=assert(cache:GetResource("Font","Fonts/MiSans-Regular.ttf"))
+    -- 12米外柱+不透明细芯，白天远处仍可辨认；地环与箭头对应真实门口。
+    local beam=CylinderGeometry(.68,.68,12,12):ToModel()
+    local core=CylinderGeometry(.10,.10,12,8):ToModel()
+    local ring=TorusGeometry(1.35,.09,8,24):ToModel()
+    local arrow=ConeGeometry(.46,.85,4):ToModel()
+    self.meshes={beam,ring,arrow,core}
+    local font=assert(cache:GetResource("Font","Fonts/NotoSerifSC-Game.otf"))
     for i=1,Markers.CAPACITY do
         local root=self.root:CreateChild("任务指引槽"..i)
         local c=colors.navigation
-        local solid=material(c);local translucent=material(c,.19)
+        local solid=material(c);local translucent=material(c,.34)
         self.materials[#self.materials+1]=solid;self.materials[#self.materials+1]=translucent
-        local b=object(root,"半透明目标光柱",beam,translucent);b.position=V(0,3.04,0)
+        local b=object(root,"半透明目标光柱",beam,translucent);b.position=V(0,6.04,0)
+        local inner=object(root,"目标明亮细芯",core,solid);inner.position=V(0,6.04,0)
         local r=object(root,"目标地环",ring,solid);r.rotation=Quaternion(90,0,0);r.position=V(0,.06,0)
         local a=object(root,"目标下箭头",arrow,solid);a.rotation=Quaternion(180,0,0);a.position=V(0,2.8,0)
         local textNode=root:CreateChild("取送阶段和距离");textNode.position=V(0,3.45,0);textNode.scale=V(.65,.65,.65)
@@ -88,7 +90,7 @@ function Markers:Init(city)
         self.slots[i]=slot
         root:SetEnabledRecursive(false)
     end
-    print("[任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；6米光柱与地环，无碰撞")
+    print("[任务指引] 5槽复用；取餐琥珀/送达青绿/地点导航蓝；12米双层光柱与地环，无碰撞")
 end
 ---@param orders CareerOrder[]
 ---@param target? table
@@ -116,7 +118,7 @@ function Markers:Sync(orders,target)
             local c=colors[goal.stage]
             for j=1,2 do
                 local mat=self.materials[(i-1)*2+j]
-                mat:SetShaderParameter("MatDiffColor",Variant(Color(c.r,c.g,c.b,j==2 and .19 or 1)))
+                mat:SetShaderParameter("MatDiffColor",Variant(Color(c.r,c.g,c.b,j==2 and .34 or 1)))
                 mat:SetShaderParameter("MatEmissiveColor",Variant(Color(c.r*1.8,c.g*1.8,c.b*1.8)))
             end
             slot.label.color=c

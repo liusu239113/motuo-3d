@@ -235,6 +235,29 @@ function Motion:SourceClearance(pose)
     end
     return low*self.rootRatio
 end
+-- 目标中段脊柱比源骨架长近一倍。按髋到颈的实际轴线限制慢跑前倾，
+-- 上身所有后代共同修正，不能单独扶正胸口却把肩、肘、腕留在旧全局位置。
+function Motion:RelaxTorso()
+    local rig=self.rig
+    local torso=rig:GetBonePosition("NeckTwist01")-rig:GetBonePosition("Hip")
+    local pitch=math.deg(math.atan(torso.z,torso.y))
+    local limit=6+8*self.running
+    local correction=clamp(pitch,-6,limit)-pitch
+    if math.abs(correction)<.001 then return end
+    ---@type table<string, Quaternion>
+    local rotations={}
+    for _,name in ipairs(rig.boneNames) do rotations[name]=rig:GetLocalBoneTransform(name):Rotation() end
+    ---@type table<string, boolean>
+    local upperBody={Waist=true}
+    for _,name in ipairs(rig.boneNames) do
+        local parent=rig.bind[name].parentName
+        if parent and upperBody[parent] then upperBody[name]=true end
+        if upperBody[name] then
+            local weight=name=="Head" and 0 or name=="NeckTwist02" and .33 or name=="NeckTwist01" and .67 or 1
+            rig:SetLocalBoneRotation(name,Quaternion(correction*weight,V.RIGHT)*rotations[name])
+        end
+    end
+end
 function Motion:Evaluate()
     local rig=self.rig
     local idle=self:SampleSource(self.clips.idle,self.idleTime%self.clips.idle.length)
@@ -253,6 +276,7 @@ function Motion:Evaluate()
             rig:SetLocalBoneRotation(target,rotation*self.corrections[target])
         end
     end
+    self:RelaxTorso()
     local walkY=walk.Bip001:Translation().y
     local runY=run.Bip001:Translation().y
     local idleY=idle.Bip001:Translation().y

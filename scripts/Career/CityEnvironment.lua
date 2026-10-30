@@ -441,21 +441,22 @@ function Environment.BuildCore(city)
             d:Quad("concrete",Vector3(l,6.55,z),Vector3(l,y(l),z),Vector3(r,6.55,z),Vector3(r,y(r),z))
         end
     end
-    -- 纸板/睡袋位于原木板床，周围留足两个方向进出；(0,-70)两米交互圆全空。
-    -- 原木床面y=.24；各层由底面向上叠放，不能把纸板和睡袋埋进床内。
+    -- 睡袋与交互点同源，均在机动车道和人行道之外；不挡东侧桌凳与水桶。
+    local home=assert(require("Career.HousingData").Get("bridge"))
+    local bx=home.x
     local paperTop=.24+.004+.035
-    d:Box("street_paper",2,paperTop-.035/2,-73,2.35,.035,1.15)
-    d:Box("street_canvas",2,paperTop+.20/2,-73.05,1.85,.20,.70)
-    d:Box("street_canvasLight",2.72,paperTop+.20+.14/2,-73.05,.28,.14,.59)
-    for x=1.25,2.6,.16 do d:Box("metal",x,paperTop+.20+.006,-73.34,.045,.012,.018) end
-    d:Box("metal",0,5.30,-70,5.2,.12,.40)
-    d:Box("lamp",0,5.22,-70,4.8,.035,.25)
-    city:NightLight(0,4.9,-70,12,13)
-    -- 双面大牌只悬空，不放新柱挡中心路；从南北导航接近均能看到桥下入口。
+    d:Box("street_paper",bx,paperTop-.035/2,-73,2.35,.035,1.15)
+    d:Box("street_canvas",bx,paperTop+.20/2,-73.05,1.85,.20,.70)
+    d:Box("street_canvasLight",bx+.72,paperTop+.20+.14/2,-73.05,.28,.14,.59)
+    for x=bx-.75,bx+.6,.16 do d:Box("metal",x,paperTop+.20+.006,-73.34,.045,.012,.018) end
+    d:Box("metal",bx,5.30,-70,5.2,.12,.40)
+    d:Box("lamp",bx,5.22,-70,4.8,.035,.25)
+    city:NightLight(bx,4.9,-70,12,13)
+    -- 双面入口字牌悬在生活区，不再误导玩家停在通车路中央。
     for _,z in ipairs({-61.36,-78.64}) do
-        d:Box("street_teal",0,4.30,z,11,.90,.12)
+        d:Box("street_teal",bx,4.30,z,11,.90,.12)
         local node=d.root:CreateChild("桥下实体入口字牌")
-        node.position=Vector3(0,4.30,z+(z< -70 and -.075 or .075))
+        node.position=Vector3(bx,4.30,z+(z< -70 and -.075 or .075))
         node.rotation=Quaternion(0,z< -70 and 0 or 180,0)
         local geom=node:CreateComponent("CustomGeometry")
         geom:BeginGeometry(0,TRIANGLE_LIST)
@@ -471,6 +472,6 @@ function Environment.BuildCore(city)
         geom:Commit();geom:SetMaterial(city.mats.coast_bridge_sign)
         geom.castShadows=false;geom.drawDistance=140
     end
-    print(string.format("[城市环境] 桥下原点(0,-70)不动 / 岸丘4m / %d件海岸设施 / 开放海湾752m / 分块8m地形",#Environment.Props))
+    print(string.format("[城市环境] 桥下休息点(%.1f,%.1f)在路外 / 岸丘4m / %d件海岸设施 / 开放海湾752m / 分块8m地形",home.x,home.z,#Environment.Props))
 end
 return Environment

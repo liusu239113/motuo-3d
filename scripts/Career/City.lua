@@ -280,10 +280,14 @@ function City:BuildPlaces()
         self:Obstacle(x,-70,2.4,4)
     end
     for _,z in ipairs({-78.5,-61.5}) do d:Box("metal",0,6.9,z,76,.7,.18) end
-    d:Ground("stone",0,-70,17,12,.08)
-    d:Box("wood",2,.15,-73,2.1,.18,1.0)
-    d:Box("trim",2,.35,-73.3,.7,.24,.4)
-    d:Sign("桥下落脚点",0,2,-74,0,.38)
+    -- 车道x[-6,6]、人行道[6,12]保持畅通；生活区在桥墩内侧x[14,25]。
+    -- 两米交互圆(20,-68)与床/桌/水桶均分离，床有真实实占碰撞。
+    local home=assert(Housing.Get("bridge"))
+    d:Ground("stone",home.x,-70,12,12,.08)
+    d:Box("wood",home.x,.15,-73,2.1,.18,1.0)
+    d:Box("trim",home.x,.35,-73.3,.7,.24,.4)
+    self:Obstacle(home.x,-73,2.35,1.15)
+    d:Sign("桥下落脚点",home.x,2,-74,0,.38)
     d:Ground("concrete",-25,44,48,3,.078)
     for _,point in ipairs(Config.pointList) do
         if point.id=="noodle" or point.id=="convenience" or point.id=="office" then

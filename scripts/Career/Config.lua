@@ -1,6 +1,8 @@
 -- 首日纯逻辑配置；世界坐标单位为米，Y 由 City 决定，不创建节点/事件/UI。
 local Config = {}
 local World = require("Career.WorldData")
+local Housing = require("Career.HousingData")
+local bridge = assert(Housing.Get("bridge"))
 
 Config.SAVE_PATH = "career_profile_v1.json"
 Config.SAVE_VERSION = 1
@@ -32,14 +34,13 @@ Config.pointList = {
     { id = "breakfast", label = "老街早餐店", kind = "merchant", x = -25, z = -8 },
     { id = "home_old", label = "旧宅门厅", kind = "delivery", x = -108, z = 80 },
     { id = "park", label = "公园长椅", kind = "rest", x = 108, z = -25 },
-    { id = "bridge", label = "桥下落脚点", kind = "rest", x = 0, z = -70 },
+    { id = "bridge", label = "桥下落脚点", kind = "rest", x = bridge.x, z = bridge.z },
     { id = "charge", label = "街边充电点", kind = "charge", x = 22, z = -8 },
     { id = "dealer", label = "车行前台", kind = "dealer", x = 108, z = 80 },
     { id = "noodle", label = "街角面馆取餐口", kind = "merchant", x = -70, z = 9 },
     { id = "convenience", label = "社区便利取货口", kind = "merchant", x = 53, z = 9 },
     { id = "office", label = "星桥写字楼门厅", kind = "delivery", x = -45, z = 44 },
 }
-local Housing = require("Career.HousingData")
 for _,home in ipairs(Housing.List) do
     if home.width then Config.pointList[#Config.pointList+1]={id=home.point,label=home.name.."入口",kind="housing",x=home.x,z=home.z} end
 end

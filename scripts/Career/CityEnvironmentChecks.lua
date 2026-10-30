@@ -184,15 +184,16 @@ function Checks.Run(session)
         local target=assert(session:Target(),"生产海岸导航缺失") --[[@as EnvironmentCheckTarget]]
         local route=assert(target.route)
         for i=2,#route do assert(Environment.SegmentFree(route[i-1],route[i],.8),"生产导航切入海水") end
-        -- 实际现场Interact与真实UI触摸：取消无写入，离开后确认重检，在原点免费过夜。
-        actor.bikeX,actor.bikeZ=20,-20;actor:Teleport(0,-70,0);actor.speed=0
+        -- 实际现场Interact与真实UI触摸：取消无写入，离开后确认重检，在路外免费过夜。
+        local bridge=assert(require("Career.HousingData").Get("bridge"))
+        actor.bikeX,actor.bikeZ=20,-20;actor:Teleport(bridge.x,bridge.z,0);actor.speed=0
         view:ClosePhone();view:ShowGame()
         local before=Store.Get();local day,cash,revision=before.day,before.cashCents,before.revision
         session:Interact();assert(view.blocked);clickText(view,"先不休息")
         assert(Store.Get().revision==revision and Store.Get().day==day and Store.Get().cashCents==cash,"取消休息有副作用")
         session:Interact();actor:Teleport(0,-85,0);clickText(view,"确认在桥下休息")
         assert(Store.Get().day==day and Store.Get().cashCents==cash,"远离桥下仍能确认过夜")
-        actor:Teleport(0,-70,0);session:Interact();clickText(view,"确认在桥下休息")
+        actor:Teleport(bridge.x,bridge.z,0);session:Interact();clickText(view,"确认在桥下休息")
         assert(Store.Get().day==day+1 and Store.Get().cashCents==cash,"桥下现场免费过夜失败/扣款")
         clickText(view,"出发")
         local stream=city.stream
