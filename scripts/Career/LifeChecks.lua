@@ -17,7 +17,7 @@ function Checks.Run(session,shot)
     local lowPlan=Life.Plan(sample)
     assert(lowPlan.mealHours==1 and lowPlan.restHours==2,"计划按真实消耗率估算")
     assert(lowPlan.reserveCents==4400 and lowPlan.shortfallCents==3400,"下一餐+30元住宿+2元充电预算")
-    sample.equipment.raincoat=true
+    sample.equipment={raincoat=true}
     assert(Life.Plan(sample).restHours>lowPlan.restHours,"雨衣节省精力应反映到计划")
     local monitor={day=0,seen={}}
     assert(Life.PollAlerts(monitor,sample),"低状态首次提醒")
