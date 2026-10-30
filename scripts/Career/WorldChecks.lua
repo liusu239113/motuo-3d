@@ -277,10 +277,15 @@ function Checks.Coverage(session)
                 local offer=assert(Delivery.GetOffer(),"远区没有真实报价："..district.id)
                 local pickup=assert(Config.points[offer.pickupId])
                 assert(World.District(pickup.x,pickup.z).id==district.id,"远区误派老街单")
-                assert(offer.templateId=="world_"..district.id..(sequence==2 and "_local" or "_cross"),"当地/跨区模板轮换错误")
+                local cross=assert(Config.GetTemplate("world_"..district.id.."_cross"))
+                local eligible=cross.timeLimitHours<=16
+                local expected=sequence==3 and eligible and cross.id or "world_"..district.id.."_local"
+                assert(offer.templateId==expected,"当地报价未遵守位置/当天可完成时限过滤："..district.id.."/"..offer.templateId)
                 assert(session.city:StaticFree(pickup.x,pickup.z,.32,"walk",0),"真实取餐门口被挡")
             end
-            passed(district.id.." 当地与跨区报价可派发，门口静态可达")
+            local cross=assert(Config.GetTemplate("world_"..district.id.."_cross"))
+            passed(string.format("%s 当地报价可派发；跨区时限%.2f游戏小时，08点%s",district.id,cross.timeLimitHours,
+                cross.timeLimitHours<=16 and "可派发" or "按当天可完成规则过滤"))
         end
     end)
 end
