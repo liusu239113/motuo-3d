@@ -115,8 +115,8 @@ function Actions:ShowMorning(message)
     local plan=require("Career.LifeStatus").Plan(p)
     local summary=(message or "")..string.format("\n昨天收入%.2f元，支出%.2f元。\n现有现金%.2f元。",(p.lastDaySummary.incomeCents or 0)/100,
         (p.lastDaySummary.expenseCents or 0)/100,p.cashCents/100)
-    summary=summary..string.format("\n\n今日安排：%s。\n今晚%s，建议预留%.2f元。\n饱腹%.0f / 精力%.0f / 电量%.0f%%。",
-        plan.mealText,plan.home.name,plan.reserveCents/100,p.hunger,p.energy,p.battery)
+    summary=summary..string.format("\n\n今日安排：%s。\n今晚%s，建议预留%.2f元。\n饱腹%.0f / 精力%.0f / %s%.0f%%。",
+        plan.mealText,plan.home.name,plan.reserveCents/100,p.hunger,p.energy,plan.electric and "电量" or "燃油",plan.power)
     self.view:ShowDialog("第"..p.day.."天 · 又是新的一天",summary,{{text="收拾好，继续生活",primary=true}})
 end
 function Actions:InteriorTarget()

@@ -30,6 +30,7 @@ local NightLighting = require("Career.NightLighting")
 ---@class CareerSession
 ---@field deliveryPeople? CareerDeliveryPeople
 ---@field deliveryMarkers? CareerDeliveryMarkers
+---@field nightLighting? CareerNightLighting
 ---@field PositionSnapshot fun(self:CareerSession):CareerPosition
 ---@field ApplySpace fun(self:CareerSession,space:string)
 ---@field ChooseHousing fun(self:CareerSession,id:string)

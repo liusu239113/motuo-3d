@@ -19,9 +19,13 @@ function Checks.Run(session,shot)
     assert(lowPlan.reserveCents==4400 and lowPlan.shortfallCents==3400,"下一餐+30元住宿+2元充电预算")
     sample.equipment={raincoat=true}
     assert(Life.Plan(sample).restHours>lowPlan.restHours,"雨衣节省精力应反映到计划")
+    sample.energy=29
     local monitor={day=0,seen={}}
-    assert(Life.PollAlerts(monitor,sample),"低状态首次提醒")
+    assert(Life.PollAlerts(monitor,sample).key=="energy-low","同级低状态按稳定顺序首次提醒")
     assert(not Life.PollAlerts(monitor,sample),"同级提醒不能连续刷屏")
+    sample.time=sample.time+.05
+    assert(Life.PollAlerts(monitor,sample).key=="power-critical","未展示的同级提醒应在冷却后展示，不能直接丢弃")
+    assert(not Life.PollAlerts(monitor,sample),"已展示提醒同一天不重复")
     sample.hunger=10
     assert(Life.PollAlerts(monitor,sample).key=="hunger-critical","严重程度升级应立即提醒")
     assert(Store.Get().cashCents==p.cashCents,"计算计划和提醒不能扣款")
@@ -71,6 +75,24 @@ function Checks.Run(session,shot)
     session:ApplySpace("city")
     assert(sky.root.enabled and session.sky.enabled,"出门恢复天空与云")
     session.view:ClosePhone();session.view:ShowGame()
+    local NightLighting=require("Career.NightLighting")
+    local lamps=assert(session.nightLighting)
+    local actorPosition=session.actor.node.worldPosition
+    local vehiclePosition=session.actor.visuals.bikeVisual.worldPosition
+    session.actor.node.worldPosition=vehiclePosition
+    NightLighting.Update(lamps,session.actor,Atmosphere.Sample(1,12),false)
+    assert(not lamps.head.enabled and not lamps.tail.enabled,"晴天正午不应开启车灯")
+    NightLighting.Update(lamps,session.actor,Atmosphere.Sample(1,22),false)
+    assert(lamps.head.enabled and lamps.tail.enabled,"夜间近车真实前后灯应开启")
+    local parkedLight=lamps.headNode.worldPosition
+    session.actor.node.worldPosition=vehiclePosition+Vector3(40,0,0)
+    NightLighting.Update(lamps,session.actor,Atmosphere.Sample(1,22),false)
+    assert(not lamps.head.enabled and not lamps.tail.enabled,"远离停车必须关闭局部照明")
+    local lampDelta=lamps.headNode.worldPosition-parkedLight
+    assert(lampDelta:LengthSquared()<.0001,"车灯不能跟步行人物飘走")
+    session.actor.node.worldPosition=actorPosition
+    NightLighting.Update(lamps,session.actor,Atmosphere.Sample(1,22),true)
+    assert(not lamps.head.enabled and not lamps.tail.enabled,"室内车灯必须关闭")
     local Delivery=require("Career.Delivery")
     local offer=assert(Delivery.GetOffer())
     assert(Delivery.Accept(offer.id))

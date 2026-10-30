@@ -246,8 +246,18 @@ function View:ShowDialog(title,text,buttons)
     self:ResetInput(); self.controls:SetEnabled(false)
     self.blocked=true; self.phone:SetVisible(false); self.overlay:SetVisible(true)
     destroyChildren(self.dialogBody)
-    self.dialogBody:AddChild(label(title,21,C.amber,{fontWeight="bold",whiteSpace="normal"}))
-    self.dialogBody:AddChild(label(text,13,C.white,{whiteSpace="normal",maxLines=14}))
+    local _,lineBreaks=text:gsub("\n","")
+    local scrollable=#text>220 or lineBreaks>=7
+    self.dialogBody:SetStyle{height=scrollable and "90%" or "auto"}
+    self.dialogBody:AddChild(PhoneKit.Text(title,21,C.amber,{fontWeight="bold",flexShrink=0}))
+    if scrollable then
+        local content=UI.ScrollView{id="career-dialog-scroll",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
+            padding=0,scrollX=false,scrollY=true}
+        content:AddChild(PhoneKit.Text(text,13,C.white,{id="career-dialog-text"}))
+        self.dialogBody:AddChild(content)
+    else
+        self.dialogBody:AddChild(PhoneKit.Text(text,13,C.white,{id="career-dialog-text"}))
+    end
     for _,item in ipairs(buttons) do
         self.dialogBody:AddChild(btn(item.text,function()
             self.overlay:SetVisible(false); self.blocked=false
@@ -538,13 +548,19 @@ function View:BuildPhone(state,offer,active)
     elseif page=="life" then
         section("生活仪表盘")
         local advice=Life.Advice(state)
+        local function navigate(point)
+            a.setWaypoint(point);a.closePhone()
+            if state.currentSpace and state.currentSpace~="city" then
+                self:Notice("导航已保留：先到房门出门，出门后继续前往目的地。")
+            end
+        end
         target:AddChild(PhoneKit.Card("career-life-summary",{children={
             PhoneKit.Text(Life.Clock(state.time),30,PhoneKit.C.ink,{id="career-life-clock",fontWeight="bold"}),
             PhoneKit.Text(string.format("第%d天 · %s · %s",state.day,Life.Part(state.time),state.weatherLabel or "晴朗"),11,PhoneKit.C.blue),
             PhoneKit.Text(advice.title,15,advice.urgent and PhoneKit.C.red or PhoneKit.C.green,{id="career-life-advice",fontWeight="bold"}),
             PhoneKit.Text(advice.detail,11,PhoneKit.C.muted),
             PhoneKit.Button(advice.action=="继续配送" and "继续当前配送" or advice.point=="breakfast" and "导航去吃饭" or "导航去休息",function()
-                a.setWaypoint(advice.point); a.closePhone()
+                navigate(advice.point)
             end,"career-life-navigate",true)}}))
         local plan=Life.Plan(state)
         section("今天的生活计划")
@@ -553,11 +569,11 @@ function View:BuildPhone(state,offer,active)
             PhoneKit.Text("下一餐 ¥12 · 耗时15游戏分钟 · 不会自动扣款",11,PhoneKit.C.muted),
             PhoneKit.Text(plan.restText,14,PhoneKit.C.blue,{id="career-plan-rest",fontWeight="bold"}),
             PhoneKit.Text(plan.home.name..string.format(" · ¥%.0f/晚 · 精力至少%d",plan.home.price/100,plan.home.energy),11,PhoneKit.C.muted),
-            PhoneKit.Text(string.format("建议预留 ¥%.2f · 预留后 ¥%.2f",plan.reserveCents/100,plan.remainingCents/100),13,
+            PhoneKit.Text(string.format("建议预留 ¥%.2f\n预留后余额 ¥%.2f",plan.reserveCents/100,plan.remainingCents/100),13,
                 plan.shortfallCents>0 and PhoneKit.C.red or PhoneKit.C.green,{id="career-plan-budget",fontWeight="bold"}),
             PhoneKit.Text(plan.shortfallCents>0 and string.format("还差 ¥%.2f。可选免费桥下/公园，或查看基础帮助条件。",plan.shortfallCents/100)
                 or "预算包含下一餐、当前住处；车辆低于25%时另预留补给。",11,PhoneKit.C.muted),
-            PhoneKit.Button("查看今晚住处",function() a.setWaypoint(plan.home.point);a.closePhone() end,"career-plan-home",false)}}))
+            PhoneKit.Button("导航到今晚住处",function() navigate(plan.home.point) end,"career-plan-home",false)}}))
         section("本日收支 · 实际流水")
         target:AddChild(PhoneKit.Card("career-life-day-ledger",{children={
             PhoneKit.Text(string.format("完成 %d 单 · 收入 ¥%.2f",plan.orders,plan.incomeCents/100),14,PhoneKit.C.green,{id="career-plan-income",fontWeight="bold"}),
@@ -590,7 +606,7 @@ function View:BuildPhone(state,offer,active)
         section("今晚住哪里")
         local home=assert(Housing.Get(state.accommodation))
         text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
-        button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
+        button("导航到当前住处",function() navigate(home.point) end,false)
         if state.currentSpace and state.currentSpace~="city" then button("到房门旁出门",a.leaveHousing,false)
         elseif home.width then button("到门口进入住处",a.enterHousing,false) end
         button("到点过夜",a.sleepHousing,false)
@@ -599,7 +615,7 @@ function View:BuildPhone(state,offer,active)
             PhoneKit.Text(string.format("%s %.0f%% · 预计剩余 %.1f km",plan.electric and "电量" or "燃油",plan.power,plan.rangeMeters/1000),14,PhoneKit.C.blue,{id="career-plan-range",fontWeight="bold"}),
             PhoneKit.Text("按当前游戏里程消耗估算；只展示，不赠送电量或燃油。",11,PhoneKit.C.muted),
             PhoneKit.Button(plan.electric and "导航到充电点" or "导航到车行",function()
-                a.setWaypoint(plan.electric and "charge" or "dealer");a.closePhone()
+                navigate(plan.electric and "charge" or "dealer")
             end,"career-plan-supply",false)}}))
         action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2 · 耗时30游戏分钟","充电",a.charge,false)
         action("career-life-aid","低现金基础帮助","满足条件才可领取基础补给，不发放现金。",nil,"申请帮助",a.aid,false)
@@ -653,8 +669,8 @@ function View:LayoutControls()
     local dashWidth=narrow and math.max(230,math.min(270,w*.46)) or 300
     local compact=h<470
     self.dashboard.speed:SetVisible(not compact or self.mountedControls)
-    self.dashboard.wallet:SetVisible(not compact)
-    self.dashboard.plan:SetVisible(not compact)
+    self.dashboard.wallet:SetVisible(not compact and not self.mountedControls)
+    self.dashboard.plan:SetVisible(not compact and not self.mountedControls)
     self.dashboard.speed:SetStyle{fontSize=self.mountedControls and 18 or 11}
     self.navPanel:SetStyle{width=navWidth}
     self.dashboard.root:SetStyle{width=dashWidth,gap=compact and 4 or 7,padding=compact and 8 or 12}

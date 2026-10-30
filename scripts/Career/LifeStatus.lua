@@ -80,17 +80,22 @@ function Life.Alerts(p)
     table.sort(result,function(a,b) if a.level==b.level then return a.key<b.key end return a.level>b.level end)
     return result
 end
--- 同一天同一级提醒只出现一次；恢复再降低也不刷屏，升级严重程度仍会提醒。
+-- 同一天同一级提醒只出现一次；只标记实际展示的提醒，其余隔一段活动时间再展示。
+-- 更严重的状态可越过冷却，手机/暂停不推进游戏时间，也就不会消耗提醒间隔。
 function Life.PollAlerts(monitor,p)
-    if monitor.day~=p.day then monitor.day=p.day;monitor.seen={} end
-    local selected
+    if monitor.day~=p.day then
+        monitor.day=p.day;monitor.seen={};monitor.nextAt=0;monitor.lastLevel=0
+    end
+    local now=(p.day-1)*24+p.time
     for _,alert in ipairs(Life.Alerts(p)) do
         if not monitor.seen[alert.key] then
+            if now<(monitor.nextAt or 0) and alert.level<=(monitor.lastLevel or 0) then return nil end
             monitor.seen[alert.key]=true
-            if not selected then selected=alert end
+            monitor.nextAt=now+.04
+            monitor.lastLevel=alert.level
+            return alert
         end
     end
-    return selected
 end
 function Life.Clock(hour) return string.format("%02d:%02d",math.floor(hour),math.floor(hour*60)%60) end
 return Life
