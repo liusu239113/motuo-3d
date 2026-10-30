@@ -20,6 +20,12 @@ function Start()
         view=arg:match("^%-view=(%a+)$") or view
         mode=arg:match("^%-pose=(%a+)$") or mode
     end
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-checks" then
+            require("Career.LocomotionChecks").Run({options={test=true},restoreTestStorage=function() end,
+                actor={visuals={walker=rig_,locomotion=motion}}})
+        end
+    end
     if mode=="bind" then rig_:Reset();rig_.mesh.position=rig_.standOffset
     else motion:PoseNormalized(phase,speed) end
     for _,name in ipairs({"Hip","Pelvis","Waist","Spine01","Spine02","NeckTwist01","Head","L_Clavicle","L_Upperarm","L_Forearm","L_Hand","R_Upperarm","R_Forearm","R_Hand","L_Thigh","L_Calf","L_Foot","L_ToeBase"}) do

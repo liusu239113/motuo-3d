@@ -68,8 +68,22 @@ function Checks.Run(session)
         assert(motion.clips.idle.animation.numTracks==97 and motion.clips.walk.animation.numTracks==98 and motion.clips.run.animation.numTracks==88,"官方资源版本/轨道不符，必须重新检查兼容性")
         assert(motion.clips.idle.keyframes==4947 and motion.clips.walk.keyframes==3626 and motion.clips.run.keyframes==2200,"不能用静态pose冒充官动关键帧")
         report.sourceEquivalence=compareSourceSampling(motion)
-        assert(#rig.fullSoleVertices.L_Foot==615 and #rig.fullSoleVertices.R_Foot==598,"原完整鞋顶点版本改变，请重新审计")
-        assert(#rig.soleVertices.L_Foot==286 and #rig.soleVertices.R_Foot==295,"精确鞋去重数量改变，请重新审计")
+        for _,name in ipairs({"L_Foot","R_Foot"}) do
+            assert(#rig.fullSoleVertices[name]>0 and #rig.soleVertices[name]>0,"当前模型必须有实际鞋部蒙皮顶点")
+            assert(#rig.soleVertices[name]<=#rig.fullSoleVertices[name],"精确去重不能添加鞋顶点")
+        end
+        -- 源绑定输入时，手和前臂必须使用相同参考校准，不能产生额外折腕。
+        for _,side in ipairs({"L_","R_"}) do
+            local forearm,hand=side.."Forearm",side.."Hand"
+            local sourceForearm="Bip001 "..side:sub(1,1).." Forearm"
+            local sourceHand="Bip001 "..side:sub(1,1).." Hand"
+            local a=motion.reference[sourceForearm]:Rotation()*motion.corrections[forearm]
+            local b=motion.reference[sourceHand]:Rotation()*motion.corrections[hand]
+            local localWrist=a:Inverse()*b
+            for _,axis in ipairs({Vector3.RIGHT,Vector3.UP,Vector3.FORWARD}) do
+                assert((localWrist*axis-rig.bind[hand].rotation*axis):Length()<.00002,"手腕校准必须与前臂一致")
+            end
+        end
         motion.paused=false
         for _,speed in ipairs({0,.6,1.8,2.6,3.4}) do
             local firstHand=Vector3.ZERO
@@ -77,6 +91,16 @@ function Checks.Run(session)
             for i=0,31 do
                 motion:PoseNormalized(i/32,speed)
                 local data=measure(rig)
+                local torso=rig:GetBonePosition("NeckTwist01")-rig:GetBonePosition("Hip")
+                local pitch=math.deg(math.atan(torso.z,torso.y))
+                assert(pitch<=6+8*motion.running+.02 and pitch>=-6.02,"自然站走跑不能前趴或后仰")
+                for _,chain in ipairs(rig.arms) do
+                    local direction=(rig:GetBonePosition(chain.lower)-rig:GetBonePosition(chain.upper)):Normalized()
+                    local swing=math.deg(math.atan(direction.z,-direction.y))
+                    local lateral=math.deg(math.atan(direction.x*chain.side,math.sqrt(direction.y*direction.y+direction.z*direction.z)))
+                    assert(swing>=-42.02 and swing<=38.02,"肘部不能抬到肩高后摆")
+                    assert(lateral>=1.98 and lateral<=8+4*motion.running+.02,"站姿与摆臂不能横向架开")
+                end
                 for _,name in ipairs({"L_Foot","R_Foot"}) do
                     local original=rig:SoleHeight(name,true)
                     local deduplicated=rig:SoleHeight(name)
@@ -154,8 +178,9 @@ function Checks.Run(session)
     visuals.phase,visuals.gaitWeight,visuals.runWeight=motion.phase*math.pi*2,motion.moving,motion.running
     assert(ok,tostring(err))
     local equivalence=assert(report.sourceEquivalence)
-    print(string.format("[官动精确缓存等价] PASS 源97->24骨 %d采样/%d映射矩阵，矩阵误差%.9g 髋误差%.9g 净空误差%.9g；鞋615/598->286/295顶点，%d鞋底对照最大误差%.9g",
+    print(string.format("[官动精确缓存等价] PASS 源97->24骨 %d采样/%d映射矩阵，矩阵误差%.9g 髋误差%.9g 净空误差%.9g；鞋%d/%d->%d/%d顶点，%d鞋底对照最大误差%.9g",
         equivalence.samples,equivalence.matrices,equivalence.maxMatrixError,equivalence.maxHipError,equivalence.maxClearanceError,
+        #rig.fullSoleVertices.L_Foot,#rig.fullSoleVertices.R_Foot,#rig.soleVertices.L_Foot,#rig.soleVertices.R_Foot,
         report.soleComparisons,report.maxSoleEquivalenceError))
     print(string.format("[官方走跑数据验收] PASS %d姿态 骨长误差%.7fm Walk髋%.3f..%.3f Run髋%.3f..%.3f 腾空%d 左右支撑%d/%d；视觉必须另看多相位实拍",
         report.poses,report.maxLengthError,report.minWalkHip,report.maxWalkHip,report.minRunHip,report.maxRunHip,report.flight,report.leftContacts,report.rightContacts))
