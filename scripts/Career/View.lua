@@ -672,6 +672,7 @@ function View:LayoutControls()
     self.dashboard.plan:SetVisible(false)
     self.navPanel:SetStyle{width=navWidth}
     self.dashboard.root:SetStyle{width=dashWidth,gap=4,padding=8}
+    self.notice:SetStyle{left=navWidth+24,right=dashWidth+24,top=12}
     local dash=self.dashboard.root:GetLayout()
     local dashBottom=dash.y+dash.h+6
     self.pauseButton:SetStyle{top=dashBottom,right=12}

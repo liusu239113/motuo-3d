@@ -24,7 +24,7 @@ function Dashboard.New(actions)
 end
 function Dashboard:Init(actions)
     self.actions=actions
-    self.clock=text("08:00",22,C.white,"career-hud-clock");self.clock:SetStyle{width=78}
+    self.clock=text("08:00",22,C.white,"career-hud-clock");self.clock:SetStyle{width=88,minWidth=88,flexShrink=0,whiteSpace="nowrap"}
     self.part=text("第1天 · 早晨",10,C.amber,"career-hud-day")
     self.weather=text("晴朗",10,C.white,"career-hud-weather")
     self.wallet=text("",11,C.white,"career-hud-wallet");self.wallet:SetVisible(false)

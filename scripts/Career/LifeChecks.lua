@@ -148,7 +148,16 @@ function Checks.Run(session,shot)
     session.options.lifeAudit=true
     session.options.lifeRide=shot=="ride" or shot=="nightride"
     if session.options.lifeRide then
-        session.actor.mounted=true;session.actor.visuals:SetMounted(true);session:Refresh()
+        session.actor.mounted=true;session.actor.visuals:SetMounted(true)
+        session.actor:SyncVisuals(0)
+        local rider=session.actor.visuals.mountedRider
+        for _,steer in ipairs({0,-1,1}) do
+            rider:PoseRide(steer)
+            local pose=rider:ReadPose()
+            assert(pose.leftGripError<.005 and pose.rightGripError<.005,"新人物骑姿必须真实握住两侧把手")
+        end
+        rider:PoseRide(0)
+        session:Refresh()
     end
     if shot=="nightride" then
         assert(Store.Transaction(function(d) d.time=22;return true end));session:Refresh()
