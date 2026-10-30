@@ -191,17 +191,25 @@ function Checks.Audit(session)
         return b
     end
     local dashboard=bounds(d.root)
-    local nav=bounds(view.navPanel)
-    assert(nav.x+nav.w<=dashboard.x or nav.y+nav.h<=dashboard.y,"地图不能遮盖人物状态卡")
-    for _,widget in ipairs({d.clock,d.part,d.weather,d.foodValue,d.energyValue,d.batteryValue,d.lifeButton,d.helpButton}) do
+    local nav=view.navPanel:GetAbsoluteLayout()
+    assert(nav.h<=0 or nav.x+nav.w<=dashboard.x or nav.y+nav.h<=dashboard.y,"导航不能遮盖独立状态")
+    assert(d.root.props.borderWidth==0 and d.root.props.backgroundColor[4]==0
+        and not d.root.props.backgroundGradient,"HUD不可恢复仪表舱底板")
+    assert(view.actionTray.props.backgroundColor[4]==0 and not view.actionTray.props.backgroundGradient,
+        "操作不能套入卡片底座")
+    for _,widget in ipairs({d.clock,d.foodValue,d.energyValue,d.batteryValue}) do
         local r=bounds(widget)
+        assert((widget.props.fontSize or 0)*UI.GetScale()>=17.99,"核心文字必须至少18物理像素")
         assert(r.x>=dashboard.x and r.y>=dashboard.y and r.x+r.w<=dashboard.x+dashboard.w+1
-            and r.y+r.h<=dashboard.y+dashboard.h+1,"仪表舱内容溢出 "..tostring(widget.props.id))
+            and r.y+r.h<=dashboard.y+dashboard.h+1,"独立状态内容溢出 "..tostring(widget.props.id))
     end
-    local phoneButton=assert(view.actionTray:FindById("career-phone"))
-    for _,button in ipairs({d.lifeButton,d.helpButton,view.pauseButton,view.mountButton,view.interactButton,phoneButton}) do
-        local r=bounds(button)
-        assert(r.w>=44 and r.h>=44,"HUD触摸目标不足44")
+    assert(view.deliveryStatus:IsVisible()==(view.lastActive==true),"无订单不显示派单说明")
+    local phoneButton=view.menuButton
+    for _,button in ipairs({view.pauseButton,view.mountButton,view.interactButton,phoneButton}) do
+        if button:IsVisible() then
+            local r=bounds(button)
+            assert(r.w>=44 and r.h>=44,"HUD触摸目标不足44")
+        end
     end
     local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
     local function tap(widget,held,pointerId)
@@ -221,19 +229,18 @@ function Checks.Audit(session)
     local savedScrollX,savedScrollY=view.phoneContent:GetScroll()
     if wasPhone=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard");view:ClosePhone() end
     local oldWaypoint,oldManual=session.waypoint,session.manualWaypoint
-    tap(d.lifeButton)
-    local alerts=Life.Alerts(p)
-    local expected=alerts[1] and alerts[1].key:match("^power") and alerts[1].point or Life.Advice(p).point
-    assert(session.waypoint==expected,"快捷按钮真实导航失败")
-    tap(d.helpButton)
-    assert(view.phonePage=="life","生活详情触摸未打开手机")
-    view:ClosePhone()
     tap(phoneButton)
-    assert(view.phonePage=="apps","操作底座手机按钮未打开桌面")
+    assert(view.phonePage=="apps","独立手机入口未打开桌面")
+    Kit.LayoutTree(view.phoneArea)
+    local lifeApp=assert(view.phoneDesktop:FindById("career-app-life"))
+    tap(lifeApp)
+    assert(view.phonePage=="life","次要生活信息必须能从手机菜单进入")
     view:ClosePhone()
-    tap(view.mapOpen)
-    assert(view.phonePage=="map","路线窗触摸未打开地图")
-    view:ClosePhone()
+    if view.mapOpen:IsVisible() then
+        tap(view.mapOpen)
+        assert(view.phonePage=="map","路线触摸未打开地图")
+        view:ClosePhone()
+    end
     tap(view.pauseButton)
     assert(view:IsBlocking(),"暂停按钮触摸未打开菜单")
     view:ShowGame()

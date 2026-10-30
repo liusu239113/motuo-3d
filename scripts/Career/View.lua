@@ -23,6 +23,17 @@ local function btn(text,click,primary,props)
     local width=props.width or "100%"
     return Theme.Button(text,click,primary,width,props)
 end
+local function hudButton(text,click,id,width)
+    local size=math.max(18,18/math.max(.1,UI.GetScale()))
+    local touch=PhoneKit.TouchSize()
+    return UI.Button{id=id,text=text,onClick=click,width=width or 80,height=touch,minWidth=touch,minHeight=touch,
+        padding=0,paddingHorizontal=0,paddingVertical=0,hoverPadding=0,pressedPadding=0,fontSize=size,
+        textColor=C.white,backgroundColor={0,0,0,0},backgroundGradient=false,
+        hoverBackgroundColor={0,0,0,70},hoverBackgroundGradient=false,
+        pressedBackgroundColor={0,0,0,110},pressedBackgroundGradient=false,
+        variantBackgroundGradient={},variantHoverBackgroundGradient={},variantPressedBackgroundGradient={},
+        borderWidth=0,borderRadius=0,boxShadow=false,pressedBoxShadow=false}
+end
 local function full(props) return UI.Panel(Theme.Full(props)) end
 local function money(cents) return string.format("¥ %.2f",cents/100) end
 ---@param parent Widget
@@ -106,16 +117,17 @@ function View:Init(actions)
     self.game=full{visible=false,pointerEvents="box-none",padding=0}
     local safe=UI.SafeAreaView{width="100%",height="100%",nativeMenuInset=true,padding=12,pointerEvents="box-none"}
     self.hudSafe=safe
-    self.dashboard=Dashboard.New(actions)
-    self.objective=PhoneKit.Text("",11,C.amber,{id="career-hud-objective",fontWeight="normal",paddingHorizontal=7,paddingVertical=4,
-        backgroundColor={10,17,21,190},borderWidth=1,borderColor={99,127,134,150},borderRadius=3})
+    self.dashboard=Dashboard.New()
+    self.objective=PhoneKit.Text("",20,C.white,{id="career-hud-objective",fontWeight="normal",
+        textStroke={width=1,color={0,0,0,230}},textShadow={offsetX=0,offsetY=2,blur=0,color={0,0,0,230}}})
     self.hint=PhoneKit.Text("",10,C.white,{id="career-hud-hint"})
-    self.deliveryStatus=PhoneKit.Text("",10,C.cyan,{id="career-hud-delivery",fontWeight="normal",paddingHorizontal=7,paddingVertical=3,
-        backgroundColor={8,15,19,175},borderWidth=1,borderColor={67,103,110,125},borderRadius=3})
+    self.deliveryStatus=PhoneKit.Text("",18,C.amber,{id="career-hud-delivery",fontWeight="normal",
+        textStroke={width=1,color={0,0,0,230}},textShadow={offsetX=0,offsetY=2,blur=0,color={0,0,0,230}}})
     self.map=Map.New("career-minimap")
-    self.map.root:SetStyle{width="100%",height=106,padding=0,borderWidth=1,borderColor={101,137,145,190},
-        borderRadius=5,backgroundGradient={direction="to-bottom",from={18,28,34,220},to={6,11,15,220}},
-        boxShadow={{x=0,y=2,blur=0,color={0,0,0,80}}}}
+    self.map.root:SetStyle{width="100%",height=88,padding=0,borderWidth=0,borderRadius=0,
+        backgroundColor={0,0,0,75},backgroundGradient=false,boxShadow=false}
+    self.map.scaleLabel:SetVisible(false)
+    self.map.edgeDistance:SetVisible(false)
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
     self.mapOpenHint=PhoneKit.Text("点开全城地图",9,C.cyan,{id="career-map-open-hint"})
     self.mapOpen=UI.Panel{id="career-minimap-open",width="100%",minHeight=44,padding=0,gap=3,
@@ -124,7 +136,10 @@ function View:Init(actions)
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
     self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=0,gap=5,
         backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
-    self.pauseButton=btn("Ⅱ",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=44,height=40,padding=0,fontSize=14})
+    self.pauseButton=hudButton("Ⅱ",actions.pause,"career-hud-pause",52)
+    self.pauseButton:SetStyle{position="absolute",right=12,top=12}
+    self.menuButton=hudButton("手机",function() actions.phone("apps") end,"career-phone",80)
+    self.menuButton:SetStyle{position="absolute",right=74,top=12}
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
         onPointerDown=function(event)
@@ -150,16 +165,19 @@ function View:Init(actions)
     safe:AddChild(self.controlLayer)
     safe:AddChild(self.navPanel)
     safe:AddChild(self.dashboard.root)
+    safe:AddChild(self.dashboard.speed)
     safe:AddChild(self.pauseButton)
-    self.mountButton=btn("上车",actions.mount,false,{id="career-mount",width=72,height=46,padding=0})
-    self.interactButton=btn("交互",actions.interact,false,{id="career-interact",width=82,height=46,padding=0})
-    self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=4,padding=4,
-        backgroundGradient={direction="to-bottom",from={22,31,37,225},to={8,13,17,225}},
-        borderWidth=1,borderColor={102,137,145,170},borderRadius=5,
-        boxShadow={{x=0,y=2,blur=0,color={0,0,0,85}}},pointerEvents="box-none",children={
-        self.mountButton,self.interactButton,
-        btn("手机",function() actions.phone("apps") end,true,{id="career-phone",width=58,height=44,padding=0})}}
+    safe:AddChild(self.menuButton)
+    self.mountButton=hudButton("上车",actions.mount,"career-mount",80)
+    self.interactButton=hudButton("交互",actions.interact,"career-interact",80)
+    self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=24,padding=0,
+        backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mountButton,self.interactButton}}
     safe:AddChild(self.actionTray)
+    -- 生涯只留大字操作名称，删除踏板上的重复教程小字；竞速模式不受影响。
+    for _,key in ipairs({"gas","brake"}) do
+        self.controls.captions[key]:SetStyle{fontSize=18,height=30}
+        self.controls.details[key]:SetVisible(false)
+    end
     self.controlHint=label("左右滑动转向 · 按住前进 · 松手停步 · 滑动画面看四周",10,C.muted,
         {position="absolute",bottom=12,left="28%",right="24%",textAlign="center",whiteSpace="normal",pointerEvents="none"})
     safe:AddChild(self.controlHint)
@@ -639,17 +657,20 @@ end
 function View:Update(state,actor,target,active,offer,dt)
     self.lastActor,self.lastTarget=actor,target
     self.lastOnline=state.online==true
+    self.lastActive=active~=nil
     self:SetControlMode(actor.mounted)
-    self:LayoutControls()
     local indoor=state.currentSpace and state.currentSpace~="city"
+    self.lastIndoor=indoor==true
     self.mountButton:SetVisible(not indoor)
-    self.map.root:SetVisible(not indoor)
-    self.mapOpen:SetVisible(not indoor)
+    self.interactButton:SetVisible(indoor or state.contactName~=nil or target~=nil and target.distance<12)
+    self.map.root:SetVisible(not indoor and target~=nil)
+    self.mapOpen:SetVisible(not indoor and target~=nil)
     self.mapCaption:SetText("附近街区 · "..World.District(actor.x,actor.z).label)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.dashboard:Update(state,actor)
-    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 手机接单")
+    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "")
+    self.objective:SetVisible(target~=nil)
     if active then
         local minutes=math.ceil(math.abs(active.remainingHours)*60)
         self.deliveryStatus:SetText(string.format("%s · %s%d分钟",active.status=="accepted" and "取餐" or "送达",
@@ -664,6 +685,8 @@ function View:Update(state,actor,target,active,offer,dt)
         or state.contactName and ("附近 · "..state.contactName.."，点击交谈")
         or target and target.hint or "停稳后可查看手机、接单与补给。")
     self.map:SetTelemetry(actor,target,active)
+    self.map.edgeDistance:SetVisible(false)
+    self:LayoutControls()
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))
     if self.noticeTime==0 then self.notice:SetText("") end
 end
@@ -672,27 +695,28 @@ function View:LayoutControls()
     if area.w<=60 or area.h<=60 then return end
     local bounds=self.hudSafe:GetAbsoluteLayout()
     local w,h=bounds.w,bounds.h
-    local narrow=w<720
-    local navWidth=narrow and math.max(150,math.min(176,w*.30)) or 192
-    local dashWidth=narrow and 270 or 296
-    local compact=h<470
-    self.dashboard.wallet:SetVisible(false)
-    self.dashboard.plan:SetVisible(false)
-    self.navPanel:SetStyle{width=navWidth}
-    self.dashboard.root:SetStyle{width=dashWidth,gap=6,padding=8}
-    self.notice:SetStyle{left=navWidth+24,right=dashWidth+24,top=12}
+    local size=math.max(18,18/math.max(.1,UI.GetScale()))
+    local navWidth=math.min(290*size/18,w*.34)
+    self.navPanel:SetStyle{width=navWidth,gap=10}
+    self.dashboard:Layout()
+    self.dashboard.root:SetStyle{right=174,top=12}
     local dash=self.dashboard.root:GetLayout()
-    local dashBottom=dash.y+dash.h+6
+    self.notice:SetStyle{left="25%",right="25%",top=h*.70,fontSize=size}
     local touchSize=PhoneKit.TouchSize()
-    self.pauseButton:SetStyle{top=dashBottom,right=12,width=touchSize,height=touchSize,minWidth=touchSize,minHeight=touchSize}
-    self.actionTray:SetStyle{top=math.max(dashBottom+52,h-240)}
-    self.map.root:SetStyle{height=compact and 65 or 80}
+    self.pauseButton:SetStyle{top=12,right=12,width=touchSize,height=touchSize,minWidth=touchSize,minHeight=touchSize}
+    self.menuButton:SetStyle{top=12,right=touchSize+28,width=96,fontSize=size}
+    self.actionTray:SetStyle{top=math.max(150,h-190),gap=24}
+    self.objective:SetStyle{fontSize=size*1.1}
+    self.deliveryStatus:SetStyle{fontSize=size}
+    self.map.root:SetStyle{height=88}
     self.mapCaption:SetVisible(false)
     self.mapOpenHint:SetVisible(false)
-    self.deliveryStatus:SetVisible(self.lastTarget~=nil or self.lastOnline==true)
+    self.mapOpen:SetVisible(self.lastTarget~=nil and not self.lastIndoor)
+    self.objective:SetVisible(self.lastTarget~=nil)
+    self.deliveryStatus:SetVisible(self.lastActive==true)
     self.hint:SetVisible(false)
     self.controlHint:SetVisible(false)
-    local signature=string.format("%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.dashboard.advice:IsVisible()))
+    local signature=string.format("%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.interactButton:IsVisible()))
     local layoutChanged=self.hudLayoutSignature~=signature
     self.hudLayoutSignature=signature
     local sizeChanged=area.w~=self.controlWidth or area.h~=self.controlHeight
@@ -717,10 +741,13 @@ function View:AvoidHUDControls()
     local area=self.controlLayer:GetAbsoluteLayout()
     local reserved={}
     local function reserve(widget)
+        if not widget:IsVisible() then return end
         local b=widget:GetAbsoluteLayout()
+        if b.w<=0 or b.h<=0 then return end
         reserved[#reserved+1]={x=b.x-area.x,y=b.y-area.y,w=b.w,h=b.h}
     end
-    reserve(self.navPanel);reserve(self.dashboard.root);reserve(self.pauseButton);reserve(self.actionTray)
+    reserve(self.navPanel);reserve(self.dashboard.root);reserve(self.dashboard.speed)
+    reserve(self.pauseButton);reserve(self.menuButton);reserve(self.actionTray)
     local function overlaps(x,y,w,h,r)
         return x<r.x+r.w+6 and x+w>r.x-6 and y<r.y+r.h+6 and y+h>r.y-6
     end
@@ -761,7 +788,7 @@ function View:SetControlMode(mounted)
     -- 可见性改变会令隐藏控件暂时没有布局，重新布置当前模式，不复用隐藏前的缓存。
     self.controlWidth,self.controlHeight=0,0
     self.controls:SetActionState("gas",{label="油门",detail="按住加速"})
-    self.controls:SetActionState("brake",{label="刹车 / 倒车",detail="停稳按住倒车"})
+    self.controls:SetActionState("brake",{label="刹车",detail="停稳按住倒车"})
     self.mountButton:SetText(mounted and "下车" or "上车")
     self.controlHint:SetText(mounted and "左右滑动转向 · 右侧油门 / 刹车 · 停稳后下车取送"
         or "左下摇杆自由移动 · 松手停步 · 右侧滑动画面看四周")
