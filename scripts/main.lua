@@ -844,7 +844,7 @@ function Start()
             or arg:match("^%-careercollisionshot=") or arg:match("^%-careerenvironmentshot=") or arg:match("^%-careercrowdshot=") then
             careerCheck,careerStart,legacyTest=true,true,false
         end
-        if arg=="-careerlifechecks" or arg:match("^%-careerlifeshot=") then
+        if arg=="-careercityreview" or arg=="-careerlifechecks" or arg:match("^%-careerlifeshot=") then
             careerCheck,careerStart,legacyTest=true,true,false
         end
         if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end

@@ -259,6 +259,32 @@ local function bridgeTrip(session,d)
     passed(string.format("%s 桥下不吸附/车辆坡道扫掠拒绝/Actor.Move上坡跨桥下坡%.2fm %d帧/桥上存档恢复height与NodeY/侧栏杆",d.id,meters+downMeters,frames+downFrames))
 end
 
+-- 逐区调用真实报价入口，不注入活动订单，不触碰现场人物或云档。
+function Checks.Coverage(session)
+    isolated(session)
+    local files={}
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text) files[path]=text;return true end,
+        cloud={Get=function() error("覆盖验收禁止云读取") end,Set=function() error("覆盖验收禁止云写入") end}},function()
+        assert(Store.NewCareer())
+        for _,district in ipairs(World.Districts) do
+            for sequence=2,3 do
+                assert(Store.Transaction(function(p)
+                    p.flags.tutorialCompleted=true;p.phase="working";p.time=8;p.nextOrderSequence=sequence
+                    p.position.x=district.x;p.position.z=district.z;p.position.space="city"
+                    return true
+                end))
+                local offer=assert(Delivery.GetOffer(),"远区没有真实报价："..district.id)
+                local pickup=assert(Config.points[offer.pickupId])
+                assert(World.District(pickup.x,pickup.z).id==district.id,"远区误派老街单")
+                assert(offer.templateId=="world_"..district.id..(sequence==2 and "_local" or "_cross"),"当地/跨区模板轮换错误")
+                assert(session.city:StaticFree(pickup.x,pickup.z,.32,"walk",0),"真实取餐门口被挡")
+            end
+            passed(district.id.." 当地与跨区报价可派发，门口静态可达")
+        end
+    end)
+end
+
 function Checks.Run(session)
     isolated(session)
     local started=os.clock()

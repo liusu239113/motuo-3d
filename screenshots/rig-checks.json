@@ -1,0 +1,80 @@
+{
+    "version": 2,
+    "script": "CareerRigProbe.lua",
+    "result": "PASS",
+    "duration_ms": 9896,
+    "frames_completed": 5,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 48,
+            "component_count": 6,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 7,
+            "components": 6,
+            "hash": 4120066825,
+            "frame_time_ms": 6234.2109375
+        },
+        {
+            "frame": 2,
+            "phase": "run",
+            "nodes": 7,
+            "components": 6,
+            "hash": 4120066825,
+            "frame_time_ms": 19.590999603271486
+        },
+        {
+            "frame": 5,
+            "phase": "run",
+            "nodes": 7,
+            "components": 6,
+            "hash": 4120066825,
+            "frame_time_ms": 26.611000061035158
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 26.611000061035158,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 1,
+        "AnimatedModel": 1,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 0
+    }
+}

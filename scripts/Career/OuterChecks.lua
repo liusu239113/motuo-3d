@@ -227,6 +227,16 @@ function Checks.Run(session)
                 assert(outer.root:GetNumChildren(true)<=warmNodes,"same-site revisit allocated growing model/skeleton node trees")
             end
             assert(outer.recycled>recycled and reusedCars and reusedPeople,"recycled nodes must be reused by actual Update spawning")
+            for _,district in ipairs(World.Districts) do
+                actor:Teleport(0,-20,0);aim();traffic:Update(.1)
+                local dx,dz=city:FindFree(district.x,district.z-18,.32,"walk",0)
+                actor.bikeX,actor.bikeZ=dx+18,dz
+                actor:Teleport(dx,dz,0);aim()
+                for _=1,30 do traffic:Update(.1) end
+                assert(#outer.cars>0 and #outer.people>0,
+                    string.format("外区%s真实视锥下未补足交通：%d车/%d人",district.id,#outer.cars,#outer.people))
+                print(string.format("[逐区交通覆盖] %s %d车/%d行人（固定池复用，非全城同时实例化）",district.id,#outer.cars,#outer.people))
+            end
             assert(same(Store.Get(),originalStore),"traffic-only acceptance changed the seeded profile")
         end)
     end)

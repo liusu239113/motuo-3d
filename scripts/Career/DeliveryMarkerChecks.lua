@@ -121,8 +121,8 @@ function Checks.Run(session)
         for _,mat in ipairs(materials) do resources[#resources+1]=mat end
         for _,resource in ipairs(resources) do assert(resource:GetTypeName()~="","resource must be live before Dispose") end
         local warm=scene:GetNumChildren(true)
-        assert(Markers.CAPACITY==5 and #slots==5 and #meshes==3 and #materials==10,"pool must have fixed five slots")
-        assert(p.root:GetNumChildren(false)==5 and p.root:GetNumChildren(true)==25 and warm==beforeNodes+26,"unexpected marker node tree")
+        assert(Markers.CAPACITY==5 and #slots==5 and #meshes==4 and #materials==10,"pool must have fixed five slots")
+        assert(p.root:GetNumChildren(false)==5 and p.root:GetNumChildren(true)==30 and warm==beforeNodes+31,"unexpected marker node tree")
         local fixtures={order("noodle_office","accepted",1),order("shop_old","accepted",2),
             order("noodle_office","picked_up",3),order("old_home","picked_up",4)}
         local original=copy(fixtures)

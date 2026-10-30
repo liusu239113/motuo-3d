@@ -293,8 +293,10 @@ function Session:BuildWorld()
         local collisionPhase="all"
         local appShot,animShot,cityShot="","",""
         local collisionShot,environmentShot,crowdShot="","",""
+        local cityReview=false
         local lifeChecks,lifeShot=false,""
         for _,arg in ipairs(GetArguments()) do
+            if arg=="-careercityreview" then cityReview=true end
             if arg=="-careerlifechecks" then lifeChecks=true end
             local life=arg:match("^%-careerlifeshot=(.+)$")
             if life then lifeShot=life end
@@ -338,7 +340,14 @@ function Session:BuildWorld()
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if lifeChecks or lifeShot~="" then require("Career.LifeChecks").Run(self,lifeShot)
+        if cityReview then
+            require("Career.LifeChecks").Run(self,"")
+            require("Career.LocomotionChecks").Run(self)
+            require("Career.DeliveryMarkerChecks").Run(self)
+            require("Career.WorldChecks").Coverage(self)
+            require("Career.OuterChecks").Run(self)
+            print("[城市整改专项通过] 生活/新人物/光柱/远区真实交通；不代表真机帧率验收")
+        elseif lifeChecks or lifeShot~="" then require("Career.LifeChecks").Run(self,lifeShot)
         elseif appShot~="" then require("Career.PhoneAppChecks").Shot(self,appShot)
         elseif animShot~="" then require("Career.LocomotionChecks").Shot(self,animShot)
         elseif cityShot~="" then require("Career.CityExpansionChecks").Shot(self,cityShot)
@@ -520,7 +529,9 @@ function Session:Refresh()
         self.deliveryMarkers:Sync(state.activeOrders,target)
         self.deliveryMarkers:Update(0,self.actor,false)
     end
-    self.view:Update(state,self.actor,target,Delivery.GetActive(),Delivery.GetOffer(),.2)
+    local offer=Delivery.GetOffer()
+    self.audioOffer=self.online and offer or nil
+    self.view:Update(state,self.actor,target,state.activeOrders[1],offer,.2)
 end
 function Session:RefreshPhone()
     if self.view.phonePage~="" then self.view:BuildPhone(self:State(),Delivery.GetOffer(),Delivery.GetActive()) end
@@ -786,8 +797,7 @@ function Session:Update(dt)
     local x,z=self.actor.x,self.actor.z
     local controls=self.view:GetInput()
     local state=Store.MotionState()
-    self.environmentTimer=self.environmentTimer+dt
-    if self.environmentTimer>=.2 then self.environmentTimer=0;self:UpdateEnvironment(state.time) end
+    -- 环境由每0.2秒的Refresh统一更新，不与移动循环重复捕获天空。
     local need=math.min(state.hunger,state.energy)
     controls.speedFactor=need<15 and .45 or need<30 and .7 or 1
     if need<30 then controls.run=false end
@@ -802,7 +812,7 @@ function Session:Update(dt)
     end
     if self.traffic then self.traffic:Update(dt) end
     if self.audio then
-        self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.online and Delivery.GetOffer() or nil,
+        self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.audioOffer,
             Environment.AudioContext(self.actor.x,self.actor.z))
     end
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
