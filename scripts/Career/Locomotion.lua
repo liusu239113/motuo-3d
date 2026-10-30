@@ -258,6 +258,34 @@ function Motion:RelaxTorso()
         end
     end
 end
+-- 生活跑步不是冲刺：限制上臂侧张与过高后摆，整个臂链共同转动，
+-- 保留原clip肘角与手腕相对旋转，不再用独立腕目标把手臂拉成弓形。
+function Motion:RelaxArms()
+    local rig=self.rig
+    for _,side in ipairs({-1,1}) do
+        local prefix=side==-1 and "L_" or "R_"
+        local upper=prefix.."Upperarm"
+        local direction=(rig:GetBonePosition(prefix.."Forearm")-rig:GetBonePosition(upper)):Normalized()
+        local swing=math.deg(math.atan(direction.z,-direction.y))
+        local lateral=math.deg(math.atan(direction.x*side,math.sqrt(direction.y*direction.y+direction.z*direction.z)))
+        local angle=math.rad(clamp(swing,-42,38))
+        local spread=math.rad(clamp(lateral,2,8+4*self.running))
+        local desired=V(side*math.sin(spread),-math.cos(angle)*math.cos(spread),math.sin(angle)*math.cos(spread))
+        local correction=Quaternion(direction,desired)
+        ---@type table<string, Quaternion>
+        local rotations={}
+        ---@type table<string, boolean>
+        local chain={[upper]=true}
+        for _,name in ipairs(rig.boneNames) do
+            local parent=rig.bind[name].parentName
+            if parent and chain[parent] then chain[name]=true end
+            if chain[name] then rotations[name]=rig:GetLocalBoneTransform(name):Rotation() end
+        end
+        for _,name in ipairs(rig.boneNames) do
+            if chain[name] then rig:SetLocalBoneRotation(name,correction*rotations[name]) end
+        end
+    end
+end
 function Motion:Evaluate()
     local rig=self.rig
     local idle=self:SampleSource(self.clips.idle,self.idleTime%self.clips.idle.length)
@@ -277,6 +305,7 @@ function Motion:Evaluate()
         end
     end
     self:RelaxTorso()
+    self:RelaxArms()
     local walkY=walk.Bip001:Translation().y
     local runY=run.Bip001:Translation().y
     local idleY=idle.Bip001:Translation().y
