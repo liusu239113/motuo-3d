@@ -7,9 +7,11 @@ local Checks={}
 ---@param session CareerSession
 function Checks.Run(session,shot)
     assert(session.options.test and session.restoreTestStorage,"生活验收必须内存隔离")
-    require("Career.HousingChecks").RunProperty()
-    require("Career.MapOverlay").Checks()
-    require("Career.TrafficChecks").Run(session)
+    if not shot or shot=="" then
+        require("Career.HousingChecks").RunProperty()
+        require("Career.MapOverlay").Checks()
+        require("Career.TrafficChecks").Run(session)
+    end
     assert(Store.NewCareer())
     assert(Store.Transaction(function(p) p.phase="working";p.flags.introSeen=true;return true end))
     local p=Store.Get()

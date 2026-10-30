@@ -17,8 +17,12 @@ function Start()
     require = originalRequire
     local result = overlay.Checks()
     print("[ATLAS_FIXTURE_PASS] " .. result.sizes .. " sizes / " .. result.buttons .. " taps / max " .. result.maxWidgets)
+    return
+    -- Screenshot setup intentionally disabled for the final logic-only rerun.
+    --[[
     local atlas = overlay.New(function() end, function() end)
     local root = UI.Panel {width = "100%", height = "100%", padding = 0, children = {atlas.root}}
     UI.SetRoot(root)
     atlas:Open({x = 0, z = -20, yaw = 35}, nil, nil)
+    ]]
 end

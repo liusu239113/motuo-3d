@@ -2,6 +2,9 @@
 -- Page styles are centralized; the UI library owns NanoVG frames, fonts, DPI and input.
 local UI = require("urhox-libs/UI")
 local RacingTheme = require("RacingTheme")
+-- PhonePages/PhoneKit 只有 Widget 分页与文字测量，不加载生涯会话、档案或业务。
+local FixedPages = require("Career.PhonePages")
+local PageText = require("Career.PhoneKit").Text
 local Catalog = require("Catalog")
 local Profile = require("Profile")
 local ControlSettings = require("ControlSettings")
@@ -393,6 +396,25 @@ end
 -- 操作编辑器独立成模块，直接复用驾驶按键。
 require("ControlEditor").Install(HUD)
 
+-- 只翻整页，不注册滚轮/拖动/滑动。原控件对象和回调留在分页树中。
+local function fixedPages(children, gap)
+    local pages = FixedPages {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1,
+        minHeight = 0, padding = 0, gap = gap or 8, children = children}
+    local previous = button("上一页", function() pages:SetPage(pages:GetPage() - 1) end, false, nil,
+        {flexGrow = 1, flexBasis = 0, minWidth = 0, height = 44, fontSize = 12, minFontSize = 12, padding = 2,
+            paddingLeft = 2, paddingRight = 2, paddingHorizontal = 2})
+    local following = button("下一页", function() pages:SetPage(pages:GetPage() + 1) end, false, nil,
+        {flexGrow = 1, flexBasis = 0, minWidth = 0, height = 44, fontSize = 12, minFontSize = 12, padding = 2,
+            paddingLeft = 2, paddingRight = 2, paddingHorizontal = 2})
+    local pageLabel = label("1 / 1", 12, MUTED, {width = 58, height = 44, textAlign = "center", minFontSize = 12})
+    local pager = UI.Row {width = "100%", height = 44, padding = 0, gap = 4, alignItems = "center",
+        children = {previous, pageLabel, following}}
+    pages:AttachPager(previous, following, pageLabel, pager)
+    local frame = UI.Column {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
+        padding = 0, gap = 8, children = {pages, pager}}
+    return frame, pages
+end
+
 function HUD:BuildGarage()
     local cards = UI.Column {width = "100%", gap = 5, padding = 0}
     for index, item in ipairs(Catalog.List) do
@@ -418,8 +440,8 @@ function HUD:BuildGarage()
         padding = 6, gap = 2, pointerEvents = "box-none", children = {
             self.vehicleName, self.vehicleDescription,
             UI.Panel {flexGrow = 1, flexBasis = 0, padding = 0, pointerEvents = "none"}, self.vehicleSpecs}}
-    self.garageList = UI.ScrollView {width = 228, height = "100%", padding = 0, scrollY = true,
-        flexShrink = 0, showScrollbar = true, children = {cards}}
+    self.garageList, self.garagePages = fixedPages({cards}, 5)
+    self.garageList:SetStyle({width = 228, height = "100%", flexGrow = 0, flexBasis = "auto", flexShrink = 0})
     self.garageBody = UI.Row {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
         padding = 0, gap = 12, pointerEvents = "box-none", children = {self.garageList, self.previewColumn}}
     local colors = UI.Row {padding = 0, gap = 6}
@@ -471,15 +493,11 @@ end
 
 local function help()
     return UI.Column {width = "100%", gap = 7, padding = 0, children = {
-        label("驾驶与竞速", 12, AMBER),
-        label("左右滑动转向，按住油门加速、刹车制动。点按氮气消耗45点，喷射2.5秒，尾焰与视野冲刺会明显放大。Q/侧键位为翘头，按住抬起前轮。多指互不抢占。", 11, MUTED,
-            {width = "100%", whiteSpace = "normal", maxLines = 6}),
-        label("键盘 W/S 油刹，A/D 转向，Shift 氮气，C 视角，Q 翘头 / Z 烧胎按住，X 180° / V 360°点按起跳旋转。比赛与练习都可用。本版不提供撞人攻击。", 11, MUTED,
-            {width = "100%", whiteSpace = "normal", maxLines = 5}),
-        label("青色箭头带提供有限加速；橙黄飞坡可绕行，腾空后注意控制落地。", 11, MUTED,
-            {width = "100%", whiteSpace = "normal", maxLines = 3}),
-        label("翘头自动配合油门；烧胎自动配合油刹。旋转可在平稳行驶至15km/h后辅助起跳，也可在腾空时点按。按键有接收反馈，不满足条件不会假装成功。虚拟竞速，请勿现实模仿。", 10, MUTED,
-            {width = "100%", whiteSpace = "normal", maxLines = 4})}}
+        PageText("驾驶与竞速", 12, AMBER),
+        PageText("左右滑动转向，按住油门加速、刹车制动。点按氮气消耗45点，喷射2.5秒，尾焰与视野冲刺会明显放大。Q/侧键位为翘头，按住抬起前轮。多指互不抢占。", 11, MUTED),
+        PageText("键盘 W/S 油刹，A/D 转向，Shift 氮气，C 视角，Q 翘头 / Z 烧胎按住，X 180° / V 360°点按起跳旋转。比赛与练习都可用。本版不提供撞人攻击。", 11, MUTED),
+        PageText("青色箭头带提供有限加速；橙黄飞坡可绕行，腾空后注意控制落地。", 11, MUTED),
+        PageText("翘头自动配合油门；烧胎自动配合油刹。旋转可在平稳行驶至15km/h后辅助起跳，也可在腾空时点按。按键有接收反馈，不满足条件不会假装成功。虚拟竞速，请勿现实模仿。", 10, MUTED)}}
 end
 function HUD:BuildPauseAndResult()
     local a = self.actions
@@ -495,34 +513,37 @@ function HUD:BuildPauseAndResult()
     self.careerPauseRestart = button("重新开始", a.restart, false, 130)
     self.resultRestart = button("再赛一次 →", a.restart, true, 160)
     self.resultReturn = button("返回主菜单", a.menu, false, 150)
+    local pauseContent = UI.Column {width = "100%", padding = 0, gap = 10, children = {
+        UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton,
+            button("按键布局 / 灵敏度", function() self:OpenSettings() end, false, 168)}},
+        UI.Row {padding = 0, gap = 10, children = {self.score, self.health}}, self.radioTitle,
+        UI.Row {padding = 0, gap = 7, children = {button("上一首", a.previousTrack, false, 90), self.radioToggle,
+            button("下一首", a.nextTrack, false, 90)}}, help()}}
+    local pauseFrame
+    pauseFrame, self.pausePages = fixedPages({pauseContent})
     self.pause = UI.Panel(fill({visible = false, backgroundColor = {5, 8, 11, 225}, padding = 12,
         alignItems = "center", justifyContent = "center", children = {
             RacingTheme.Card {width = "92%", maxWidth = 680, height = "96%", padding = 18, gap = 12, children = {
                     RacingTheme.Kicker("RACE CONTROL / 赛事控制"),
                     UI.Row {padding = 0, justifyContent = "space-between", alignItems = "center", children = {
                         label("暂歇，调整节奏。", 22, WHITE, {fontWeight = "bold"}), button("继续竞速 →", a.pause, true, 140)}},
-                    UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
-                        UI.Column {width = "100%", padding = 0, gap = 10, children = {
-                            UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton,
-                                button("按键布局 / 灵敏度", function() self:OpenSettings() end, false, 168)}},
-                            UI.Row {padding = 0, gap = 10, children = {self.score, self.health}},
-                            self.radioTitle,
-                            UI.Row {padding = 0, gap = 7, children = {button("上一首", a.previousTrack, false, 90), self.radioToggle, button("下一首", a.nextTrack, false, 90)}}, help()}}}},
+                    pauseFrame,
                     UI.Row {padding = 0, gap = 8, children = {self.careerPauseRestart, self.careerPauseReturn}}}}}}))
-    self.resultTitle = label("竞速结算", 24, WHITE, {maxLines = 2, whiteSpace = "normal", width = "100%"})
-    self.resultStats = label("", 11, MUTED, {maxLines = 5, whiteSpace = "normal", width = "100%"})
+    self.resultTitle = PageText("竞速结算", 24, WHITE)
+    self.resultStats = PageText("", 11, MUTED)
     local list = UI.Column {width = "100%", padding = 0, gap = 4}
     for i = 1, 9 do
         local row = label("", 11, MUTED, {width = "100%", height = 26, paddingHorizontal = 8,
             backgroundColor = {25, 31, 37, 160}, borderRadius = 2, visible = false})
         self.resultRows[i] = row; list:AddChild(row)
     end
+    local resultFrame
+    resultFrame, self.resultPages = fixedPages({UI.Column {width = "100%", padding = 0, gap = 9,
+        children = {self.resultTitle, self.resultStats, list}}})
     self.result = UI.Panel(fill({visible = false, backgroundColor = {5, 8, 11, 230}, padding = 12,
         alignItems = "center", justifyContent = "center", children = {
             RacingTheme.Card {width = "92%", maxWidth = 660, height = "96%", padding = 18, gap = 12, children = {
-                    RacingTheme.Kicker("FINISH LINE / 比赛结果"),
-                    UI.ScrollView {width = "100%", padding = 0, flexGrow = 1, flexBasis = 0, flexShrink = 1, children = {
-                        UI.Column {width = "100%", padding = 0, gap = 9, children = {self.resultTitle, self.resultStats, list}}}},
+                    RacingTheme.Kicker("FINISH LINE / 比赛结果"), resultFrame,
                     UI.Row {padding = 0, gap = 8, children = {self.resultRestart, self.resultReturn}}}}}}))
 end
 function HUD:SetCareerRace(enabled)

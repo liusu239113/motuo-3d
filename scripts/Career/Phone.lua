@@ -60,7 +60,8 @@ function Phone.Create(view,actions)
     local following=Kit.Button("下一页",function() pages:SetPage(pages:GetPage()+1) end,"career-phone-page-next",true,
         {width=66,padding=0,fontSize=11})
     local number=Kit.Text("1 / 1",10,Kit.C.white,{id="career-phone-page-number",width="auto",
-        flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,textAlign="center",whiteSpace="nowrap"})
+        flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,height=touchSize,minHeight=touchSize,
+        verticalAlign="middle",textAlign="center",whiteSpace="nowrap"})
     local pager=UI.Row{id="career-phone-pagination",width="100%",padding=0,gap=4,height=touchSize,minHeight=touchSize,
         flexShrink=0,alignItems="center",visible=false,children={previous,number,following}}
     pages:AttachPager(previous,following,number,pager)

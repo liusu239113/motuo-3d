@@ -7,6 +7,20 @@ local Config=require("Career.Config")
 local World=require("Career.WorldData")
 local Delivery=require("Career.Delivery")
 local Checks={}
+-- Explicit compatibility-only coverage for the retained old map builder. The
+-- shipped map icon opens MapOverlay instead; never confuse the two entry paths.
+---@param view CareerView
+function Checks.OpenLegacy(view,state,offer,active)
+    view:CloseWorldMap()
+    view:CloseConversation();view.overlay:SetVisible(false);view.blocked=false
+    if view.phonePage=="" then view.mapDistrictId="";view.mapPointPage=1;view.mapPickerOpen=false end
+    view.phonePage="map";view.phone:SetVisible(true);view:ResetInput();view.controls:SetEnabled(false)
+    view:BuildPhone(state,offer,active)
+end
+---@param session CareerSession
+local function legacyMap(session)
+    Checks.OpenLegacy(session.view,session:State(),Delivery.GetOffer(),Delivery.GetActive())
+end
 
 ---@param widget Widget
 ---@return Widget[]
@@ -150,6 +164,10 @@ function Checks.Run(session)
         local revision=Store.Get().revision
         session:OpenPhone("apps")
         tap(view,"career-app-map")
+        assert(view.worldMap:IsVisible() and view:IsBlocking() and view.phonePage=="",
+            "正式地图入口必须打开阻塞式全屏地图而非旧手机内页")
+        view:CloseWorldMap()
+        legacyMap(session)
         assert(view.mapDistrictId=="east_market","初开应由实时actor而非老存档定位")
         assert(find(view,"career-map-current").props.text:find("东门市集",1,true))
         assert(find(view,"career-map-region-east_market-card"):GetChildAt(2).props.text:find("当前区",1,true))
@@ -160,7 +178,7 @@ function Checks.Run(session)
             tap(view,"career-map-coast-"..place.id)
             assert(session.waypoint==place.id and view.phonePage=="" and Store.Get().revision==revision,
                 "海滨导航必须走生产actions且不传送/写档")
-            session:OpenPhone("map")
+            legacyMap(session)
         end
         local mapPage=tree(assert(view.phoneContent:GetChildAt(1)))
         choose(view,"west_garden")
@@ -170,7 +188,7 @@ function Checks.Run(session)
         assert(view.mapDistrictId=="west_garden","同页刷新应保留用户选择")
         local refreshed=tree(assert(view.phoneContent:GetChildAt(1)))
         session:OpenPhone("wallet"); freed(refreshed)
-        session:OpenPhone("map")
+        legacyMap(session)
         assert(view.mapDistrictId=="west_garden","切应用后返回应保留选择")
 
         choose(view,"old_town")
@@ -207,7 +225,7 @@ function Checks.Run(session)
         assert(target.pointId==destination and #target.route>=2,"城市导航未接到真实目的地/道路路线")
 
         -- 绿带无虚构门店；必须是距当前位置最近4个真实Config点。
-        actor.x,actor.z=14000,1000; session:Refresh(); session:OpenPhone("map")
+        actor.x,actor.z=14000,1000; session:Refresh(); legacyMap(session)
         assert(view.mapDistrictId=="greenbelt","重开手机应按新当前位置重定位")
         local nearest=verifyRows(view,"greenbelt",actor.x,actor.z)
         assert(#nearest==4 and find(view,"career-map-distance-note").props.text:find("无固定服务点",1,true))
@@ -228,7 +246,7 @@ function Checks.Run(session)
             p.position.cityX=0; p.position.cityZ=6144; p.position.cityYaw=37
             return true
         end))
-        session:Refresh(); session:OpenPhone("map"); layout(view)
+        session:Refresh(); legacyMap(session); layout(view)
         assert(view.mapDistrictId=="north_lake" and find(view,"career-map-indoor"))
         assert(#verifyRows(view,"north_lake",0,6144)==4)
         local map=find(view,"career-phone-map")
@@ -252,7 +270,7 @@ function Checks.Run(session)
         for _,d in ipairs(World.Districts) do districts[#districts+1]=d end
         districts[#districts+1]=World.District(14000,1000)
         for round=1,2 do
-            session:OpenPhone("map")
+            legacyMap(session)
             for _,d in ipairs(districts) do
                 choose(view,d.id)
                 verifyRows(view,d.id,actor.x,actor.z)
@@ -263,7 +281,11 @@ function Checks.Run(session)
             local stale=tree(assert(view.phoneContent:GetChildAt(1)))
             session:OpenPhone("apps"); freed(stale)
             tap(view,"career-app-map")
-            assert(view.mapDistrictId=="greenbelt","反复切页丢失所选区域")
+            assert(view.worldMap:IsVisible() and view.phonePage=="","正式地图入口不能回归旧手机地图")
+            view:CloseWorldMap()
+            legacyMap(session)
+            choose(view,"greenbelt") -- Legacy layout explicitly reselects; closing the real map resets phone state.
+            assert(view.mapDistrictId=="greenbelt","旧地图专项显式选择无效")
             local closing=tree(assert(view.phoneContent:GetChildAt(1)))
             view:ClosePhone(); freed(closing)
             assert(view.phoneContent:GetNumChildren()==0 and #tree(view.root)==baseCount,"收起未释放手机子树")
@@ -275,7 +297,7 @@ function Checks.Run(session)
         session.manualWaypoint=false
         assert(session:Target().pointId==active.pickupId,"默认仍应导航当前取餐点")
         local beforeNavigation=Store.Get()
-        session:OpenPhone("map")
+        legacyMap(session)
         choose(view,"east_market")
         tap(view,"career-map-poi-world_east_market_charge")
         local supply=assert(session:Target())
@@ -388,6 +410,15 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
             end
             for _,app in ipairs(Phone.Apps) do
                 touch(assert(holder:FindById("career-app-"..app[1])))
+                if app[1]=="map" then
+                    assert(view.worldMap:IsVisible() and view:IsBlocking() and view.phonePage=="",
+                        "正式地图入口必须打开全屏地图并阻塞游戏")
+                    freed(old)
+                    view:CloseWorldMap()
+                    view:OpenPhone("apps",state,offer,active)
+                    settle(width,height)
+                    old=tree(assert(view.phoneDesktop:GetChildAt(1)))
+                else
                 assert(view.phonePage==app[1] and view.phoneContent:IsVisible() and not view.phoneDesktop:IsVisible())
                 freed(old)
                 settle(width,height)
@@ -422,7 +453,8 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
                             x=(area.x+area.w/2)*scale,y=(area.y+area.h*e[2])*scale,button=PointerEvent.Button.Left}))
                     end
                     local behavior=view.phoneContent --[[@as table]]
-                    assert(view.phoneContent:GetPage()==1 and not behavior.OnWheel and not behavior.OnPanMove,
+                    assert(view.phoneContent:GetPage()==1 and not behavior.OnWheel and behavior.OnPanMove==UI.Widget.OnPanMove
+                        and not view.phoneContent.props.onPanMove and not view.phoneContent.props.onSwipe,
                         "拖拽/滚轮不得驱动分页")
                     assert(view.phoneContent:ShowWidget("career-motorcycle-rally_3"),"最后关键购车操作不在任何页")
                     settle(width,height)
@@ -437,6 +469,7 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
                 assert(view.phonePage=="apps","内页返回必须回到应用首页")
                 settle(width,height)
                 old=tree(assert(view.phoneDesktop:GetChildAt(1)))
+                end
             end
             touch(assert(holder:FindById("career-phone-close"))); freed(old)
             assert(view.phonePage=="" and view.phoneDesktop:GetNumChildren()==0 and view.phoneContent:GetNumChildren()==0,

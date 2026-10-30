@@ -49,7 +49,7 @@ local function text(value, size, color, props)
 end
 local function button(id, value, action, width, primary)
     return Theme.Button(value, action, primary == true, width or 44, {
-        id = "career-atlas-" .. id, height = 44, minHeight = 44, minWidth = 44,
+        id = "career-atlas-" .. id, height = 46, minHeight = 46, minWidth = 46,
         flexShrink = 0, padding = 3, paddingHorizontal = 3, fontSize = 11,
     })
 end
@@ -89,7 +89,7 @@ function Overlay:Init(onClose, onWaypoint)
     self.map.root:SetStyle({position = "absolute", left = 0, right = 0, top = 0, bottom = 0,
         width = "100%", height = "100%", flexShrink = 1})
     self.title = text("南城地图", 16, C.white, {id = "career-atlas-title", flexGrow = 1, flexShrink = 1, maxLines = 1})
-    local header = UI.Row {width = "100%", height = 44, minHeight = 44, gap = 8, alignItems = "center", padding = 0,
+    local header = UI.Row {width = "100%", height = 46, minHeight = 46, gap = 8, alignItems = "center", padding = 0,
         children = {self.title, button("close", "关闭", function() self:Close() end, 68)}}
 
     self.zoomIn = button("zoom-in", "+", function() self:Zoom(2) end)
@@ -100,7 +100,7 @@ function Overlay:Init(onClose, onWaypoint)
             button("me", "本人", function() self:FocusPlayer() end, 56)}}
     -- All direction buttons pan the view centre, not the actor. +Z is north/up.
     local directions = UI.Panel {position = "absolute", right = 8, bottom = 22,
-        width = 140, height = 140, padding = 0, gap = 4, alignItems = "center", pointerEvents = "box-none",
+        width = 148, height = 148, padding = 0, gap = 4, alignItems = "center", pointerEvents = "box-none",
         children = {
             button("north", "北", function() self:Pan(0, -.3) end),
             UI.Row {gap = 4, padding = 0, pointerEvents = "box-none", children = {
@@ -116,7 +116,7 @@ function Overlay:Init(onClose, onWaypoint)
 
     self.regionTitle = text("", 12, C.cyan, {id = "career-atlas-region", flexGrow = 1, flexShrink = 1,
         textAlign = "center", maxLines = 1, verticalAlign = "middle"})
-    local regionPicker = UI.Row {height = 44, minHeight = 44, alignItems = "center", gap = 3, padding = 0,
+    local regionPicker = UI.Row {height = 46, minHeight = 46, alignItems = "center", gap = 3, padding = 0,
         children = {
             button("region-prev", "<区", function() self:ChangeRegion(-1) end),
             self.regionTitle,
@@ -133,10 +133,11 @@ function Overlay:Init(onClose, onWaypoint)
         textAlign = "center", verticalAlign = "middle"})
     self.previousPage = button("page-prev", "上页", function() self:ChangePage(-1) end, 54)
     self.nextPage = button("page-next", "下页", function() self:ChangePage(1) end, 54)
-    local pages = UI.Row {height = 44, minHeight = 44, gap = 4, padding = 0,
+    local pages = UI.Row {height = 46, minHeight = 46, gap = 4, padding = 0,
         children = {self.previousPage, self.pageTitle, self.nextPage}}
-    self.selection = text("选择地点查看详情", 10, C.amber, {id = "career-atlas-selection", height = 18,
-        minHeight = 18, maxLines = 1, verticalAlign = "middle"})
+    self.selection = text("选择地点查看详情", 10, C.amber, {id = "career-atlas-selection",
+        position = "absolute", left = 4, right = 4, bottom = 4, height = 18,
+        minHeight = 18, maxLines = 1, verticalAlign = "middle", visible = false})
     self.navigate = button("navigate", "导航到所选地点", function() self:Navigate() end, "100%", true)
     self.sidebar = UI.Panel {id = "career-atlas-sidebar", width = 238, flexShrink = 0, padding = 2, gap = 2,
         backgroundColor = {19, 27, 32, 255}, overflow = "hidden", children = {
@@ -167,7 +168,7 @@ function Overlay:RefreshLayout()
     self.body:SetStyle({flexDirection = portrait and "column" or "row"})
     self.sidebar:SetStyle({width = portrait and "100%" or math.min(238, math.max(204, layout.w * .32)),
         height = portrait and 310 or "100%", padding = 2, gap = 2})
-    self.selection:SetVisible(portrait or layout.h >= 294)
+    self.selection:SetVisible(portrait or layout.h >= 310)
 end
 
 ---@return boolean

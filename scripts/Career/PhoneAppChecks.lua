@@ -227,7 +227,7 @@ function Checks.Run(session)
                     tap(view,"career-chat-"..id); Checks.Audit(view,"多尺寸/chat-"..id)
                     tap(view,"career-phone-back")
                 end
-            elseif page=="map" then
+            elseif page=="legacy-map" then
                 local World=require("Career.WorldData")
                 local districts={World.District(0,0)}
                 for _,d in ipairs(World.Districts) do districts[#districts+1]=d end
@@ -381,7 +381,16 @@ function Checks.Shot(session,page)
             local p=assert(Config.points[offer.pickupId]); assert(Delivery.Pickup(offer.id,p.x,p.z,{riding=false,speed=0}))
         end
     end
-    session:Refresh(); session:OpenPhone(app); layout(view)
+    session:Refresh(); session:OpenPhone(app)
+    if app=="map" then
+        assert(view.worldMap:IsVisible() and view:IsBlocking() and view.phonePage=="",
+            "地图实拍必须来自新的全屏地图入口")
+        UI.Layout()
+        print("[全屏地图实拍就绪] "..requestedPage.." / 正式地图入口；不执行旧手机地图断言")
+        view.notice:SetText("")
+        return
+    end
+    layout(view)
     if app=="messages" and page~="messages" then
         local contact=({chat="cousin",["chat-cousin"]="cousin",["chat-station"]="station_master",
             ["chat-mechanic"]="mechanic",["chat-journal"]="journal"})[page]
