@@ -493,8 +493,11 @@ function Outer:Update(dt,blockers)
         local p=self.people[i]
         if distance2(p.x,p.z,self.actor)>Outer.PEOPLE_RANGE^2 then self:ReleasePerson(i) end
     end
-    if self.scanTime>=1 or (self.actor.x-self.scanX)^2+(self.actor.z-self.scanZ)^2>64^2 then
-        self.scanTime=0; self:Scan(); self:Fill(blockers)
+    local moved=(self.actor.x-self.scanX)^2+(self.actor.z-self.scanZ)^2>64^2
+    if self.scanTime>=1 or moved then
+        self.scanTime=0
+        if moved or #self.lanes==0 then self:Scan() end
+        self:Fill(blockers)
     end
     local count=math.max(1,math.ceil(duration*60))
     for _=1,count do self:Step(duration/count,blockers) end

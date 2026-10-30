@@ -197,6 +197,7 @@ function Crowd:AddRoute(path,id,crossing)
     if length>=8 then self.routes[#self.routes+1]={path=path,length=length,id=id,crossing=crossing} end
 end
 function Crowd:Scan(actor)
+    self.routeX,self.routeZ=actor.x,actor.z
     self.routes={}
     -- 海岸路线来自环境真源矩形，不复制另一套岸线坐标；只走木板中心/沙滩干地。
     local board,pier=Environment.Boardwalk,Environment.Pier
@@ -457,7 +458,8 @@ function Crowd:Update(dt,actor,enabled,camera)
     self.elapsed=self.elapsed+dt; self.scanElapsed=self.scanElapsed+dt
     self:Snapshot(actor)
     if self.scanElapsed>=1 then
-        self.scanElapsed=0; self:Scan(actor)
+        self.scanElapsed=0
+        if not self.routeX or (actor.x-self.routeX)^2+(actor.z-self.routeZ)^2>=16^2 then self:Scan(actor) end
         for i=#self.people,1,-1 do
             local p=self.people[i]
             if d2(p.x,p.z,actor)>Crowd.RECYCLE^2 and self:Hidden(p.x,p.z,actor,camera) then self:Retire(i) end
