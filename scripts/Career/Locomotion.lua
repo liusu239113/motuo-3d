@@ -33,7 +33,8 @@ local V=Vector3
 ---@field bones CareerSourceBone[]
 ---@field allBones CareerSourceBone[] 原始97骨，仅用于完整采样对照
 ---@field reference table<string, Matrix3x4>
----@field corrections table<string, Quaternion>
+---@field sourceParents table<string, string?>
+---@field sourceBindRotations table<string, Quaternion>
 ---@field clips table<string, CareerOfficialClip>
 ---@field phase number
 ---@field idleTime number
