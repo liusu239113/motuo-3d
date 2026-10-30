@@ -1,0 +1,102 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "TIMEOUT",
+    "duration_ms": 105155,
+    "frames_completed": 326,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2581.29ms (threshold: 2000ms)",
+                    "frame": 124
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6629.23ms (threshold: 2000ms)",
+                    "frame": 125
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 326
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 5346,
+            "component_count": 2239,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 2503.93310546875
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.604000091552736
+        },
+        {
+            "frame": 225,
+            "phase": "run",
+            "nodes": 539,
+            "components": 417,
+            "hash": 179602284,
+            "frame_time_ms": 343.93499755859377
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 6629.22509765625,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 4,
+        "SkyLightCapture": 1,
+        "Light": 24,
+        "ProceduralSky": 1,
+        "Skybox": 1,
+        "CustomGeometry": 1068,
+        "StaticModel": 800,
+        "Text3D": 287,
+        "AnimatedModel": 38,
+        "SoundSource": 13
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 3,
+        "total_errors": 3
+    }
+}

@@ -109,6 +109,7 @@ function View:Init(actions)
     self.dashboard=Dashboard.New(actions)
     self.objective=PhoneKit.Text("",13,C.amber,{id="career-hud-objective",fontWeight="bold"})
     self.hint=PhoneKit.Text("",10,C.white,{id="career-hud-hint"})
+    self.deliveryStatus=PhoneKit.Text("",12,C.cyan,{id="career-hud-delivery",fontWeight="bold"})
     self.map=Map.New("career-minimap")
     self.map.root:SetStyle{width="100%",height=106}
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
@@ -118,7 +119,7 @@ function View:Init(actions)
             if not self:IsBlocking() then actions.phone("map") end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
     self.navPanel=UI.Card{id="career-navigation-card",position="absolute",left=12,top=12,width=238,padding=10,gap=6,
-        pointerEvents="box-none",children={self.mapOpen,self.objective,self.hint}}
+        pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
     self.pauseButton=btn("暂停",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=64,height=46})
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
@@ -545,6 +546,32 @@ function View:BuildPhone(state,offer,active)
             PhoneKit.Button(advice.action=="继续配送" and "继续当前配送" or advice.point=="breakfast" and "导航去吃饭" or "导航去休息",function()
                 a.setWaypoint(advice.point); a.closePhone()
             end,"career-life-navigate",true)}}))
+        local plan=Life.Plan(state)
+        section("今天的生活计划")
+        target:AddChild(PhoneKit.Card("career-life-plan",{children={
+            PhoneKit.Text(plan.mealText,15,PhoneKit.C.orange,{id="career-plan-meal",fontWeight="bold"}),
+            PhoneKit.Text("下一餐 ¥12 · 耗时15游戏分钟 · 不会自动扣款",11,PhoneKit.C.muted),
+            PhoneKit.Text(plan.restText,14,PhoneKit.C.blue,{id="career-plan-rest",fontWeight="bold"}),
+            PhoneKit.Text(plan.home.name..string.format(" · ¥%.0f/晚 · 精力至少%d",plan.home.price/100,plan.home.energy),11,PhoneKit.C.muted),
+            PhoneKit.Text(string.format("建议预留 ¥%.2f · 预留后 ¥%.2f",plan.reserveCents/100,plan.remainingCents/100),13,
+                plan.shortfallCents>0 and PhoneKit.C.red or PhoneKit.C.green,{id="career-plan-budget",fontWeight="bold"}),
+            PhoneKit.Text(plan.shortfallCents>0 and string.format("还差 ¥%.2f。可选免费桥下/公园，或查看基础帮助条件。",plan.shortfallCents/100)
+                or "预算包含下一餐、当前住处；车辆低于25%时另预留补给。",11,PhoneKit.C.muted),
+            PhoneKit.Button("查看今晚住处",function() a.setWaypoint(plan.home.point);a.closePhone() end,"career-plan-home",false)}}))
+        section("本日收支 · 实际流水")
+        target:AddChild(PhoneKit.Card("career-life-day-ledger",{children={
+            PhoneKit.Text(string.format("完成 %d 单 · 收入 ¥%.2f",plan.orders,plan.incomeCents/100),14,PhoneKit.C.green,{id="career-plan-income",fontWeight="bold"}),
+            PhoneKit.Text(string.format("支出 ¥%.2f · 净收入 ¥%.2f",plan.expenseCents/100,(plan.incomeCents-plan.expenseCents)/100),12,PhoneKit.C.ink),
+            PhoneKit.Button("打开钱包明细",function() a.phone("wallet") end,"career-plan-wallet",false)}}))
+        local alerts=Life.Alerts(state)
+        if #alerts>0 then
+            section("当前需要留意")
+            for index,alert in ipairs(alerts) do
+                target:AddChild(PhoneKit.Card("career-life-alert-"..index,{children={
+                    PhoneKit.Text(alert.title,13,alert.level>=2 and PhoneKit.C.red or PhoneKit.C.orange,{fontWeight="bold"}),
+                    PhoneKit.Text(alert.detail,11,PhoneKit.C.muted)}}))
+            end
+        end
         section("人物状态 · 不是车辆电量")
         for _,stat in ipairs({{id="hunger",name="饱腹",value=state.hunger,color=PhoneKit.C.orange,
                 detail="低于30不能奔跑；55以下建议补一餐。"},
@@ -567,7 +594,14 @@ function View:BuildPhone(state,offer,active)
         if state.currentSpace and state.currentSpace~="city" then button("到房门旁出门",a.leaveHousing,false)
         elseif home.width then button("到门口进入住处",a.enterHousing,false) end
         button("到点过夜",a.sleepHousing,false)
-        action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2","充电",a.charge,false)
+        section("车辆续航与补给")
+        target:AddChild(PhoneKit.Card("career-life-range",{children={
+            PhoneKit.Text(string.format("%s %.0f%% · 预计剩余 %.1f km",plan.electric and "电量" or "燃油",plan.power,plan.rangeMeters/1000),14,PhoneKit.C.blue,{id="career-plan-range",fontWeight="bold"}),
+            PhoneKit.Text("按当前游戏里程消耗估算；只展示，不赠送电量或燃油。",11,PhoneKit.C.muted),
+            PhoneKit.Button(plan.electric and "导航到充电点" or "导航到车行",function()
+                a.setWaypoint(plan.electric and "charge" or "dealer");a.closePhone()
+            end,"career-plan-supply",false)}}))
+        action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2 · 耗时30游戏分钟","充电",a.charge,false)
         action("career-life-aid","低现金基础帮助","满足条件才可领取基础补给，不发放现金。",nil,"申请帮助",a.aid,false)
         section("声音与偏好")
         -- 短屏scale<1时子项端点取整可超过自动父高度1～2px；尾部留2物理px真实内边距。
@@ -592,6 +626,16 @@ function View:Update(state,actor,target,active,offer,dt)
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.dashboard:Update(state,actor)
     self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 手机接单")
+    if active then
+        local minutes=math.ceil(math.abs(active.remainingHours)*60)
+        self.deliveryStatus:SetText(string.format("%s · %s%d分钟\n配送费 ¥%.2f · %d份在途",active.status=="accepted" and "去取餐" or "去送达",
+            active.remainingHours<0 and "已超时" or "剩余",minutes,active.feeCents/100,#state.activeOrders))
+        self.deliveryStatus:SetStyle{fontColor=active.remainingHours<.25 and C.red or C.cyan}
+    else
+        self.deliveryStatus:SetText(state.time>=23 and "深夜已停止派单 · 先安排休息"
+            or state.online and (offer and string.format("可接新单 · ¥%.2f",offer.feeCents/100) or "听单中 · 暂无附近订单") or "未上线 · 手机外卖页可接单")
+        self.deliveryStatus:SetStyle{fontColor=C.cyan}
+    end
     self.hint:SetText(state.trafficHint
         or state.contactName and ("附近 · "..state.contactName.."，点击交谈")
         or target and target.hint or "停稳后可查看手机、接单与补给。")
@@ -608,8 +652,10 @@ function View:LayoutControls()
     local navWidth=narrow and math.max(150,math.min(194,w*.33)) or 238
     local dashWidth=narrow and math.max(230,math.min(270,w*.46)) or 300
     local compact=h<470
-    self.dashboard.speed:SetVisible(not compact)
+    self.dashboard.speed:SetVisible(not compact or self.mountedControls)
     self.dashboard.wallet:SetVisible(not compact)
+    self.dashboard.plan:SetVisible(not compact)
+    self.dashboard.speed:SetStyle{fontSize=self.mountedControls and 18 or 11}
     self.navPanel:SetStyle{width=navWidth}
     self.dashboard.root:SetStyle{width=dashWidth,gap=compact and 4 or 7,padding=compact and 8 or 12}
     local dash=self.dashboard.root:GetLayout()
@@ -617,6 +663,7 @@ function View:LayoutControls()
     self.pauseButton:SetStyle{top=dashBottom,right=12}
     self.actionTray:SetStyle{top=math.max(dashBottom+52,math.min(h*.52,h-190))}
     self.map.root:SetStyle{height=h<470 and 72 or 106}
+    self.deliveryStatus:SetVisible(h>=470 or self.lastTarget~=nil)
     self.hint:SetVisible(h>=470)
     self.controlHint:SetVisible(h>=470)
     if area.w~=self.controlWidth or area.h~=self.controlHeight then

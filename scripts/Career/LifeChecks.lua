@@ -10,6 +10,21 @@ function Checks.Run(session,shot)
     assert(Store.NewCareer())
     assert(Store.Transaction(function(p) p.phase="working";p.flags.introSeen=true;return true end))
     local p=Store.Get()
+    local basePlan=Life.Plan(p)
+    assert(basePlan.reserveCents==1200 and basePlan.home.price==0,"开局计划只能预留下一餐，免费住处不虚扣")
+    local sample=Store.Get()
+    sample.hunger=63;sample.energy=57;sample.battery=10;sample.cashCents=1000;sample.accommodation="hostel"
+    local lowPlan=Life.Plan(sample)
+    assert(lowPlan.mealHours==1 and lowPlan.restHours==2,"计划按真实消耗率估算")
+    assert(lowPlan.reserveCents==4400 and lowPlan.shortfallCents==3400,"下一餐+30元住宿+2元充电预算")
+    sample.equipment.raincoat=true
+    assert(Life.Plan(sample).restHours>lowPlan.restHours,"雨衣节省精力应反映到计划")
+    local monitor={day=0,seen={}}
+    assert(Life.PollAlerts(monitor,sample),"低状态首次提醒")
+    assert(not Life.PollAlerts(monitor,sample),"同级提醒不能连续刷屏")
+    sample.hunger=10
+    assert(Life.PollAlerts(monitor,sample).key=="hunger-critical","严重程度升级应立即提醒")
+    assert(Store.Get().cashCents==p.cashCents,"计算计划和提醒不能扣款")
     local clock=p.time
     assert(Store.Advance(60,0))
     local advanced=Store.Get()
@@ -103,9 +118,22 @@ function Checks.Run(session,shot)
     if shot=="life" then session:OpenPhone("life") end
     session.view.notice:SetText("")
     session.options.lifeAudit=true
-    session.options.lifeRide=shot=="ride"
+    session.options.lifeRide=shot=="ride" or shot=="nightride"
     if session.options.lifeRide then
         session.actor.mounted=true;session.actor.visuals:SetMounted(true);session:Refresh()
+    end
+    if shot=="nightride" then
+        assert(Store.Transaction(function(d) d.time=22;return true end));session:Refresh()
+    elseif shot=="order" then
+        local orderOffer=assert(Delivery.GetOffer());assert(Delivery.Accept(orderOffer.id));session:Refresh()
+    elseif shot=="plan" then
+        assert(Store.Transaction(function(d) d.hunger=63;d.energy=57;d.battery=20;d.accommodation="hostel";return true end))
+        session:Refresh();session:OpenPhone("life")
+        local planCard=assert(session.view.phoneBody:FindById("career-life-plan"))
+        Kit.LayoutTree(session.view.phoneArea)
+        local card=planCard:GetAbsoluteLayoutForHitTest()
+        local area=session.view.phoneContent:GetAbsoluteLayoutForHitTest()
+        session.view.phoneContent:SetScroll(0,math.max(0,card.y-area.y))
     end
     print("[生活时间验收通过] 活动消耗/用餐/过夜/手机与暂停冻结/带单导航/天气连续；实拍="..tostring(shot))
 end
@@ -147,10 +175,13 @@ function Checks.Audit(session)
         assert(up.target==widget,"HUD抬手命中错误 "..tostring(widget.props.id))
     end
     local wasPhone=view.phonePage
+    local savedScrollX,savedScrollY=view.phoneContent:GetScroll()
     if wasPhone=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard");view:ClosePhone() end
     local oldWaypoint,oldManual=session.waypoint,session.manualWaypoint
     tap(d.lifeButton)
-    assert(session.waypoint==Life.Advice(p).point,"快捷按钮真实导航失败")
+    local alerts=Life.Alerts(p)
+    local expected=alerts[1] and alerts[1].key:match("^power") and alerts[1].point or Life.Advice(p).point
+    assert(session.waypoint==expected,"快捷按钮真实导航失败")
     tap(d.helpButton)
     assert(view.phonePage=="life","生活详情触摸未打开手机")
     view:ClosePhone()
@@ -190,7 +221,9 @@ function Checks.Audit(session)
     view.controlWidth,view.controlHeight=0,0
     session.waypoint,session.manualWaypoint=oldWaypoint,oldManual
     session:Refresh();view:LayoutControls();Kit.LayoutTree(view.game)
-    if wasPhone=="life" then session:OpenPhone("life") end
+    if wasPhone=="life" then
+        session:OpenPhone("life");Kit.LayoutTree(view.phoneArea);view.phoneContent:SetScroll(savedScrollX,savedScrollY)
+    end
     print(string.format("[生活HUD渲染验收通过] screen %.0fx%.0f / 实际值一致 / 44尺寸 / 生活与暂停真实触摸 / 骑行避让与多指释放",view.root:GetLayout().w,view.root:GetLayout().h))
 end
 return Checks

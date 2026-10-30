@@ -23,6 +23,8 @@ local DeliveryMarkers = require("Career.DeliveryMarkers")
 local Environment = require("Career.CityEnvironment")
 local Crowd = require("Career.Crowd")
 local Atmosphere = require("Career.Atmosphere")
+local Life = require("Career.LifeStatus")
+local NightLighting = require("Career.NightLighting")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -67,6 +69,7 @@ function Session:Init(options)
     end
     self.running,self.loading,self.online,self.disposed=false,false,false,false
     self.yaw,self.pitch,self.timer=0,14,0
+    self.lifeMonitor={day=0,seen={}}
     self.waypoint=""
     self.manualWaypoint=false
     self.navigation={key="",route={}}
@@ -88,6 +91,8 @@ function Session:Init(options)
     self.sky=nil
     ---@type CareerAtmosphere?
     self.atmosphere=nil
+    ---@type CareerNightLighting?
+    self.nightLighting=nil
     self.environmentHour=-1
     ---@type ThirdPersonCameraInstance?
     self.camera=nil
@@ -196,6 +201,7 @@ function Session:StartCareer(fresh,confirmed)
     if self.actor then self:DisposeWorld() end
     self.waypoint=""; self.manualWaypoint=false; self.navigation={key="",route={}}
     self.loading=true
+    self.lifeMonitor={day=0,seen={}}
     self.view.home:SetVisible(false)
     self.view:ShowLoading("准备南城老街","正在校验城市、人物、车辆和材质。",0)
     local resources,types={},{}
@@ -248,6 +254,7 @@ function Session:BuildWorld()
     self.view:ShowLoading("装配人物与车辆","独立停车位置与配送箱挂点。",.8)
     coroutine.yield()
     self.actor=Actor.New(self.scene,self.city)
+    self.nightLighting=NightLighting.New(self.scene)
     self.audio=CareerAudio.New(self.scene)
     self.audio:Unlock()
     self.environmentHour=-1
@@ -396,7 +403,8 @@ function Session:UpdateEnvironment(hour)
     if self.atmosphere then
         local p=Store.Get()
         local position=self.camera and self.camera:GetCamera().node.worldPosition
-        Atmosphere.Apply(self.atmosphere,p.day,hour,position,self.space~="city")
+        local sample=Atmosphere.Apply(self.atmosphere,p.day,hour,position,self.space~="city")
+        if self.nightLighting then NightLighting.Update(self.nightLighting,self.actor,sample,self.space~="city") end
     end
 end
 function Session:Intro()
@@ -796,7 +804,13 @@ function Session:Update(dt)
     local ok,message=Delivery.Update(dt,distance)
     if not ok and message~="存档忙" then self.view:Notice(message) end
     self.timer=self.timer+dt
-    if self.timer>=.2 then self.timer=0; self:Refresh() end
+    if self.timer>=.2 then
+        self.timer=0; self:Refresh()
+        if self.view.noticeTime<=0 then
+            local alert=Life.PollAlerts(self.lifeMonitor,Store.Get())
+            if alert then self.view:Notice(alert.title.." · "..alert.detail) end
+        end
+    end
 end
 function Session:PostUpdate(dt)
     if not self.camera or not self.actor then return end
@@ -806,7 +820,10 @@ function Session:PostUpdate(dt)
     end
     self.camera:SetMode(self.space~="city" and "indoor" or self.actor.mounted and "ride" or "normal")
     self.camera:Update(dt,self.actor.node,self.yaw,self.pitch)
-    if self.atmosphere then self.atmosphere.root.worldPosition=self.camera:GetCamera().node.worldPosition end
+    if self.atmosphere then
+        self.atmosphere.root.worldPosition=self.camera:GetCamera().node.worldPosition
+        if self.nightLighting then NightLighting.Update(self.nightLighting,self.actor,self.atmosphere.state,self.space~="city") end
+    end
 end
 function Session:LeaveForLegacy()
     if self.running and not self.options.test then self:SavePosition(); Store.Save() end
@@ -826,6 +843,7 @@ function Session:DisposeWorld()
     if self.deliveryPeople then self.deliveryPeople:Dispose(); self.deliveryPeople=nil end
     if self.deliveryMarkers then self.deliveryMarkers:Dispose(); self.deliveryMarkers=nil end
     if self.audio then self.audio:Stop(); self.audio=nil end
+    if self.nightLighting then NightLighting.Dispose(self.nightLighting);self.nightLighting=nil end
     if self.actor then self.actor:Dispose(); self.actor=nil end
     if self.city then self.city:Dispose(); self.city=nil end
     if self.atmosphere then self.atmosphere:Dispose(); self.atmosphere=nil end

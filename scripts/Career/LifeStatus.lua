@@ -31,5 +31,66 @@ function Life.Advice(p)
     local untilMeal=math.max(0,(p.hunger-55)/Config.HUNGER_PER_HOUR)
     return {title="身体状态良好",detail=string.format("按当前消耗，约%d游戏分钟后建议吃饭；也可以提前用餐。",math.floor(untilMeal*60)),point="breakfast",action="生活详情",urgent=false}
 end
+-- 计划是按当前消耗估算，不是预约或自动付款；装备节能与生产Advance保持一致。
+function Life.Plan(p)
+    local home=Housing.Get(p.accommodation) or Housing.List[1]
+    local energyRate=Config.ENERGY_PER_HOUR*(p.equipment and p.equipment.raincoat and .85 or 1)
+    local mealHours=math.max(0,(p.hunger-55)/Config.HUNGER_PER_HOUR)
+    local restHours=math.max(0,(p.energy-45)/energyRate)
+    local restAt=math.max(p.time,math.min(21,p.time+restHours))
+    local electric=(p.position.activeVehicle or "borrowed_ebike")=="borrowed_ebike"
+    local power=electric and p.battery or (p.motorcycleFuel or 100)
+    local supply=power<=25 and (electric and 200 or 2000) or 0
+    local reserve=Config.MEAL_CENTS+home.price+supply
+    local income,expense,orders=0,0,0
+    for _,entry in ipairs(p.ledger) do
+        if entry.day==p.day and entry.kind~="opening" then
+            if entry.deltaCents>0 then income=income+entry.deltaCents
+            else expense=expense-entry.deltaCents end
+            if entry.kind=="delivery" then orders=orders+1 end
+        end
+    end
+    local range=power/(electric and (p.equipment and p.equipment.battery and 100/65000 or Config.BATTERY_PER_METER) or 100/180000)
+    return {home=home,mealHours=mealHours,restHours=restHours,restAt=restAt,
+        mealAt=math.min(24,p.time+mealHours),reserveCents=reserve,
+        remainingCents=p.cashCents-reserve,shortfallCents=math.max(0,reserve-p.cashCents),
+        supplyCents=supply,electric=electric,power=power,rangeMeters=range,
+        incomeCents=income,expenseCents=expense,orders=orders,
+        mealText=mealHours==0 and "现在建议用餐" or (Life.Clock(math.min(24,p.time+mealHours)).."左右补一餐"),
+        restText=restAt<=p.time and "完成配送后安排休息" or (Life.Clock(restAt).."前后准备收工")}
+end
+function Life.Alerts(p)
+    local result={}
+    local function add(key,title,detail,point,level)
+        result[#result+1]={key=key,title=title,detail=detail,point=point,level=level}
+    end
+    local home=Housing.Get(p.accommodation) or Housing.List[1]
+    if p.hunger<15 then add("hunger-critical","饥饿严重","移动明显变慢，先去早餐店补给。","breakfast",3)
+    elseif p.hunger<30 then add("hunger-low","空腹影响移动","无法奔跑，建议先吃饭再接下一单。","breakfast",2)
+    elseif p.hunger<=55 then add("hunger-meal","该吃饭了","预留12元和15游戏分钟，不必等到空腹。","breakfast",1) end
+    if p.energy<15 then add("energy-critical","精力严重不足","完成当前配送后休息，避免继续接单。",home.point,3)
+    elseif p.energy<30 then add("energy-low","疲劳影响移动","无法奔跑，完成当前配送后休息。",home.point,2)
+    elseif p.energy<=45 then add("energy-rest","安排休息","今晚住处已列在生活计划里。",home.point,1) end
+    local plan=Life.Plan(p)
+    if plan.power<=0 then add("power-empty",plan.electric and "车辆没电了" or "燃油耗尽",plan.electric and "去充电点补给，步行仍可移动。" or "去车行补给燃油。",plan.electric and "charge" or "dealer",3)
+    elseif plan.power<=10 then add("power-critical",plan.electric and "电量告急" or "燃油告急","不要再安排远程行程，优先补给。",plan.electric and "charge" or "dealer",2)
+    elseif plan.power<=25 then add("power-low","车辆需要补给","生活计划已预留本次补给开销。",plan.electric and "charge" or "dealer",1) end
+    if p.time>=23 then add("late","深夜停止派单",#p.activeOrders>0 and "完成手头配送后收工，不能带单过夜。" or "到落脚点休息至次日08:00。",home.point,2)
+    elseif p.time>=21 then add("evening","该安排今晚住处了","生活计划可查看住宿和下一餐预算。",home.point,1) end
+    table.sort(result,function(a,b) if a.level==b.level then return a.key<b.key end return a.level>b.level end)
+    return result
+end
+-- 同一天同一级提醒只出现一次；恢复再降低也不刷屏，升级严重程度仍会提醒。
+function Life.PollAlerts(monitor,p)
+    if monitor.day~=p.day then monitor.day=p.day;monitor.seen={} end
+    local selected
+    for _,alert in ipairs(Life.Alerts(p)) do
+        if not monitor.seen[alert.key] then
+            monitor.seen[alert.key]=true
+            if not selected then selected=alert end
+        end
+    end
+    return selected
+end
 function Life.Clock(hour) return string.format("%02d:%02d",math.floor(hour),math.floor(hour*60)%60) end
 return Life
