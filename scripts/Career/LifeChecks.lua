@@ -193,7 +193,13 @@ function Checks.Audit(session)
     local dashboard=bounds(d.root)
     local nav=bounds(view.navPanel)
     assert(nav.x+nav.w<=dashboard.x or nav.y+nav.h<=dashboard.y,"地图不能遮盖人物状态卡")
-    for _,button in ipairs({d.lifeButton,d.helpButton,view.pauseButton,view.mountButton,view.interactButton}) do
+    for _,widget in ipairs({d.clock,d.part,d.weather,d.foodValue,d.energyValue,d.batteryValue,d.lifeButton,d.helpButton}) do
+        local r=bounds(widget)
+        assert(r.x>=dashboard.x and r.y>=dashboard.y and r.x+r.w<=dashboard.x+dashboard.w+1
+            and r.y+r.h<=dashboard.y+dashboard.h+1,"仪表舱内容溢出 "..tostring(widget.props.id))
+    end
+    local phoneButton=assert(view.actionTray:FindById("career-phone"))
+    for _,button in ipairs({d.lifeButton,d.helpButton,view.pauseButton,view.mountButton,view.interactButton,phoneButton}) do
         local r=bounds(button)
         assert(r.w>=44 and r.h>=44,"HUD触摸目标不足44")
     end
@@ -221,6 +227,12 @@ function Checks.Audit(session)
     assert(session.waypoint==expected,"快捷按钮真实导航失败")
     tap(d.helpButton)
     assert(view.phonePage=="life","生活详情触摸未打开手机")
+    view:ClosePhone()
+    tap(phoneButton)
+    assert(view.phonePage=="apps","操作底座手机按钮未打开桌面")
+    view:ClosePhone()
+    tap(view.mapOpen)
+    assert(view.phonePage=="map","路线窗触摸未打开地图")
     view:ClosePhone()
     tap(view.pauseButton)
     assert(view:IsBlocking(),"暂停按钮触摸未打开菜单")

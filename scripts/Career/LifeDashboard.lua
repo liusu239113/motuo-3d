@@ -22,7 +22,10 @@ local function shortcut(title,callback,id)
     -- 轻量仪表舱内的分段按键：保留44px命中区，不再像独立弹窗。
     local touchSize=Kit.TouchSize()
     button:SetStyle{width=46,minWidth=touchSize,height=touchSize,minHeight=touchSize,padding=0,borderRadius=4,borderWidth=1,
+        textColor=C.white,
         borderColor={105,143,151,180},backgroundGradient={direction="to-bottom",from={46,64,70,235},to={20,29,34,245}},
+        hoverBackgroundGradient={direction="to-bottom",from={59,83,89,245},to={29,44,50,250}},
+        pressedBackgroundGradient={direction="to-bottom",from={15,29,34,250},to={32,54,60,250}},
         boxShadow={{x=0,y=1,blur=0,color={0,0,0,80}}}}
     return button
 end
