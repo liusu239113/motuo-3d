@@ -13,7 +13,7 @@ local Housing={}
 ---@field story? string
 ---@type CareerHousing[]
 Housing.List={
-    {id="bridge",name="桥下落脚点",price=0,energy=70,point="bridge",x=0,z=-70},
+    {id="bridge",name="桥下落脚点",price=0,energy=70,point="bridge",x=20,z=-68},
     {id="park",name="公园长椅",price=0,energy=75,point="park",x=108,z=-25},
     {id="hostel",name="青年旅舍床位",price=3000,energy=90,point="housing_hostel",x=-109,z=-43,width=7,depth=8,
         story="旅舍的灯还亮着。王二狗把头盔放进柜子，第一次不用听着桥上的车声入睡。\n30元一晚，不宽敞，但有一张干净的床。"},

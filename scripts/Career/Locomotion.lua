@@ -33,8 +33,7 @@ local V=Vector3
 ---@field bones CareerSourceBone[]
 ---@field allBones CareerSourceBone[] 原始97骨，仅用于完整采样对照
 ---@field reference table<string, Matrix3x4>
----@field sourceParents table<string, string?>
----@field sourceBindRotations table<string, Quaternion>
+---@field corrections table<string, Quaternion>
 ---@field clips table<string, CareerOfficialClip>
 ---@field phase number
 ---@field idleTime number
@@ -64,14 +63,15 @@ Motion.ResourceTypes={[Motion.SourceModel]="Model",[Motion.Paths.idle]="Animatio
 local mapping={Hip="Bip001",Pelvis="Bip001 Pelvis",Waist="Bip001 Spine",Spine01="Bip001 Spine1",Spine02="Bip001 Spine2",
     NeckTwist01="Bip001 Neck",Head="Bip001 Head"}
 local children={Waist="Spine01",Spine01="Spine02",Spine02="NeckTwist01"}
+local inheritedAlignment={L_Hand="L_Forearm",R_Hand="R_Forearm"}
 for _,side in ipairs({"L","R"}) do
     for _,pair in ipairs({{"Thigh","Thigh"},{"Calf","Calf"},{"Foot","Foot"},{"ToeBase","Toe0"},
         {"Clavicle","Clavicle"},{"Upperarm","UpperArm"},{"Forearm","Forearm"},{"Hand","Hand"}}) do
         mapping[side.."_"..pair[1]]="Bip001 "..side.." "..pair[2]
     end
-    -- 踝到脚尖在源骨架下降约16cm，而目标鞋骨近水平；不能按这段几何校准鞋面。
-    -- Foot/Toe/Hand保留目标绑定掌面，只传源动作片段相对绑定的旋转变化。
-    for _,pair in ipairs({{"Thigh","Calf"},{"Calf","Foot"},{"Clavicle","Upperarm"},{"Upperarm","Forearm"},{"Forearm","Hand"}}) do
+    -- 手掌继承前臂的绑定校准，不能与前臂使用不同的全局参考姿势。
+    -- 锁骨属于体型比例：保留目标肩线，只传动作增量，不强压成源模型肩线。
+    for _,pair in ipairs({{"Thigh","Calf"},{"Calf","Foot"},{"Upperarm","Forearm"},{"Forearm","Hand"}}) do
         children[side.."_"..pair[1]]=side.."_"..pair[2]
     end
 end
@@ -164,23 +164,29 @@ function Motion:Init(rig)
     assert(mappings==23 and #self.allBones==97 and #self.bones==24,"官方动作23映射/24骨祖先闭包已变化，请重新审计")
     rig:Reset()
     rig.mesh.position=rig.standOffset
-    for target,source in pairs(mapping) do
-        assert(rig.bind[target] and self.reference[source],"重定向骨骼映射不完整: "..target)
-        local sourceBind=self.reference[source]:Rotation()
-        local targetBind=rig:GetLocalBoneTransform(target):Rotation()
-        local align=Quaternion.IDENTITY
-        local child=children[target]
-        if child then
-            local targetDirection=rig:GetBonePosition(child)-rig:GetBonePosition(target)
-            local sourceChild=assert(mapping[child])
-            local sourceDirection=self.reference[sourceChild]:Translation()-self.reference[source]:Translation()
-            align=Quaternion(targetDirection:Normalized(),sourceDirection:Normalized())
+    ---@type table<string, Quaternion>
+    local alignments={}
+    for _,target in ipairs(rig.boneNames) do
+        local source=mapping[target]
+        if source then
+            assert(rig.bind[target] and self.reference[source],"重定向骨骼映射不完整: "..target)
+            local sourceBind=self.reference[source]:Rotation()
+            local targetBind=rig:GetLocalBoneTransform(target):Rotation()
+            local align=Quaternion.IDENTITY
+            local child=children[target]
+            if child then
+                local targetDirection=rig:GetBonePosition(child)-rig:GetBonePosition(target)
+                local sourceChild=assert(mapping[child])
+                local sourceDirection=self.reference[sourceChild]:Translation()-self.reference[source]:Translation()
+                align=Quaternion(targetDirection:Normalized(),sourceDirection:Normalized())
+            elseif inheritedAlignment[target] then
+                align=assert(alignments[inheritedAlignment[target]],"前臂校准必须先于手掌")
+            end
+            alignments[target]=align
+            -- 全局绑定校准；手腕沿前臂参考，消除仅因参考姿势不同产生的折腕。
+            local correction=sourceBind:Inverse()*align*targetBind
+            self.corrections[target]=correction:Normalized()
         end
-        -- 全局旋转重定向公式：desiredGlobal = sourceGlobal(t) * sourceBind^-1 * A-poseAxisAlignment * targetBind
-        -- 将目标骨段的绑定方向对齐源骨段，避免源A字姿势与目标下垂臂的差异变成胸前张手。
-        ---@type Quaternion
-        local correction=sourceBind:Inverse()*align*targetBind
-        self.corrections[target]=correction:Normalized()
     end
     self.sourceHipY=self.reference.Bip001:Translation().y
     local targetHipY=rig:GetBonePosition("Hip").y-rig.standOffset.y
