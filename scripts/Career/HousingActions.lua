@@ -117,7 +117,7 @@ function Actions:ShowMorning(message)
         (p.lastDaySummary.expenseCents or 0)/100,p.cashCents/100)
     summary=summary..string.format("\n\n今日安排：%s。\n今晚%s，建议预留%.2f元。\n饱腹%.0f / 精力%.0f / %s%.0f%%。",
         plan.mealText,plan.home.name,plan.reserveCents/100,p.hunger,p.energy,plan.electric and "电量" or "燃油",plan.power)
-    self.view:ShowDialog("第"..p.day.."天 · 又是新的一天",summary,{{text="收拾好，继续生活",primary=true}})
+    self.view:ShowDialog("第"..p.day.."天 · 又是新的一天",summary,{{text="收拾好，继续生活",primary=true}},true)
 end
 function Actions:InteriorTarget()
     local bx,bz=Data.Bed(self.space)

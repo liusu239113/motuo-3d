@@ -241,13 +241,13 @@ end
 function View:ShowLoading(title,detail,fraction)
     self:ShowDialog(title,detail..string.format("\n已完成 %.0f%%",fraction*100),{})
 end
-function View:ShowDialog(title,text,buttons)
+function View:ShowDialog(title,text,buttons,forceScroll)
     self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ResetInput(); self.controls:SetEnabled(false)
     self.blocked=true; self.phone:SetVisible(false); self.overlay:SetVisible(true)
     destroyChildren(self.dialogBody)
     local _,lineBreaks=text:gsub("\n","")
-    local scrollable=#text>220 or lineBreaks>=7
+    local scrollable=forceScroll or #text>220 or lineBreaks>=7
     self.dialogBody:SetStyle{height=scrollable and "90%" or "auto"}
     self.dialogBody:AddChild(PhoneKit.Text(title,21,C.amber,{fontWeight="bold",flexShrink=0}))
     if scrollable then
