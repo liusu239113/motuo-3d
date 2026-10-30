@@ -170,6 +170,7 @@ function Checks.Run(session)
         local harness=setmetatable({options={test=true},running=true,actor=a,deliveryMarkers=p,
             city={UpdateStreaming=function() end,contacts={Update=function() end}},
             State=function() return state end,Target=function() return {pointId="park"} end,
+            UpdateEnvironment=function() end,
             Pause=function() end,
             view={IsBlocking=function() return true end,UpdateSpeech=function() end,LayoutControls=function() end,
                 controls={UpdateFeedback=function() end},phonePage="",conversation={IsVisible=function() return false end},
