@@ -140,6 +140,7 @@ end
 function Visuals:SetMounted(mounted)
     if self.mounted~=mounted then self:ResetGait() end
     self.mounted=mounted
+    self.lastPoseRider=nil
     self.walkNode:SetEnabledRecursive(not mounted); self.mountedRider:SetVisible(mounted and self.cityVisible)
     if not mounted then self.lean=0; self.bikeVisual.rotation=Quaternion.IDENTITY; self.bikeVisual.position=V.ZERO end
 end
@@ -163,7 +164,10 @@ function Visuals:Update(dt,speed,steer,bikeX,bikeY,bikeZ,bikeYaw,distance)
     self.bikeVisual.rotation=Quaternion(roll,V.FORWARD)
     self.bikeVisual.position=V.ZERO
     if self.mounted then
-        self.mountedRider:PoseRide(0)
+        if math.abs(steer-(self.lastPoseSteer or 100))>.001 or self.lastPoseRider~=self.mountedRider then
+            self.mountedRider:PoseRide(steer)
+            self.lastPoseSteer=steer;self.lastPoseRider=self.mountedRider
+        end
     else
         self:UpdateGait(dt,speed,distance)
     end

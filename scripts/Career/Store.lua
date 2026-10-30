@@ -441,6 +441,14 @@ function Store.Get()
     return copy(data)
 end
 
+-- 高频移动只取标量快照，避免每帧深拷贝完整流水、订单历史与收藏。
+-- 返回新表而非内部档案引用，仍只有Advance/Transaction写入真值。
+function Store.MotionState()
+    if not data then Store.Get() end
+    local p=data --[[@as CareerProfile]]
+    return {time=p.time,hunger=p.hunger,energy=p.energy,battery=p.battery,motorcycleFuel=p.motorcycleFuel}
+end
+
 ---@return boolean, string
 function Store.Save()
     if transactionBusy or cloudBusy then return false, "存档忙，请稍后重试" end

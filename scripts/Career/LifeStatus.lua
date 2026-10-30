@@ -59,6 +59,13 @@ function Life.Plan(p)
         mealText=mealHours==0 and "现在建议用餐" or (Life.Clock(math.min(24,p.time+mealHours)).."左右补一餐"),
         restText=restAt<=p.time and "完成配送后安排休息" or (Life.Clock(restAt).."前后准备收工")}
 end
+---@class CareerLifeAlert
+---@field key string
+---@field title string
+---@field detail string
+---@field point string
+---@field level number
+---@return CareerLifeAlert[]
 function Life.Alerts(p)
     local result={}
     local function add(key,title,detail,point,level)

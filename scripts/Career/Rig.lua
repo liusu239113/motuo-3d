@@ -2,8 +2,8 @@
 local Rider=require("Rider")
 local Locomotion=require("Career.Locomotion")
 local V=Vector3
-local ROOT="model/b2849c2afd734d59aaf285fcb69b2b1a/"
-local STEM="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14"
+local ROOT="model/62a13e80-74a8-5078-b777-5530e5a4346e/"
+local STEM="rig-1-4db698a0-fa75-4297-921d-cb4897aad9cb"
 ---@class CareerRig : Rider
 ---@field soleVertices table<string, table[]>
 ---@field fullSoleVertices table<string, table[]> 原始完整鞋顶点，仅用于等价性回归
@@ -19,9 +19,9 @@ local Rig={}
 Rig.__index=Rig
 setmetatable(Rig,{__index=Rider})
 Rig.ModelPath=ROOT.."Meshes/"..STEM..".mdl"
-Rig.MaterialPath=ROOT.."Materials/"..STEM.."_00_tripo_material_f6f61c31-14b2-4a13-a6ed-039b59564bd7.xml"
+Rig.MaterialPath=ROOT.."Materials/"..STEM.."_00_tripo_material_8547aae4-7585-4381-9471-199ca2c0c6ae.xml"
 Rig.DiffusePath=ROOT.."Textures/"..STEM.."_00_D.jpg"
-Rig.NormalPath=ROOT.."Textures/"..STEM.."_00_N.png"
+Rig.NormalPath=ROOT.."Textures/"..STEM.."_00_N.jpg"
 ---@param parent Node
 ---@return CareerRig
 function Rig.New(parent,asset)

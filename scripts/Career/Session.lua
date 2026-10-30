@@ -70,6 +70,8 @@ function Session:Init(options)
     end
     self.running,self.loading,self.online,self.disposed=false,false,false,false
     self.yaw,self.pitch,self.timer=0,14,0
+    self.storyTimer=0
+    self.environmentTimer=0
     self.lifeMonitor={day=0,seen={}}
     self.waypoint=""
     self.manualWaypoint=false
@@ -243,7 +245,7 @@ function Session:BuildWorld()
     self.sky.sunLight=light
     self.sky.skyCurve=.2
     local capture=lg:CreateComponent("SkyLightCapture")
-    capture.resolution=64; capture.minCaptureInterval=2
+    capture.resolution=32; capture.minCaptureInterval=12
     zone.envTextureDiffIntensity=1; zone.envTextureSpecIntensity=1
     self.atmosphere=Atmosphere.New(self.scene,self.sky,light,moon,zone)
     renderer.hdrRendering=true
@@ -756,7 +758,9 @@ function Session:Update(dt)
         return
     end
     if not self.options.test and math.abs(self.actor.speed)<.35 then
-        local story=Progress.NextStory(Store.Get())
+        self.storyTimer=self.storyTimer+dt
+        local story=self.storyTimer>=.5 and Progress.NextStory(Store.Get()) or nil
+        if self.storyTimer>=.5 then self.storyTimer=0 end
         if story then
             self.view:ShowDialog(story.title,story.text,{{text="记住这一刻 · 继续",primary=true,onClick=function()
                 local _,message=Progress.MarkStory(story.id); self.view:Notice(message)
@@ -781,8 +785,9 @@ function Session:Update(dt)
     if self.options.test then return end
     local x,z=self.actor.x,self.actor.z
     local controls=self.view:GetInput()
-    local state=Store.Get()
-    self:UpdateEnvironment(state.time)
+    local state=Store.MotionState()
+    self.environmentTimer=self.environmentTimer+dt
+    if self.environmentTimer>=.2 then self.environmentTimer=0;self:UpdateEnvironment(state.time) end
     local need=math.min(state.hunger,state.energy)
     controls.speedFactor=need<15 and .45 or need<30 and .7 or 1
     if need<30 then controls.run=false end

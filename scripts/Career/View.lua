@@ -107,9 +107,9 @@ function View:Init(actions)
     local safe=UI.SafeAreaView{width="100%",height="100%",nativeMenuInset=true,padding=12,pointerEvents="box-none"}
     self.hudSafe=safe
     self.dashboard=Dashboard.New(actions)
-    self.objective=PhoneKit.Text("",13,C.amber,{id="career-hud-objective",fontWeight="bold"})
+    self.objective=PhoneKit.Text("",11,C.amber,{id="career-hud-objective",fontWeight="normal"})
     self.hint=PhoneKit.Text("",10,C.white,{id="career-hud-hint"})
-    self.deliveryStatus=PhoneKit.Text("",12,C.cyan,{id="career-hud-delivery",fontWeight="bold"})
+    self.deliveryStatus=PhoneKit.Text("",10,C.cyan,{id="career-hud-delivery",fontWeight="normal"})
     self.map=Map.New("career-minimap")
     self.map.root:SetStyle{width="100%",height=106}
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
@@ -118,8 +118,8 @@ function View:Init(actions)
         pointerEvents="box-only",onClick=function()
             if not self:IsBlocking() then actions.phone("map") end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
-    self.navPanel=UI.Card{id="career-navigation-card",position="absolute",left=12,top=12,width=238,padding=10,gap=6,
-        pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
+    self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=7,gap=4,
+        backgroundColor={12,18,23,145},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
     self.pauseButton=btn("暂停",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=64,height=46})
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
@@ -644,8 +644,8 @@ function View:Update(state,actor,target,active,offer,dt)
     self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "自由生活 · 手机接单")
     if active then
         local minutes=math.ceil(math.abs(active.remainingHours)*60)
-        self.deliveryStatus:SetText(string.format("%s · %s%d分钟\n配送费 ¥%.2f · %d份在途",active.status=="accepted" and "去取餐" or "去送达",
-            active.remainingHours<0 and "已超时" or "剩余",minutes,active.feeCents/100,#state.activeOrders))
+        self.deliveryStatus:SetText(string.format("%s · %s%d分钟",active.status=="accepted" and "取餐" or "送达",
+            active.remainingHours<0 and "超时" or "剩余",minutes))
         self.deliveryStatus:SetStyle{fontColor=active.remainingHours<.25 and C.red or C.cyan}
     else
         self.deliveryStatus:SetText(state.time>=23 and "深夜已停止派单 · 先安排休息"
@@ -665,29 +665,32 @@ function View:LayoutControls()
     local bounds=self.hudSafe:GetAbsoluteLayout()
     local w,h=bounds.w,bounds.h
     local narrow=w<720
-    local navWidth=narrow and math.max(150,math.min(194,w*.33)) or 238
-    local dashWidth=narrow and math.max(230,math.min(270,w*.46)) or 300
+    local navWidth=narrow and math.max(150,math.min(176,w*.30)) or 192
+    local dashWidth=narrow and 280 or 306
     local compact=h<470
-    self.dashboard.speed:SetVisible(not compact or self.mountedControls)
-    self.dashboard.wallet:SetVisible(not compact and not self.mountedControls)
-    self.dashboard.plan:SetVisible(not compact and not self.mountedControls)
-    self.dashboard.speed:SetStyle{fontSize=self.mountedControls and 18 or 11}
+    self.dashboard.wallet:SetVisible(false)
+    self.dashboard.plan:SetVisible(false)
     self.navPanel:SetStyle{width=navWidth}
-    self.dashboard.root:SetStyle{width=dashWidth,gap=compact and 4 or 7,padding=compact and 8 or 12}
+    self.dashboard.root:SetStyle{width=dashWidth,gap=4,padding=8}
     local dash=self.dashboard.root:GetLayout()
     local dashBottom=dash.y+dash.h+6
     self.pauseButton:SetStyle{top=dashBottom,right=12}
-    self.actionTray:SetStyle{top=math.max(dashBottom+52,math.min(h*.52,h-190))}
-    self.map.root:SetStyle{height=h<470 and 72 or 106}
-    self.deliveryStatus:SetVisible(h>=470 or self.lastTarget~=nil)
-    self.hint:SetVisible(h>=470)
-    self.controlHint:SetVisible(h>=470)
+    self.actionTray:SetStyle{top=math.max(dashBottom+52,h-240)}
+    self.map.root:SetStyle{height=compact and 65 or 80}
+    self.mapCaption:SetVisible(false)
+    self.mapOpenHint:SetVisible(false)
+    self.deliveryStatus:SetVisible(self.lastTarget~=nil)
+    self.hint:SetVisible(false)
+    self.controlHint:SetVisible(false)
+    local signature=string.format("%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.dashboard.advice:IsVisible()))
+    local layoutChanged=self.hudLayoutSignature~=signature
+    self.hudLayoutSignature=signature
     if area.w~=self.controlWidth or area.h~=self.controlHeight then
         self.controlWidth,self.controlHeight=area.w,area.h
         self.controls:SetCompact(area.w<920 or area.h<470)
         self.controls:ApplyScheme(ControlSettings.Current(),area.w,area.h)
     end
-    if self.mountedControls then self:AvoidHUDControls() end
+    if self.mountedControls and layoutChanged then self:AvoidHUDControls() end
 end
 -- 只调整本次生涯画面的冲突位置，不改写玩家保存的竞速操作方案。
 function View:AvoidHUDControls()

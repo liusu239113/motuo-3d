@@ -15,7 +15,7 @@ end
 local shadow = {{x = 0, y = 3, blur = 10, color = {0, 0, 0, 65}}}
 Racing.Theme = UI.Theme.ExtendTheme(UI.Theme.defaultTheme, {
     fonts = {{family = "sans", weights = {
-        normal = "Fonts/MiSans-Regular.ttf", bold = "Fonts/NotoSansSC-Black.ttf",
+        normal = "Fonts/NotoSerifSC-Game.otf", bold = "Fonts/NotoSerifSC-Game.otf",
     }}},
     colors = {
         primary = C.amber, primaryHover = {242, 199, 131, 255}, primaryPressed = {177, 130, 64, 255},
