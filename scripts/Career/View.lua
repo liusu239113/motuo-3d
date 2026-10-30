@@ -107,20 +107,24 @@ function View:Init(actions)
     local safe=UI.SafeAreaView{width="100%",height="100%",nativeMenuInset=true,padding=12,pointerEvents="box-none"}
     self.hudSafe=safe
     self.dashboard=Dashboard.New(actions)
-    self.objective=PhoneKit.Text("",11,C.amber,{id="career-hud-objective",fontWeight="normal"})
+    self.objective=PhoneKit.Text("",11,C.amber,{id="career-hud-objective",fontWeight="normal",paddingHorizontal=7,paddingVertical=4,
+        backgroundColor={10,17,21,190},borderWidth=1,borderColor={99,127,134,150},borderRadius=3})
     self.hint=PhoneKit.Text("",10,C.white,{id="career-hud-hint"})
-    self.deliveryStatus=PhoneKit.Text("",10,C.cyan,{id="career-hud-delivery",fontWeight="normal"})
+    self.deliveryStatus=PhoneKit.Text("",10,C.cyan,{id="career-hud-delivery",fontWeight="normal",paddingHorizontal=7,paddingVertical=3,
+        backgroundColor={8,15,19,175},borderWidth=1,borderColor={67,103,110,125},borderRadius=3})
     self.map=Map.New("career-minimap")
-    self.map.root:SetStyle{width="100%",height=106}
+    self.map.root:SetStyle{width="100%",height=106,padding=0,borderWidth=1,borderColor={101,137,145,190},
+        borderRadius=5,backgroundGradient={direction="to-bottom",from={18,28,34,220},to={6,11,15,220}},
+        boxShadow={{x=0,y=2,blur=0,color={0,0,0,80}}}}
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
     self.mapOpenHint=PhoneKit.Text("点开全城地图",9,C.cyan,{id="career-map-open-hint"})
     self.mapOpen=UI.Panel{id="career-minimap-open",width="100%",minHeight=44,padding=0,gap=3,
         pointerEvents="box-only",onClick=function()
             if not self:IsBlocking() then actions.phone("map") end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
-    self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=7,gap=4,
-        backgroundColor={12,18,23,145},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
-    self.pauseButton=btn("暂停",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=64,height=46})
+    self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=0,gap=5,
+        backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
+    self.pauseButton=btn("Ⅱ",actions.pause,false,{id="career-hud-pause",position="absolute",right=12,top=266,width=44,height=40,padding=0,fontSize=14})
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
         onPointerDown=function(event)
@@ -149,9 +153,12 @@ function View:Init(actions)
     safe:AddChild(self.pauseButton)
     self.mountButton=btn("上车",actions.mount,false,{id="career-mount",width=72,height=46,padding=0})
     self.interactButton=btn("交互",actions.interact,false,{id="career-interact",width=82,height=46,padding=0})
-    self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=8,padding=0,pointerEvents="box-none",children={
+    self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=4,padding=4,
+        backgroundGradient={direction="to-bottom",from={22,31,37,225},to={8,13,17,225}},
+        borderWidth=1,borderColor={102,137,145,170},borderRadius=5,
+        boxShadow={{x=0,y=2,blur=0,color={0,0,0,85}}},pointerEvents="box-none",children={
         self.mountButton,self.interactButton,
-        btn("手机",function() actions.phone("apps") end,true,{id="career-phone",width=64,height=46,padding=0})}}
+        btn("手机",function() actions.phone("apps") end,true,{id="career-phone",width=58,height=44,padding=0})}}
     safe:AddChild(self.actionTray)
     self.controlHint=label("左右滑动转向 · 按住前进 · 松手停步 · 滑动画面看四周",10,C.muted,
         {position="absolute",bottom=12,left="28%",right="24%",textAlign="center",whiteSpace="normal",pointerEvents="none"})
@@ -667,16 +674,17 @@ function View:LayoutControls()
     local w,h=bounds.w,bounds.h
     local narrow=w<720
     local navWidth=narrow and math.max(150,math.min(176,w*.30)) or 192
-    local dashWidth=narrow and 280 or 306
+    local dashWidth=narrow and 270 or 296
     local compact=h<470
     self.dashboard.wallet:SetVisible(false)
     self.dashboard.plan:SetVisible(false)
     self.navPanel:SetStyle{width=navWidth}
-    self.dashboard.root:SetStyle{width=dashWidth,gap=4,padding=8}
+    self.dashboard.root:SetStyle{width=dashWidth,gap=6,padding=8}
     self.notice:SetStyle{left=navWidth+24,right=dashWidth+24,top=12}
     local dash=self.dashboard.root:GetLayout()
     local dashBottom=dash.y+dash.h+6
-    self.pauseButton:SetStyle{top=dashBottom,right=12}
+    local touchSize=PhoneKit.TouchSize()
+    self.pauseButton:SetStyle{top=dashBottom,right=12,width=touchSize,height=touchSize,minWidth=touchSize,minHeight=touchSize}
     self.actionTray:SetStyle{top=math.max(dashBottom+52,h-240)}
     self.map.root:SetStyle{height=compact and 65 or 80}
     self.mapCaption:SetVisible(false)

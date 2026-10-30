@@ -10,14 +10,21 @@ local function text(t,size,color,id)
     return Kit.Text(t,size,color,{id=id,fontWeight="normal"})
 end
 local function meter(id,title,color)
-    local value=text(title.." —",11,C.white,id.."-value")
+    local value=text(title.." —",10,C.white,id.."-value")
     local bar=UI.ProgressBar{id=id.."-bar",value=0,max=100,width="100%",height=3,
         showLabel=false,fillColor=color,borderWidth=0,borderRadius=0,padding=0,pointerEvents="none"}
-    return UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=2,children={value,bar}},value,bar
+    local body=UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=3,children={value,bar}}
+    return body,value,bar
 end
 local function shortcut(title,callback,id)
-    return Kit.Button(title,callback,id,false,{width=48,minWidth=44,fontSize=11,
-        backgroundColor={24,31,35,145},textColor=C.white})
+    local button=Kit.Button(title,callback,id,false,{width=46,minWidth=44,height=40,minHeight=40,fontSize=10,
+        backgroundColor={25,34,40,230},textColor=C.white})
+    -- 轻量仪表舱内的分段按键：保留44px命中区，不再像独立弹窗。
+    local touchSize=Kit.TouchSize()
+    button:SetStyle{width=46,minWidth=touchSize,height=touchSize,minHeight=touchSize,padding=0,borderRadius=4,borderWidth=1,
+        borderColor={105,143,151,180},backgroundGradient={direction="to-bottom",from={46,64,70,235},to={20,29,34,245}},
+        boxShadow={{x=0,y=1,blur=0,color={0,0,0,80}}}}
+    return button
 end
 function Dashboard.New(actions)
     local self=setmetatable({},Dashboard);self:Init(actions);return self
@@ -39,12 +46,15 @@ function Dashboard:Init(actions)
     self.advice=text("",10,C.amber,"career-hud-advice")
     self.lifeButton=shortcut("吃饭",function() actions.phone("life") end,"career-life-quick")
     self.helpButton=shortcut("生活",function() actions.phone("life") end,"career-life-details")
-    self.root=UI.Panel{id="career-life-dashboard",position="absolute",right=12,top=12,width=306,
-        padding=8,gap=5,backgroundColor={12,18,23,145},pointerEvents="box-none",children={
-            UI.Row{width="100%",padding=0,gap=4,alignItems="center",children={self.clock,
+    self.root=UI.Panel{id="career-life-dashboard",position="absolute",right=12,top=12,width=296,
+        padding=8,gap=6,backgroundGradient={direction="to-bottom",from={22,31,37,235},to={8,13,17,225}},
+        borderWidth=1,borderColor={102,137,145,190},borderRadius=5,
+        boxShadow={{x=0,y=3,blur=0,color={0,0,0,95}}},pointerEvents="box-none",children={
+            UI.Row{width="100%",padding=0,gap=5,alignItems="center",children={self.clock,
                 UI.Panel{flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,padding=0,gap=1,children={self.part,self.weather}},
                 self.lifeButton,self.helpButton}},
-            UI.Row{width="100%",padding=0,gap=10,children={food,energy,battery}},self.advice,self.speed,self.wallet,self.plan}}
+            UI.Panel{width="100%",height=1,padding=0,backgroundColor={126,169,175,80},pointerEvents="none"},
+            UI.Row{width="100%",padding=0,gap=9,children={food,energy,battery}},self.advice,self.speed,self.wallet,self.plan}}
 end
 function Dashboard:Update(p,actor)
     local advice=Life.Advice(p)
