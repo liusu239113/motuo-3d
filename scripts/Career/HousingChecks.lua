@@ -2,11 +2,14 @@
 local Store=require("Career.Store")
 local Data=require("Career.HousingData")
 local Progress=require("Career.Progression")
+local Property=require("Career.Property")
+local HousingActions=require("Career.HousingActions")
+local Config=require("Career.Config")
 local Delivery=require("Career.Delivery")
-local UI=require("urhox-libs/UI")
-local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
 local Checks={}
 local function clickText(view,text)
+    local UI=require("urhox-libs/UI")
+    local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
     local function find(widget)
         if widget.props.text==text and widget.props.onClick then return widget end
         for _,child in ipairs(widget:GetChildren()) do local found=find(child); if found then return found end end
@@ -28,7 +31,137 @@ local function walk(actor,x,z)
     end
     error("室内通道被家具挡住")
 end
+-- 无场景/无UI依赖的隔离事务测试；只用内存文件表，禁止真实File及云接口。
+function Checks.RunProperty()
+    local files={}
+    local failWrite=false
+    local writes=0
+    local function same(a,b)
+        if type(a)~=type(b) then return false end
+        if type(a)~="table" then return a==b end
+        for k,v in pairs(a) do if not same(v,b[k]) then return false end end
+        for k in pairs(b) do if a[k]==nil then return false end end
+        return true
+    end
+    local function grant(cents,key)
+        assert(Store.Transaction(function(p) return Store.ApplyCash(p,cents,"test_fixture",key) end))
+    end
+    local function unchanged(before,text,count)
+        assert(same(before,Store.Get()),"失败或重复操作改变了内存存档")
+        assert(files[Config.SAVE_PATH]==text and writes==count,"失败或重复操作不应写入新档")
+    end
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text)
+            if failWrite then return false,"房产验收模拟写失败" end
+            writes=writes+1; files[path]=text; return true
+        end,
+        cloud={Set=function() error("房产验收禁止调用云保存") end,Get=function() error("房产验收禁止读取云档") end},
+    },function()
+        assert(Store.NewCareer())
+        assert(next(Store.Get().ownedHomes)==nil)
+        local legacy=Store.Get()
+        legacy.ownedHomes=nil; legacy.accommodation="apartment"
+        legacy.flags.stayed_room=true; legacy.flags.stayed_apartment=true; legacy.flags.roomStory=true
+        files[Config.SAVE_PATH]=cjson.encode(legacy)
+        local legacyText,count=files[Config.SAVE_PATH],writes
+        local normalized=Store.Normalize(legacy)
+        assert(legacy.ownedHomes==nil and next(normalized.ownedHomes)==nil,"迁移不修改输入、不凭租住赠房")
+        assert(Store.Load() and next(Store.Get().ownedHomes)==nil)
+        assert(files[Config.SAVE_PATH]==legacyText and writes==count,"旧档读取不应自动覆写文件")
+        assert(Property.NightlyCost(Store.Get(),"apartment")==15000)
+        local before=Store.Get()
+        assert(not Progress.BuyHome("hostel") and not Progress.BuyHome("unknown"))
+        unchanged(before,legacyText,count)
+        -- 非法已有字段拒绝，不把false/字符串/未知房型静默清空成合法产权。
+        for _,invalid in ipairs({false,"room",{hostel=true},{unknown=true},{room="true"},{room=true}}) do
+            local bad=Store.Normalize(legacy) --[[@as table]]
+            bad.ownedHomes=invalid
+            local text=cjson.encode(bad); files[Config.SAVE_PATH]=text
+            assert(not Store.Load() and files[Config.SAVE_PATH]==text,"非法产权必须拒绝且保留原文件")
+        end
+        files[Config.SAVE_PATH]=legacyText; assert(Store.Load())
+        for _,id in ipairs({"room","apartment"}) do
+            assert(Store.NewCareer())
+            local home=assert(Data.Get(id))
+            local price=assert(home.buyPriceCents)
+            -- 比最低购房门槛少1分也不能买；保留生活费不允许负余额。
+            grant(price+Property.LIVING_RESERVE_CENTS-5001,"test:home-threshold")
+            assert(Progress.SetHousing(id))
+            before=Store.Get(); local text=files[Config.SAVE_PATH]; count=writes
+            assert(not Property.CanBuy(before,id) and not Progress.BuyHome(id))
+            unchanged(before,text,count)
+            grant(1,"test:home-one-cent")
+            before=Store.Get(); text=files[Config.SAVE_PATH]; count=writes
+            assert(Property.CanBuy(before,id))
+            failWrite=true; assert(not Progress.BuyHome(id)); failWrite=false
+            unchanged(before,text,count)
+            local refreshes,notices=0,0
+            local action={view={Notice=function() notices=notices+1 end},
+                RefreshPhone=function() refreshes=refreshes+1 end,Refresh=function() refreshes=refreshes+1 end}
+            assert(HousingActions.BuyHome(action --[[@as CareerHousingActions]],id),"生产Action必须经购买事务")
+            local bought=Store.Get()
+            assert(bought.cashCents==Property.LIVING_RESERVE_CENTS and bought.ownedHomes[id])
+            assert(bought.accommodation==before.accommodation and same(bought.position,before.position),"购买不自动搬家")
+            assert(#bought.ledger==#before.ledger+1 and bought.financialKeys[Property.PurchaseKey(id)])
+            local entry=bought.ledger[#bought.ledger]
+            assert(entry.deltaCents==-price and entry.deltaCents%1==0 and entry.kind=="home_purchase")
+            assert(refreshes==2 and notices==1)
+            assert(Store.Load() and Property.Owns(Store.Get(),id),"产权必须从本地档恢复")
+            before=Store.Get(); text=files[Config.SAVE_PATH]; count=writes
+            assert(not Progress.BuyHome(id) and not HousingActions.BuyHome(action --[[@as CareerHousingActions]],id))
+            unchanged(before,text,count)
+            local query=assert(Property.Get(before,id))
+            assert(query.owned and query.nightlyCents==0 and query.buyPriceCents==price and not query.canBuy)
+            assert(#Property.List(before)==2 and not Property.Owns(before,"hostel"))
+            assert(Property.NightlyCost(before,id=="room" and "apartment" or "room")>0,"产权只免对应住房费用")
+            query.owned=false; assert(Property.Owns(Store.Get(),id),"查询快照不能改产权")
+            failWrite=true; assert(not Store.Rest(id)); failWrite=false
+            unchanged(before,text,count)
+            assert(Store.Rest(id))
+            local rested=Store.Get()
+            assert(rested.cashCents==before.cashCents and rested.day==before.day+1 and #rested.ledger==#before.ledger)
+            assert(rested.ownedHomes[id] and rested.flags["stayed_"..id] and not rested.financialKeys["lodging:"..before.day])
+            assert(Store.Rest(id) and Store.Get().cashCents==before.cashCents,"连续自住仍免房费")
+            -- 旅舍依然按晚扣款，未购买另一套房仍按晚收费。
+            local cash=Store.Get().cashCents
+            assert(Store.Rest("hostel") and Store.Get().cashCents==cash-3000)
+            cash=Store.Get().cashCents
+            local other=id=="room" and "apartment" or "room"
+            assert(Store.Rest(other) and Store.Get().cashCents==cash-assert(Data.Get(other)).price)
+            assert(Store.Pay(Store.Get().cashCents,"test_fixture","test:home-empty-wallet"))
+            assert(Progress.SetHousing(id) and Store.Rest(id) and Store.Get().cashCents==0,"有产权后零现金也能选择自住和过夜")
+        end
+        -- 周排班分别检查两套产权房、未购房和旅舍，严格保留代表班次门槛。
+        for _,scenario in ipairs({{id="room",owned=true},{id="apartment",owned=true},{id="room",owned=false},{id="hostel",owned=false}}) do
+            assert(Store.NewCareer()); grant(30000000,"test:home-week-capital")
+            for _=1,10 do
+                local offer=assert(Delivery.GetOffer()); assert(Delivery.Accept(offer.id))
+                local pickup,dropoff=Config.points[offer.pickupId],Config.points[offer.dropoffId]
+                assert(Delivery.Pickup(offer.id,pickup.x,pickup.z))
+                assert(Delivery.Deliver(offer.id,dropoff.x,dropoff.z))
+            end
+            if scenario.owned then assert(Progress.BuyHome(scenario.id)) end
+            assert(Progress.SetHousing(scenario.id))
+            assert(Store.Transaction(function(p)
+                p.day=10; p.activeSeconds=900; p.hunger=80; p.energy=80; p.flags.firstRest=true; return true
+            end))
+            before=Store.Get(); local text=files[Config.SAVE_PATH]; count=writes
+            failWrite=true; assert(not Progress.WorkWeek()); failWrite=false
+            unchanged(before,text,count)
+            assert(Progress.WorkWeek())
+            local after=Store.Get()
+            local costs=17600+30*230+Property.NightlyCost(before,scenario.id)*7
+            assert(after.cashCents==before.cashCents+230*580-costs and after.lastDaySummary.expenseCents==costs)
+            assert(after.day==17 and (not scenario.owned or after.ownedHomes[scenario.id]))
+            assert(not Progress.WorkWeek(),"自有房不能绕过周排班防连点")
+        end
+        print("[房产事务验收通过] 旧档无赠房/非法产权拒绝/两套游戏定价买断/生活费1分边界/保存失败全回滚/产权重载/复购不扣款/对应自住免房费/旅舍与他房照付/周排班产权免房费")
+    end)
+    return true
+end
 function Checks.Run(session)
+    local UI=require("urhox-libs/UI")
+    Checks.RunProperty()
     local files={}
     local fail=false
     local a=assert(session.actor)

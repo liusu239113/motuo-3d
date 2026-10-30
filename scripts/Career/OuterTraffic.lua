@@ -1,4 +1,5 @@
 -- 外区旁观交通：共享WorldData道路，固定6车/4人槽位，不建立全城实体或通用寻路。
+-- 本轮只在老街替换2槽；外区保留汽车，避免视锥回收池新增异构车型/骨骼开销。
 -- 基于现有TrafficRoutes连续环线和Pedestrians距离驱动步态；老街数组不参与此池。
 local World=require("Career.WorldData")
 local Signals=require("Career.OuterSignals")
@@ -10,6 +11,7 @@ local Walk=require("Career.LocalWalk")
 local Motion=require("Career.TrafficMotion")
 ---@class OuterTrafficCar
 ---@field id string
+---@field riding? TrafficRiderVisual 当前外区不启用骑手，显式保留共享验收类型
 ---@field node Node
 ---@field length number
 ---@field width number

@@ -2,6 +2,7 @@
 local UI=require("urhox-libs/UI")
 local Theme=require("RacingTheme")
 local Kit=require("Career.PhoneKit")
+local PhonePages=require("Career.PhonePages")
 local Phone={}
 Phone.Frame="image/career_phone_hardware_frame_20261028190339.png"
 Phone.Wallpaper="image/career_phone_wallpaper_20261028185104.png"
@@ -49,16 +50,45 @@ function Phone.Create(view,actions)
         Theme.Button("收起",function() actions.closePhone() end,false,52,{id="career-phone-close",height=touchSize,minHeight=touchSize,minWidth=touchSize,
             paddingLeft=4,paddingRight=4,paddingTop=0,paddingBottom=0,
             paddingHorizontal=4,paddingVertical=0,hoverPadding={0,4,0,4},pressedPadding={0,4,0,4},fontSize=12})}})
-    -- 首页不在任何 ScrollView 内。长订单/装备等内页共用一个有界滚动容器。
+    -- 桌面仍为两行三列；内页使用真实Panel和固定按钮分页，没有滚轮/拖拽/惯性。
     view.phoneDesktop=UI.Panel{id="career-phone-desktop",width="100%",flexGrow=1,flexBasis=0,minHeight=0,padding=0,overflow="hidden"}
-    view.phoneContent=UI.ScrollView{id="career-phone-content",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
-        padding=0,scrollX=false,scrollY=true,visible=false}
+    local pages=PhonePages{id="career-phone-content",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
+        padding=0,overflow="hidden",visible=false}
+    view.phoneContent=pages
+    local previous=Kit.Button("上一页",function() pages:SetPage(pages:GetPage()-1) end,"career-phone-page-prev",false,
+        {width=66,padding=0,fontSize=11})
+    local following=Kit.Button("下一页",function() pages:SetPage(pages:GetPage()+1) end,"career-phone-page-next",true,
+        {width=66,padding=0,fontSize=11})
+    local number=Kit.Text("1 / 1",10,Kit.C.white,{id="career-phone-page-number",width="auto",
+        flexGrow=1,flexShrink=1,flexBasis=0,minWidth=0,textAlign="center",whiteSpace="nowrap"})
+    local pager=UI.Row{id="career-phone-pagination",width="100%",padding=0,gap=4,height=touchSize,minHeight=touchSize,
+        flexShrink=0,alignItems="center",visible=false,children={previous,number,following}}
+    pages:AttachPager(previous,following,number,pager)
     screen:AddChild(view.phoneDesktop)
-    screen:AddChild(view.phoneContent)
+    screen:AddChild(pages)
+    screen:AddChild(pager)
     shell:AddChild(screen)
     shell:AddChild(UI.Panel{id="career-phone-frame",position="absolute",left=0,top=0,width="100%",height="100%",
         backgroundImage=Phone.Frame,backgroundFit="fill",pointerEvents="none"})
     return shell
+end
+-- Call once at the END of View:BuildPhone, after every app branch has added
+-- its controls. The widget also reflows on width/font/live-source changes.
+---@param view CareerView
+function Phone.Paginate(view)
+    local pages=view.phoneContent --[[@as CareerPhonePages]]
+    pages:RefreshPager()
+    if view.phonePage~="apps" and view.phonePage~="" then
+        -- First open may precede phoneArea.Update; resolve its actual safe-area
+        -- dimensions before measuring cards. No global UI.Update/game tick.
+        UI.Layout()
+        local area=view.phoneArea
+        if area then
+            local bounds=area:GetLayout()
+            Phone.Layout(view,bounds.w,bounds.h)
+        end
+        pages:Paginate()
+    end
 end
 function Phone.Desktop(content,state,actions,height)
     local summary=Kit.Text("第"..state.day.."天 · 南城 · "..(state.online and "正在听单" or "尚未上线"),12,

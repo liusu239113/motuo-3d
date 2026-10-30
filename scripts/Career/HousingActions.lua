@@ -2,6 +2,7 @@
 local Store=require("Career.Store")
 local Data=require("Career.HousingData")
 local Progress=require("Career.Progression")
+local Property=require("Career.Property")
 ---@class CareerHousingActions
 ---@field actor CareerActor
 ---@field city CareerCity
@@ -44,6 +45,14 @@ function Actions:ChooseHousing(id)
     local _,message=Progress.SetHousing(id)
     self.view:Notice(message); self:RefreshPhone()
 end
+function Actions:BuyHome(id)
+    -- 确认弹窗由房产UI负责；只有事务保存成功才报告拥有，不改变入住选择或人物空间。
+    local ok,message=Progress.BuyHome(id)
+    self.view:Notice(message)
+    self:RefreshPhone()
+    if ok then self:Refresh() end
+    return ok,message
+end
 function Actions:EnterHousing(id)
     local home=Data.Get(id)
     if not home or not home.width or not self.actor or self.space~="city" then return false end
@@ -51,7 +60,9 @@ function Actions:EnterHousing(id)
     if not allowed then self.waypoint=home.point; self.view:Notice(message); return false end
     local state=Store.Get()
     if state.accommodation~=id then
-        self.view:ShowDialog(home.name,string.format("每晚%.2f元，选择和进门不收费。到床边确认休息才支付今晚房费。\n电动车会停在原处。",home.price/100),{
+        local detail=Property.Owns(state,id) and "已拥有此房产，选择自住后每晚免房费。\n电动车会停在原处。"
+            or string.format("每晚%.2f元，选择和进门不收费。到床边确认休息才支付今晚房费。\n电动车会停在原处。",home.price/100)
+        self.view:ShowDialog(home.name,detail,{
             {text="暂不入住"},{text="选择此住处",primary=true,onClick=function() self:ChooseHousing(id) end}})
         return false
     end
@@ -99,8 +110,11 @@ function Actions:SleepHousing()
         self.view:Notice("请停在床边1.5米内，再点击休息"); return
     end
     if #Store.Get().activeOrders>0 then self.view:Notice("请先完成手头配送，不能带单过夜"); return end
-    self.view:ShowDialog("今晚住在"..home.name,string.format("确认支付%.2f元住宿费，休息至次日08:00？\n每次确认只结算一晚，不是永久买断。",home.price/100),{
-        {text="先不睡"},{text="支付并休息",primary=true,onClick=function()
+    local owned=Property.Owns(Store.Get(),home.id)
+    local detail=owned and "这是已买断的自有住房，今晚房费0元。确认休息至次日08:00？\n永久产权保留，不会再次扣购房款。"
+        or string.format("确认支付%.2f元住宿费，休息至次日08:00？\n每次确认只结算一晚，不是永久买断。",home.price/100)
+    self.view:ShowDialog("今晚住在"..home.name,detail,{
+        {text="先不睡"},{text=owned and "自有住房休息" or "支付并休息",primary=true,onClick=function()
             local pos=self:PositionSnapshot()
             local located,reason=Store.SetPosition(pos)
             if not located then self.view:Notice(reason); return end

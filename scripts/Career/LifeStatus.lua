@@ -1,6 +1,7 @@
 -- 生活提示只读取生涯真值；不扣款、不改存档，也不另造一套体力。
 local Config=require("Career.Config")
 local Housing=require("Career.HousingData")
+local Property=require("Career.Property")
 local Life={}
 local function restAdvice(p,home,title,detail,urgent)
     local order=p.activeOrders[1]
@@ -26,7 +27,9 @@ function Life.Advice(p)
     elseif p.hunger<=55 then
         return {title="该补充饮食了",detail="建议饱腹55以下补一餐，不必等到体力不足。",point="breakfast",action="导航吃饭",urgent=false}
     elseif p.energy<=45 or p.time>=21 then
-        return restAdvice(p,home,"安排今晚休息","桥下和公园免费，住房按晚收费；休息至次日08:00。",false)
+        return restAdvice(p,home,"安排今晚休息",Property.Owns(p,home.id)
+            and "当前住处为自有房产，过夜免房费；休息至次日08:00。"
+            or "桥下和公园免费，未买断住房按晚收费；休息至次日08:00。",false)
     end
     local untilMeal=math.max(0,(p.hunger-55)/Config.HUNGER_PER_HOUR)
     return {title="身体状态良好",detail=string.format("按当前消耗，约%d游戏分钟后建议吃饭；也可以提前用餐。",math.floor(untilMeal*60)),point="breakfast",action="生活详情",urgent=false}
@@ -41,7 +44,8 @@ function Life.Plan(p)
     local electric=(p.position.activeVehicle or "borrowed_ebike")=="borrowed_ebike"
     local power=electric and p.battery or (p.motorcycleFuel or 100)
     local supply=power<=25 and (electric and 200 or 2000) or 0
-    local reserve=Config.MEAL_CENTS+home.price+supply
+    local nightly=Property.NightlyCost(p,home.id)
+    local reserve=Config.MEAL_CENTS+nightly+supply
     local income,expense,orders=0,0,0
     for _,entry in ipairs(p.ledger) do
         if entry.day==p.day and entry.kind~="opening" then
@@ -51,7 +55,7 @@ function Life.Plan(p)
         end
     end
     local range=power/(electric and (p.equipment and p.equipment.battery and 100/65000 or Config.BATTERY_PER_METER) or 100/180000)
-    return {home=home,mealHours=mealHours,restHours=restHours,restAt=restAt,
+    return {home=home,nightlyCents=nightly,ownedHome=Property.Owns(p,home.id),mealHours=mealHours,restHours=restHours,restAt=restAt,
         mealAt=math.min(24,p.time+mealHours),reserveCents=reserve,
         remainingCents=p.cashCents-reserve,shortfallCents=math.max(0,reserve-p.cashCents),
         supplyCents=supply,electric=electric,power=power,rangeMeters=range,

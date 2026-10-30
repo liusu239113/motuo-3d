@@ -78,6 +78,115 @@ local function click(widget)
     demand(rect.w > 0 and rect.h > 0, "点击目标须完成真实布局")
     clickAt(rect.x + rect.w * 0.5, rect.y + rect.h * 0.5)
 end
+-- 菜单专项只构建 BuildMenu，不调用 HUD.New / Profile.Load / CareerSession。
+-- 真实 Yoga、字体与指针分发；业务入口全部用计数替身，不碰玩家档案。
+-- UI 初始化后可单独运行 require("RacingUIChecks").Menu(854, 480)。
+function Checks.Menu(width, height)
+    local HUD = require("HUD")
+    local oldRoot = UI.GetRoot()
+    local calls = {race = 0, practice = 0, settings = 0, career = 0, laps = 0}
+    local fixture = setmetatable({screen = "menu", selectedLaps = 3, actions = {
+        start = function(challenge)
+            if challenge then calls.race = calls.race + 1 else calls.practice = calls.practice + 1 end
+        end,
+    }}, {__index = HUD})
+    fixture.SetScreen = function(self, screen) self.screen = screen end
+    fixture.SelectLaps = function(_, laps)
+        demand(laps == 3, "赛事与练习须保留既有圈数")
+        calls.laps = calls.laps + 1
+    end
+    fixture.OpenSettings = function() calls.settings = calls.settings + 1 end
+    fixture:BuildMenu()
+    -- 模拟 main.lua 事后追加返回入口，验证不改 main 仍能接入固定布局。
+    local returnCallback = function() calls.career = calls.career + 1 end
+    local returnButton = UI.Button {text = "← 返回王二狗生涯", width = 230, height = 42, onClick = returnCallback}
+    fixture.menu:AddChild(returnButton)
+    local holder = UI.Panel {width = width, height = height, padding = 0, children = {fixture.menu}}
+    UI.SetRoot(holder)
+    local textCount = 0
+    local ok, failure = pcall(function()
+        fixture:LayoutMenu(width, height)
+        UI.Layout()
+        demand(returnButton.parent == fixture.menuReturnHost and returnButton.props.onClick == returnCallback,
+            "返回入口须复用原对象与原业务回调")
+        demand(#fixture.menu:GetChildren() == 1, "追加返回入口不得挤占菜单外层高度")
+        -- 连续两次真实渲染后再测量，捕捉字体加载/自适应换行造成的涨高。
+        for _ = 1, 2 do
+            visit(fixture.menu, function(widget)
+                if widget:IsVisible() and (widget._className == "Label" or widget._className == "Button") then
+                    widget:Render(UI.GetNVGContext())
+                end
+            end)
+            UI.Layout()
+        end
+        visit(fixture.menu, function(widget)
+            demand(widget._className ~= "ScrollView" and type(widget.GetScroll) ~= "function",
+                "入口菜单不得有任何滚动容器")
+            local text = widget.props.text
+            if text then
+                demand(not text:find("[A-Za-z]"), "菜单不得保留英文装饰：" .. text)
+                demand(not text:find("九人竞速", 1, true) and not text:find("真实公路", 1, true),
+                    "右侧无意义小字必须移除")
+            end
+        end)
+        local function visibleBounds(widget)
+            if not widget:IsVisible() then return end
+            local bounds = widget:GetAbsoluteLayout()
+            demand(bounds.w > 0 and bounds.h > 0, "可见菜单节点必须有完整尺寸")
+            if widget.parent then
+                local parentBounds = widget.parent:GetAbsoluteLayout()
+                demand(inside(bounds, parentBounds, 2), string.format("菜单节点超出祖先：%s / %.1f,%.1f %.1fx%.1f / 父 %.1f,%.1f %.1fx%.1f",
+                    tostring(widget.props.text or widget._className), bounds.x, bounds.y, bounds.w, bounds.h,
+                    parentBounds.x, parentBounds.y, parentBounds.w, parentBounds.h))
+            end
+            if widget._className == "Label" or widget._className == "Button" then
+                local props = widget.props
+                local size = props.fontSize or 0
+                local pixels = UI.Theme.FontSize(size)
+                local textWidth = UI.MeasureTextWidth(props.text or "", pixels,
+                    UI.Theme.FontFace(props.fontFamily, props.fontWeight), props.letterSpacing)
+                local contentWidth = bounds.w - (props.paddingLeft or 0) - (props.paddingRight or 0)
+                demand(size >= 14 and (props.minFontSize or 0) >= size, "菜单文字不得自动缩小为小字")
+                demand(textWidth > 0 and textWidth <= contentWidth + 1, "真实字体完整文案不得横向越界：" .. tostring(props.text))
+                demand(bounds.h >= pixels, "菜单文字高度不能被压扁")
+                textCount = textCount + 1
+            end
+            for _, child in ipairs(widget:GetChildren()) do visibleBounds(child) end
+        end
+        visibleBounds(fixture.menu)
+        local entries = {fixture.menuRaceButton, fixture.menuPracticeButton, fixture.menuSettingsButton, returnButton}
+        local before = {}
+        for index, entry in ipairs(entries) do
+            demand(entry:IsVisible() and entry.props.fontSize == 18 and entry:GetAbsoluteLayout().h >= 55,
+                "四个必要入口须始终完整显示且保持18pt大字与56高触摸区：" .. tostring(entry.props.text)
+                    .. " / " .. tostring(entry:GetAbsoluteLayout().h))
+            before[index] = entry:GetAbsoluteLayout()
+        end
+        for index, first in ipairs(before) do
+            for other = index + 1, #before do
+                local second = before[other]
+                demand(first.x + first.w <= second.x + 1 or second.x + second.w <= first.x + 1
+                    or first.y + first.h <= second.y + 1 or second.y + second.h <= first.y + 1,
+                    "固定菜单入口不得重叠")
+            end
+        end
+        for _, entry in ipairs(entries) do click(entry) end
+        demand(calls.race == 1 and calls.practice == 1 and calls.settings == 1 and calls.career == 1 and calls.laps == 2,
+            "赛事/自由练习/操作设置/返回生涯须各分发一次既有回调")
+        for index, entry in ipairs(entries) do
+            local after = entry:GetAbsoluteLayout()
+            demand(after.x == before[index].x and after.y == before[index].y, "点击入口不得改变固定位置")
+        end
+        demand(fixture.menuGrid == (height < 440), "短横屏须切换固定两行而非缩字或滚动")
+    end)
+    UI.SetRoot(oldRoot)
+    holder:Destroy()
+    UI.Layout()
+    demand(ok, tostring(failure))
+    print(string.format("[RacingUIChecks] PASS 固定大字菜单 %.0fx%.0f / %d文字 / 四入口回调 / 无滚动越界", width, height, textCount))
+    return textCount
+end
+
 function Checks.Dialogs(hud)
     local oldScreen = hud.screen
     hud:OpenTracks()
@@ -209,7 +318,10 @@ function Checks.Features(hud)
 end
 function Checks.Run(hud)
     demand(not hud:IsModalOpen(), "回归前须关闭已有业务弹窗")
-    local labels = 0
+    local labels, menuLabels = 0, 0
+    for _, size in ipairs({{854,480}, {640,360}, {568,320}, {640,280}, {748,400}, {1280,720}, {1568,705}}) do
+        menuLabels = menuLabels + Checks.Menu(size[1], size[2])
+    end
     for _, size in ipairs({{854,480}, {1280,720}, {1568,705}}) do
         labels = labels + Checks.Layout(hud, size[1], size[2])
     end
@@ -217,6 +329,6 @@ function Checks.Run(hud)
     local controls = Checks.Controls(hud)
     Checks.Features(hud)
     print("[RacingUIChecks] 全部通过；ControlChecks请单独继续执行")
-    return {passed = true, labels = labels, resolutions = 3, controls = controls}
+    return {passed = true, labels = labels, resolutions = 3, controls = controls, menuLabels = menuLabels, menuResolutions = 7}
 end
 return Checks

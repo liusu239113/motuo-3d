@@ -1,6 +1,7 @@
 -- 长线成长配置与交易。所有买卖/排班/职业奖励仍经Store事务落盘。
 -- 扩展字段向后兼容缺省值；不改变v1旧订单报价。
 local Store=require("Career.Store")
+local Property=require("Career.Property")
 local Progress={}
 Progress.Equipment={
     {id="insulated_box",name="加固双单保温箱",price=28000,level=2,description="容量2份；保持独立箱体挂点"},
@@ -73,9 +74,27 @@ function Progress.SetHousing(id)
     if not item then return false,"住处不存在" end
     return Store.Transaction(function(p)
         if p.position.space and p.position.space~="city" then return false,"请先离开当前住处再换房" end
-        if item.price>0 and p.cashCents<item.price+1200 then return false,"至少留出今晚住宿和一顿饭的钱" end
+        local nightly=Property.NightlyCost(p,id)
+        if nightly>0 and p.cashCents<nightly+1200 then return false,"至少留出今晚住宿和一顿饭的钱" end
         p.accommodation=id
+        if Property.Owns(p,id) then return true,"已选择自有住房"..item.name.."；永久产权，每晚免房费" end
         return true,"已选择"..item.name.."；每次过夜才扣费，不是永久买断"
+    end)
+end
+-- 买断只取得产权，不自动搬家/瞬移；保留当前空间和今晚选择，允许先买后入住。
+---@param id string
+---@return boolean, string
+function Progress.BuyHome(id)
+    return Store.Transaction(function(p)
+        local allowed,reason=Property.CanBuy(p,id)
+        if not allowed then return false,reason end
+        local home=assert(require("Career.HousingData").Get(id))
+        local price=assert(home.buyPriceCents)
+        local ok,message=Store.ApplyCash(p,-price,"home_purchase",Property.PurchaseKey(id))
+        if not ok then return false,message end
+        Property.Normalize(p)
+        p.ownedHomes[id]=true
+        return true,string.format("已买断%s，支出%.2f元，永久产权已本地保存；此处每晚免房费。（游戏固定价，非现实房价）",home.name,price/100)
     end)
 end
 -- 每次周排班都需要新完成15分钟活动与10份亲送，不允许连点快进刷现金。
@@ -96,8 +115,7 @@ function Progress.WorkWeek()
         local average=level>=4 and 620 or level>=3 and 600 or 580
         local simulated=math.max(0,total-manual)
         local gross=simulated*average
-        local housing=0
-        for _,h in ipairs(Progress.Housing) do if h.id==p.accommodation then housing=h.price*7 end end
+        local housing=Property.NightlyCost(p,p.accommodation)*7
         local costs=17600+30*simulated+housing
         if p.cashCents+gross<costs then return false,"该住处的排班支出超过现有现金与收入" end
         local key="week:"..(p.weeksWorked+1)

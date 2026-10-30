@@ -5,6 +5,7 @@ local Pedestrians=require("Career.Pedestrians")
 local Contact=require("Career.VehicleContact")
 local OuterTraffic=require("Career.OuterTraffic")
 local Motion=require("Career.TrafficMotion")
+local Riders=require("Career.TrafficRiders")
 local Collision=require("Career.FootprintCollision")
 ---@class CityTraffic
 ---@field cars table[]
@@ -16,7 +17,12 @@ Traffic.__index=Traffic
 Traffic.Resources=Assets.ResourcesFor(Assets.TrafficIds)
 Traffic.ResourceTypes={}
 for _,path in ipairs(Traffic.Resources) do Traffic.ResourceTypes[path]=Assets.ResourceTypes[path] end
-for _,path in ipairs(Pedestrians.Resources) do Traffic.Resources[#Traffic.Resources+1]=path; Traffic.ResourceTypes[path]=Pedestrians.ResourceTypes[path] end
+for _,pack in ipairs({Pedestrians,Riders}) do
+    for _,path in ipairs(pack.Resources) do
+        if not Traffic.ResourceTypes[path] then Traffic.Resources[#Traffic.Resources+1]=path end
+        Traffic.ResourceTypes[path]=pack.ResourceTypes[path]
+    end
+end
 
 -- 碰撞示意（米，俯视）：
 --       停止线 z=-12       路口中心0       停止线z=12
@@ -55,10 +61,18 @@ function Traffic:Init(city,actor)
     for ri,route in ipairs(Routes.List) do
         for n=1,3 do
             local id=Assets.TrafficIds[(ri+n-2)%#Assets.TrafficIds+1]
-            local node=Assets.Add(self.root,id,nil,"distant")
-            if id=="truck" then Contact.CompleteTruck(node) end
-            local size=node:GetVar("VehicleSize"):GetVector3()
-            local car={id=id,node=node,route=route,routeId=ri,s=35+(n-1)*200+ri*7,x=0,z=0,yaw=0,speed=0,cruise=5.5+(ri+n)%3,length=size.z,width=size.x}
+            -- Only two existing slots near the central street; no extra city instances.
+            -- id stays nil on rider records intentionally: TrafficMotion then uses
+            -- their measured composite OBB in every caller (also Crowd/LocalWalk).
+            local riderId=ri==2 and n==1 and Riders.MOTORCYCLE or ri==4 and n==1 and Riders.DELIVERY or nil
+            ---@type TrafficRiderVisual?
+            local riding=riderId and Riders.Add(self.root,riderId) or nil
+            local node=riding and riding.node or Assets.Add(self.root,id,nil,"distant")
+            if not riding and id=="truck" then Contact.CompleteTruck(node) end
+            local size=riding and Vector3(riding.width,0,riding.length) or node:GetVar("VehicleSize"):GetVector3()
+            local car={id=not riding and id or nil,vehicleId=riderId or id,riding=riding,node=node,route=route,routeId=ri,
+                s=riding and (ri==2 and 117 or 137) or 35+(n-1)*200+ri*7,x=0,z=0,yaw=0,speed=0,
+                cruise=riding and 5.5 or 5.5+(ri+n)%3,length=size.z,width=size.x}
             local placed=false
             for _=1,80 do
                 self:Place(car)
@@ -72,7 +86,7 @@ function Traffic:Init(city,actor)
     -- 外区池是city.root的同级子树，不加入老街self.cars/self.pedestrians。
     self.outer=OuterTraffic.New(self)
     self.root:SetEnabledRecursive(city.space=="city")
-    print(string.format("[老街交通] %d辆贴图车辆 / %d位独立便服行人 / 6个实体信号路口；不改玩家存档",#self.cars,#self.pedestrians.people))
+    print(string.format("[老街交通] %d个车辆槽（13汽车+1摩托骑手+1配送骑手） / %d位独立便服行人；外区6汽车不扩容；不改玩家存档",#self.cars,#self.pedestrians.people))
 end
 function Traffic:Blockers()
     local a=self.actor
@@ -98,7 +112,7 @@ function Traffic:Blockers()
 end
 function Traffic:ApplyContact(car)
     if car.contactX==car.x and car.contactZ==car.z and car.contactYaw==car.yaw and car.contactSpace==self.city.space then return end
-    local height,pitch,roll=Contact.Solve(self.city,car.id,car.x,car.z,car.yaw,0)
+    local height,pitch,roll=Contact.Solve(self.city,car.vehicleId or car.id,car.x,car.z,car.yaw,0)
     car.node.position=Vector3(car.x,height,car.z)
     car.node.rotation=Quaternion(0,car.yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
     car.contactX,car.contactZ,car.contactYaw,car.contactSpace=car.x,car.z,car.yaw,self.city.space
@@ -224,6 +238,7 @@ function Traffic:Dispose()
     if self.disposed then return end
     self.disposed=true; self.active=false
     self.outer:Dispose()
+    for _,car in ipairs(self.cars) do Riders.Dispose(car.riding) end
     for _,p in ipairs(self.pedestrians.people) do p.rig:Dispose() end
     self.root:Dispose()
 end

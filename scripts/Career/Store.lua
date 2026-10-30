@@ -4,6 +4,7 @@
 local Store = {}
 local Config = require "Career.Config"
 local Housing = require "Career.HousingData"
+local Property = require "Career.Property"
 local Vehicles = require "Career.VehicleData"
 
 ---@class CareerVehicle
@@ -61,6 +62,7 @@ local Vehicles = require "Career.VehicleData"
 ---@field battery number
 ---@field vehicle CareerVehicle
 ---@field ownedMotorcycles table<string, boolean>
+---@field ownedHomes table<string, boolean> 永久产权；仅买断可写true，住宿选择不授予产权
 ---@field activeOrders CareerOrder[]
 ---@field settledOrders table<string, boolean>
 ---@field nextOrderSequence integer
@@ -126,7 +128,7 @@ local function defaults()
         cashCents = Config.INITIAL_CASH_CENTS, reserveCents = 0,
         day = 1, time = Config.START_HOUR, hunger = 65, energy = 80, battery = 70,
         vehicle = { id = "borrowed_ebike", borrowed = true, condition = 55 },
-        ownedMotorcycles = {}, activeOrders = {}, settledOrders = {},
+        ownedMotorcycles = {}, ownedHomes = {}, activeOrders = {}, settledOrders = {},
         nextOrderSequence = 1, completedOrders = 0, phase = "opening",
         flags = { tutorialCompleted = false, firstMeal = false, firstRest = false },
         ledger = { { id = "opening", kind = "opening", deltaCents = 5000,
@@ -135,6 +137,16 @@ local function defaults()
         lastDaySummary = {},
         position = { x = 0, z = -20, yaw = 0, mounted = false, bikeX = 1.5, bikeZ = -20, bikeYaw = 0 },
     }
+end
+
+-- 缺省字段迁移只操作副本，不覆写旧档、不从租住/剧情记录推断产权。
+-- 本地/云读取共用；非法字段及未知版本仍由validate拒绝。
+---@param p any
+---@return CareerProfile
+function Store.Normalize(p)
+    local normalized=copy(p)
+    if type(normalized)=="table" then Property.Normalize(normalized) end
+    return normalized
 end
 
 local function finite(value)
@@ -238,6 +250,8 @@ local function validate(p)
             end
         end
     end
+    local propertyValid,propertyMessage=Property.Validate(p)
+    if not propertyValid then return false,propertyMessage end
     local teamValid,teamMessage=require("Career.Team").Validate(p)
     if not teamValid then return false,teamMessage end
     local eventValid,eventMessage=require("Career.Engagements").Validate(p)
@@ -407,6 +421,7 @@ function Store.Load()
     if not text then loadError = message or "无法读取生涯存档"; return false, loadError end
     local decoded, p = pcall(cjson.decode, text)
     if not decoded then loadError = "生涯存档解析失败；原档已保留"; return false, loadError end
+    p=Store.Normalize(p)
     local valid, validationMessage = validate(p)
     if not valid then loadError = validationMessage; return false, validationMessage or "生涯存档无效" end
     install(p)
@@ -552,8 +567,9 @@ function Store.Rest(pointId)
     return Store.Transaction(function(p)
         if #p.activeOrders > 0 then return false, "请先完成当前配送再休息" end
         if (p.position.space or "city")~="city" and p.position.space~=place then return false,"请先离开当前房间" end
-        if room.price>0 then
-            local ok,message=Store.ApplyCash(p,-room.price,"lodging","lodging:"..p.day)
+        local nightly=Property.NightlyCost(p,place)
+        if nightly>0 then
+            local ok,message=Store.ApplyCash(p,-nightly,"lodging","lodging:"..p.day)
             if not ok then return false,message end
         end
         local income, expense = 0, 0
@@ -574,8 +590,9 @@ function Store.Rest(pointId)
         p.flags.firstRest = true
         if room.price>0 then p.flags["stayed_"..place]=true end
         p.phase = "working"
-        return true, room.price==0 and "免费休息至次日08:00，已本地保存"
-            or string.format("住宿支出%.2f元，休息至次日08:00，已本地保存",room.price/100)
+        if Property.Owns(p,place) then return true,"自有住房免房费，休息至次日08:00，已本地保存" end
+        return true, nightly==0 and "免费休息至次日08:00，已本地保存"
+            or string.format("住宿支出%.2f元，休息至次日08:00，已本地保存",nightly/100)
     end)
 end
 
@@ -734,6 +751,7 @@ function Store.LoadCloud(callback)
                 if finished or generation ~= cloudGeneration then return end
                 local p = type(values) == "table" and values[Config.CLOUD_KEY] or nil
                 if type(p) ~= "table" then finish(false, "云档为空或格式无效；未覆盖任何本地进度"); return end
+                p=Store.Normalize(p)
                 local valid, detail = validate(p)
                 if not valid then finish(false, detail or "云档无效"); return end
                 local saved, saveMessage = persist(p)

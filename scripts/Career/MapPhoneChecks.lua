@@ -47,18 +47,18 @@ end
 local function tap(view,id)
     layout(view)
     local widget=find(view,id)
+    local desktop=view.phonePage=="apps"
+    local fixed=id=="career-phone-back" or id=="career-phone-close" or id=="career-phone-page-prev" or id=="career-phone-page-next"
+    if not desktop and not fixed then
+        assert(view.phoneContent:ShowWidget(widget),"目标不在真实分页计划："..id)
+        layout(view)
+    end
     assert(widget:IsVisible() and not widget.props.disabled,"控件不可点："..id)
     local r=widget:GetAbsoluteLayoutForHitTest()
-    local desktop=view.phonePage=="apps"
-    local area=(desktop and view.phoneDesktop or view.phoneContent):GetAbsoluteLayoutForHitTest()
+    local area=(fixed and view.phoneBody or desktop and view.phoneDesktop or view.phoneContent):GetAbsoluteLayoutForHitTest()
     assert(area.h>0 and r.h>=44 and r.w>=44,"触摸必须使用至少44px真实布局："..id)
-    -- 主页禁止通过滚动寻找应用；仅内页允许把目标滚进视口。
-    if not desktop then
-        local _,scroll=view.phoneContent:GetScroll()
-        view.phoneContent:SetScroll(0,math.max(0,scroll+r.y+r.h/2-area.y-area.h/2))
-        r=widget:GetAbsoluteLayoutForHitTest()
-    end
-    assert(r.y+r.h/2>area.y and r.y+r.h/2<area.y+area.h,"目标仍被滚动视口裁剪："..id)
+    assert(r.x>=area.x-1 and r.x+r.w<=area.x+area.w+1 and r.y>=area.y-1 and r.y+r.h<=area.y+area.h+1,
+        "目标必须完整显示，不能只露出中心："..id)
     local scale=UI.GetScale()
     local function event(kind)
         return PointerEvent.new(kind,{pointerId=791201,pointerType="touch",isPrimary=false,
@@ -391,13 +391,43 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
                 assert(view.phonePage==app[1] and view.phoneContent:IsVisible() and not view.phoneDesktop:IsVisible())
                 freed(old)
                 settle(width,height)
-                assert(view.phoneContent:GetAbsoluteLayout().h>44,"内页滚动视口坍缩")
+                assert(view.phoneContent:GetAbsoluteLayout().h>44,"内页分页区域坍缩")
+                assert(view.phoneContent._className=="CareerPhonePages" and view.phoneContent:GetPageCount()>=1,
+                    "内页必须使用真实Panel分页")
+                local function forbidScroll(widget)
+                    assert(widget._className~="ScrollView","手机任何页面不能含滑动容器")
+                    for _,child in ipairs(widget:GetChildren()) do forbidScroll(child) end
+                end
+                forbidScroll(view.phoneBody)
                 if app[1]=="progression" then
-                    local _,contentHeight=view.phoneContent:GetContentSize()
-                    assert(contentHeight>view.phoneContent:GetAbsoluteLayout().h,"装备/生涯长页仍须可纵向滚动")
-                    view.phoneContent:ScrollToBottom()
-                    local _,scroll=view.phoneContent:GetScroll()
-                    assert(scroll>0,"长内页滚动失效")
+                    local pages=view.phoneContent:GetPageCount()
+                    assert(pages>1,"生涯长页必须拆成多个完整内容页")
+                    view.phoneContent:SetPage(1);settle(width,height)
+                    local pager=assert(holder:FindById("career-phone-pagination"))
+                    local before=pager:GetAbsoluteLayout()
+                    touch(assert(holder:FindById("career-phone-page-next")))
+                    settle(width,height)
+                    assert(view.phoneContent:GetPage()==2,"真实下一页触摸没有翻页")
+                    local after=pager:GetAbsoluteLayout()
+                    assert(before.x==after.x and before.y==after.y and before.h==after.h,"分页按钮不得随内容移动")
+                    touch(assert(holder:FindById("career-phone-page-prev")))
+                    settle(width,height)
+                    assert(view.phoneContent:GetPage()==1,"真实上一页触摸没有翻页")
+                    -- Panel has neither wheel nor pan handler. Dispatch an actual
+                    -- touch drag across the page and prove it cannot turn pages.
+                    local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
+                    local scale=UI.GetScale()
+                    for _,e in ipairs({{"PointerDown",.8},{"PointerMove",.5},{"PointerMove",.2},{"PointerUp",.2}}) do
+                        UI.HandlePointerEvent(PointerEvent.new(e[1],{pointerId=791203,pointerType="touch",isPrimary=true,
+                            x=(area.x+area.w/2)*scale,y=(area.y+area.h*e[2])*scale,button=PointerEvent.Button.Left}))
+                    end
+                    local behavior=view.phoneContent --[[@as table]]
+                    assert(view.phoneContent:GetPage()==1 and not behavior.OnWheel and not behavior.OnPanMove,
+                        "拖拽/滚轮不得驱动分页")
+                    assert(view.phoneContent:ShowWidget("career-motorcycle-rally_3"),"最后关键购车操作不在任何页")
+                    settle(width,height)
+                    local last=assert(holder:FindById("career-motorcycle-rally_3")):GetAbsoluteLayout()
+                    assert(inside(last,view.phoneContent:GetAbsoluteLayout()),"最后操作不能切半或丢失")
                 end
                 if checkApp then checkApp(app[1]) end
                 local oldPage=tree(assert(view.phoneContent:GetChildAt(1)))

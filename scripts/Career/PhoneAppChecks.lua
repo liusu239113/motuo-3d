@@ -66,7 +66,41 @@ function Checks.Audit(view,context)
         end
         for _,child in ipairs(widget:GetChildren()) do inspect(child) end
     end
-    inspect(view.phonePage=="apps" and view.phoneDesktop or view.phoneContent)
+    if view.phonePage=="apps" then inspect(view.phoneDesktop)
+    else
+        local selected=view.phoneContent:GetPage()
+        local expected={}
+        for _,unit in ipairs(view.phoneContent.units) do
+            for widget in pairs(unit.members) do expected[widget]=true end
+        end
+        local visited={}
+        local function visible(widget)
+            if not widget:IsVisible() then return end
+            assert(widget._className~="ScrollView","手机分页不能含ScrollView")
+            local r=widget:GetAbsoluteLayout()
+            local area=view.phoneContent:GetAbsoluteLayout()
+            assert(r.x>=area.x-1 and r.x+r.w<=area.x+area.w+1 and r.y>=area.y-1 and r.y+r.h<=area.y+area.h+1,
+                "分页控件必须完整处于内容区 "..tostring(widget.props.id or widget._className))
+            visited[widget]=true
+            for _,child in ipairs(widget:GetChildren()) do visible(child) end
+        end
+        for page=1,view.phoneContent:GetPageCount() do
+            view.phoneContent:SetPage(page);layout(view)
+            inspect(view.phoneContent)
+            for _,child in ipairs(view.phoneContent:GetChildren()) do visible(child) end
+        end
+        for widget in pairs(expected) do assert(visited[widget],"分页遗漏源控件 "..tostring(widget.props.id or widget._className)) end
+        -- Every UTF-8 continuation must reconstruct its original body exactly.
+        local continuations={}
+        for _,unit in ipairs(view.phoneContent.units) do
+            if unit.widget~=unit.source then
+                continuations[unit.source]=(continuations[unit.source] or "")..unit.widget.props.text
+            end
+        end
+        for source,full in pairs(continuations) do assert(full==source.props.text,"分页正文丢字/重复/顺序错误") end
+        view.phoneContent:SetPage(selected);layout(view)
+        inspect(assert(view.phoneBody:FindById("career-phone-pagination")))
+    end
     inspect(assert(view.phoneBody:FindById("career-phone-toolbar")))
     print(string.format("[手机全页文案验收] %s / %d项 / 真实字体测宽测高/父边界/无缩字",context,count))
     return count
@@ -86,18 +120,20 @@ end
 local function tap(view,id)
     layout(view)
     local widget=find(view,id)
+    local fixed=id=="career-phone-back" or id=="career-phone-close" or id=="career-phone-page-prev" or id=="career-phone-page-next"
+    if not fixed and view.phonePage~="apps" then
+        assert(view.phoneContent:ShowWidget(widget),"目标必须存在于真实分页计划 "..id)
+        layout(view)
+    end
     local r=widget:GetAbsoluteLayoutForHitTest()
     local scale=UI.GetScale()
     print(string.format("[手机触摸尺寸] %s hit=(%.9f,%.9f,%.9f,%.9f) physical=(%.9f,%.9f) scale=%.12f configuredH=%s minH=%s minW=%s",
         id,r.x,r.y,r.w,r.h,r.w*scale,r.h*scale,scale,tostring(widget.props.height),tostring(widget.props.minHeight),tostring(widget.props.minWidth)))
     assert(r.w>=44 and r.h>=44,"触摸目标小于44px "..id)
-    local fixed=id=="career-phone-back" or id=="career-phone-close"
     if not fixed and view.phonePage~="apps" then
         local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
-        local _,scroll=view.phoneContent:GetScroll()
-        view.phoneContent:SetScroll(0,math.max(0,scroll+r.y+r.h/2-area.y-area.h/2))
-        r=widget:GetAbsoluteLayoutForHitTest()
-        assert(r.y+r.h/2>area.y and r.y+r.h/2<area.y+area.h,"触摸目标被裁剪 "..id)
+        assert(r.x>=area.x-1 and r.x+r.w<=area.x+area.w+1 and r.y>=area.y-1 and r.y+r.h<=area.y+area.h+1,
+            "触摸目标必须完整显示，不能切半 "..id)
     end
     local function event(kind)
         return PointerEvent.new(kind,{pointerId=791210,pointerType="touch",isPrimary=true,
@@ -363,13 +399,10 @@ function Checks.Shot(session,page)
         or page=="progression-expensive" and "career-motorcycle-rally_3-card"
         or page=="map-coast" and "career-map-coast" or nil
     if anchor then
-        local r=find(view,anchor):GetAbsoluteLayoutForHitTest()
-        local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
-        view.phoneContent:SetScroll(0,math.max(0,r.y-area.y-4))
+        assert(view.phoneContent:ShowWidget(anchor),"实拍锚点不在真实分页中 "..anchor)
     elseif position=="middle" then
-        local _,height=view.phoneContent:GetContentSize()
-        view.phoneContent:SetScroll(0,math.max(0,(height-view.phoneContent:GetAbsoluteLayout().h)/2))
-    elseif position=="bottom" then view.phoneContent:ScrollToBottom() end
+        view.phoneContent:SetPage(math.max(1,math.ceil(view.phoneContent:GetPageCount()/2)))
+    elseif position=="bottom" then view.phoneContent:SetPage(view.phoneContent:GetPageCount()) end
     layout(view)
     if app=="messages" and page~="messages" then visibleTextLayout(view,"career-chat-header-info") end
     if app=="delivery" then visibleTextLayout(view,"career-delivery-online-label") end

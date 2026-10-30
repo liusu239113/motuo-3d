@@ -43,7 +43,10 @@ function Checks.Run(session)
         local bounds,area=icon:GetAbsoluteLayout(),view.phoneDesktop:GetAbsoluteLayout()
         assert(bounds.y>=area.y and bounds.y+bounds.h<=area.y+area.h+1,"底部应用必须一屏完整显示")
         tap(icon)
-        assert(view.phonePage==app[1],"应用未打开："..app[1])
+        if app[1]=="map" then
+            assert(view.worldMap:IsVisible() and view:IsBlocking() and view.phonePage=="","地图应用必须打开固定全屏地图")
+            view:CloseWorldMap()
+        else assert(view.phonePage==app[1],"应用未打开："..app[1]) end
         if app[1]=="messages" then
             local conversations=assert(view.phoneBody:FindById("career-message-conversations"),"消息不是会话列表")
             assert(conversations:GetNumChildren()==4 and view.phoneBody:FindById("career-chat-cousin"),"真实联系人会话缺失")

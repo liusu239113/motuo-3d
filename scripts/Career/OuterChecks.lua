@@ -102,6 +102,23 @@ function Checks.Run(session)
     local actor,city,traffic,camera=assert(session.actor),assert(session.city),assert(session.traffic),assert(session.camera)
     local outer=assert(traffic.outer,"outer traffic not installed") --[[@as CareerOuterTraffic]]
     assert(not traffic.disposed and not outer.disposed,"traffic already disposed")
+    ---@type {car:table,node:Node,rider:Rider,hip:Vector3}[]
+    local residentRiders={}
+    for _,car in ipairs(traffic.cars) do
+        if car.riding then residentRiders[#residentRiders+1]={car=car,node=car.node,rider=car.riding.rider,hip=car.riding.rider:GetBonePosition("Hip")} end
+    end
+    assert(#traffic.cars==15 and #residentRiders==2,"near-street riders must share existing 15 slots")
+    local function sameRiders()
+        local count=0
+        for _,car in ipairs(traffic.cars) do if car.riding then count=count+1 end end
+        assert(count==2 and #traffic.cars==15,"outer recycling duplicated resident rider slots")
+        for _,saved in ipairs(residentRiders) do
+            local car=saved.car
+            assert(car.node==saved.node and car.riding.rider==saved.rider and not saved.rider.disposed,"outer pool replaced/disposed resident rider")
+            assert((saved.rider:GetBonePosition("Hip")-saved.hip):Length()<.00001 and car.riding.poseSolves==1,"far rider pose must remain frozen")
+        end
+        for _,car in ipairs(outer.carPool) do assert(not car.riding and car.id~=nil,"outer pool is explicitly automobile-only in this revision") end
+    end
     local started=os.clock()
     local originalStore=Store.Get()
     local originalActor=shallow(actor)
@@ -162,6 +179,7 @@ function Checks.Run(session)
                 for _=1,math.floor(seconds*10+.5) do
                     traffic:Update(.1)
                     validate(session)
+                    sameRiders()
                     maxCars,maxPeople=math.max(maxCars,#outer.cars),math.max(maxPeople,#outer.people)
                 end
                 unchanged(traffic.cars,frozenCars,"far old cars must freeze")

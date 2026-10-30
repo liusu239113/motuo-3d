@@ -15,7 +15,7 @@ local KINDS={opening="初始生活现金",delivery="配送到账",meal="早餐�
     accommodation="住宿过夜",equipment="骑手装备",motorcycle="购入摩托",training="护具与训练",
     race_entry="赛事报名",career_race="赛事奖金",scheduled_delivery="排班配送",scheduled_living="排班生活支出",
     engagement="联系人委托谢礼",team_signing="车队首轮合同奖金",team_sponsor="车队赞助",payment="生活支出",
-    sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油"}
+    sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油",home_purchase="房产买断"}
 function Apps.LedgerName(entry) return KINDS[entry.kind] or entry.kind end
 -- 今日真正发生的收支，不将开局本金包装为今天挣到的钱。
 function Apps.Today(state)
@@ -299,6 +299,8 @@ function Apps.Delivery(view,content,state,offer,active)
         card:AddChild(routeRow(picked and "已" or "取",picked and "已取餐" or "当前目标 · 到店取餐",active.pickupId,not picked))
         card:AddChild(routeRow("送",picked and "当前目标 · 送达顾客" or "下一步 · 送达顾客",active.dropoffId,picked))
         card:AddChild(K.Button("导航到当前任务",function() view.actions.setWaypoint(picked and active.dropoffId or active.pickupId); view.actions.closePhone() end,"career-order-navigation",true))
+        local orderId=active.id
+        card:AddChild(K.Button("联系顾客",function() view.actions.callCustomer(orderId) end,"career-order-call",false))
         card:AddChild(K.Button(picked and "交付外卖" or "到店取餐",view.actions.interact,"career-order-interact",false))
         card:AddChild(K.Text("必须到真实取送点停稳、下车后交接；按钮仍核对现场位置。",9,C.muted))
         if #state.activeOrders>1 then
@@ -319,5 +321,19 @@ function Apps.Delivery(view,content,state,offer,active)
             K.Text(state.online and "当前区域或时段没有合适报价。可检查时间、身体状态或前往其他区域。" or "上线后在此查看真实报价，接单后显示取餐与送达进度。",11,C.muted)}}))
     end
     content:AddChild(K.Text("普通单配送费2.50～10.00元，接单锁价，绕路不加价。长途订单预留更多时限；当日来不及完成不派发。",9,C.muted))
+end
+---@param view CareerView
+function Apps.Call(view,content)
+    local call=view.phoneCall
+    view.phoneTitle:SetText("顾客电话")
+    content:AddChild(K.Heading("订单顾客",call and call.place or "本次通话已结束","career-call-heading"))
+    if not call then return end
+    content:AddChild(K.Text(call.phase=="ringing" and "正在呼叫……" or "已接通 · 游戏内模拟通话",17,C.green,{id="career-call-phase"}))
+    if call.phase=="connected" then
+        content:AddChild(K.Card("career-call-rider",{children={K.Text("王二狗",12,C.green),K.Text(call.rider,16,C.ink,{id="career-call-rider-line"})}}))
+        content:AddChild(K.Card("career-call-customer",{children={K.Text("顾客",12,C.blue),K.Text(call.customer,16,C.ink,{id="career-call-customer-line"})}}))
+    end
+    content:AddChild(K.Button("挂断并返回订单",function() view.actions.endCall(); view.actions.phone("delivery") end,"career-call-hangup",true))
+    content:AddChild(K.Text("不拨打真实号码，不代替现场交接。正式人声待确认声线后接入，当前为铃声与对白文字。",11,C.muted))
 end
 return Apps

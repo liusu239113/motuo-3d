@@ -1,6 +1,7 @@
 -- 生涯独立混音：真实位移 + 鞋底支撑边沿，不从速度推算敲击节拍。
 -- 生命周期由Session持有；不订阅Update、不改全局音量、不读写存档。
 local World=require("Career.WorldData")
+local Config=require("Career.Config")
 ---@class CareerFootstepState
 ---@field x? number
 ---@field z? number
@@ -31,6 +32,9 @@ local AudioContextType={}
 ---@field sounds table<string,Sound>
 ---@field stepState CareerFootstepState
 ---@field zones table[]
+---@field PhoneRing fun(self:CareerSoundscape)
+---@field StopPhone fun(self:CareerSoundscape)
+---@field musicHour number
 local Audio={}
 Audio.__index=Audio
 Audio.Paths={music="audio/night_ride.ogg",electric="audio/sfx/career_ebike_motor.mp3",
@@ -38,11 +42,13 @@ Audio.Paths={music="audio/night_ride.ogg",electric="audio/sfx/career_ebike_motor
     sand="audio/sfx/career_step_sand_natural.wav",wood="audio/sfx/career_step_wood_natural.wav",
     city="audio/sfx/career_city_ambience.mp3",sea="audio/sfx/career_coastal_surf_bed.ogg",
     bridge="audio/sfx/career_bridge_wind_bed.ogg",traffic="audio/sfx/career_distant_traffic_bed.ogg",
-    tap="audio/sfx/career_ui_tap.mp3",order="audio/sfx/career_order_chime.mp3",brake="audio/sfx/motorcycle_brake_loop.mp3"}
+    tap="audio/sfx/career_ui_tap.mp3",order="audio/sfx/career_order_chime.mp3",brake="audio/sfx/motorcycle_brake_loop.mp3",
+    shop="audio/sfx/career_takeaway_shop_ambience.mp3",residential="audio/sfx/career_residential_evening_ambience.mp3",
+    musicDay="audio/radio_01.ogg",ring="audio/sfx/career_customer_call_ring.mp3"}
 Audio.Resources,Audio.ResourceTypes={},{}
 for _,path in pairs(Audio.Paths) do Audio.Resources[#Audio.Resources+1]=path; Audio.ResourceTypes[path]="Sound" end
 Audio.StepGain={concrete=.24,sand=.23,wood=.20}
-local singles={steps=true,sand=true,wood=true,tap=true,order=true}
+local singles={steps=true,sand=true,wood=true,tap=true,order=true,ring=true}
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.huge end
 local function unit(n) return finite(n) and math.max(0,math.min(1,n)) or 0 end
 local function smooth(n) local t=unit(n); return t*t*(3-2*t) end
@@ -159,6 +165,7 @@ function Audio:Init(scene)
     self.zones={}
     self.mix={sea=0,bridge=0,urban=0,traffic=0,surface="concrete"}
     self.mixElapsed=1
+    self.shopMix=0
     self.stepDistance,self.stepCount,self.orderCount=0,0,0
     self.paused,self.disposed=false,false
     for key,path in pairs(Audio.Paths) do
@@ -167,12 +174,24 @@ function Audio:Init(scene)
             sound.looped=not singles[key]
             self.sounds[key]=sound
             local source=self.node:CreateChild(key):CreateComponent("SoundSource")
-            source.soundType=key=="music" and SOUND_MUSIC or SOUND_EFFECT
+            source.soundType=(key=="music" or key=="musicDay") and SOUND_MUSIC or SOUND_EFFECT
             source.declickEnabled=true; source.gain=0
             self.sources[key]=source
             print("[生涯音频] 已加载 "..key.." "..path)
         else print("[生涯音频错误] 缺少可播放素材 "..path) end
     end
+    self.phoneSource=self.node:CreateChild("独立模拟电话"):CreateComponent("SoundSource")
+    self.phoneSource.soundType=SOUND_EFFECT
+    self.phoneSource.declickEnabled=true
+    self.musicHour=8
+end
+function Audio:PhoneRing()
+    if self.disposed or not self.unlocked or not self.effectsEnabled then return end
+    local sound=self.sounds.ring
+    if sound then self.phoneSource:Play(sound,0,.24) end
+end
+function Audio:StopPhone()
+    self.phoneSource:StopImmediate()
 end
 function Audio:Unlock() self.unlocked=true end
 function Audio:SetZones(zones) self.zones=zones or {}; self.mixElapsed=1 end
@@ -211,9 +230,10 @@ end
 function Audio:Loop(key,gain,pitch,dt)
     local source,sound=self.sources[key],self.sounds[key]
     if not source or not sound then return end
-    local enabled=not self.paused and self.unlocked and (key=="music" and self.musicEnabled or key~="music" and self.effectsEnabled)
+    local music=key=="music" or key=="musicDay"
+    local enabled=not self.paused and self.unlocked and (music and self.musicEnabled or not music and self.effectsEnabled)
     local target=enabled and math.max(0,gain) or 0
-    local ambience=key=="sea" or key=="bridge" or key=="traffic" or key=="city"
+    local ambience=key=="sea" or key=="bridge" or key=="traffic" or key=="city" or key=="shop" or key=="residential"
     local rate=ambience and .9 or 7
     local level=source.gain+(target-source.gain)*(1-math.exp(-dt*rate))
     if target==0 and level<.0005 then source.gain=0; if source.playing then source:StopImmediate() end; return end
@@ -263,10 +283,21 @@ function Audio:Update(dt,actor,blocked,indoor,controls,order,context)
     self.mixElapsed=self.mixElapsed+dt
     if self.mixElapsed>=.25 then
         self.mix=Audio.Environment(actor.x,actor.z,context,self.zones); self.mixElapsed=0
+        local shop=0
+        for _,point in ipairs(Config.pointList) do
+            if point.kind=="merchant" then
+                shop=math.max(shop,smooth(1-math.sqrt((actor.x-point.x)^2+(actor.z-point.z)^2)/24))
+            end
+        end
+        self.shopMix=shop
     end
     if context.surface=="sand" or context.surface=="wood" or context.surface=="concrete" then self.mix.surface=context.surface end
     local mix=self.mix
-    self:Loop("music",.12,1,dt)
+    local daytime=self.musicHour>=7 and self.musicHour<19
+    self:Loop("music",daytime and 0 or .10,1,dt)
+    self:Loop("musicDay",daytime and .09 or 0,1,dt)
+    self:Loop("shop",not indoor and self.shopMix*.16 or 0,1,dt)
+    self:Loop("residential",not indoor and not daytime and mix.urban*(1-self.shopMix)*.10 or 0,1,dt)
     -- Equal-power crossfade from street bed to surf; distinct wind/traffic stems are localized.
     local outdoor=indoor and 0 or 1
     self:Loop("city",outdoor*.13*math.sqrt(mix.urban)*math.sqrt(1-mix.sea)*(.9-.35*mix.bridge),1,dt)
@@ -288,7 +319,7 @@ function Audio:Update(dt,actor,blocked,indoor,controls,order,context)
 end
 function Audio:Stop()
     if self.disposed then return end
-    self:SetPaused(true); self.disposed=true
+    self:SetPaused(true); self:StopPhone(); self.disposed=true
     self.node:Dispose(); self.sources,self.sounds={},{}
 end
 return Audio

@@ -7,6 +7,9 @@ local Checks={}
 ---@param session CareerSession
 function Checks.Run(session,shot)
     assert(session.options.test and session.restoreTestStorage,"生活验收必须内存隔离")
+    require("Career.HousingChecks").RunProperty()
+    require("Career.MapOverlay").Checks()
+    require("Career.TrafficChecks").Run(session)
     assert(Store.NewCareer())
     assert(Store.Transaction(function(p) p.phase="working";p.flags.introSeen=true;return true end))
     local p=Store.Get()
@@ -17,6 +20,10 @@ function Checks.Run(session,shot)
     local lowPlan=Life.Plan(sample)
     assert(lowPlan.mealHours==1 and lowPlan.restHours==2,"计划按真实消耗率估算")
     assert(lowPlan.reserveCents==4400 and lowPlan.shortfallCents==3400,"下一餐+30元住宿+2元充电预算")
+    local ownedSample=Store.Get()
+    ownedSample.accommodation="room";ownedSample.ownedHomes={room=true}
+    local ownedPlan=Life.Plan(ownedSample)
+    assert(ownedPlan.nightlyCents==0 and ownedPlan.reserveCents==1200 and ownedPlan.ownedHome,"自有住房不应继续预留虚构房费")
     sample.equipment={raincoat=true}
     assert(Life.Plan(sample).restHours>lowPlan.restHours,"雨衣节省精力应反映到计划")
     sample.energy=29
@@ -102,6 +109,36 @@ function Checks.Run(session,shot)
     local Delivery=require("Career.Delivery")
     local offer=assert(Delivery.GetOffer())
     assert(Delivery.Accept(offer.id))
+    session.actor.speed=0
+    local beforeCall=Store.Get()
+    local sound=assert(session.audio)
+    for _,key in ipairs({"shop","residential","musicDay","ring"}) do assert(sound.sounds[key] and sound.sounds[key]:GetLength()>0,"新增音景素材必须实际可加载："..key) end
+    assert(sound.phoneSource~=sound.sources.ring,"电话必须使用独立于玩法暂停的音源")
+    session:CallCustomer(beforeCall.activeOrders[1].id)
+    assert(session.customerCall and session.view.phonePage=="call" and session.view:IsBlocking(),"电话必须进入真实手机页并冻结玩法")
+    for _=1,22 do session:Update(.1) end
+    local connected=assert(session.customerCall)
+    assert(connected.phase=="connected","独立电话时间应在游戏暂停时接通")
+    local afterCall=Store.Get()
+    assert(afterCall.cashCents==beforeCall.cashCents and afterCall.time==beforeCall.time
+        and afterCall.activeOrders[1].remainingHours==beforeCall.activeOrders[1].remainingHours,"电话不扣款、不推进订单、不远程交单")
+    session.view:ClosePhone()
+    assert(not session.customerCall,"收起手机必须挂断电话")
+    local callCount=session.callSequence
+    session:CallCustomer("missing-order")
+    assert(not session.customerCall and session.callSequence==callCount,"结束或错误订单不能拨号")
+    local Calls=require("Career.CustomerCall")
+    local delivered=beforeCall.activeOrders[1]
+    delivered.status="picked"
+    local point=assert(require("Career.Config").points[delivered.dropoffId])
+    local lines={}
+    for sequence=1,4 do
+        local candidate=assert(Calls.Begin(delivered,{x=point.x,z=point.z,speed=0},sequence))
+        assert(not lines[candidate.rider],"到门口对白需要四种不同内容")
+        lines[candidate.rider]=true
+    end
+    assert(not Calls.Begin(delivered,{x=point.x,z=point.z,speed=1},1),"骑行不能拨号")
+    print("[顾客电话验收通过] 订单绑定/冻结/接通/挂断/四种到门口对白/无远程交单")
     assert(Store.Transaction(function(d) d.time=23;d.energy=24;return true end))
     local advice=Life.Advice(Store.Get())
     assert(advice.action=="继续配送" and advice.point==offer.pickupId,"深夜带单不能快捷导航去睡觉")
@@ -143,7 +180,9 @@ function Checks.Run(session,shot)
     session.actor:Teleport(0,-20,0);session.yaw,session.pitch=0,-4
     session.waypoint="";session.manualWaypoint=false;session.navigation={key="",route={}}
     session:Refresh();session:UpdateEnvironment(Store.Get().time)
-    if shot=="life" then session:OpenPhone("life") end
+    if shot=="life" then session:OpenPhone("life")
+    elseif shot=="atlas" then session.view:OpenWorldMap()
+    elseif shot=="property" then session:OpenPhone("progression") end
     session.view.notice:SetText("")
     session.options.lifeAudit=true
     session.options.lifeRide=shot=="ride" or shot=="nightride"
@@ -161,16 +200,18 @@ function Checks.Run(session,shot)
     end
     if shot=="nightride" then
         assert(Store.Transaction(function(d) d.time=22;return true end));session:Refresh()
-    elseif shot=="order" then
+    elseif shot=="order" or shot=="call" then
         local orderOffer=assert(Delivery.GetOffer());assert(Delivery.Accept(orderOffer.id));session:Refresh()
+        if shot=="call" then
+            local callOrder=assert(Delivery.GetActive())
+            session:CallCustomer(callOrder.id)
+            for _=1,22 do session:Update(.1) end
+        end
     elseif shot=="plan" then
         assert(Store.Transaction(function(d) d.hunger=63;d.energy=57;d.battery=20;d.accommodation="hostel";return true end))
         session:Refresh();session:OpenPhone("life")
-        local planCard=assert(session.view.phoneBody:FindById("career-life-plan"))
         Kit.LayoutTree(session.view.phoneArea)
-        local card=planCard:GetAbsoluteLayoutForHitTest()
-        local area=session.view.phoneContent:GetAbsoluteLayoutForHitTest()
-        session.view.phoneContent:SetScroll(0,math.max(0,card.y-area.y))
+        session.view.phoneContent:ShowWidget("career-life-plan")
     end
     print("[生活时间验收通过] 活动消耗/用餐/过夜/手机与暂停冻结/带单导航/天气连续；实拍="..tostring(shot))
 end
@@ -228,8 +269,11 @@ function Checks.Audit(session)
         assert(up.target==widget,"HUD抬手命中错误 "..tostring(widget.props.id))
     end
     local wasPhone=view.phonePage
-    local savedScrollX,savedScrollY=view.phoneContent:GetScroll()
-    if wasPhone=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard");view:ClosePhone() end
+    local wasMap=view.worldMap:IsVisible()
+    local savedPage=view.phoneContent:GetPage()
+    if wasPhone=="life" then require("Career.PhoneAppChecks").Audit(view,"life-dashboard") end
+    view:CloseWorldMap()
+    if wasPhone~="" then view:ClosePhone() end
     local oldWaypoint,oldManual=session.waypoint,session.manualWaypoint
     tap(phoneButton)
     assert(view.phonePage=="apps","独立手机入口未打开桌面")
@@ -238,11 +282,12 @@ function Checks.Audit(session)
     tap(lifeApp)
     assert(view.phonePage=="life","次要生活信息必须能从手机菜单进入")
     view:ClosePhone()
-    if view.mapOpen:IsVisible() then
-        tap(view.mapOpen)
-        assert(view.phonePage=="map","路线触摸未打开地图")
-        view:ClosePhone()
-    end
+    assert(view.mapOpen:IsVisible() and view.map.root:IsVisible(),"小地图必须常驻，不能依赖活动订单")
+    tap(view.mapOpen)
+    assert(view.worldMap:IsVisible() and view:IsBlocking(),"小地图必须打开完整地图并冻结玩法")
+    assert(view.phonePage=="","完整地图不能挤进手机滚动页")
+    view:CloseWorldMap()
+    assert(not view.worldMap:IsVisible() and not view:IsBlocking(),"关闭地图应恢复玩法")
     tap(view.pauseButton)
     assert(view:IsBlocking(),"暂停按钮触摸未打开菜单")
     view:ShowGame()
@@ -250,13 +295,9 @@ function Checks.Audit(session)
     local function planTap(id)
         session:OpenPhone("life")
         Kit.LayoutTree(view.phoneArea)
-        view.phoneContent:SetScroll(0,0)
+        assert(view.phoneContent:ShowWidget(id),"分页中找不到生活动作 "..id)
         Kit.LayoutTree(view.phoneArea)
         local widget=assert(view.phoneBody:FindById(id))
-        local r=widget:GetAbsoluteLayoutForHitTest()
-        local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
-        view.phoneContent:SetScroll(0,math.max(0,r.y-area.y-(area.h-r.h)/2))
-        Kit.LayoutTree(view.phoneArea)
         tap(widget)
     end
     planTap("career-plan-home")
@@ -269,11 +310,11 @@ function Checks.Audit(session)
     view:ClosePhone()
     session:ShowMorning("休息结束，准备新一天。")
     Kit.LayoutTree(view.overlay)
-    local morningScroll=assert(view.dialogBody:FindById("career-dialog-scroll"))
-    local morningBounds=bounds(morningScroll)
+    local morningPages=assert(view.dialogBody:FindById("career-dialog-pages"))
+    local morningBounds=bounds(morningPages)
     local morningButton=view.dialogBody.children[#view.dialogBody.children]
     local buttonBounds=bounds(morningButton)
-    assert(morningBounds.y+morningBounds.h<=buttonBounds.y+1,"晨间确认按钮必须在滚动正文之外")
+    assert(morningBounds.y+morningBounds.h<=buttonBounds.y+1,"晨间确认按钮必须在分页正文之外")
     tap(morningButton)
     assert(not view:IsBlocking(),"晨间确认必须能真实触摸关闭")
     local originalMounted=session.actor.mounted
@@ -309,8 +350,14 @@ function Checks.Audit(session)
     view.controlWidth,view.controlHeight=0,0
     session.waypoint,session.manualWaypoint=oldWaypoint,oldManual
     session:Refresh();view:LayoutControls();Kit.LayoutTree(view.game)
-    if wasPhone=="life" then
-        session:OpenPhone("life");Kit.LayoutTree(view.phoneArea);view.phoneContent:SetScroll(savedScrollX,savedScrollY)
+    if wasMap then view:OpenWorldMap()
+    elseif wasPhone~="" then
+        if wasPhone=="call" then
+            local active=assert(require("Career.Delivery").GetActive())
+            session:CallCustomer(active.id)
+            for _=1,22 do session:Update(.1) end
+        else session:OpenPhone(wasPhone) end
+        Kit.LayoutTree(view.phoneArea);view.phoneContent:SetPage(savedPage)
     end
     print(string.format("[生活HUD渲染验收通过] screen %.0fx%.0f / 实际值一致 / 44尺寸 / 生活与暂停真实触摸 / 骑行避让与多指释放",view.root:GetLayout().w,view.root:GetLayout().h))
 end

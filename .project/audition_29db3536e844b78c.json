@@ -1,0 +1,30 @@
+{
+  "version": "2.0",
+  "provider": "elevenlabs",
+  "character_name": "王二狗",
+  "character_description": "成年中国男性，约25至32岁，城市外卖骑手王二狗，普通话清楚自然，温和略有生活疲惫感但亲切负责，中等音高、略带颗粒感的清亮声线，不夸张不卖惨。语速平稳略快，短句自然换气，有真实电话沟通的停顿。情绪礼貌、务实、可靠，普通中国影视生活剧配音表演风格，不要播音腔，不要广告腔，不要模仿任何真实人物。professional audio, clear articulation, studio-quality recording.",
+  "audition_line": "您好，我是给您送餐的骑手，您的外卖已经送到小区门口了。请问您现在方便下来取一下吗？好的，您不用着急，我会站在店招旁边等您，餐袋给您放稳，不会放在车道上。要是门口不好找，您告诉我附近的标志，我再确认一下位置。下雨天路上有点慢，让您久等了。餐品都给您带齐了，您拿稳，小心汤有点烫。谢谢，祝您用餐愉快！",
+  "created_at": "2026-10-30T15:34:26.017Z",
+  "recommended_index": 1,
+  "candidates": [
+    {
+      "index": 1,
+      "provider": "elevenlabs",
+      "generated_voice_id": "PGOECuOC9paO7bhAr1p0",
+      "audio_url": "https://tapcode-sce.spark.xd.com/assets/audio/audition/60189c41a91615f2_29db3536e844b78c_candidate_1_1793374445949.mp3",
+      "oss_path": "audio/audition/60189c41a91615f2_29db3536e844b78c_candidate_1_1793374445949.mp3",
+      "duration_seconds": 32.602625,
+      "description": "成年中国男性，约25至32岁，城市外卖骑手王二狗，普通话清楚自然，温和略有生活疲惫感但亲切负责，中等音高、略带颗粒感的清亮声线，不夸张不卖惨。语速平稳略快，短句自然换气，有真实电话沟通的停顿。情绪礼貌、务实、可靠，普通中国影视生活剧配音表演风格，不要播音腔，不要广告腔，不要模仿任何真实人物。professional audio, clear articulation, studio-quality recording."
+    },
+    {
+      "index": 2,
+      "provider": "elevenlabs",
+      "generated_voice_id": "x2fA6Cp1xPtkwf752OKo",
+      "audio_url": "https://tapcode-sce.spark.xd.com/assets/audio/audition/60189c41a91615f2_29db3536e844b78c_candidate_2_1793374464949.mp3",
+      "oss_path": "audio/audition/60189c41a91615f2_29db3536e844b78c_candidate_2_1793374464949.mp3",
+      "duration_seconds": 29.467916666666667,
+      "description": "成年中国男性，约25至32岁，城市外卖骑手王二狗，普通话清楚自然，温和略有生活疲惫感但亲切负责，中等音高、略带颗粒感的清亮声线，不夸张不卖惨。语速平稳略快，短句自然换气，有真实电话沟通的停顿。情绪礼貌、务实、可靠，普通中国影视生活剧配音表演风格，不要播音腔，不要广告腔，不要模仿任何真实人物。professional audio, clear articulation, studio-quality recording."
+    }
+  ],
+  "use_voice_design": true
+}

@@ -24,7 +24,8 @@
     "asset_ignores": [
       "../assets/audio/source",
       "../assets/audio/*.oga",
-      "../assets/image/career_reviews"
+      "../assets/image/career_reviews",
+      "../assets/audio/audition"
     ]
   },
   "@runtime": {

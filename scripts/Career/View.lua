@@ -3,6 +3,7 @@ local UI = require("urhox-libs/UI")
 local Theme = require("RacingTheme")
 local Config = require("Career.Config")
 local Map = require("Career.MapWidget")
+local MapOverlay = require("Career.MapOverlay")
 local Progress = require("Career.Progression")
 local MobileControls = require("MobileControls")
 local ControlSettings = require("ControlSettings")
@@ -63,7 +64,8 @@ end
 local MAP_PAGE_SIZE=6
 
 ---@class CareerView
----@field phoneContent ScrollView
+---@field phoneContent CareerPhonePages
+---@field phoneCall? table
 ---@field phoneDesktop Panel
 ---@field phoneBack Button
 ---@field phoneTitle Label
@@ -132,7 +134,7 @@ function View:Init(actions)
     self.mapOpenHint=PhoneKit.Text("点开全城地图",9,C.cyan,{id="career-map-open-hint"})
     self.mapOpen=UI.Panel{id="career-minimap-open",width="100%",minHeight=44,padding=0,gap=3,
         pointerEvents="box-only",onClick=function()
-            if not self:IsBlocking() then actions.phone("map") end
+            if not self:IsBlocking() then self:OpenWorldMap() end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
     self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=0,gap=5,
         backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
@@ -202,6 +204,11 @@ function View:Init(actions)
     self.notice=label("",12,C.amber,{position="absolute",top=12,left="30%",right="22%",whiteSpace="normal",textAlign="center",maxLines=3})
     self.root:AddChild(self.home); self.root:AddChild(self.game); self.root:AddChild(self.phone)
     self.root:AddChild(self.overlay); self.root:AddChild(self.notice)
+    self.worldMap=MapOverlay.New(function() self:CloseWorldMap() end,function(id)
+        self.actions.setWaypoint(id)
+        self:CloseWorldMap()
+    end)
+    self.root:AddChild(self.worldMap.root)
     self.conversation=UI.SafeAreaView(Theme.Full{nativeMenuInset=true,visible=false,padding=18,
         justifyContent="flex-end",alignItems="center",backgroundColor={0,0,0,25}})
     self.conversationBody=UI.Panel{id="career-conversation",width=620,maxWidth="92%",maxHeight="88%",
@@ -214,6 +221,18 @@ function View:Init(actions)
     self.speech:AddChild(self.speechText); self.root:AddChild(self.speech)
     self.speechTime=0
 end
+function View:OpenWorldMap()
+    self:ClosePhone();self:CloseConversation()
+    self.overlay:SetVisible(false);self.speech:SetVisible(false);self.notice:SetText("")
+    self.blocked=true;self:ResetInput();self.controls:SetEnabled(false)
+    self.worldMap:Open(self.lastMapPosition or {x=0,z=-20,yaw=0},self.lastTarget,self.lastOrder)
+end
+function View:CloseWorldMap()
+    self.worldMap:Close()
+    self.blocked=self.overlay:IsVisible() or self.conversation:IsVisible()
+    self:ResetInput()
+    self.controls:SetEnabled(self.game:IsVisible() and self.phonePage=="" and not self.blocked)
+end
 function View:CloseConversation()
     self.conversation:SetVisible(false)
     destroyChildren(self.conversationBody)
@@ -221,6 +240,7 @@ function View:CloseConversation()
     self.controls:SetEnabled(self.game:IsVisible() and self.phonePage=="" and not self.blocked)
 end
 function View:ShowConversation(name,text,choices)
+    self:CloseWorldMap()
     self:ClosePhone(); self.overlay:SetVisible(false)
     self:ResetInput(); self.controls:SetEnabled(false); self.blocked=true
     self.speech:SetVisible(false); self.speechTime=0
@@ -248,6 +268,7 @@ function View:UpdateSpeech(dt)
     if self.speechTime==0 then self.speech:SetVisible(false) end
 end
 function View:ShowHome(hasSave,message)
+    self:CloseWorldMap()
     self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ClosePhone()
     self.home:SetVisible(true); self.game:SetVisible(false); self.phone:SetVisible(false); self.overlay:SetVisible(false)
@@ -259,6 +280,7 @@ function View:ShowHome(hasSave,message)
     if message then self.homeActions:AddChild(label(message,10,C.muted,{whiteSpace="normal"})) end
 end
 function View:ShowGame()
+    self:CloseWorldMap()
     self:CloseConversation()
     self.home:SetVisible(false); self.game:SetVisible(true); self.overlay:SetVisible(false)
     self.controlWidth,self.controlHeight=0,0
@@ -268,8 +290,10 @@ function View:ShowLoading(title,detail,fraction)
     self:ShowDialog(title,detail..string.format("\n已完成 %.0f%%",fraction*100),{})
 end
 function View:ShowDialog(title,text,buttons,forceScroll)
+    self:CloseWorldMap()
     self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ResetInput(); self.controls:SetEnabled(false)
+    if self.actions.endCall then self.actions.endCall() end
     self.blocked=true; self.phone:SetVisible(false); self.overlay:SetVisible(true)
     destroyChildren(self.dialogBody)
     local _,lineBreaks=text:gsub("\n","")
@@ -277,10 +301,17 @@ function View:ShowDialog(title,text,buttons,forceScroll)
     self.dialogBody:SetStyle{height=scrollable and "90%" or "auto"}
     self.dialogBody:AddChild(PhoneKit.Text(title,21,C.amber,{fontWeight="bold",flexShrink=0}))
     if scrollable then
-        local content=UI.ScrollView{id="career-dialog-scroll",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
-            padding=0,scrollX=false,scrollY=true}
+        local content=require("Career.PhonePages"){id="career-dialog-pages",width="100%",flexGrow=1,flexBasis=0,minHeight=0,
+            padding=0,overflow="hidden"}
         content:AddChild(PhoneKit.Text(text,13,C.white,{id="career-dialog-text"}))
         self.dialogBody:AddChild(content)
+        local previous=PhoneKit.Button("上一页",function() content:SetPage(content:GetPage()-1) end,"career-dialog-prev",false,{width=90})
+        local following=PhoneKit.Button("下一页",function() content:SetPage(content:GetPage()+1) end,"career-dialog-next",false,{width=90})
+        local pageLabel=PhoneKit.Text("1 / 1",12,C.white,{flexGrow=1,textAlign="center"})
+        local pager=UI.Row{width="100%",padding=0,gap=8,flexShrink=0,alignItems="center",children={previous,pageLabel,following}}
+        self.dialogBody:AddChild(pager)
+        content:AttachPager(previous,following,pageLabel,pager)
+        content:Paginate()
     else
         self.dialogBody:AddChild(PhoneKit.Text(text,13,C.white,{id="career-dialog-text"}))
     end
@@ -297,8 +328,9 @@ function View:Notice(text)
     self.notice:SetText(text or ""); self.noticeTime=5
     print("[生涯提示] "..tostring(text))
 end
-function View:IsBlocking() return self.blocked or self.phonePage~="" end
+function View:IsBlocking() return self.blocked or self.phonePage~="" or self.worldMap:IsVisible() end
 function View:ClosePhone()
+    if self.actions.endCall then self.actions.endCall() end
     self.phone:SetVisible(false); self.phonePage=""; self:ResetInput()
     destroyChildren(self.phoneContent)
     destroyChildren(self.phoneDesktop)
@@ -308,11 +340,14 @@ function View:ClosePhone()
     self.controls:SetEnabled(self.game:IsVisible() and not self.blocked)
 end
 function View:OpenPhone(page,state,offer,active)
+    if page=="map" then self:OpenWorldMap();return end
+    self:CloseWorldMap()
     self:CloseConversation(); self.overlay:SetVisible(false); self.blocked=false
     self.speech:SetVisible(false); self.speechTime=0
     if self.phonePage=="" then
         self.mapDistrictId=""; self.mapPointPage=1; self.mapPickerOpen=false
     end
+    if self.phonePage=="call" and page~="call" and self.actions.endCall then self.actions.endCall() end
     if self.phonePage~=(page or "apps") then self.phoneContent:ScrollToTop() end
     self:ResetInput(); self.controls:SetEnabled(false); self.phonePage=page or "apps"; self.phone:SetVisible(true)
     self:BuildPhone(state,offer,active)
@@ -480,6 +515,8 @@ function View:BuildPhone(state,offer,active)
     self.phoneClock:SetText(string.format("%02d:%02d",math.floor(state.time),math.floor(state.time*60)%60))
     if page=="apps" then
         Phone.Desktop(content,state,a,self.phoneHeight)
+    elseif page=="call" then
+        PhoneApps.Call(self,content)
     elseif page=="delivery" then
         PhoneApps.Delivery(self,content,state,offer,active)
     elseif page=="map" then
@@ -488,6 +525,16 @@ function View:BuildPhone(state,offer,active)
         PhoneApps.Wallet(self,content,state)
     elseif page=="messages" then
         PhoneApps.Messages(self,content,state)
+    elseif page=="property-confirm" then
+        local property=require("Career.Property").Get(state,self.purchaseHomeId or "")
+        if property then
+            self.phoneTitle:SetText("买断确认")
+            text(property.name,18)
+            text(string.format("一次买断 ¥%.0f\n购后至少保留 ¥%.0f 生活费",property.buyPriceCents/100,property.reserveCents/100),15)
+            text("游戏内固定定价，非现实房价。取得永久产权后，对应住处免每晚房费；不会自动入住或移动人物。",13)
+            button("确认买断",function() a.confirmBuyHome(property.id) end,true,"career-property-confirm")
+            button("先不买",function() a.phone("progression") end,false,"career-property-cancel")
+        end
     elseif page=="progression" then
         text(Progress.Chapter(state),17,C.amber)
         local level,name=Progress.Level(state)
@@ -502,13 +549,23 @@ function View:BuildPhone(state,offer,active)
                 string.format("价格 ¥%.0f\n要求 Lv.%d · %s",item.price/100,item.level,owned and "已拥有" or "到南城车行办理"),
                 owned and "已拥有" or "购入装备",function() a.buyEquipment(id) end,false)
         end
-        section("改善住处 · 按晚付费")
-        text("旅舍、出租屋、公寓各有入口和室内。进门不收费，到床边确认休息才支付一晚。",10,C.muted)
+        section("选择住处 · 产权与住宿分开")
+        text("旅舍、出租屋、公寓各有入口和室内。进门不收费，到床边休息才支付当晚费用；自有房免房费。",10,C.muted)
+        local Property=require("Career.Property")
         for _,item in ipairs(Progress.Housing) do
             local id=item.id
-            action("career-housing-"..id,item.name,"选择后到对应入口入住；确认过夜才收费。",
-                string.format("¥%.0f / 晚 · %s",item.price/100,state.accommodation==id and "当前住处" or "可选择"),
+            local owned=Property.Owns(state,id)
+            action("career-housing-"..id,item.name,"选择后到对应入口入住；不会移动人物。",
+                string.format("%s · %s",owned and "自有房 · 免房费" or string.format("¥%.0f / 晚",item.price/100),state.accommodation==id and "当前住处" or "可选择"),
                 "选择住处",function() a.housing(id) end,false)
+        end
+        section("买一套自己的房")
+        text(Property.PRICE_NOTE,12,C.muted)
+        for _,property in ipairs(Property.List(state)) do
+            local id=property.id
+            action("career-property-"..id,property.name,property.owned and "永久产权已登记；选择该住处后免每晚房费。" or "买断后永久拥有；仍需亲自前往入口入住。",
+                string.format("游戏买断价 ¥%.0f · %s",property.buyPriceCents/100,property.owned and "已拥有" or "未购入"),
+                property.owned and "选择自有房" or "查看买断",function() if property.owned then a.housing(id) else a.buyHome(id) end end,false)
         end
         local home=assert(Housing.Get(state.accommodation))
         button("导航到当前住处",function() a.setWaypoint(home.point); a.closePhone() end,false)
@@ -594,7 +651,7 @@ function View:BuildPhone(state,offer,active)
             PhoneKit.Text(plan.mealText,15,PhoneKit.C.orange,{id="career-plan-meal",fontWeight="bold"}),
             PhoneKit.Text("下一餐 ¥12 · 耗时15游戏分钟 · 不会自动扣款",11,PhoneKit.C.muted),
             PhoneKit.Text(plan.restText,14,PhoneKit.C.blue,{id="career-plan-rest",fontWeight="bold"}),
-            PhoneKit.Text(plan.home.name..string.format(" · ¥%.0f/晚 · 精力至少%d",plan.home.price/100,plan.home.energy),11,PhoneKit.C.muted),
+            PhoneKit.Text(plan.home.name..string.format(" · %s · 精力至少%d",plan.ownedHome and "自有房免房费" or string.format("¥%.0f/晚",plan.nightlyCents/100),plan.home.energy),11,PhoneKit.C.muted),
             PhoneKit.Text(string.format("建议预留 ¥%.2f\n预留后余额 ¥%.2f",plan.reserveCents/100,plan.remainingCents/100),13,
                 plan.shortfallCents>0 and PhoneKit.C.red or PhoneKit.C.green,{id="career-plan-budget",fontWeight="bold"}),
             PhoneKit.Text(plan.shortfallCents>0 and string.format("还差 ¥%.2f。可选免费桥下/公园，或查看基础帮助条件。",plan.shortfallCents/100)
@@ -631,7 +688,7 @@ function View:BuildPhone(state,offer,active)
         action("career-life-park","公园长椅","免费睡至次日08:00，精力至少恢复到75；不能带单过夜。",nil,"休息 / 导航",function() a.rest("park") end,false)
         section("今晚住哪里")
         local home=assert(Housing.Get(state.accommodation))
-        text("当前住处："..home.name..string.format(" · %.0f元/晚",home.price/100),12,C.cyan)
+        text("当前住处："..home.name..(plan.ownedHome and " · 自有房免房费" or string.format(" · %.0f元/晚",plan.nightlyCents/100)),12,C.cyan)
         button("导航到当前住处",function() navigate(home.point) end,false)
         if state.currentSpace and state.currentSpace~="city" then button("到房门旁出门",a.leaveHousing,false)
         elseif home.width then button("到门口进入住处",a.enterHousing,false) end
@@ -654,9 +711,12 @@ function View:BuildPhone(state,offer,active)
             state.effectsEnabled and "关闭音效" or "开启音效",a.toggleEffects,false)
         if a.progression then button("查看生涯发展",a.progression,true) end
     end
+    Phone.Paginate(self)
 end
 function View:Update(state,actor,target,active,offer,dt)
     self.lastActor,self.lastTarget=actor,target
+    self.lastOrder=active
+    self.lastMapPosition=mapPosition(state,actor)
     self.lastOnline=state.online==true
     self.lastActive=active~=nil
     self:SetControlMode(actor.mounted)
@@ -664,8 +724,8 @@ function View:Update(state,actor,target,active,offer,dt)
     self.lastIndoor=indoor==true
     self.mountButton:SetVisible(not indoor)
     self.interactButton:SetVisible(indoor or state.contactName~=nil or target~=nil and target.distance<12)
-    self.map.root:SetVisible(not indoor and target~=nil)
-    self.mapOpen:SetVisible(not indoor and target~=nil)
+    self.map.root:SetVisible(true)
+    self.mapOpen:SetVisible(true)
     self.mapCaption:SetText("附近街区 · "..World.District(actor.x,actor.z).label)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
@@ -685,7 +745,9 @@ function View:Update(state,actor,target,active,offer,dt)
     self.hint:SetText(state.trafficHint
         or state.contactName and ("附近 · "..state.contactName.."，点击交谈")
         or target and target.hint or "停稳后可查看手机、接单与补给。")
-    self.map:SetTelemetry(actor,target,active)
+    local mapTarget=target
+    if indoor then mapTarget=nil end
+    self.map:SetTelemetry(self.lastMapPosition,mapTarget,active)
     self.map.edgeDistance:SetVisible(false)
     self:LayoutControls()
     self.noticeTime=math.max(0,(self.noticeTime or 0)-(dt or .2))
@@ -712,7 +774,7 @@ function View:LayoutControls()
     self.map.root:SetStyle{height=88}
     self.mapCaption:SetVisible(false)
     self.mapOpenHint:SetVisible(false)
-    self.mapOpen:SetVisible(self.lastTarget~=nil and not self.lastIndoor)
+    self.mapOpen:SetVisible(true)
     self.objective:SetVisible(self.lastTarget~=nil)
     self.deliveryStatus:SetVisible(self.lastActive==true)
     self.hint:SetVisible(false)

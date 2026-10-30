@@ -24,6 +24,7 @@ local Environment = require("Career.CityEnvironment")
 local Crowd = require("Career.Crowd")
 local Atmosphere = require("Career.Atmosphere")
 local Life = require("Career.LifeStatus")
+local Calls = require("Career.CustomerCall")
 local NightLighting = require("Career.NightLighting")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
@@ -48,6 +49,9 @@ local NightLighting = require("Career.NightLighting")
 ---@field ClaimTeam fun(self:CareerSession)
 ---@field TalkTo fun(self:CareerSession,id:string):boolean
 ---@field DeliveryResponse fun(self:CareerSession,pointId:string,pickup:boolean)
+---@field CallCustomer fun(self:CareerSession,id:string)
+---@field EndCustomerCall fun(self:CareerSession)
+---@field BuyHome fun(self:CareerSession,id:string):boolean,string
 local Session={}
 Session.__index=Session
 require("Career.HousingActions").Install(Session)
@@ -69,6 +73,9 @@ function Session:Init(options)
             cloud={Get=function() error("隔离验收禁止访问账号云档") end,Set=function() error("隔离验收禁止访问账号云档") end}})
     end
     self.running,self.loading,self.online,self.disposed=false,false,false,false
+    self.callSequence=0
+    ---@type table?
+    self.customerCall=nil
     self.yaw,self.pitch,self.timer=0,14,0
     self.storyTimer=0
     self.environmentTimer=0
@@ -124,6 +131,8 @@ function Session:Init(options)
         pause=function() self:Pause() end,
         phone=function(page) self:OpenPhone(page) end,
         closePhone=function() self.view:ClosePhone() end,
+        callCustomer=function(id) self:CallCustomer(id) end,
+        endCall=function() self:EndCustomerCall() end,
         online=function(value) self.online=value; self:RefreshPhone() end,
         accept=function() self:Accept() end,
         selectOrder=function(id)
@@ -157,6 +166,13 @@ function Session:Init(options)
         progression=function() self:OpenPhone("progression") end,
         buyEquipment=function(id) self:Service("dealer",function() return Progress.BuyEquipment(id) end) end,
         housing=function(id) self:ChooseHousing(id) end,
+        buyHome=function(id)
+            local property=require("Career.Property").Get(Store.Get(),id)
+            if not property or not property.canBuy then self.view:Notice(property and property.reason or "房产不存在"); return end
+            self.view.purchaseHomeId=id
+            self:OpenPhone("property-confirm")
+        end,
+        confirmBuyHome=function(id) self:BuyHome(id);self:OpenPhone("progression") end,
         sleepHousing=function() self:SleepHousing() end,
         enterHousing=function() self:EnterHousing(Store.Get().accommodation) end,
         leaveHousing=function() self:LeaveHousing() end,
@@ -542,6 +558,26 @@ function Session:OpenPhone(page)
     if math.abs(self.actor.speed)>.35 then self.view:Notice("请先停车，再打开手机"); return end
     self.view:OpenPhone(page,self:State(),Delivery.GetOffer(),Delivery.GetActive())
 end
+function Session:CallCustomer(id)
+    if not self.running or not self.actor then return end
+    if self.space~="city" then self.view:Notice("请先出门，再联系订单顾客。"); return end
+    local order=Calls.Find(Store.Get().activeOrders,id)
+    local call,message=Calls.Begin(order,self.actor,self.callSequence+1)
+    if not call then self.view:Notice(message); return end
+    self:EndCustomerCall()
+    self.callSequence=self.callSequence+1
+    self.customerCall=call
+    self.view.phoneCall=call
+    self:OpenPhone("call")
+    if self.audio then self.audio:Unlock(); CareerAudio.PhoneRing(self.audio) end
+    print("[顾客电话] 开始订单="..id.." 变体="..call.index)
+end
+function Session:EndCustomerCall()
+    if self.customerCall then print("[顾客电话] 挂断订单="..self.customerCall.orderId) end
+    self.customerCall=nil
+    if self.view then self.view.phoneCall=nil end
+    if self.audio then CareerAudio.StopPhone(self.audio) end
+end
 function Session:Accept()
     if self.space~="city" then self.view:Notice("请先出门，再上线接单"); return end
     if not self.online then self.view:Notice("先上线听单"); return end
@@ -738,6 +774,14 @@ function Session:Update(dt)
         return
     end
     if not self.running or not self.actor then return end
+    if self.customerCall then
+        if self.view.phonePage~="call" then self:EndCustomerCall()
+        elseif Calls.Advance(self.customerCall,dt) then
+            if self.audio then CareerAudio.StopPhone(self.audio) end
+            self:RefreshPhone()
+            print("[顾客电话] 已接通订单="..self.customerCall.orderId)
+        end
+    end
     if self.city then self.city:UpdateStreaming(self.actor.x,self.actor.z) end
     self.city.contacts:Update(dt,self.actor,self.environmentHour,
         self.space=="city" and not self.view:IsBlocking() and not self.options.test)
@@ -759,7 +803,8 @@ function Session:Update(dt)
             Environment.AudioContext(self.actor.x,self.actor.z))
     end
     if input:GetKeyPress(KEY_ESCAPE) then
-        if self.view.phonePage~="" then self.view:ClosePhone()
+        if self.view.worldMap:IsVisible() then self.view:CloseWorldMap()
+        elseif self.view.phonePage~="" then self.view:ClosePhone()
         elseif self.view.conversation:IsVisible() then self.view:CloseConversation()
         elseif not self.view:IsBlocking() then self:Pause() end
         return
@@ -812,6 +857,7 @@ function Session:Update(dt)
     end
     if self.traffic then self.traffic:Update(dt) end
     if self.audio then
+        self.audio.musicHour=state.time
         self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.audioOffer,
             Environment.AudioContext(self.actor.x,self.actor.z))
     end
@@ -847,6 +893,7 @@ function Session:LeaveForLegacy()
     if self.options.legacy then self.options.legacy() end
 end
 function Session:DisposeWorld()
+    self:EndCustomerCall()
     self.running,self.loading=false,false
     self.view.controls:SetEnabled(false); self.view:ResetInput()
     if self.loader then self.loader:Cancel(); self.loader=nil end

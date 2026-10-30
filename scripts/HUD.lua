@@ -318,28 +318,76 @@ function HUD:BuildRide()
 end
 
 function HUD:BuildMenu()
-    self.menu = UI.Panel(fill({padding = 28, gap = 12, children = {
-        UI.Row {padding = 0, alignItems = "center", justifyContent = "space-between", children = {
-            RacingTheme.Kicker("P U R S U I T  /  MOTORSPORT"),
-            label("真实公路 · 九人竞速", 10, MUTED)}},
-        UI.ScrollView {width = "54%", maxWidth = 600, flexGrow = 1, flexBasis = 0, flexShrink = 1, padding = 0, children = {
-            UI.Column {width = "100%", padding = 0, paddingVertical = 24, gap = 14, children = {
-                label("公路追逐", 44, WHITE, {fontWeight = "bold", lineHeight = 1.1}),
-                label("每一道弯，都是你的主场。", 14, MUTED),
-                RacingTheme.Card {width = "100%", maxWidth = 340, padding = 16, gap = 9, children = {
-                    RacingTheme.Kicker("RACE WEEKEND / 赛事中心"),
-                    label("九位车手。一个终点。", 16, WHITE, {fontWeight = "bold"}),
-                    label("氮气突围 · 技术弯道 · 公路追逐", 10, MUTED),
-                    button("进入赛事   →", function() self:OpenGarage(true) end, true, "100%"),
-                    UI.Row {width = "100%", padding = 0, gap = 8, children = {
-                        button("自由练习", function() self:OpenGarage(false) end, false, nil,
-                            {flexGrow = 1, flexBasis = 0}),
-                        button("操作设置", function() self:OpenSettings() end, false, nil,
-                            {flexGrow = 1, flexBasis = 0})}},
-                }},
-            }}}},
-        label("VIRTUAL MOTORSPORT   /   横屏 · 双手操控 · 请勿现实模仿", 9, MUTED),
-    }}))
+    -- 固定入口，不把菜单塞进滚动视口。短横屏只改为两行两列，字号不变。
+    local entryStyle = {height = 56, fontSize = 18, minFontSize = 18, fontWeight = "bold", flexShrink = 0}
+    local function entry(text, callback, primary)
+        local props = {}
+        for key, value in pairs(entryStyle) do props[key] = value end
+        return button(text, callback, primary, "100%", props)
+    end
+    self.menuRaceButton = entry("进入赛事", function() self:OpenGarage(true) end, true)
+    self.menuPracticeButton = entry("自由练习", function() self:OpenGarage(false) end, false)
+    self.menuSettingsButton = entry("操作设置", function() self:OpenSettings() end, false)
+    -- main 的生涯入口会事后追加自己的返回按钮；这里只留固定槽，不复制业务回调。
+    self.menuReturnHost = UI.Panel {width = "100%", height = 56, padding = 0, flexShrink = 0}
+    self.menuPrimaryRow = UI.Panel {width = "100%", padding = 0, gap = 10,
+        children = {self.menuRaceButton, self.menuPracticeButton}}
+    self.menuSecondaryRow = UI.Panel {width = "100%", padding = 0, gap = 10,
+        children = {self.menuSettingsButton, self.menuReturnHost}}
+    self.menuActions = UI.Column {width = "100%", padding = 0, gap = 10,
+        children = {self.menuPrimaryRow, self.menuSecondaryRow}}
+    self.menuCard = RacingTheme.Card {width = "100%", padding = 16, gap = 0, children = {self.menuActions}}
+    self.menuTitle = label("公路追逐", 36, WHITE, {width = "100%", height = 64,
+        minFontSize = 36, fontWeight = "bold", lineHeight = 1, maxLines = 1})
+    self.menuSubtitle = label("选择赛事，或先练一圈", 16, MUTED, {width = "100%", height = 32,
+        minFontSize = 16, maxLines = 1})
+    self.menuHeading = UI.Column {width = "100%", padding = 0, gap = 4,
+        children = {self.menuTitle, self.menuSubtitle}}
+    self.menuNote = label("虚拟竞速，请勿现实模仿", 14, MUTED, {width = "100%", height = 28,
+        minFontSize = 14, maxLines = 1})
+    self.menuColumn = UI.Column {width = 440, height = "100%", padding = 0, gap = 16,
+        minWidth = 0, flexShrink = 1, justifyContent = "center",
+        children = {self.menuHeading, self.menuCard, self.menuNote}}
+    self.menu = UI.Panel(fill({padding = 24, children = {self.menuColumn}}))
+    self.menuGrid, self.menuChildCount = false, 0
+end
+
+function HUD:LayoutMenu(width, height)
+    -- 兼容 main.lua 的 menu:AddChild(returnButton)。搬入固定槽且保留原对象与 onClick，
+    -- 避免追加按钮挤占菜单高度，也不触发返回/结算/存档等业务逻辑。
+    local children = self.menu:GetChildren()
+    if #children ~= self.menuChildCount then
+        local appended = {}
+        for _, child in ipairs(children) do
+            if child._className == "Button" then appended[#appended + 1] = child end
+        end
+        for _, child in ipairs(appended) do
+            local returnButton = child --[[@as Button]]
+            returnButton:Remove()
+            returnButton:SetText("返回生涯")
+            returnButton:SetStyle({width = "100%", height = 56, fontSize = 18, minFontSize = 18,
+                fontWeight = "bold", flexShrink = 0, variant = "secondary"})
+            self.menuReturnHost:AddChild(returnButton)
+        end
+        self.menuChildCount = #self.menu:GetChildren()
+    end
+    local grid = height < 440
+    local padding = grid and 12 or (height < 600 and 16 or 24)
+    local columnWidth = math.max(0, math.min(grid and 560 or 440, width - padding * 2))
+    local cardPadding, gap = grid and 12 or 16, 10
+    local actionWidth = math.max(0, columnWidth - cardPadding * 2 - 2)
+    local entryWidth = grid and math.max(0, (actionWidth - gap) * 0.5) or actionWidth
+    self.menuGrid = grid
+    self.menu:SetStyle({padding = padding})
+    self.menuColumn:SetStyle({width = columnWidth, gap = grid and 12 or 16})
+    self.menuCard:SetStyle({padding = cardPadding})
+    for _, row in ipairs({self.menuPrimaryRow, self.menuSecondaryRow}) do
+        row:SetStyle({flexDirection = grid and "row" or "column", gap = gap})
+        for _, child in ipairs(row:GetChildren()) do child:SetWidth(entryWidth) end
+    end
+    -- 留白不足时移除次要文案，而不是缩小操作文字或裁剪入口。
+    self.menuSubtitle:SetVisible(height >= 520)
+    self.menuNote:SetVisible(height >= 600)
 end
 
 -- 操作编辑器独立成模块，直接复用驾驶按键。
@@ -643,6 +691,9 @@ function HUD:LayoutResponsive()
     local vw, vh = UI.GetViewportSize()
     local insets = UI.GetSafeAreaInsets()
     local w, h = vw - insets.left - insets.right, vh - insets.top - insets.bottom
+    if w ~= self.layoutWidth or h ~= self.layoutHeight or #self.menu:GetChildren() ~= self.menuChildCount then
+        self:LayoutMenu(w, h)
+    end
     if w == self.layoutWidth and h == self.layoutHeight then
         -- 尺寸没变也可能刚显示驾驶层，仍需要把按键摆到方案位置。
         if self.pendingControlLayout then
@@ -655,7 +706,6 @@ function HUD:LayoutResponsive()
     self.pendingControlLayout = true
     local compact = w < 920 or h < 470
     self.controls:SetCompact(compact)
-    self.menu:SetStyle({padding = compact and 18 or 30})
     self.garage:SetStyle({padding = compact and 10 or 20})
     self.garageList:SetWidth(compact and 184 or 228)
     self.confirmButton:SetWidth(compact and 190 or 228)
