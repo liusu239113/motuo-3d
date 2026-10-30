@@ -197,7 +197,9 @@ function Checks.Audit(session)
         and not d.root.props.backgroundGradient,"HUD不可恢复仪表舱底板")
     assert(view.actionTray.props.backgroundColor[4]==0 and not view.actionTray.props.backgroundGradient,
         "操作不能套入卡片底座")
-    for _,widget in ipairs({d.clock,d.foodValue,d.energyValue,d.batteryValue}) do
+    bounds(d.clock)
+    assert((d.clock.props.fontSize or 0)*UI.GetScale()>=28,"独立时钟必须保持大字")
+    for _,widget in ipairs({d.foodValue,d.energyValue,d.batteryValue}) do
         local r=bounds(widget)
         assert((widget.props.fontSize or 0)*UI.GetScale()>=17.99,"核心文字必须至少18物理像素")
         assert(r.x>=dashboard.x and r.y>=dashboard.y and r.x+r.w<=dashboard.x+dashboard.w+1
@@ -286,9 +288,9 @@ function Checks.Audit(session)
     for _,key in ipairs({"gas","brake","steering"}) do
         local widget=view.controls.widgets[key]
         local r=bounds(widget)
-        for _,obstacle in ipairs({d.root,view.navPanel,view.pauseButton,view.actionTray}) do
+        for _,obstacle in ipairs({d.root,d.clock,d.speed,view.navPanel,view.pauseButton,view.menuButton,view.actionTray}) do
             local q=obstacle:GetAbsoluteLayout()
-            assert(r.x+r.w<=q.x or r.x>=q.x+q.w or r.y+r.h<=q.y or r.y>=q.y+q.h,"骑行控件遮盖HUD "..key)
+            assert(not obstacle:IsVisible() or q.h<=0 or r.x+r.w<=q.x or r.x>=q.x+q.w or r.y+r.h<=q.y or r.y>=q.y+q.h,"骑行控件遮盖HUD "..key)
         end
         tap(widget,function()
             assert(key=="steering" and view.controls.pointers.steer==791230

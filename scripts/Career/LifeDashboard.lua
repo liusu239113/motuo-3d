@@ -25,7 +25,7 @@ function Dashboard.New()
 end
 function Dashboard:Init()
     self.clock=text("08:00",30,C.white,"career-hud-clock")
-    self.clock:SetStyle{width=150,flexShrink=0}
+    self.clock:SetStyle{position="absolute",left=12,top=12,width=150,flexShrink=0}
     self.speed=text("",32,C.white,"career-hud-speed")
     self.speed:SetStyle{position="absolute",bottom=22,left="44%",width=200,textAlign="center"}
     local food,foodValue,foodBar=meter("career-hud-hunger","饱腹",C.green)
@@ -34,9 +34,9 @@ function Dashboard:Init()
     self.foodValue,self.foodBar=foodValue,foodBar
     self.energyValue,self.energyBar=energyValue,energyBar
     self.batteryValue,self.batteryBar=batteryValue,batteryBar
-    self.root=UI.Panel{id="career-life-dashboard",position="absolute",right=12,top=12,width=380,
-        padding=0,gap=18,backgroundColor={0,0,0,0},borderWidth=0,pointerEvents="none",children={
-            self.clock,UI.Row{width="100%",padding=0,gap=22,children={food,energy,battery}}}}
+    self.root=UI.Panel{id="career-life-dashboard",position="absolute",right=174,top=18,width=380,
+        padding=0,backgroundColor={0,0,0,0},borderWidth=0,pointerEvents="none",children={
+            UI.Row{width="100%",padding=0,gap=22,children={food,energy,battery}}}}
 end
 function Dashboard:Layout()
     -- 短屏密度缩放不能把核心数字再次缩成小字，至少保留18物理像素。

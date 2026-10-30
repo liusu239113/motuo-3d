@@ -125,7 +125,7 @@ function View:Init(actions)
         textStroke={width=1,color={0,0,0,230}},textShadow={offsetX=0,offsetY=2,blur=0,color={0,0,0,230}}})
     self.map=Map.New("career-minimap")
     self.map.root:SetStyle{width="100%",height=88,padding=0,borderWidth=0,borderRadius=0,
-        backgroundColor={0,0,0,75},backgroundGradient=false,boxShadow=false}
+        backgroundColor={0,0,0,0},backgroundGradient=false,boxShadow=false}
     self.map.scaleLabel:SetVisible(false)
     self.map.edgeDistance:SetVisible(false)
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
@@ -165,6 +165,7 @@ function View:Init(actions)
     safe:AddChild(self.controlLayer)
     safe:AddChild(self.navPanel)
     safe:AddChild(self.dashboard.root)
+    safe:AddChild(self.dashboard.clock)
     safe:AddChild(self.dashboard.speed)
     safe:AddChild(self.pauseButton)
     safe:AddChild(self.menuButton)
@@ -697,9 +698,9 @@ function View:LayoutControls()
     local w,h=bounds.w,bounds.h
     local size=math.max(18,18/math.max(.1,UI.GetScale()))
     local navWidth=math.min(290*size/18,w*.34)
-    self.navPanel:SetStyle{width=navWidth,gap=10}
+    self.navPanel:SetStyle{width=navWidth,gap=10,top=76}
     self.dashboard:Layout()
-    self.dashboard.root:SetStyle{right=174,top=12}
+    self.dashboard.root:SetStyle{right=174,top=18}
     local dash=self.dashboard.root:GetLayout()
     self.notice:SetStyle{left="25%",right="25%",top=h*.70,fontSize=size}
     local touchSize=PhoneKit.TouchSize()
@@ -746,7 +747,7 @@ function View:AvoidHUDControls()
         if b.w<=0 or b.h<=0 then return end
         reserved[#reserved+1]={x=b.x-area.x,y=b.y-area.y,w=b.w,h=b.h}
     end
-    reserve(self.navPanel);reserve(self.dashboard.root);reserve(self.dashboard.speed)
+    reserve(self.navPanel);reserve(self.dashboard.root);reserve(self.dashboard.clock);reserve(self.dashboard.speed)
     reserve(self.pauseButton);reserve(self.menuButton);reserve(self.actionTray)
     local function overlaps(x,y,w,h,r)
         return x<r.x+r.w+6 and x+w>r.x-6 and y<r.y+r.h+6 and y+h>r.y-6
