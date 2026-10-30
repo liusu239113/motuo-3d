@@ -3,7 +3,6 @@
 local UI = require("urhox-libs/UI")
 local RacingTheme = require("RacingTheme")
 -- PhonePages/PhoneKit 只有 Widget 分页与文字测量，不加载生涯会话、档案或业务。
-local FixedPages = require("Career.PhonePages")
 local PageText = require("Career.PhoneKit").Text
 local Catalog = require("Catalog")
 local Profile = require("Profile")
@@ -397,23 +396,7 @@ end
 require("ControlEditor").Install(HUD)
 
 -- 只翻整页，不注册滚轮/拖动/滑动。原控件对象和回调留在分页树中。
-local function fixedPages(children, gap)
-    local pages = FixedPages {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1,
-        minHeight = 0, padding = 0, gap = gap or 8, children = children}
-    local previous = button("上一页", function() pages:SetPage(pages:GetPage() - 1) end, false, nil,
-        {flexGrow = 1, flexBasis = 0, minWidth = 0, height = 44, fontSize = 12, minFontSize = 12, padding = 2,
-            paddingLeft = 2, paddingRight = 2, paddingHorizontal = 2})
-    local following = button("下一页", function() pages:SetPage(pages:GetPage() + 1) end, false, nil,
-        {flexGrow = 1, flexBasis = 0, minWidth = 0, height = 44, fontSize = 12, minFontSize = 12, padding = 2,
-            paddingLeft = 2, paddingRight = 2, paddingHorizontal = 2})
-    local pageLabel = label("1 / 1", 12, MUTED, {width = 58, height = 44, textAlign = "center", minFontSize = 12})
-    local pager = UI.Row {width = "100%", height = 44, padding = 0, gap = 4, alignItems = "center",
-        children = {previous, pageLabel, following}}
-    pages:AttachPager(previous, following, pageLabel, pager)
-    local frame = UI.Column {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
-        padding = 0, gap = 8, children = {pages, pager}}
-    return frame, pages
-end
+local fixedPages = RacingTheme.FixedPages
 
 function HUD:BuildGarage()
     local cards = UI.Column {width = "100%", gap = 5, padding = 0}

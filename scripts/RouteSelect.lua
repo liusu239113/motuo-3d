@@ -42,14 +42,12 @@ function Routes:BuildTracks()
             children = {Theme.Kicker("RACE / ROUTE COLLECTION", {height = 16}), self.routeTitle, self.routeSubtitle}},
         UI.Column {padding = 0, gap = 5, alignItems = "flex-end", children = {
             self.routeBalance, Theme.Button("返回车库", function() self:SetScreen("garage") end, false, 116)}}}}
-    self.routeScroll = UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0,
-        flexShrink = 1, minHeight = 0, padding = 0, scrollY = true, showScrollbar = true,
-        children = {self.trackGrid}}
+    self.routeFrame, self.routeScroll = Theme.FixedPages({self.trackGrid}, 12)
     self.routeFootnote = Theme.Label("白点为发车位 · 路线与实景一致 · 未解锁赛道可查看条件", 10, C.muted,
         {width = "100%", height = 22})
     self.trackSelection = UI.Panel(Theme.Full({visible = false, padding = 20, gap = 10,
         backgroundGradient = Theme.Gradient({23, 29, 34, 255}, {9, 13, 17, 255}),
-        children = {self.routeHeader, self.routeScroll, self.routeFootnote}}))
+        children = {self.routeHeader, self.routeFrame, self.routeFootnote}}))
     self.routeColumns, self.routeMapHeight, self.trackSignature = 0, 62, ""
     self:RefreshTrackCards()
 end
@@ -63,6 +61,8 @@ function Routes:RefreshTrackCards()
     self.routeBalance:SetText("持有金币  " .. tostring(Profile.Coins()))
     if self.trackSignature == key then return end
     self.trackSignature, self.trackCount = key, #entries
+    -- Restore source widgets before rebuilding; page masks must not reference removed rows.
+    self.routeScroll:RestoreSource()
     self.trackGrid:ClearChildren()
     self.trackCards, self.trackGraphics = {}, {}
     local columns, row = math.max(1, self.routeColumns), UI.Row {width = "100%", gap = 12, padding = 0}
@@ -138,7 +138,7 @@ function Routes:LayoutTracks(w, h)
     self.routeTitle:SetFontSize(w < 600 and 18 or 23)
     self.routeSubtitle:SetVisible(w >= 650)
     self.routeFootnote:SetStyle({whiteSpace = w < 600 and "normal" or "nowrap", height = w < 600 and 36 or 22})
-    print(string.format("[赛道排版] %.0fx%.0f / %d列 / 自然卡高+纵向滚动", w, h, metrics.columns))
+    print(string.format("[赛道排版] %.0fx%.0f / %d列 / 固定按钮分页", w, h, metrics.columns))
 end
 function Routes:OpenTracks()
     self:RefreshTrackCards()

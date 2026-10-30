@@ -1,0 +1,66 @@
+{
+    "version": 2,
+    "script": "WalletPageProbe.lua",
+    "result": "TIMEOUT",
+    "duration_ms": 65012,
+    "frames_completed": 0,
+    "phases": {
+        "load": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "resource",
+                    "message": "[2026-10-31 00_45_16_636][59] ERROR: Could not find resource WalletPageProbe.lua",
+                    "frame": 0
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-10-31 00_45_16_636][59] ERROR: Failed to parse script file[WalletPageProbe.lua]!",
+                    "frame": 0
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 0
+                }
+            ]
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [],
+    "scene_stalled": false,
+    "max_frame_time_ms": 0.0,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [
+        "WalletPageProbe.lua"
+    ],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 1,
+        "engine_errors": 1,
+        "total_errors": 3
+    }
+}

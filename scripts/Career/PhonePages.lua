@@ -54,7 +54,11 @@ end
 -- Page masking is NOT business visibility. Restore the exact IsVisible method
 -- and Yoga display before measuring or detaching, never overwrite props.visible.
 function Pages:RestoreSource()
-    for _,record in ipairs(self.records) do
+    -- Detaching a generated direct child calls Pages:RemoveChild again. Take
+    -- ownership up front so teardown cannot recursively revisit the same list.
+    local records,constraints,generated=self.records,self.constraints,self.generated
+    self.records={};self.constraints={};self.generated={};self.units={};self.pages={}
+    for _,record in ipairs(records) do
         local widget=record.widget
         if widget.node then
             widget.IsVisible=record.isVisible
@@ -62,11 +66,10 @@ function Pages:RestoreSource()
             YGNodeStyleSetDisplay(widget.node,widget:IsVisible() and YGDisplayFlex or YGDisplayNone)
         end
     end
-    for _,record in ipairs(self.constraints) do
+    for _,record in ipairs(constraints) do
         if record.widget.node then record.widget:ApplyStyleToYoga(record.widget.props) end
     end
-    for _,widget in ipairs(self.generated) do if widget.node then widget:Destroy() end end
-    self.records={};self.generated={};self.units={};self.pages={};self.constraints={}
+    for _,widget in ipairs(generated) do if widget.node then widget:Destroy() end end
 end
 
 ---@param child Widget
@@ -95,6 +98,13 @@ function Pages:ClearChildren()
     return self
 end
 Pages.RemoveAllChildren=Pages.ClearChildren
+
+-- Widget.Destroy iterates its live children backwards. RestoreSource removes
+-- continuation siblings, so perform that teardown BEFORE the base iteration.
+function Pages:Destroy()
+    self:RestoreSource()
+    UI.Widget.Destroy(self)
+end
 
 -- Include logical props and tree identity, not the selected page's zero layouts.
 -- This detects live map-picker changes, rebuilt lists, text/font and screen changes.
@@ -221,14 +231,18 @@ function Pages:Collect(widget,budget,context)
     -- Fragmented cards keep horizontal wrapping/padding, but omit decorative
     -- vertical padding on continuations. On a short landscape phone, nested
     -- padding must not consume the last complete text line or touch target.
-    local available=budget-(widget.props.borderTopWidth or widget.props.borderWidth or 0)
+    local edgePadding=2/math.max(.1,UI.GetScale())
+    local available=budget-edgePadding-(widget.props.borderTopWidth or widget.props.borderWidth or 0)
         -(widget.props.borderBottomWidth or widget.props.borderWidth or 0)
     self.constraints[#self.constraints+1]={widget=widget}
     YGNodeStyleSetHeightAuto(widget.node)
     YGNodeStyleSetMinHeight(widget.node,0)
     YGNodeStyleSetMaxHeight(widget.node,math.huge)
     YGNodeStyleSetPadding(widget.node,YGEdgeTop,0)
-    YGNodeStyleSetPadding(widget.node,YGEdgeBottom,0)
+    -- Child and parent Yoga edges round independently at fractional UI scale.
+    -- Reserve real trailing pixels so the final full-height label stays inside
+    -- its fragmented card; this is layout space, not an audit tolerance.
+    YGNodeStyleSetPadding(widget.node,YGEdgeBottom,edgePadding)
     local row=widget.props.flexDirection=="row"
     if row then
         -- At most one tall column occurs in current phone rows (message bubble,
@@ -280,7 +294,11 @@ function Pages:Paginate()
         assert(bounds.w>0 and bounds.h>0,"手机分页需要先挂载到有界布局")
         -- Two physical pixels protect independent Yoga edge rounding.
         local budget=bounds.h-2/math.max(.1,UI.GetScale())
-        for _,child in ipairs(self:GetChildren()) do self:Collect(child,budget,{}) end
+        local sourceChildren={}
+        for _,child in ipairs(self:GetChildren()) do sourceChildren[#sourceChildren+1]=child end
+        -- SplitText inserts real continuation siblings. Never traverse that
+        -- live array while appending, or newly inserted fragments split forever.
+        for _,child in ipairs(sourceChildren) do self:Collect(child,budget,{}) end
         -- Continuation labels are inserted only after source measurement. Give
         -- them their final parent width and run the same natural-height updater.
         UI.Layout()
@@ -361,10 +379,12 @@ function Pages:ShowWidget(target)
     return false
 end
 
--- Legacy save/restore only: x is always 0; y is a ZERO-BASED PAGE INDEX,
--- never a pixel offset. New code must use GetPage/SetPage/ShowWidget instead.
-function Pages:GetScroll() return 0,self.pageIndex-1 end
-function Pages:SetScroll(_,pageIndex) self:SetPage((pageIndex or 0)+1) end
+-- Compatibility with former ScrollView callers: this Panel has NO pixel offset.
+-- Widget hit-testing subtracts every ancestor's GetScroll(), so returning a page
+-- index here would move descendants' hit boxes without moving their rendering.
+-- Save/restore page selection explicitly with GetPage/SetPage instead.
+function Pages:GetScroll() return 0,0 end
+function Pages:SetScroll(_,__) return self end
 function Pages:ScrollToTop() self:SetPage(1) end
 function Pages:ScrollToBottom() self:SetPage(math.max(1,#self.pages)) end
 function Pages:GetContentSize() return self:GetLayout().w,self:GetLayout().h end

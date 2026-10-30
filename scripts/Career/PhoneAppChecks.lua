@@ -78,6 +78,9 @@ function Checks.Audit(view,context)
             if not widget:IsVisible() then return end
             assert(widget._className~="ScrollView","手机分页不能含ScrollView")
             local r=widget:GetAbsoluteLayout()
+            local hit=widget:GetAbsoluteLayoutForHitTest()
+            assert(r.x==hit.x and r.y==hit.y and r.w==hit.w and r.h==hit.h,
+                "分页绘制与触摸边界必须一致 "..tostring(widget.props.id or widget._className))
             local area=view.phoneContent:GetAbsoluteLayout()
             assert(r.x>=area.x-1 and r.x+r.w<=area.x+area.w+1 and r.y>=area.y-1 and r.y+r.h<=area.y+area.h+1,
                 "分页控件必须完整处于内容区 "..tostring(widget.props.id or widget._className))
@@ -148,10 +151,10 @@ local function tap(view,id)
             return string.format("%s#%s pe=%s rect=(%.1f,%.1f,%.1f,%.1f)",tostring(target._className),
                 tostring(target.props.id),tostring(target.props.pointerEvents),bounds.x,bounds.y,bounds.w,bounds.h)
         end
-        local sx,sy=view.phoneContent:GetScroll()
+        local page=view.phoneContent:GetPage()
         local area=view.phoneContent:GetAbsoluteLayoutForHitTest()
-        print(string.format("[手机触摸命中诊断] page=%s expected=%s down=%s up=%s scroll=(%.1f,%.1f) viewport=(%.1f,%.1f,%.1f,%.1f) scale=%.3f",
-            view.phonePage,description(widget),description(down.target),description(up.target),sx,sy,area.x,area.y,area.w,area.h,scale))
+        print(string.format("[手机触摸命中诊断] page=%s expected=%s down=%s up=%s contentPage=%d viewport=(%.1f,%.1f,%.1f,%.1f) scale=%.3f",
+            view.phonePage,description(widget),description(down.target),description(up.target),page,area.x,area.y,area.w,area.h,scale))
         local ancestor=down.target
         for depth=1,7 do
             if not ancestor then break end
@@ -191,14 +194,14 @@ function Checks.Run(session)
     isolated(session)
     local view,actor=session.view,assert(session.actor)
     assert(view.phonePage=="" and not view.blocked,"请在无弹窗的游戏态运行手机验收")
-    local oldScrollX,oldScrollY=view.phoneContent:GetScroll()
+    local oldPage=view.phoneContent:GetPage()
     local old={x=actor.x,z=actor.z,speed=actor.speed,mounted=actor.mounted,online=session.online,
         space=session.space,waypoint=session.waypoint,manual=session.manualWaypoint,navigation=session.navigation,
         notice=view.notice.props.text,noticeTime=view.noticeTime,lastActor=view.lastActor,lastTarget=view.lastTarget,
         phonePage=view.phonePage,chatId=view.phoneChatId,ledgerId=view.phoneLedgerId,walletFilter=view.phoneWalletFilter,
         readThreads=view.phoneReadThreads,appState=view.phoneAppState,appOffer=view.phoneAppOffer,appActive=view.phoneAppActive,
         mapDistrictId=view.mapDistrictId,mapPointPage=view.mapPointPage,mapPickerOpen=view.mapPickerOpen,
-        scrollX=oldScrollX,scrollY=oldScrollY}
+        contentPage=oldPage}
     view.phoneReadThreads={}
     local files,writes,cloud={},0,0
     local restore=Store.UseTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
@@ -333,7 +336,7 @@ function Checks.Run(session)
     view.mapDistrictId,view.mapPointPage,view.mapPickerOpen=old.mapDistrictId,old.mapPointPage,old.mapPickerOpen
     view.lastActor,view.lastTarget=old.lastActor,old.lastTarget
     local uiRestored,uiFailure=pcall(function()
-        view.phoneContent:SetScroll(old.scrollX,old.scrollY)
+        view.phoneContent:SetPage(old.contentPage)
         view.notice:SetText(old.notice or ""); view.noticeTime=old.noticeTime
     end)
     if not ok then error(failure,0) end

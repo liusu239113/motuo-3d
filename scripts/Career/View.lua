@@ -307,7 +307,8 @@ function View:ShowDialog(title,text,buttons,forceScroll)
         self.dialogBody:AddChild(content)
         local previous=PhoneKit.Button("上一页",function() content:SetPage(content:GetPage()-1) end,"career-dialog-prev",false,{width=90})
         local following=PhoneKit.Button("下一页",function() content:SetPage(content:GetPage()+1) end,"career-dialog-next",false,{width=90})
-        local pageLabel=PhoneKit.Text("1 / 1",12,C.white,{flexGrow=1,textAlign="center"})
+        local pageLabel=PhoneKit.Text("1 / 1",12,C.white,{width="auto",flexBasis=0,minWidth=0,flexShrink=1,
+            flexGrow=1,height=PhoneKit.TouchSize(),verticalAlign="middle",textAlign="center"})
         local pager=UI.Row{width="100%",padding=0,gap=8,flexShrink=0,alignItems="center",children={previous,pageLabel,following}}
         self.dialogBody:AddChild(pager)
         content:AttachPager(previous,following,pageLabel,pager)

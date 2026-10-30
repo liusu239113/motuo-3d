@@ -114,4 +114,26 @@ function Racing.ControlSurface(pressed, active, blocked)
             {x = 0, y = 2, blur = 0, color = {0, 0, 0, 60}}},
     }
 end
+-- Shared non-scrolling page frame; no gameplay/session/profile dependencies.
+function Racing.FixedPages(children, gap)
+    local Pages = require("Career.PhonePages")
+    local pages = Pages {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1,
+        minHeight = 0, padding = 0, gap = gap or 8, children = children}
+    local touchHeight = require("Career.PhoneKit").TouchSize()
+    local function pageButton(text, delta)
+        return Racing.Button(text, function() pages:SetPage(pages:GetPage() + delta) end, false, nil,
+            {flexGrow = 1, flexBasis = 0, minWidth = 0, height = touchHeight, minHeight = touchHeight, fontSize = 12, minFontSize = 12,
+                padding = 2, paddingLeft = 2, paddingRight = 2, paddingHorizontal = 2})
+    end
+    local previous, following = pageButton("上一页", -1), pageButton("下一页", 1)
+    local pageLabel = Racing.Label("1 / 1", 12, C.muted,
+        {width = 58, height = touchHeight, minHeight = touchHeight, textAlign = "center", minFontSize = 12})
+    local pager = UI.Row {width = "100%", height = touchHeight, minHeight = touchHeight, padding = 0, gap = 4, alignItems = "center",
+        children = {previous, pageLabel, following}}
+    pages:AttachPager(previous, following, pageLabel, pager)
+    local frame = UI.Column {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
+        padding = 0, gap = 8, children = {pages, pager}}
+    return frame, pages
+end
+
 return Racing

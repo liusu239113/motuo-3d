@@ -125,7 +125,13 @@ function Session:Init(options)
     self.view=View.New({
         sound=function() if self.audio then self.audio:Unlock(); self.audio:Once("tap") end end,
         toggleMusic=function() if self.audio then self.audio.musicEnabled=not self.audio.musicEnabled; self:RefreshPhone() end end,
-        toggleEffects=function() if self.audio then self.audio.effectsEnabled=not self.audio.effectsEnabled; self:RefreshPhone() end end,
+        toggleEffects=function()
+            if self.audio then
+                self.audio.effectsEnabled=not self.audio.effectsEnabled
+                if not self.audio.effectsEnabled then CareerAudio.StopPhone(self.audio) end
+                self:RefreshPhone()
+            end
+        end,
         startCareer=function(fresh) self:StartCareer(fresh) end,
         legacy=function() self:LeaveForLegacy() end,
         pause=function() self:Pause() end,

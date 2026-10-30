@@ -187,6 +187,72 @@ function Checks.Menu(width, height)
     return textCount
 end
 
+-- 只构建车库/暂停/结算 UI；不实例化 HUD，不调用任何 Profile API。
+function Checks.FixedPages(width, height)
+    local HUD, Catalog = require("HUD"), require("Catalog")
+    local oldRoot = UI.GetRoot()
+    local selected = {}
+    local fixture = setmetatable({actions = {}, vehicleCards = {}, vehicleBadges = {}, riderButtons = {}, resultRows = {},
+        score = UI.Label {text = "得分 000000", fontSize = 10}, health = UI.Label {text = "车况 100%", fontSize = 10},
+        radioTitle = UI.Label {text = "骑行电台", fontSize = 10}, radioToggle = UI.Button {text = "播放", width = 70, height = 44}}, {__index = HUD})
+    fixture.SelectVehicle = function(_, id, notify) demand(notify == true, "车型点击须通知业务"); selected[id] = true end
+    fixture:BuildGarage(); fixture:BuildPauseAndResult()
+    local holder = UI.Panel {width = width, height = height, padding = 0, children = {fixture.garage, fixture.pause, fixture.result}}
+    UI.SetRoot(holder)
+    local total = 0
+    local ok, failure = pcall(function()
+        for _, panel in ipairs({fixture.garage, fixture.pause, fixture.result}) do
+            visit(panel, function(widget) demand(widget._className ~= "ScrollView", "竞速页面不得有ScrollView") end)
+        end
+        for index, row in ipairs(fixture.resultRows) do row:SetText(string.format("%d  车手%d  02:34.50", index, index)); row:Show() end
+        fixture.resultStats:SetText("名次 3 / 9\n用时 02:34.50\n金币 +100\n车况 100%")
+        ---@type table[]
+        local sets = {{fixture.garage, fixture.garagePages}, {fixture.pause, fixture.pausePages}, {fixture.result, fixture.resultPages}}
+        for _, set in ipairs(sets) do
+            for _, panel in ipairs({fixture.garage, fixture.pause, fixture.result}) do panel:SetVisible(panel == set[1]) end
+            local pages = set[2]
+            UI.Layout(); pages:Paginate()
+            demand(pages:GetPageCount() > 0, "固定分页必须产生可访问页面")
+            demand(pages.prevButton:GetAbsoluteLayout().h >= 44 and pages.nextButton:GetAbsoluteLayout().h >= 44,
+                "分页真实触摸高度不得小于44，不以容差掩盖取整")
+            local seen = {}
+            for page = 1, pages:GetPageCount() do
+                pages:SetPage(page); UI.Layout()
+                local function inspect(widget)
+                    if not widget:IsVisible() then return end
+                    seen[widget] = true
+                    local bounds = widget:GetAbsoluteLayout()
+                    demand(bounds.w > 0 and bounds.h > 0, "当前页节点必须有自然布局")
+                    demand(inside(bounds, pages:GetAbsoluteLayout(), 2), "固定分页可见内容越过页界：" .. tostring(widget.props.text or widget._className))
+                    for _, child in ipairs(widget:GetChildren()) do inspect(child) end
+                end
+                for _, child in ipairs(pages:GetChildren()) do inspect(child) end
+                if pages == fixture.garagePages then
+                    for id, card in pairs(fixture.vehicleCards) do if card:IsVisible() then click(card); demand(selected[id], "车型回调须保留：" .. id) end end
+                end
+                total = total + 1
+            end
+            if pages == fixture.garagePages then
+                for _, item in ipairs(Catalog.List) do demand(seen[fixture.vehicleCards[item.id]] and selected[item.id], "全部车型须可翻页选择：" .. item.id) end
+            elseif pages == fixture.resultPages then
+                for _, row in ipairs(fixture.resultRows) do demand(seen[row], "九人结算行必须完整可达") end
+            else
+                demand(seen[fixture.musicButton] and seen[fixture.effectsButton] and seen[fixture.qualityButton]
+                    and seen[fixture.radioToggle], "暂停设置与电台控件须完整可达")
+            end
+            pages:SetPage(1); UI.Layout()
+            if pages:GetPageCount() > 1 then
+                click(pages.nextButton); demand(pages:GetPage() == 2, "下一页须只翻固定页")
+                click(pages.prevButton); demand(pages:GetPage() == 1, "上一页须返回固定页")
+            end
+        end
+    end)
+    UI.SetRoot(oldRoot); holder:Destroy(); UI.Layout()
+    demand(ok, tostring(failure))
+    print(string.format("[RacingUIChecks] PASS 车库/暂停/结算固定分页 %.0fx%.0f / %d页 / 九车型回调与九人结算完整", width, height, total))
+    return total
+end
+
 function Checks.Dialogs(hud)
     local oldScreen = hud.screen
     hud:OpenTracks()
@@ -196,6 +262,9 @@ function Checks.Dialogs(hud)
     local underneath = 0
     hud.actions.unlockTrack = function() underneath = underneath + 1 end
     local ok, failure = pcall(function()
+        -- 固定分页下先显式显示底层锁定卡，再验证模态阻断；不能点击离页零布局。
+        local lockedCard = hud.trackCards.lake
+        if lockedCard and hud.routeScroll then hud.routeScroll:ShowWidget(lockedCard); UI.Layout() end
         local modal = hud:ShowTrackLock(track, 200, function() calls = calls + 1; return true end)
         renderModal(modal)
         demand(hud:IsModalOpen() and UI.GetTopOverlay() == modal, "解锁必须处于真实模态栈")
@@ -234,6 +303,29 @@ function Checks.Dialogs(hud)
         local notice = hud:ShowNotice("测试提示", "金币不足，还差1000金币。")
         renderModal(notice)
         demand(UI.GetTopOverlay() == notice, "通用提示也必须是模态")
+        hud:CloseModal()
+        local longMessage = string.rep("完整长提示：固定按钮分页不能遗漏正文，不缩字号，也不使用滚轮或拖动。\n", 12)
+        notice = hud:ShowNotice("长正文分页", longMessage)
+        renderModal(notice)
+        local pages = notice.racingPages
+        demand(pages and pages:GetPageCount() > 1, "长提示须生成固定多页")
+        local source = pages:GetChildren()[1]
+        local sourceSize = source.props.fontSize
+        local combined = ""
+        for _, fragment in ipairs(pages.generated) do
+            demand(fragment.props.fontSize == sourceSize, "长文续页不得缩字")
+            combined = combined .. fragment.props.text
+        end
+        demand(combined == longMessage, "长提示UTF8续页必须无损拼回原文")
+        local count = pages:GetPageCount()
+        for index = 1, count do
+            pages:SetPage(index); renderModal(notice)
+            demand(pages.prevButton:GetAbsoluteLayout().h >= 44 and pages.nextButton:GetAbsoluteLayout().h >= 44,
+                "弹窗分页真实触摸高度不能不足44")
+        end
+        pages:SetPage(1); renderModal(notice)
+        click(pages.nextButton); demand(pages:GetPage() == 2, "弹窗下一页须真实命中")
+        click(pages.prevButton); demand(pages:GetPage() == 1, "弹窗上一页须真实命中")
         hud:CloseModal()
     end)
     hud:CloseModal()
@@ -324,6 +416,9 @@ function Checks.Run(hud)
     end
     for _, size in ipairs({{854,480}, {1280,720}, {1568,705}}) do
         labels = labels + Checks.Layout(hud, size[1], size[2])
+    end
+    for _, size in ipairs({{854,480}, {748,400}, {640,360}, {1280,720}, {1568,705}}) do
+        Checks.FixedPages(size[1], size[2])
     end
     Checks.Dialogs(hud)
     local controls = Checks.Controls(hud)
