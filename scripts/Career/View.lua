@@ -631,6 +631,7 @@ function View:BuildPhone(state,offer,active)
 end
 function View:Update(state,actor,target,active,offer,dt)
     self.lastActor,self.lastTarget=actor,target
+    self.lastOnline=state.online==true
     self:SetControlMode(actor.mounted)
     self:LayoutControls()
     local indoor=state.currentSpace and state.currentSpace~="city"
@@ -680,18 +681,28 @@ function View:LayoutControls()
     self.map.root:SetStyle{height=compact and 65 or 80}
     self.mapCaption:SetVisible(false)
     self.mapOpenHint:SetVisible(false)
-    self.deliveryStatus:SetVisible(self.lastTarget~=nil)
+    self.deliveryStatus:SetVisible(self.lastTarget~=nil or self.lastOnline==true)
     self.hint:SetVisible(false)
     self.controlHint:SetVisible(false)
     local signature=string.format("%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.dashboard.advice:IsVisible()))
     local layoutChanged=self.hudLayoutSignature~=signature
     self.hudLayoutSignature=signature
-    if area.w~=self.controlWidth or area.h~=self.controlHeight then
+    local sizeChanged=area.w~=self.controlWidth or area.h~=self.controlHeight
+    if sizeChanged then
         self.controlWidth,self.controlHeight=area.w,area.h
         self.controls:SetCompact(area.w<920 or area.h<470)
         self.controls:ApplyScheme(ControlSettings.Current(),area.w,area.h)
     end
-    if self.mountedControls and layoutChanged then self:AvoidHUDControls() end
+    if self.mountedControls and (layoutChanged or sizeChanged) then
+        -- 生涯独立摆位，不覆盖保存的竞速方案；驾驶操作靠屏幕下沿，不悬在视野上方。
+        for _,key in ipairs({"gas","brake","steering"}) do
+            local widget=self.controls.widgets[key]
+            local box=widget:GetLayout()
+            local x=key=="steering" and 12 or key=="gas" and area.w-box.w-12 or area.w-box.w-116
+            widget:SetStyle{left=math.max(0,x),top=math.max(0,area.h-box.h-16)}
+        end
+        self:AvoidHUDControls()
+    end
 end
 -- 只调整本次生涯画面的冲突位置，不改写玩家保存的竞速操作方案。
 function View:AvoidHUDControls()
