@@ -1,0 +1,71 @@
+-- 手机和音源状态回归，只在Career.Checks内存档运行，不声称代替真机听感验收。
+local UI=require("urhox-libs/UI")
+local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
+local Checks={}
+local function tap(widget)
+    UI.Layout()
+    local r=widget:GetAbsoluteLayout()
+    assert(r.w>=44 and r.h>=44,"手机组件必须有至少44逻辑像素触摸目标")
+    local scale=UI.GetScale()
+    local function event(kind)
+        return PointerEvent.new(kind,{pointerId=790001,pointerType="touch",isPrimary=true,
+            x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
+    end
+    local down=event("PointerDown"); UI.HandlePointerEvent(down)
+    assert(down.target==widget,"图片装饰不得挡住实际应用点击")
+    UI.HandlePointerEvent(event("PointerUp"))
+end
+function Checks.Run(session)
+    local view,actor,sound=session.view,assert(session.actor),assert(session.audio)
+    for key,clip in pairs(sound.sounds) do assert(clip:GetLength()>0,"音频为空："..key) end
+    assert(sound.sources.music and sound.sources.electric and sound.sources.steps and sound.sources.engine)
+    local snapshot={speed=actor.speed,mounted=actor.mounted,vehicle=actor.vehicleId}
+    actor.speed,actor.mounted,actor.vehicleId=1.8,false,"borrowed_ebike"
+    -- 足音改为真实位移+鞋底支撑，不再把speed=1.8但坐标不动冒称“距离”。
+    require("Career.SoundCrowdChecks").Steps()
+    sound:Update(.1,actor,true,false,{},nil)
+    assert(sound.stepDistance==0 and not sound.sources.steps.playing,"手机暂停必须停止脚步")
+    actor.speed,actor.mounted=4,true
+    sound:Update(.25,actor,false,false,{throttle=1},nil)
+    assert(sound.sources.electric.gain>0 and sound.sources.electric.frequency>sound.sounds.electric:GetFrequency()*.7)
+    actor.vehicleId="sport"
+    sound:Update(.25,actor,false,false,{throttle=1},nil)
+    assert(sound.sources.engine.gain>0,"摩托与电动车应有独立音源")
+    local orders=sound.orderCount
+    sound:Update(.1,actor,false,false,{}, {id="sound-check-offer"})
+    sound:Update(.1,actor,false,false,{}, {id="sound-check-offer"})
+    assert(sound.orderCount==orders+1,"同一新订单只提示一次")
+    actor.speed,actor.mounted,actor.vehicleId=snapshot.speed,snapshot.mounted,snapshot.vehicle
+    session:OpenPhone("apps"); UI.Layout(); view.phoneArea:Update(0); UI.Layout()
+    assert(view.phoneDesktop:IsVisible() and not view.phoneContent:IsVisible(),"应用首页不能藏在纵向滚动区")
+    for _,app in ipairs(require("Career.Phone").Apps) do
+        local icon=assert(view.root:FindById("career-app-"..app[1]))
+        local bounds,area=icon:GetAbsoluteLayout(),view.phoneDesktop:GetAbsoluteLayout()
+        assert(bounds.y>=area.y and bounds.y+bounds.h<=area.y+area.h+1,"底部应用必须一屏完整显示")
+        tap(icon)
+        if app[1]=="map" then
+            assert(view.worldMap:IsVisible() and view:IsBlocking() and view.phonePage=="","地图应用必须打开固定全屏地图")
+            view:CloseWorldMap()
+        else assert(view.phonePage==app[1],"应用未打开："..app[1]) end
+        if app[1]=="messages" then
+            local conversations=assert(view.phoneBody:FindById("career-message-conversations"),"消息不是会话列表")
+            assert(conversations:GetNumChildren()==4 and view.phoneBody:FindById("career-chat-cousin"),"真实联系人会话缺失")
+        elseif app[1]=="wallet" then
+            assert(view.phoneBody:FindById("career-wallet-balance-card") and view.phoneBody:FindById("career-wallet-filters"),
+                "钱包必须有余额卡与可交互明细筛选")
+        elseif app[1]=="delivery" then
+            assert(view.phoneBody:FindById("career-delivery-status-card") and view.phoneBody:FindById("career-online"),
+                "外卖工作台必须保留真实听单操作")
+        end
+        session:OpenPhone("apps"); UI.Layout()
+    end
+    local music,effects=sound.musicEnabled,sound.effectsEnabled
+    view.actions.toggleMusic(); view.actions.toggleEffects()
+    assert(sound.musicEnabled~=music and sound.effectsEnabled~=effects)
+    for _=1,20 do sound:Update(.1,actor,true,false,{},nil) end
+    assert(sound.sources.music.gain==0 and sound.sources.city.gain==0,"关闭分组后应淡出至静音")
+    view.actions.toggleMusic(); view.actions.toggleEffects()
+    view:ClosePhone(); session:Refresh()
+    print("[手机音源验收通过] 六应用真实触摸/框图穿透/音乐与效果独立开关/车辆独立音源/脚步按距离/暂停停脚/订单去重；真实听感仍需手机验收")
+end
+return Checks

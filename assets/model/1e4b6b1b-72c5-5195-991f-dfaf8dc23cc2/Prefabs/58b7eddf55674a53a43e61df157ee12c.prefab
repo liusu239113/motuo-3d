@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<node>
+	<attribute name="Is Enabled" value="true" />
+	<attribute name="Name" value="58b7eddf55674a53a43e61df157ee12c" />
+	<attribute name="Tags" value="" />
+	<attribute name="Position" value="0 0 0" />
+	<attribute name="Rotation" value="1 0 0 0" />
+	<attribute name="Scale" value="1 1 1" />
+	<attribute name="Variables" value="" />
+	<component type="StaticModel">
+		<attribute name="Model" value="Model;model/1e4b6b1b-72c5-5195-991f-dfaf8dc23cc2/Meshes/58b7eddf55674a53a43e61df157ee12c.mdl" />
+		<attribute name="Material" value="Material;model/1e4b6b1b-72c5-5195-991f-dfaf8dc23cc2/Materials/58b7eddf55674a53a43e61df157ee12c_00_tripo_material_a6984b4f-6344-4c98-bb05-461bdfd28983.xml" />
+		<attribute name="Cast Shadows" value="true" />
+	</component>
+</node>

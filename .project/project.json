@@ -1,0 +1,27 @@
+{
+  "$schema": "../schemas/project.schema.json",
+  "project_id": "m_dttf",
+  "author": {
+    "id": "293533708",
+    "name": "流苏水寒工作室"
+  },
+  "entry": "main.lua",
+  "version": "1.0.18",
+  "taptap_publish": {
+    "title": "公路狂飙：从外卖骑手到职业车手",
+    "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
+    "category": "racing",
+    "screen_orientation": "landscape",
+    "collection_type": "racing",
+    "trial_note": "",
+    "app_platforms": "1,2",
+    "developer_id": 377480,
+    "app_id": 1013102,
+    "miniapp_id": "tapmcakcfxnohtqqmk"
+  },
+  "assets": {
+    "icon": "",
+    "screenshots": [],
+    "promotional_image": ""
+  }
+}

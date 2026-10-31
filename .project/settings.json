@@ -1,0 +1,47 @@
+{
+  "$schema": "../schemas/settings.schema.json",
+  "sources": {
+    "engine": {
+      "tag": "stable"
+    },
+    "engine-res": {
+      "tag": "stable"
+    },
+    "urhox-libs": {
+      "tag": "1.0"
+    },
+    "official-res": {
+      "tag": "stable"
+    }
+  },
+  "build": {
+    "generate_fs_path": true,
+    "output_dir": "../dist",
+    "asset_dirs": [
+      "../assets",
+      "../scripts"
+    ],
+    "asset_ignores": []
+  },
+  "@runtime": {
+    "multiplayer": {
+      "enabled": false
+    },
+    "ad": {
+      "status": 0,
+      "url": "https://developer.taptap.cn/forge/377480/app/1013102/operation/ad-monetization",
+      "ad_spaces": [
+        {
+          "id": "1054323",
+          "type": 1
+        },
+        {
+          "id": "1054324",
+          "type": 2
+        }
+      ],
+      "top_on_placements": [],
+      "synced_at": "2026-10-31T03:48:50.046Z"
+    }
+  }
+}

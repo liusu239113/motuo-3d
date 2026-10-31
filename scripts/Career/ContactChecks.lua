@@ -1,0 +1,436 @@
+-- 接触面回归：用真实顶点和inverse bind读回，不把模型包围盒或脚踝当鞋底。
+local Checks={}
+---@param rig CareerRig
+function Checks.SkinBounds(rig)
+    ---@type table[]
+    local vertices=assert(rig:ReadSkinVertices()[1])
+    ---@type Matrix3x4[]
+    local matrices={}
+    local sk=rig.model:GetSkeleton()
+    for i,name in ipairs(rig.boneNames) do
+        local transform=rig:GetLocalBoneTransform(name)*sk:GetBone(name).offsetMatrix --[[@as Matrix3x4]]
+        matrices[i]=transform
+    end
+    local bounds=BoundingBox()
+    local feet={L_Foot=BoundingBox(),R_Foot=BoundingBox()}
+    for _,v in ipairs(vertices) do
+        local pos=Vector3.ZERO
+        local x,y,z=0,0,0
+        local side=""
+        for k=1,4 do
+            local p=matrices[v.indices[k]+1]*v.position
+            local w=v.weights[k]
+            x,y,z=x+p.x*w,y+p.y*w,z+p.z*w
+            local name=rig.boneNames[v.indices[k]+1]
+            if w>.2 and (name=="L_Foot" or name=="L_ToeBase") then side="L_Foot" end
+            if w>.2 and (name=="R_Foot" or name=="R_ToeBase") then side="R_Foot" end
+        end
+        pos=Vector3(x,y,z);bounds:Merge(pos)
+        if side~="" then feet[side]:Merge(pos) end
+    end
+    print(string.format("[真实蒙皮接触] 模型%s 左鞋底%.5f 右鞋底%.5f Hip%s",bounds:ToString(),feet.L_Foot.min.y,feet.R_Foot.min.y,rig:GetBonePosition("Hip"):ToString()))
+    for _,c in ipairs(rig.arms) do
+        print(string.format("[真实肘部] %s 肩%s 肘%s 腕%s",c.tip,rig:GetBonePosition(c.upper):ToString(),rig:GetBonePosition(c.lower):ToString(),rig:GetBonePosition(c.tip):ToString()))
+    end
+    return bounds,feet
+end
+-- 只操作已有Rig/Visuals并原样恢复；可单独从早期-careercontact调用，不访问档案/云。
+function Checks.Motion(session)
+    -- 主角已经换成官方关键帧；旧FootCycle支撑占比/正弦IK目标不再是主角真值。
+    if session.actor.visuals.walker.locomotion then return require("Career.LocomotionChecks").Run(session) end
+    local Rig=require("Career.Rig")
+    local visuals=session.actor.visuals
+    ---@type CareerRig
+    local rig=visuals.walker
+    local ground=rig.ground
+    local phase,weight,run=rig.walkPhase,rig.walkWeight,rig.walkRun
+    local vp,vw,vr,stop=visuals.phase,visuals.gaitWeight,visuals.runWeight,visuals.stopTime
+    local report={poses=0,maxLengthError=0,maxSoleError=0,flight=0,maxRunLift=0,maxWalkLift=0}
+    local clamped=rig.reachClampedFrames or 0
+    local ok,err=pcall(function()
+        rig.ground=nil
+        for _,w in ipairs({0,.1,.25,.5,1}) do
+            for _,r in ipairs({0,.5,1}) do
+                for i=0,63 do
+                    local p=i*math.pi/32
+                    rig:PoseWalk(p,w,r)
+                    for _,chains in ipairs({rig.legs,rig.arms}) do
+                        for _,chain in ipairs(chains) do
+                            local a,b,c=rig:GetBonePosition(chain.upper),rig:GetBonePosition(chain.lower),rig:GetBonePosition(chain.tip)
+                            local lengthError=math.max(math.abs((b-a):Length()-chain.lengthA),math.abs((c-b):Length()-chain.lengthB))
+                            report.maxLengthError=math.max(report.maxLengthError,lengthError)
+                            assert(lengthError<.00002,"步态实际骨长不可改变: "..chain.tip)
+                            local direction=(c-a):Normalized()
+                            local hint=chain.tip:find("Hand") and Vector3(chain.side*.18,-.08,-1) or Vector3(chain.side*.055,0,1)
+                            local pole=hint-direction*hint:DotProduct(direction)
+                            assert((b-a):DotProduct(pole)>0,"肘/膝不可反折: "..chain.tip)
+                            if r==1 and w==1 and chain.tip:find("Hand") then
+                                local dot=(b-a):Normalized():DotProduct((c-b):Normalized())
+                                local flex=math.deg(math.acos(math.max(-1,math.min(1,dot))))
+                                assert(flex>65 and flex<115,"跑步必须明显屈肘，不能只是缩手距")
+                            end
+                        end
+                    end
+                    for _,name in ipairs(rig.boneNames) do
+                        local bone=rig.model:GetSkeleton():GetBone(name)
+                        assert((bone.node.position-rig.bind[name].position):Length()<.000001,"不许移动骨骼抵消IK")
+                        assert((bone.node.scale-rig.bind[name].scale):Length()<.000001,"不许缩放腿或手臂")
+                    end
+                    local airborne=true
+                    for _,chain in ipairs(rig.legs) do
+                        local _,lift,stance=Rig.FootCycle(p,w,r,chain.side)
+                        local sole=rig:SoleHeight(chain.tip)
+                        local error=math.abs(sole-lift)
+                        report.maxSoleError=math.max(report.maxSoleError,error)
+                        assert(error<.006,"真实鞋底应匹配支撑/摆动目标，不以脚踝冒充鞋底")
+                        if stance then
+                            airborne=false
+                            assert(math.abs(sole)<.006,"支撑脚真实鞋底必须接地")
+                        elseif lift>.02 then assert(sole>.014,"摆动脚必须有真实鞋底净空") end
+                        if w==1 and r==0 then report.maxWalkLift=math.max(report.maxWalkLift,sole) end
+                        if w==1 and r==1 then report.maxRunLift=math.max(report.maxRunLift,sole) end
+                    end
+                    if w==1 and r==1 and airborne then
+                        report.flight=report.flight+1
+                        assert(math.min(rig:SoleHeight("L_Foot"),rig:SoleHeight("R_Foot"))>0,"跑步腾空期两鞋底均应离地")
+                    end
+                    report.poses=report.poses+1
+                end
+            end
+        end
+        assert((rig.reachClampedFrames or 0)==clamped,"慢走到跑步都不可依赖超伸夹取")
+        assert(report.flight>0 and report.maxRunLift>report.maxWalkLift+.18,"跑步必须有腾空及明显更高抬脚，不只是加步频")
+        -- 支撑中段的真实踝点后移与前进距离相抵，正常腿长不靠scale作弊。
+        local lastFrequency=0
+        for _,speed in ipairs({.18,.6,1.8,3.4}) do
+            local w=math.sqrt(math.min(1,speed/1.8))
+            local r=math.max(0,math.min(1,(speed-1.8)/1.6))
+            local cycle=Rig.CycleLength(w,r)
+            local frequency=speed/cycle
+            assert(frequency>lastFrequency,"慢走到跑步步幅与步频须匹配真实速度")
+            lastFrequency=frequency
+            rig:PoseWalk(.3,w,r)
+            local a=rig:GetBonePosition("L_Foot")
+            rig:PoseWalk(.38,w,r)
+            local b=rig:GetBonePosition("L_Foot")
+            assert(math.abs(b.z-a.z+cycle*.08/(2*math.pi))<.001,"支撑脚后移应抵消真实前进距离")
+        end
+        visuals:ResetGait()
+        visuals:UpdateGait(.1,0,.06)
+        assert(visuals.gaitWeight>0 and visuals.phase>0,"末子步撞墙不得吞掉本帧前段真实位移步态")
+        local partialPhase=visuals.phase
+        visuals:UpdateGait(.1,3.4,0)
+        assert(visuals.phase==partialPhase,"整帧没有真实位移时不得按残余速度踏步")
+        for _,speed in ipairs({.18,.6,1.8,3.4}) do
+            visuals:ResetGait()
+            for _=1,60 do visuals:UpdateGait(1/60,speed,speed/60) end
+            local running=visuals.runWeight
+            if speed==3.4 then assert(running>.99,"真实跑速应进入完整跑步姿态") end
+            local frozen=visuals.phase
+            visuals:UpdateGait(1/60,0,0)
+            assert(visuals.phase==frozen,"松手后不应继续踏步")
+            for _=1,17 do visuals:UpdateGait(1/60,0,0) end
+            assert(visuals.gaitWeight==0 and visuals.runWeight==0 and visuals.phase==0,"松手.3秒内应精确回站姿")
+            local reference=rig:GetBonePosition("L_Hand")
+            rig:PoseWalk(0,0,0)
+            assert((reference-rig:GetBonePosition("L_Hand")):Length()<.00001,"停止必须恢复同一自然站姿")
+        end
+    end)
+    rig.ground=ground
+    visuals.phase,visuals.gaitWeight,visuals.runWeight,visuals.stopTime=vp,vw,vr,stop
+    rig:PoseWalk(phase,weight,run)
+    assert(ok,tostring(err))
+    print(string.format("[走跑骨骼验收] PASS %d相位，骨长误差%.7fm，真实鞋底误差%.5fm，run腾空%d，抬脚walk/run %.3f/%.3fm；4速起停.3s（CPU，视觉待实拍）",
+        report.poses,report.maxLengthError,report.maxSoleError,report.flight,report.maxWalkLift,report.maxRunLift))
+    return report
+end
+function Checks.Run(session)
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-contactshot" then Checks.Shot(session);return end
+        if arg=="-vehiclechecks" then Checks.Vehicles(session);Checks.Shot(session);return end
+    end
+    if session.actor.visuals.walker.locomotion then
+        -- 官动独立验收真实骨长/鞋底/相位/实际速度，不能继续拿旧IK的FootCycle断言它。
+        Checks.Motion(session)
+        Checks.Vehicles(session)
+        local rider=session.actor.visuals.mountedRider
+        rider:PoseRide(0)
+        local pose=rider:ReadPose()
+        assert(pose.leftGripError<.005 and pose.rightGripError<.005,"官方步态改动不能破坏骑姿握把")
+        print("[接触验收] 官方走跑数据/原始骨长与鞋底/逐车轮胎/独立骑姿通过；自然度另看多相位实拍")
+        Checks.Shot(session)
+        return
+    end
+    Checks.Motion(session)
+    local actor=session.actor
+    ---@type CareerRig
+    local rig=actor.visuals.walker
+    rig.ground=session.city
+    actor.mounted=false;actor.visuals:SetMounted(false)
+    actor:Teleport(0,-20,0)
+    -- 身体位于人行道边缘，左右脚跨在不同高度，分别验证鞋底而不是仅查角色根。
+    for _,x in ipairs({5.9,6.0,6.1,11.9,12.0,12.1}) do
+        actor:Teleport(x,-20,0)
+        rig:PoseWalk(0,0)
+        for _,chain in ipairs(rig.legs) do
+            local foot=actor.node.worldTransform*rig:GetBonePosition(chain.tip)
+            local ground=session.city:Surface(foot.x,foot.z)
+            assert(math.abs(rig:SoleHeight(chain.tip)+actor.node.position.y-ground)<.006,"跨路沿双脚须分别落地")
+        end
+    end
+    for _,yaw in ipairs({0,90,180,270}) do
+        local y,pitch=session.city:VehicleSurface(6,-20,yaw,.729281,-.617155)
+        local rotation=Quaternion(0,yaw,0)*Quaternion(pitch,Vector3.RIGHT)
+        for _,z in ipairs({-.617155,.729281}) do
+            local p=Vector3(6,y,-20)+rotation*Vector3(0,0,z)
+            assert(math.abs(p.y-session.city:Surface(p.x,p.z))<.001,"前后轮须分别落地")
+        end
+    end
+    local visuals=actor.visuals
+    for _,speed in ipairs({.18,.6,1.8,3.4,0}) do
+        for _=1,60 do visuals:Update(1/60,speed,0,0,session.city:Surface(0,-20),-20,0) end
+        if speed==3.4 then assert(visuals.runWeight>.99,"跑步应切换完整跑步姿态") end
+        if speed==0 then assert(visuals.gaitWeight==0 and visuals.runWeight==0,"停止后必须完全回到站姿") end
+    end
+    for _,person in ipairs(session.traffic.pedestrians.people) do
+        local npc=person.rig
+        local clamped=npc.reachClampedFrames or 0
+        for i=0,7 do
+            npc:PoseWalk(i*math.pi/4,.8)
+            assert(math.abs(math.min(npc:SoleHeight("L_Foot"),npc:SoleHeight("R_Foot")))<.006,"路人鞋底须贴在人行道上")
+        end
+        assert((npc.reachClampedFrames or 0)==clamped,"不同体型路人不可超伸")
+    end
+    for _,speed in ipairs({.18,.6,1.8,3.4}) do
+        local w=math.sqrt(math.min(1,speed/1.8))
+        local r=math.max(0,math.min(1,(speed-1.8)/1.6))
+        local cycle=require("Career.Rig").CycleLength(w,r)
+        rig.ground=nil
+        rig:PoseWalk(.3,w,r)
+        local a=rig:GetBonePosition("L_Foot")
+        local travel=cycle*.08/(2*math.pi)
+        rig:PoseWalk(.38,w,r)
+        local b=rig:GetBonePosition("L_Foot")
+        assert(math.abs((b.z-a.z)+travel)<.001,"支撑脚向后位移必须抵消前进距离")
+    end
+    rig.ground=nil
+    print("[动态接触验收通过] 15组速度混合/八位路人/支撑脚滑移/跨路沿双脚/四方向前后轮/慢走起停与跑步切换")
+    print("[阴影接触] "..tostring(session.sun.shadowBias.constantBias).."/"..tostring(session.sun.shadowBias.slopeScaledBias).."/"..tostring(session.sun.shadowBias.normalOffset))
+    local clamped=actor.visuals.walker.reachClampedFrames or 0
+    local hipLow,hipHigh=math.huge,-math.huge
+    for i=0,63 do
+        actor.visuals.walker:PoseWalk(i*math.pi/32,1)
+        local y=actor.visuals.walker:GetBonePosition("Hip").y
+        hipLow,hipHigh=math.min(hipLow,y),math.max(hipHigh,y)
+    end
+    assert(hipHigh-hipLow<.065,"步行髋部不能上下蹲跳")
+    assert((actor.visuals.walker.reachClampedFrames or 0)==clamped,"正常跨步不能超伸夹取")
+    for _,phase in ipairs({0,math.pi/4,math.pi/2,math.pi*3/4,math.pi,math.pi*5/4,math.pi*3/2,math.pi*7/4}) do
+        actor.visuals.walker:PoseWalk(phase,1)
+        local _,feet=Checks.SkinBounds(actor.visuals.walker)
+        assert(math.abs(math.min(feet.L_Foot.min.y,feet.R_Foot.min.y))<.006,"支撑鞋底必须贴地")
+    end
+    actor.visuals.walker:PoseWalk(0,0)
+    Checks.SkinBounds(actor.visuals.walker)
+    for _,c in ipairs(actor.visuals.walker.arms) do
+        local rig=actor.visuals.walker
+        assert(rig:GetBonePosition(c.lower).z<rig:GetBonePosition(c.upper).z-.03,"站姿肘部必须后弯")
+    end
+    actor.visuals.mountedRider:PoseRide(0)
+    Checks.SkinBounds(actor.visuals.mountedRider)
+    for _,c in ipairs(actor.visuals.mountedRider.arms) do
+        local rig=actor.visuals.mountedRider
+        local a,b,e=rig:GetBonePosition(c.upper),rig:GetBonePosition(c.tip),rig:GetBonePosition(c.lower)
+        local t=(e.y-a.y)/(b.y-a.y)
+        assert(e.z<a.z+(b.z-a.z)*t-.03,"骑姿肘部必须在肩腕连线后侧")
+    end
+    for _,p in ipairs({{0,-20,.055},{-50,-50,0},{-50,9,.069},{120,-25,.10}}) do
+        assert(math.abs(session.city:Surface(p[1],p[2])-p[3])<.0001,"地表查询必须匹配视觉地面")
+    end
+    local front=actor.visuals.mountedRider:ReadPose()
+    assert(front.leftGripError<.005 and front.rightGripError<.005,"修肘不能脱离握把")
+    local Contact=require("Career.VehicleContact")
+    for _,roll in ipairs({-10,-5,0,5,10}) do
+        actor.visuals:SetMounted(true)
+        actor.visuals:Update(1,35/3.6,roll/10,0,session.city:Surface(0,-20),-20,0)
+        for _,w in ipairs(Contact.Wheels.borrowed_ebike) do
+            local low=math.huge
+            for _,p in ipairs(w.points) do
+                local world=actor.visuals.bikeVisual.worldTransform*p --[[@as Vector3]]
+                low=math.min(low,world.y-session.city:Surface(world.x,world.z))
+            end
+            assert(math.abs(low)<.001,"压弯前后胎底必须保持接地")
+        end
+    end
+    Checks.Vehicles(session)
+    actor.visuals:SetMounted(false)
+    print("[接触验收通过] 64相位无超伸/八相位鞋底/站姿与骑姿后弯肘/握把/道路人行道公园查高/五角度压弯胎底")
+    print("[接触诊断] 地表(0,-20)="..session.city:Surface(0,-20))
+    Checks.Shot(session)
+end
+function Checks.Vehicles(session)
+    local Contact=require("Career.VehicleContact")
+    local Vehicles=require("Career.VehicleData")
+    local ids={Vehicles.EBIKE,table.unpack(Vehicles.Ids)}
+    for _,id in ipairs({"sedan","suv","truck"}) do ids[#ids+1]=id end
+    local count=0
+    local details=session.city.details
+    local function compareSurface(x,z)
+        local expected=0
+        for _,s in ipairs(details.surfaces) do
+            if math.abs(x-s.x)<=s.w/2 and math.abs(z-s.z)<=s.d/2 then expected=math.max(expected,s.y) end
+        end
+        assert(details:Surface(x,z)==expected,"地表候选索引必须与全表精确相同")
+    end
+    for x=-180,180,4 do for z=-180,180,4 do compareSurface(x,z) end end
+    for _,s in ipairs(details.surfaces) do
+        for _,dx in ipairs({-s.w/2-.00001,-s.w/2,s.w/2,s.w/2+.00001}) do
+            for _,dz in ipairs({-s.d/2-.00001,-s.d/2,s.d/2,s.d/2+.00001}) do compareSurface(s.x+dx,s.z+dz) end
+        end
+    end
+    for _,id in ipairs(ids) do
+        if id~="borrowed_ebike" and id~="truck" then
+            local asset=require("VehicleAssets").Vehicles[id]
+            local model=assert(cache:GetResource("Model",asset.model))
+            local source=model.boundingBox
+            local yawRotation=Quaternion(0,asset.rotation,0)
+            local bounds=BoundingBox()
+            for _,x in ipairs({source.min.x,source.max.x}) do
+                for _,y in ipairs({source.min.y,source.max.y}) do
+                    for _,z in ipairs({source.min.z,source.max.z}) do bounds:Merge(yawRotation*Vector3(x,y,z)) end
+                end
+            end
+            local scale=asset.targetLength/bounds.size.z
+            local vb=model:GetGeometry(0,0):GetVertexBuffer(0)
+            local data=vb:GetData()
+            local vertices={}
+            for i=0,vb.vertexCount-1 do
+                data:Seek(i*vb.vertexSize+vb:GetElementOffset(SEM_POSITION))
+                local p=(yawRotation*data:ReadVector3()+Vector3(-bounds.center.x,-bounds.min.y,-bounds.center.z))*scale
+                if math.abs(p.z)>.4 and p.y<.14 then vertices[#vertices+1]=p end
+            end
+            for _,lean in ipairs(#Contact.Wheels[id]==2 and {-10,0,10} or {0}) do
+                local y,pitch,roll=Contact.Solve(session.city,id,0,-20,0,lean)
+                local rotation=Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+                local lowest=math.huge
+                for _,p in ipairs(vertices) do lowest=math.min(lowest,y+(rotation*p).y-.055) end
+                assert(lowest>-.001 and lowest<.001,id.."独立读回完整胎面必须吻合标定")
+            end
+        end
+        for _,yaw in ipairs({0,45,90,180,270}) do
+            for _,x in ipairs({0,6,12}) do
+                for _,lean in ipairs(#Contact.Wheels[id]==2 and {-10,0,10} or {0}) do
+                    local y,pitch,roll=Contact.Solve(session.city,id,x,-20,yaw,lean)
+                    local rotation=Quaternion(0,yaw,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+                    local maxGap,minGap=-math.huge,math.huge
+                    for _,w in ipairs(Contact.Wheels[id]) do
+                        local low=math.huge
+                        for _,p in ipairs(w.points) do
+                            local world=rotation*p
+                            low=math.min(low,y+world.y-session.city:Surface(x+world.x,-20+world.z))
+                        end
+                        minGap,maxGap=math.min(minGap,low),math.max(maxGap,low)
+                    end
+                    assert(minGap>-.0001 and minGap<.001,id.."胎面不能悬空或穿地")
+                    if #Contact.Wheels[id]==2 then assert(maxGap<.001,string.format("%s前后两轮都须接地 x%.1f yaw%.1f lean%.1f pitch%.5f gap%.6f",id,x,yaw,lean,pitch,maxGap)) end
+                    count=count+1
+                end
+            end
+        end
+        if id~="sedan" and id~="suv" and id~="truck" then
+            local entry=session.actor.visuals:EnsureVehicle(id)
+            local clamped=entry.rider.reachClampedFrames or 0
+            entry.rider:PoseRide(0)
+            local pose=entry.rider:ReadPose()
+            assert(pose.leftGripError<.005 and pose.rightGripError<.005,id.."双手必须握住车把")
+            assert((entry.rider.reachClampedFrames or 0)==clamped,id.."骑姿不可超伸夹取")
+            for _,chain in ipairs(entry.rider.legs) do
+                local target=Vector3(chain.side*entry.rider.config.foot.x,entry.rider.config.foot.y,entry.rider.config.foot.z)
+                assert((entry.rider:GetBonePosition(chain.tip)-target):Length()<.005,id.."双脚须落在脚踏目标")
+            end
+            print(string.format("[逐车骑姿] %s 左手%.5f 右手%.5f 夹取%d",id,pose.leftGripError,pose.rightGripError,(entry.rider.reachClampedFrames or 0)-clamped))
+        end
+    end
+    local visuals=session.actor.visuals
+    visuals:SetCityVisible(false)
+    for _,entry in pairs(visuals.vehicles) do
+        assert(not entry.node.enabled,"室内车辆根必须隐藏")
+        for _,child in ipairs(entry.node:GetChildren(true)) do assert(not child.enabled,"室内不可残留车辆子模型") end
+    end
+    visuals:UpdateParking(session.actor.parking,session.city)
+    visuals:SetCityVisible(true)
+    for id,entry in pairs(visuals.vehicles) do
+        if not session.actor.parking[id] then
+            for _,child in ipairs(entry.node:GetChildren(true)) do assert(not child.enabled,"未持有车型不可残留幽灵子模型") end
+        end
+    end
+    print(string.format("[逐车胎面验收通过] 13款/%d组方向路沿压弯，刚性四轮不强求不共面路沿四点全贴；室内与未持有子模型递归隐藏",count))
+end
+function Checks.Shot(session)
+    local actor=session.actor
+    local rig=actor.visuals.walker
+    local phase,weight,yaw,run=0,0,110,0
+    local curb=false
+    local mounted=false
+    local vehicle="borrowed_ebike"
+    local lean=0
+    for _,arg in ipairs(GetArguments()) do
+        local selected=arg:match("^%-contactvehicle=([%w_]+)$")
+        if selected then vehicle=selected end
+        local angle=arg:match("^%-contactlean=([%-%d%.]+)$")
+        if angle then lean=tonumber(angle) or 0 end
+        local value=arg:match("^%-contactphase=([%.%d]+)$")
+        if value then phase=tonumber(value) or 0;weight=1 end
+        value=arg:match("^%-contactyaw=([%-%d%.]+)$")
+        if value then yaw=tonumber(value) or 110 end
+        if arg=="-contactrun" then run=1;weight=1 end
+        local motion=arg:match("^%-contactmotion=([%a]+)$")
+        if motion=="slow" then weight=math.sqrt(.6/1.8);run=0 end
+        if motion=="walk" then weight=1;run=0 end
+        if motion=="run" then weight=1;run=1 end
+        if motion=="stop" or motion=="idle" then weight=0;run=0 end
+        value=arg:match("^%-contactweight=([%.%d]+)$")
+        if value then weight=math.max(0,math.min(1,tonumber(value) or 0)) end
+        if arg=="-contactcurb" then curb=true end
+        if arg=="-contactride" then mounted=true end
+    end
+    actor.mounted=mounted;actor.visuals:SetMounted(mounted)
+    actor.bikeX,actor.bikeZ,actor.bikeYaw=curb and 6 or 0,-17,curb and 90 or 0
+    actor:Teleport(curb and 6 or mounted and 0 or 2,mounted and -17 or -20,curb and 90 or 0)
+    rig.ground=session.city
+    -- Teleport内部会重算Pose，受控相位必须最后应用，暂停后才可复现实拍。
+    if vehicle=="sedan" or vehicle=="suv" or vehicle=="truck" then
+        local Contact=require("Career.VehicleContact")
+        local root=require("VehicleAssets").Add(session.scene,vehicle,nil,"distant")
+        if vehicle=="truck" then Contact.CompleteTruck(root) end
+        local x=curb and 6 or 0
+        local y,pitch,roll=Contact.Solve(session.city,vehicle,x,-17,curb and 90 or 0,0)
+        root.position=Vector3(x,y,-17)
+        root.rotation=Quaternion(0,curb and 90 or 0,0)*Quaternion(pitch,Vector3.RIGHT)*Quaternion(roll,Vector3.FORWARD)
+        actor.visuals:SetCityVisible(false)
+        actor.visuals.walkNode:SetEnabled(false)
+        actor.node.position=Vector3(x,y,-17)
+    else
+        actor.vehicleId=vehicle
+        actor.visuals:SetVehicle(vehicle)
+        for id,entry in pairs(actor.visuals.vehicles) do entry.node:SetEnabled(id==vehicle) end
+        actor.visuals:Update(1,35/3.6,lean/10,actor.bikeX,session.city:Surface(actor.bikeX,actor.bikeZ),actor.bikeZ,actor.bikeYaw)
+        if mounted then actor.visuals.mountedRider:PoseRide(0)
+        else actor.visuals.walker:PoseWalk(phase,weight,run) end
+    end
+    session.yaw,session.pitch=yaw,2
+    session:UpdateEnvironment(12)
+    session.camera:SetModeConfig("normal",{distance=3.8,offset=Vector3(0,1,0),fov=52})
+    session.camera:SetModeConfig("ride",{distance=3.8,offset=Vector3(0,1,0),fov=52})
+    session.camera:Update(1,actor.node,session.yaw,session.pitch)
+    session.view:ShowGame(); session:Refresh()
+    session.view:ShowDialog("接触诊断","",{});session.view.overlay:SetVisible(false)
+    -- Refresh会按内存档重新显示停车节点，实拍隔离必须在它之后提交。
+    for id,entry in pairs(actor.visuals.vehicles) do
+        entry.node:SetEnabledRecursive(id==vehicle)
+        print(string.format("[实拍车型隔离] %s 显示%s",id,tostring(id==vehicle)))
+    end
+    if actor.visuals.vehicles[vehicle] then actor.visuals.mountedRider:SetVisible(mounted) end
+    if vehicle=="sedan" or vehicle=="suv" or vehicle=="truck" then actor.visuals.walkNode:SetEnabledRecursive(false) end
+end
+return Checks
