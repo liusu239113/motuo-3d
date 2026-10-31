@@ -21,27 +21,11 @@
       "../assets",
       "../scripts"
     ],
-    "asset_ignores": [
-      "../assets/audio/source",
-      "../assets/audio/*.oga",
-      "../assets/image/career_reviews",
-      "../assets/audio/audition"
-    ]
+    "asset_ignores": []
   },
   "@runtime": {
     "multiplayer": {
-      "enabled": false,
-      "max_players": 4,
-      "background_match": false,
-      "match_info": {
-        "desc_name": "free_match",
-        "immediately_start": false,
-        "match_timeout": 30,
-        "player_number": 1
-      },
-      "persistent_world": {
-        "enabled": false
-      }
+      "enabled": false
     }
   }
 }
