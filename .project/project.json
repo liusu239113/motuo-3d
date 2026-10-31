@@ -2,7 +2,8 @@
   "$schema": "../schemas/project.schema.json",
   "project_id": "m_bief",
   "author": {
-    "id": "655765888"
+    "id": "655765888",
+    "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
   "version": "1.0.10",
@@ -14,9 +15,8 @@
     "collection_type": "racing",
     "trial_note": "",
     "app_platforms": "1,2",
-    "app_id": 1005342,
-    "miniapp_id": "tapmcyodqe1xif6vtw",
-    "developer_id": 403350
+    "developer_id": 377480,
+    "app_id": 1005342
   },
   "assets": {
     "icon": "",
@@ -24,10 +24,10 @@
     "promotional_image": ""
   },
   "test_qrcode": {
-    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_bief_1793334231261.png",
-    "generated_at": "2026-10-30T04:23:51.424Z"
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_bief_1793414011684.png",
+    "generated_at": "2026-10-31T02:33:31.847Z"
   },
   "metadata": {
-    "updated_at": "2026-10-30T04:23:51.424Z"
+    "updated_at": "2026-10-31T02:33:31.847Z"
   }
 }
