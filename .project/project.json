@@ -6,7 +6,7 @@
     "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "taptap_publish": {
     "title": "公路狂飙：从外卖骑手到职业车手",
     "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
@@ -23,11 +23,11 @@
     "screenshots": [],
     "promotional_image": ""
   },
-  "test_qrcode": {
-    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_bief_1793414011684.png",
-    "generated_at": "2026-10-31T02:33:31.847Z"
-  },
   "metadata": {
-    "updated_at": "2026-10-31T02:33:31.847Z"
+    "updated_at": "2026-10-31T02:36:09.635Z"
+  },
+  "test_qrcode": {
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_bief_1793414169474.png",
+    "generated_at": "2026-10-31T02:36:09.635Z"
   }
 }
