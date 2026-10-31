@@ -354,6 +354,8 @@ function Checks.Shot(session,page)
     isolated(session)
     local requestedPage=page
     local position="top"
+    local pageNumber=tonumber(page:match("%-page(%d+)$"))
+    if pageNumber then page=page:gsub("%-page%d+$","") end
     local base,suffix=page:match("^(.-)%-(middle)$")
     if not base then base,suffix=page:match("^(.-)%-(bottom)$") end
     if base then page,position=base,suffix end
@@ -414,6 +416,7 @@ function Checks.Shot(session,page)
         assert(view.phoneContent:ShowWidget(anchor),"实拍锚点不在真实分页中 "..anchor)
     elseif position=="middle" then
         view.phoneContent:SetPage(math.max(1,math.ceil(view.phoneContent:GetPageCount()/2)))
+    elseif pageNumber then view.phoneContent:SetPage(pageNumber)
     elseif position=="bottom" then view.phoneContent:SetPage(view.phoneContent:GetPageCount()) end
     layout(view)
     if app=="messages" and page~="messages" then visibleTextLayout(view,"career-chat-header-info") end
