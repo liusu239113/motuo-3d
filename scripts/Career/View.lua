@@ -703,6 +703,11 @@ function View:BuildPhone(state,offer,active)
             end,"career-plan-supply",false)}}))
         action("career-life-charge","街边充电","到充电点停稳下车。","费用 ¥2 · 耗时30游戏分钟","充电",a.charge,false)
         action("career-life-aid","低现金基础帮助","满足条件才可领取基础补给，不发放现金。",nil,"申请帮助",a.aid,false)
+        local subsidyCents=state.adSubsidyCents or 0
+        action("career-life-ad-subsidy","每日广告补贴",
+            state.adSubsidyClaimed and "今天的补贴已领取，明天再来。" or "完整观看一段广告，领取一次性生活补贴；失败不发放、不扣任何资源。",
+            string.format("今日一次\n补贴 ¥%.2f",subsidyCents/100),
+            state.adSubsidyClaimed and "今日已领取" or "看广告领取",a.adSubsidy,false)
         section("声音与偏好")
         -- 短屏scale<1时子项端点取整可超过自动父高度1～2px；尾部留2物理px真实内边距。
         target:SetStyle{paddingBottom=2/math.max(.1,UI.GetScale())}

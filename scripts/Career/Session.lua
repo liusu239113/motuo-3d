@@ -26,6 +26,7 @@ local Atmosphere = require("Career.Atmosphere")
 local Life = require("Career.LifeStatus")
 local Calls = require("Career.CustomerCall")
 local NightLighting = require("Career.NightLighting")
+local RewardedAds = require("RewardedAds")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
@@ -168,6 +169,7 @@ function Session:Init(options)
         rest=function(id) self:Service(id,function() return Store.Rest(id) end) end,
         charge=function() self:Service("charge",function() return Store.Charge() end) end,
         aid=function() self:Service("breakfast",function() return Store.RequestAid() end) end,
+        adSubsidy=function() self:ClaimAdSubsidy() end,
         save=function() self:SaveCloud() end,
         progression=function() self:OpenPhone("progression") end,
         buyEquipment=function(id) self:Service("dealer",function() return Progress.BuyEquipment(id) end) end,
@@ -455,6 +457,9 @@ end
 ---@return CareerSessionState
 function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
+    -- 生活页展示今日补贴是否已领，避免玩家点开才发现重复。
+    state.adSubsidyClaimed=Store.AdSubsidyClaimed(state.day)
+    state.adSubsidyCents=Config.AD_SUBSIDY_CENTS
     local weather=Atmosphere.Sample(state.day,state.time)
     state.weatherLabel,state.weatherCloudiness=weather.label,weather.cloudiness
     state.musicEnabled=self.audio and self.audio.musicEnabled
@@ -584,6 +589,51 @@ function Session:EndCustomerCall()
     if self.view then self.view.phoneCall=nil end
     if self.audio then CareerAudio.StopPhone(self.audio) end
 end
+---交付成功后的可选小费：金额等基本单配送费，只有完整看完广告才入账。
+---@param order CareerOrder 已结算订单
+---@param pointId string
+function Session:OfferAdTip(order,pointId)
+    if not order or not order.feeCents then return end
+    if Store.AdTipClaimed and Store.AdTipClaimed(order.id) then return end
+    local cents=math.max(1,math.floor(order.feeCents))
+    local orderId=order.id
+    self.view:ShowDialog("顾客追加了小费","顾客：「这一单准时又稳，给你加个小费。」\n看一段广告，即可领取与本次配送费等额的小费。\n\n不看也没关系，配送费已经到账，不影响任何进度。",{
+        {text="先不领",onClick=function() self.view:Notice("小费未领取，配送费已入账。") end},
+        {text="看广告领小费",primary=true,onClick=function() self:ClaimAdTip(orderId,cents) end}})
+end
+
+---@param orderId string
+---@param cents integer
+function Session:ClaimAdTip(orderId,cents)
+    RewardedAds.Show {
+        onReward = function()
+            local ok,message=Store.ClaimAdTip(orderId,cents)
+            self.view:Notice(ok and message or "小费已领取过，不再重复发放")
+            self:RefreshPhone()
+        end,
+        onFailure = function(msg)
+            self.view:Notice("广告未完成，小费没有发放："..tostring(msg))
+        end,
+    }
+end
+
+---每日一次的生活补贴入口，失败不发、不扣任何资源。
+function Session:ClaimAdSubsidy()
+    local state=Store.Get()
+    if Store.AdSubsidyClaimed(state.day) then self.view:Notice("今日补贴已经领过了，明天再来"); return end
+    local cents=Config.AD_SUBSIDY_CENTS
+    RewardedAds.Show {
+        onReward = function()
+            local ok,message=Store.ClaimAdSubsidy(cents)
+            self.view:Notice(ok and message or "今日补贴已领取")
+            self:RefreshPhone()
+        end,
+        onFailure = function(msg)
+            self.view:Notice("广告未完成，今日补贴没有发放："..tostring(msg))
+        end,
+    }
+end
+
 function Session:Accept()
     if self.space~="city" then self.view:Notice("请先出门，再上线接单"); return end
     if not self.online then self.view:Notice("先上线听单"); return end
@@ -647,6 +697,8 @@ function Session:Interact()
         if ok then self.manualWaypoint=false end
         self.view:Notice(message)
         if ok then self:DeliveryResponse(orderPoint,order.status=="accepted") end
+        -- 交付成功才提供激励视频小费：金额与本单配送费等额，失败不发、每天可领。
+        if ok and order.status~="accepted" then self:OfferAdTip(order,orderPoint) end
         self:RefreshPhone()
         if ok and not Delivery.GetActive() then self.waypoint="breakfast" end
         return

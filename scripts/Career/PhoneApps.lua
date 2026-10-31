@@ -15,7 +15,8 @@ local KINDS={opening="初始生活现金",delivery="配送到账",meal="早餐�
     accommodation="住宿过夜",equipment="骑手装备",motorcycle="购入摩托",training="护具与训练",
     race_entry="赛事报名",career_race="赛事奖金",scheduled_delivery="排班配送",scheduled_living="排班生活支出",
     engagement="联系人委托谢礼",team_signing="车队首轮合同奖金",team_sponsor="车队赞助",payment="生活支出",
-    sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油",home_purchase="房产买断"}
+    sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油",home_purchase="房产买断",
+    ad_tip="顾客小费（激励视频）",ad_subsidy="每日补贴（激励视频）"}
 function Apps.LedgerName(entry) return KINDS[entry.kind] or entry.kind end
 -- 今日真正发生的收支，不将开局本金包装为今天挣到的钱。
 function Apps.Today(state)

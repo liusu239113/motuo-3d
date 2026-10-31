@@ -10,7 +10,7 @@
   "taptap_publish": {
     "title": "公路狂飙：从外卖骑手到职业车手",
     "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
-    "category": "racing",
+    "category": "simulation",
     "screen_orientation": "landscape",
     "collection_type": "racing",
     "trial_note": "",
@@ -23,5 +23,27 @@
     "icon": "",
     "screenshots": [],
     "promotional_image": ""
+  },
+  "dc_publish_sync": {
+    "synced": true,
+    "dcVersion": "V-20261031",
+    "dcStatus": "INIT",
+    "baseFields": {
+      "title": "公路狂飙：从外卖骑手到职业车手",
+      "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
+      "category": "simulation",
+      "trial_note": null,
+      "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png",
+      "banner_url": null,
+      "square_promo_url": null,
+      "cover_horizontal_url": null,
+      "cover_vertical_url": null,
+      "screenshot_urls": null
+    },
+    "pending": {},
+    "baseGameplayDemoVideoId": 0
+  },
+  "metadata": {
+    "updated_at": "2026-10-31T03:51:48.738Z"
   }
 }

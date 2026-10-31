@@ -496,6 +496,11 @@ function HUD:BuildPauseAndResult()
     self.careerPauseRestart = button("重新开始", a.restart, false, 130)
     self.resultRestart = button("再赛一次 →", a.restart, true, 160)
     self.resultReturn = button("返回主菜单", a.menu, false, 150)
+    -- 结算页激励视频：仅竞速结算可用，点击后按钮变灰防止重复请求。
+    self.resultAdBonus = button("看广告 · 双倍金币", function()
+        if a.watchResultAd then a.watchResultAd() end
+    end, false, 200)
+    self.resultAdBonus:SetVisible(false)
     local pauseContent = UI.Column {width = "100%", padding = 0, gap = 10, children = {
         UI.Row {padding = 0, gap = 7, flexWrap = "wrap", children = {self.musicButton, self.effectsButton, self.qualityButton,
             button("按键布局 / 灵敏度", function() self:OpenSettings() end, false, 168)}},
@@ -527,8 +532,18 @@ function HUD:BuildPauseAndResult()
         alignItems = "center", justifyContent = "center", children = {
             RacingTheme.Card {width = "92%", maxWidth = 660, height = "96%", padding = 18, gap = 12, children = {
                     RacingTheme.Kicker("FINISH LINE / 比赛结果"), resultFrame,
+                    self.resultAdBonus,
                     UI.Row {padding = 0, gap = 8, children = {self.resultRestart, self.resultReturn}}}}}}))
 end
+---@param available boolean 是否展示激励视频入口
+---@param busy? boolean 请求进行中，按钮置灰
+---@param text? string 按钮文案
+function HUD:SetResultAdOffer(available, busy, text)
+    self.resultAdBonus:SetVisible(available == true)
+    self.resultAdBonus:SetDisabled(available ~= true or busy == true)
+    self.resultAdBonus:SetText(text or "看广告 · 双倍金币")
+end
+
 function HUD:SetCareerRace(enabled)
     self.careerPauseRestart:SetVisible(not enabled)
     self.careerPauseReturn:SetText(enabled and "返回生涯（保留报名）" or "主菜单")

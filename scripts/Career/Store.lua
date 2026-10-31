@@ -646,6 +646,49 @@ end
 ---@return boolean, string
 function Store.Help() return Store.RequestAid() end
 
+-- 激励视频奖励统一走事务：去重键即流水号，重复回调无法二次入账。
+-- 只有已结算的订单才能领小费，避免配合未完成订单刷奖励。
+---@param orderId string
+---@param cents integer
+---@return boolean, string
+function Store.ClaimAdTip(orderId, cents)
+    if type(orderId) ~= "string" or not integer(cents, 1) then return false, "小费参数无效" end
+    return Store.Transaction(function(p)
+        if p.settledOrders[orderId] ~= true then return false, "该订单尚未结算" end
+        local ok, message = Store.ApplyCash(p, cents, "ad_tip", "ad_tip:" .. orderId)
+        if not ok then return false, message end
+        return true, string.format("顾客小费 %.2f 元已入账", cents / 100)
+    end)
+end
+
+-- 每日一次：键含游戏日，跨天自然恢复，也不额外新增存档字段。
+---@param cents integer
+---@return boolean, string
+function Store.ClaimAdSubsidy(cents)
+    if not integer(cents, 1) then return false, "补贴金额无效" end
+    return Store.Transaction(function(p)
+        local ok, message = Store.ApplyCash(p, cents, "ad_subsidy", "ad_subsidy:day" .. p.day)
+        if not ok then return false, "今天已经领过补贴了" end
+        return true, string.format("今日补贴 %.2f 元已入账", cents / 100)
+    end)
+end
+
+---@param day integer
+---@return boolean 今日补贴是否已领取
+function Store.AdSubsidyClaimed(day)
+    if not data then Store.Get() end
+    local p = data --[[@as CareerProfile]]
+    return p.financialKeys["ad_subsidy:day" .. math.floor(day)] == true
+end
+
+---@param orderId string
+---@return boolean 该订单的小费是否已领取
+function Store.AdTipClaimed(orderId)
+    if not data then Store.Get() end
+    local p = data --[[@as CareerProfile]]
+    return p.financialKeys["ad_tip:" .. orderId] == true
+end
+
 -- 仅由 Delivery.Update 转发活动 dt；不订阅全局 Update，不计真实离线时长。
 ---@param dt number
 ---@param distanceMeters? number

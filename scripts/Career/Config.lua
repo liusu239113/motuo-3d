@@ -10,6 +10,8 @@ Config.CLOUD_KEY = "career/profile/v1"
 Config.INITIAL_CASH_CENTS = 5000
 Config.MEAL_CENTS = 1200
 Config.AID_THRESHOLD_CENTS = 3000
+-- 激励视频每日补贴：一次性小额，不做成主要收入来源，也不影响常规配送报价。
+Config.AD_SUBSIDY_CENTS = 300
 Config.CAPACITY = 1
 Config.START_HOUR = 8
 -- 15 现实分钟代表 2 游戏小时；菜单暂停由入口停止调用 Update 实现。

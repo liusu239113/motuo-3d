@@ -26,6 +26,7 @@ local careerRaceId_ = ""
 local careerRaceCheck_,careerRaceCheckStage_,careerRaceCheckFrames_=false,0,0
 local CareerProgress = require("Career.Progression")
 local CareerStore = require("Career.Store")
+local RewardedAds = require("RewardedAds")
 
 ---@type RideRace?
 local race_ = nil
@@ -75,6 +76,8 @@ local loadPhase_, loadingFrames_ = "idle", 0
 local raceAssetsReady_ = false
 local clock_, accumulator_, lastYaw_ = 0.0, 0.0, 0.0
 local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
+-- 竞速结算广告：只在自由竞速结算发放，生涯赛事走生涯现金通道，不混用金币。
+local resultAdAvailable_, resultAdClaimed_ = false, false
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
 local careerReadyShot_,careerReadyFrames_="",0
 local testScenery_, testNitroShot_ = false, false
@@ -258,6 +261,8 @@ local function ResetRideState()
     world_:Update(0, sim_.distance, clock_, sim_.x, sim_.z)
     if testTrick_ ~= "" then sim_.speed = 8 end
     accumulator_, resultShown_, lastYaw_, boostFov_ = 0.0, false, sim_.heading, 0.0
+    resultAdAvailable_, resultAdClaimed_ = false, false
+    if hud_ then hud_:SetResultAdOffer(false, false) end
     bike_:SetRiderColor(selectedRider_)
     sound_:SetVehicle(selectedVehicle_)
     bike_:UpdateState(0, sim_, firstPerson_, clock_)
@@ -348,6 +353,42 @@ local function SettleCareerResult()
     else ok,message=CareerProgress.SettleRace(race_.player.rank or 9,race_.player.finished==true,careerRaceId_) end
     if ok then sim_.coinsEarned=0 else print("[生涯赛事保存失败] "..message) end
     return ok,message
+end
+
+---竞速结算双倍金币：只在自由竞速结算展示；生涯奖金走生涯现金，不并入金币。
+---@param earned integer 本场已结算金币
+local function OfferResultAdBonus(earned)
+    resultAdAvailable_ = earned > 0 and not careerRace_
+    resultAdClaimed_ = false
+    if hud_ then hud_:SetResultAdOffer(resultAdAvailable_, false, "看广告 · 双倍金币") end
+end
+
+local function WatchResultAdBonus()
+    if not resultAdAvailable_ or resultAdClaimed_ then return end
+    if not hud_ or hud_.screen ~= "result" then return end
+    local earned = math.floor(sim_ and sim_.coinsEarned or 0)
+    if earned <= 0 then return end
+
+    RewardedAds.Show {
+        setBusy = function(busy)
+            hud_:SetResultAdOffer(resultAdAvailable_, busy, busy and "广告加载中…" or "看广告 · 双倍金币")
+        end,
+        onReward = function()
+            resultAdClaimed_ = true
+            resultAdAvailable_ = false
+            -- 与首次结算同额补发，等于把本场金币翻倍；只发一次。
+            Profile.AddCoins(earned)
+            hud_:RefreshOwnership()
+            hud_:SetResultAdOffer(false, false)
+            hud_.resultStats:SetText(string.format("本场金币 %d · 看广告已双倍，额外到账 +%d\n余额 %d 金币",
+                earned, earned, Profile.Coins()))
+            print(string.format("[广告奖励] 竞速结算双倍 +%d，余额 %d", earned, Profile.Coins()))
+        end,
+        onFailure = function(msg)
+            hud_:SetResultAdOffer(resultAdAvailable_, false, "看广告 · 双倍金币")
+            hud_:ShowNotice("广告未完成", (msg or "广告暂不可用") .. "\n奖励未发放，可稍后再试。")
+        end,
+    }
 end
 
 local function ReturnToCareer()
@@ -634,6 +675,7 @@ function Start()
     graphics.windowTitle = "公路狂飙：从外卖骑手到职业车手"
     input.mouseMode = MM_ABSOLUTE
     hud_ = HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
+        watchResultAd = WatchResultAdBonus,
         selectVehicle = function(id)
             if screen_ ~= "loading" and Catalog.Get(id) then selectedVehicle_ = id end
         end,
@@ -976,6 +1018,8 @@ end
 function HandleUpdate(eventType, eventData)
     CareerStore.UpdateCloud(eventData:GetFloat("TimeStep"))
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
+    -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
+    RewardedAds.Update(dt)
     if careerMode_ and career_ then career_:Update(dt); return end
     clock_ = clock_ + dt
     local portrait = graphics:GetHeight() > graphics:GetWidth()
@@ -1159,6 +1203,7 @@ function HandleUpdate(eventType, eventData)
             end
             SetScreen("result")
             hud_:ShowResult(sim_)
+            OfferResultAdBonus(math.floor(sim_.coinsEarned or 0))
             if careerResultMessage~="" then
                 hud_.resultStats:SetText(careerResultMessage.."\n奖金计入生涯现金，不发放旧竞速金币。")
             end
