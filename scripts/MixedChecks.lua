@@ -143,7 +143,7 @@ function Checks.RunWeapons()
         end
     end
     for _,mode in ipairs({"hit","shield","dodge"}) do
-        local source,target=racer("beetle",0,0),racer("ebike",0,4)
+        local source,target=racer("beetle",0,0),racer("ebike",0,2.9)
         local test=arena(source,target);attack(test,source)
         if mode=="shield" then target.driveSim.oddShield=3
         elseif mode=="dodge" then target.x=9 end
