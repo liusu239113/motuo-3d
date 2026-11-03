@@ -5,6 +5,168 @@
 ---@field oddSkillResultTimer number
 ---@field oddPreviousAltitude number
 local Checks={}
+-- 快速纯规则专项：不创建Scene、不加载Simulation/Profile、不读写玩家存档。
+function Checks.RunWeapons()
+    local Rules=require("MixedRace")
+    local count=0
+    local function check(value,message)
+        assert(value,"[武器契约] "..message);count=count+1
+    end
+    local function racer(id,x,z)
+        local drive={vehicleId=id,x=x,y=0,z=z,speed=25,heading=0,impactSerial=0}
+        Rules.Reset(drive)
+        drive.oddAltitude=id=="helicopter" and 2.5 or id=="jellyfish" and 1.65 or 0
+        return {id=id..x..z,vehicleId=id,x=x,y=0,z=z,contactX=x,contactY=0,contactZ=z,
+            lane=x,wantedLane=x,yaw=0,speed=25,boostTimer=2,isPlayer=false,driveSim=drive}
+    end
+    local function arena(source,target)
+        return {phase="racing",sim=source.driveSim,player=source,racers=target and {source,target} or {source},
+            roadHalfWidth=8,events={},collisions=0,
+            Collision=function(self) self.collisions=self.collisions+1 end,
+            Emit=function(self,event) self.events[#self.events+1]=event end}
+    end
+    local function attack(test,source)
+        source.driveSim.oddActive,source.driveSim.oddCooldown=2,15
+        source.driveSim.oddAttack=true
+        Rules.Attack(test,source,source.driveSim)
+    end
+    local function launch(test,source)
+        attack(test,source)
+        check(source.driveSim.oddLockPending and math.abs(source.driveSim.oddLockTimer-.55)<1e-8,
+            source.vehicleId.."先锁定0.55秒")
+        check(#(test.mixedProjectiles or {})==0 and test.collisions==0,"锁定阶段没有弹体或瞬间伤害")
+        Rules.RaceStep(test,.54)
+        check(source.driveSim.oddLockPending and #(test.mixedProjectiles or {})==0,"0.54秒仍未发射")
+        Rules.RaceStep(test,.011)
+        local shot=assert(test.mixedProjectiles and test.mixedProjectiles[1],"锁定完成必须发射")
+        check(#test.mixedProjectiles==1 and not source.driveSim.oddLockPending
+            and shot.homing and shot.target==test.racers[2] and shot.ttl==8 and shot.age==0,
+            source.vehicleId.."锁定后发射同一目标的8秒追踪弹")
+        return shot
+    end
+    for _,kind in ipairs({"tank","helicopter"}) do
+        for _,distance in ipairs({200,300}) do
+            local source,target=racer(kind,0,0),racer("ebike",0,distance)
+            source.speed,source.driveSim.speed=75,75
+            target.speed,target.driveSim.speed=85,85
+            local test=arena(source,target)
+            local shot=launch(test,source)
+            local turned,climbed,elapsed=false,false,0
+            -- 俯视：目标以85m/s跑半径约122m的弯道并变道；侧视：高度0..5m连续改变。
+            -- 每步保存真实前一帧接触坐标，验证追踪相对扫掠，非反复扫过初始位置。
+            while #test.mixedProjectiles>0 and elapsed<8.1 do
+                local dt=.05
+                elapsed=elapsed+dt
+                target.contactX,target.contactY,target.contactZ=target.x,target.y,target.z
+                local yaw=elapsed*40
+                target.yaw=yaw
+                target.x=target.x+math.sin(math.rad(yaw))*85*dt
+                target.z=target.z+math.cos(math.rad(yaw))*85*dt
+                target.y=2.5+math.sin(elapsed*2)*2.5
+                target.driveSim.x,target.driveSim.y,target.driveSim.z=target.x,target.y,target.z
+                Rules.RaceStep(test,dt)
+                turned=turned or math.abs(shot.vx)>10
+                climbed=climbed or math.abs(shot.vy)>1
+            end
+            check(turned and climbed,kind..distance.."米高速弯道/变道/高度改变实际转向追踪")
+            check(#test.mixedProjectiles==0 and test.collisions==1 and math.abs(target.speed-68)<1e-6
+                and target.driveSim.speed==target.speed and target.driveSim.oddDisrupt==3 and target.boostTimer==0,
+                kind..distance.."米高速移动目标真实命中一次、减速20%、失衡并打断氮气")
+        end
+        local outside=racer(kind,0,0)
+        local invalid=arena(outside,racer("ebike",0,300.01));attack(invalid,outside)
+        check(not outside.driveSim.oddLockPending and outside.driveSim.oddCooldown==0
+            and #(invalid.mixedProjectiles or {})==0,kind.."超过300米不锁定、不消耗技能")
+        for _,mode in ipairs({"shield","finished","eliminated","source-left","endurance"}) do
+            local source,target=racer(kind,0,0),racer("ebike",0,200)
+            local test=arena(source,target)
+            local shot=launch(test,source)
+            local disposed=false
+            shot.node={Dispose=function() disposed=true end}
+            if mode=="shield" then target.driveSim.oddShield=10
+            elseif mode=="finished" then target.finished=true
+            elseif mode=="eliminated" then target.eliminated=true
+            elseif mode=="source-left" then source.eliminated=true
+            else target.z,target.contactZ=2000,2000;target.speed=0 end
+            local elapsed=0
+            while #test.mixedProjectiles>0 and elapsed<8.1 do
+                Rules.RaceStep(test,.05);elapsed=elapsed+.05
+                if mode=="endurance" and elapsed>.8 and elapsed<.9 then
+                    check(#test.mixedProjectiles==1,"追踪弹不沿用水球0.8秒寿命")
+                end
+            end
+            check(#test.mixedProjectiles==0 and disposed and shot.node==nil and test.collisions==0,
+                kind.."护盾/离场/续航终止并释放弹体："..mode)
+            if mode=="shield" then
+                check(target.speed==25 and target.driveSim.oddDisrupt==0
+                    and source.driveSim.oddSkillResult=="攻击被护盾挡住","追踪命中护盾不造成伤害")
+            elseif mode=="endurance" then
+                check(elapsed>=8 and elapsed<8.1 and target.speed==0,"8秒续航后超时，不伪造远距命中")
+            else check(elapsed<=.05 and target.speed==25,"目标/发射者离场下一步取消追踪") end
+        end
+        local source,target=racer(kind,0,0),racer("ebike",0,200)
+        local cancelled=arena(source,target);attack(cancelled,source);target.finished=true
+        Rules.RaceStep(cancelled,.1)
+        check(not source.driveSim.oddLockPending and source.driveSim.oddLockTarget==nil
+            and source.driveSim.oddCooldown==0 and #(cancelled.mixedProjectiles or {})==0,
+            kind.."锁定中目标离场取消并返还冷却")
+    end
+    -- 低帧率250ms：目标横穿x=-10..+10，弹体纵穿z=0..约40，端点均不重叠。
+    -- 水平/垂直必须在同一子步相交；target.contact*只描述本帧起点。
+    local source,target=racer("tank",0,0),racer("ebike",10,20)
+    target.contactX=-10;target.speed,target.driveSim.speed=0,0
+    local sweep=arena(source,target)
+    source.driveSim.oddCooldown=15
+    sweep.mixedProjectiles={{kind="tank",x=0,y=.8,z=0,vx=0,vy=0,vz=160,speed=160,
+        age=0,ttl=8,distance=0,homing=true,source=source,target=target}}
+    Rules.RaceStep(sweep,.25)
+    check(#sweep.mixedProjectiles==0 and sweep.collisions==1 and target.driveSim.oddDisrupt==3,
+        "低帧率高速相对交叉扫掠不穿透")
+    for _,mode in ipairs({"hit","dodge","height","shield","expired","outside"}) do
+        local source,target=racer("jellyfish",0,0),racer("ebike",0,mode=="outside" and 28.01 or 28)
+        local test=arena(source,target);attack(test,source)
+        if mode=="outside" then
+            check(#(test.mixedProjectiles or {})==0 and source.driveSim.oddCooldown==0,"水球仍限制28米")
+        else
+            local shot=assert(test.mixedProjectiles[1])
+            check(not shot.homing and shot.ttl==.8 and test.collisions==0,"水球28米立即直射、0.8秒续航")
+            local vx,vy,vz=shot.vx,shot.vy,shot.vz
+            if mode=="dodge" then target.x,target.contactX=7,7
+            elseif mode=="height" then target.driveSim.oddAltitude=10
+            elseif mode=="shield" then target.driveSim.oddShield=3
+            elseif mode=="expired" then target.z,target.contactZ=100,100 end
+            for _=1,41 do Rules.RaceStep(test,.02) end
+            check(#test.mixedProjectiles==0 and shot.vx==vx and shot.vy==vy and shot.vz==vz,
+                "水球不追踪变道或高度、命中/超时释放："..mode)
+            check(mode=="hit" and target.speed==20 and test.collisions==1
+                or mode~="hit" and target.speed==25 and test.collisions==0,"水球伤害与躲避/护盾："..mode)
+        end
+    end
+    for _,mode in ipairs({"hit","shield","dodge"}) do
+        local source,target=racer("beetle",0,0),racer("ebike",0,4)
+        local test=arena(source,target);attack(test,source)
+        if mode=="shield" then target.driveSim.oddShield=3
+        elseif mode=="dodge" then target.x=9 end
+        Rules.RaceStep(test,.479)
+        check(test.collisions==0 and target.speed==25 and not source.driveSim.oddGrabResolved,
+            "夹击0.48秒闭钳前无伤害："..mode)
+        Rules.RaceStep(test,.002)
+        check(source.driveSim.oddGrabResolved and (source.driveSim.oddGrabHolding==(mode=="hit"))
+            and test.collisions==(mode=="hit" and 1 or 0),"闭钳关键帧只命中近距无盾目标："..mode)
+        Rules.RaceStep(test,.598)
+        if mode=="hit" then
+            check(source.driveSim.oddGrabHolding and target.driveSim.oddLaunch==0
+                and test.collisions==1,"1.079秒仍夹持、不重复伤害或提前抛开")
+        end
+        Rules.RaceStep(test,.002)
+        check(not source.driveSim.oddGrabHolding and test.collisions==(mode=="hit" and 1 or 0),
+            "1.08秒松钳、伤害只触发一次："..mode)
+        check(mode=="hit" and target.driveSim.oddLaunch==.65 and target.tumble==.55
+            or mode~="hit" and target.driveSim.oddLaunch==0,"仅成功夹持后释放抛开："..mode)
+    end
+    print(string.format("[武器契约] PASS %d项 / 0.55秒锁定 / 300米8秒追踪 / 高速弯道高度 / 低帧率扫掠 / 水球直射 / 夹击关键帧",count))
+    return {passed=true,count=count}
+end
 function Checks.Run()
     local Data=require("MixedVehicles")
     local Rules=require("MixedRace")

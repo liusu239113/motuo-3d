@@ -123,6 +123,80 @@ local function rotate(root,name,rotation)
     node.rotation=rotation
 end
 
+---@param state table?
+---@return number, number, boolean
+local function grabPose(state)
+    local duration = state and state.oddGrabDuration or 1.5
+    duration = math.max(.01, duration)
+    local timer = state and state.oddGrabTimer
+    local holding = state and state.oddGrabHolding == true
+    local elapsed
+    if type(timer) == "number" then
+        elapsed = math.max(0, math.min(duration, duration - timer))
+    elseif state and (state.oddActive or 0) > 0 then
+        -- 兼容旧的视觉夹具：没有延迟计时字段时直接显示闭钳保持段。
+        elapsed = .72
+    else
+        elapsed = duration
+    end
+    -- RaceStep 在延迟命中和随行阶段置 holding；即使计时器跨过边界，
+    -- 也必须保持闭钳，避免目标刚被夹住时出现一帧松钳。
+    if holding then elapsed = .72 end
+    local openMagnitude, extension
+    if elapsed < .18 then
+        openMagnitude = -14
+        extension = 0
+    elseif elapsed < .34 then
+        local t = (elapsed - .18) / .16
+        openMagnitude = -14
+        extension = .20 * t
+    elseif elapsed < .48 then
+        local t = (elapsed - .34) / .14
+        openMagnitude = -14 + 26 * t
+        closedMagnitude = 12
+        extension = .20
+    elseif elapsed < 1.08 or holding then
+        openMagnitude = 12
+        closedMagnitude = 12
+        extension = .20
+    elseif elapsed < 1.30 then
+        local t = (elapsed - 1.08) / .22
+        openMagnitude = 12 - 26 * t
+        extension = .20 * (1 - .60 * t)
+    elseif elapsed < duration then
+        local t = (elapsed - 1.30) / math.max(.01, duration - 1.30)
+        openMagnitude = -14 * (1 - t)
+        extension = .08 * (1 - t)
+    else
+        openMagnitude = 0
+        extension = 0
+    end
+    return openMagnitude, extension, holding or (elapsed >= .48 and elapsed < 1.08)
+end
+
+---@param root Node
+---@return Vector3?
+function M.GetGrabLocalPosition(root)
+    if not root or not root:GetChild("JawP", true) or not root:GetChild("JawN", true) then return nil end
+    local positive = root:GetChild("JawP", true).position
+    local negative = root:GetChild("JawN", true).position
+    return (positive + negative) * .5 + V(.20, 0, 0)
+end
+
+---@param root Node
+---@return Vector3?
+function M.GetGrabWorldPosition(root)
+    if not root or not root:GetChild("JawP", true) or not root:GetChild("JawN", true) then return nil end
+    -- Jaw根节点已经包含SourceTransform旋转、等比缩放和前伸位移；
+    -- 再从当前两根部中心向前取钳口中心，供目标随行使用。
+    local positive = root:GetChild("JawP", true).worldPosition
+    local negative = root:GetChild("JawN", true).worldPosition
+    local source = root:GetChild("SourceTransform", true)
+    local scale = source and source.worldScale.x or 1
+    local forward = source and source.worldRotation * V(.20 * scale, 0, 0) or V(.20, 0, 0)
+    return (positive + negative) * .5 + forward
+end
+
 ---@param root Node
 ---@param id string
 ---@param time number
@@ -158,9 +232,18 @@ function M.Animate(root,id,time,state)
             local lift=-math.max(0,stride)*5*sign
             rotate(root,"Leg"..side..station,Quaternion(stride*9,V.UP)*Quaternion(lift,V.RIGHT))
         end
-        -- 技能夹击是独立巨颚绕根部Y轴闭合；技能结束明确回到原始开颚姿态。
-        local closure=active and (10+7*math.sin(time*12)) or 0
-        rotate(root,"Jaw"..side,Quaternion(sign*closure,V.UP))
+        if id=="beetle" then
+            -- 正式JawP/JawN是独立原始连通件：只改根节点TR，Body和源VB保持静止。
+            -- 源模型+X为前；.20源米约等于归一化后的.64米前伸，确保夹持动作清晰。
+            local jaw=assert(root:GetChild("Jaw"..side,true))
+            local rest=jaw:GetVar("RestPosition"):GetVector3()
+            local openMagnitude,extension,holding=grabPose(state)
+            local jawAngle=sign*openMagnitude
+            jaw.position=rest+V(extension,0,0)
+            jaw.rotation=Quaternion(jawAngle,V.UP)
+            jaw:SetVar("GrabHolding",Variant(holding))
+            jaw:SetVar("GrabExtension",Variant(extension))
+        end
     end
 end
 

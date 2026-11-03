@@ -312,6 +312,12 @@ function HUD:BuildRide()
         width = 250, padding = 6, gap = 1, visible = false, pointerEvents = "none",
         backgroundColor = {7, 26, 27, 210}, borderWidth = 1, borderColor = {83, 231, 196, 165},
         borderRadius = 3, children = {self.featureTitle, self.featureHint}}
+    self.weaponTarget = UI.Panel {position = "absolute", width = 156, height = 44, visible = false,
+        pointerEvents = "none", padding = 5, borderWidth = 1, borderRadius = 4,
+        backgroundColor = {35, 12, 12, 225}, borderColor = RED,
+        children = {UI.Label {text = "", id = "weapon-target-label", width = "100%", height = 32,
+            textAlign = "center", fontSize = 11, fontWeight = "bold", fontColor = RED}}}
+    self.weaponTargetLabel = self.weaponTarget:FindById("weapon-target-label")
     self.skillButton = button("E · 专属技能",a.skill,true,154)
     self.skillButton:SetStyle({position="absolute",right=76,top=70,height=48,fontSize=12})
     -- 通用提示：无边框、紧贴保护/危险条上方，避免挡住前方视野中心。
@@ -320,7 +326,7 @@ function HUD:BuildRide()
     self.game = UI.Panel(fill({visible = false, pointerEvents = "box-none", children = {
         self.skillButton,
         self.featureRush, self.rankPanel, self.trackMap, self.navPanel, self.instrumentPanel, self.rightTop, self.recoverPanel,
-        self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel, self.messagePanel,
+        self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel, self.weaponTarget, self.messagePanel,
         self.controlLayer}}))
     self.cockpit = RaceInstruments.Dial {position = "absolute", left = 0, top = 0, width = 154, height = 76,
         small = true, visible = false}
@@ -914,6 +920,26 @@ function HUD:UpdateSkillFeedback(sim)
             variantBackgroundGradient = {}, variantDisabledBackgroundGradient = {},
             borderWidth = active > 0 and 2 or 1})
     end
+end
+
+function HUD:UpdateWeaponTarget(sim, camera)
+    if not self.weaponTarget or not self.weaponTargetLabel then return end
+    local id = sim and sim.vehicleId or ""
+    local homing = id == "tank" or id == "helicopter"
+    local target = sim and sim.oddLockTarget
+    local show = homing and target ~= nil and (sim.oddLockPending or (sim.oddLockTimer or 0) > 0)
+        and self.screen == "ride" and camera ~= nil
+    if not show then self.weaponTarget:SetVisible(false); return end
+    local screen = camera:WorldToScreenPoint(Vector3(target.x, target.y + (target.driveSim and target.driveSim.oddAltitude or 0) + 1.2, target.z))
+    local scale = UI.GetScale()
+    local width, height = graphics:GetWidth() / scale, graphics:GetHeight() / scale
+    if screen.x <= 0 or screen.x >= 1 or screen.y <= 0 or screen.y >= 1 then
+        self.weaponTarget:SetVisible(false); return
+    end
+    local distance = sim.oddLockDistance or math.sqrt((target.x - sim.x)^2 + (target.z - sim.z)^2)
+    self.weaponTargetLabel:SetText(string.format("锁定 %s\n%.0f m", target.name or "目标", distance))
+    self.weaponTarget:SetStyle({left = screen.x * width - 78, top = screen.y * height - 22})
+    self.weaponTarget:SetVisible(true)
 end
 
 function HUD:UpdateFeatureFeedback(sim)

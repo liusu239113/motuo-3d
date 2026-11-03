@@ -36,7 +36,13 @@
 ---@field previousElapsed number
 ---@field previousScreen string
 ---@field engineClass string
+---@field engineProfile table?
 ---@field engineSounds table<string, Sound>
+---@field engineSoundFailures table<string, boolean>
+---@field engineLayerSource SoundSource?
+---@field engineLayerSound Sound?
+---@field engineLayerClass string
+---@field outputWarningShown boolean
 ---@field padSource SoundSource? 独立短whoosh，不占用/改变原六通道
 ---@field padTimer number
 ---@field padGain number
@@ -108,9 +114,82 @@ RideAudio.EnginePitch = {
     electric = 1.35, heavy = 0.55, turbine = 1.55,
 }
 
+-- 车型声学配置：primary 使用已有发动机录音，layer 只为重型/飞行载具增加低频或气流层。
+-- 所有值都是相对于录音原始采样率的倍率；实际传给 SoundSource 的仍是绝对 Hz。
+RideAudio.VehicleEngineProfiles = {
+    sport = {class = "sport", pitch = 1.00, gain = 1.00, layer = nil},
+    sport_2 = {class = "sport", pitch = 1.06, gain = 0.98, layer = nil},
+    sport_3 = {class = "sport", pitch = 1.12, gain = 0.96, layer = nil},
+    cruiser = {class = "cruiser", pitch = 0.88, gain = 1.05, layer = "bass", layerGain = 0.16, layerPitch = 0.50},
+    cruiser_2 = {class = "cruiser", pitch = 0.82, gain = 1.08, layer = "bass", layerGain = 0.19, layerPitch = 0.46},
+    cruiser_3 = {class = "cruiser", pitch = 0.78, gain = 1.10, layer = "bass", layerGain = 0.21, layerPitch = 0.43},
+    rally = {class = "rally", pitch = 0.94, gain = 1.00, layer = nil},
+    rally_2 = {class = "rally", pitch = 0.98, gain = 1.00, layer = nil},
+    rally_3 = {class = "rally", pitch = 1.03, gain = 0.98, layer = nil},
+    ebike = {class = "electric", pitch = 1.35, gain = 1.12, layer = nil, electric = true},
+    tank = {class = "heavy", pitch = 0.54, gain = 1.08, layer = "bass", layerGain = 0.34, layerPitch = 0.38, heavy = true},
+    beetle = {class = "heavy", pitch = 0.63, gain = 1.02, layer = "mechanical", layerGain = 0.26, layerPitch = 0.48, heavy = true},
+    centipede = {class = "heavy", pitch = 0.58, gain = 1.04, layer = "mechanical", layerGain = 0.31, layerPitch = 0.43, heavy = true},
+    loader = {class = "heavy", pitch = 0.50, gain = 1.12, layer = "bass", layerGain = 0.30, layerPitch = 0.36, heavy = true},
+    cicada = {class = "rally", pitch = 1.18, gain = 0.92, layer = "mechanical", layerGain = 0.18, layerPitch = 0.78},
+    helicopter = {class = "turbine", pitch = 1.42, gain = 0.86, layer = "rotor", layerGain = 0.30, layerPitch = 0.72, airborne = true},
+    hovercraft = {class = "turbine", pitch = 1.24, gain = 0.82, layer = "rotor", layerGain = 0.18, layerPitch = 0.62, airborne = true},
+    jellyfish = {class = "turbine", pitch = 1.36, gain = 0.80, layer = "rotor", layerGain = 0.20, layerPitch = 0.68, airborne = true},
+    jetboat = {class = "turbine", pitch = 1.58, gain = 0.92, layer = "rotor", layerGain = 0.15, layerPitch = 0.86},
+    toilet = {class = "turbine", pitch = 1.50, gain = 0.90, layer = nil},
+    bathtub = {class = "cruiser", pitch = 0.74, gain = 1.00, layer = "bass", layerGain = 0.22, layerPitch = 0.42},
+    buggy = {class = "rally", pitch = 1.02, gain = 1.02, layer = nil},
+    frog = {class = "rally", pitch = 0.97, gain = 0.96, layer = nil},
+    skateboard = {class = "rally", pitch = 1.24, gain = 0.72, layer = "mechanical", layerGain = 0.10, layerPitch = 0.92},
+    sled = {class = "sport", pitch = 0.90, gain = 0.78, layer = "mechanical", layerGain = 0.10, layerPitch = 0.56},
+    cart = {class = "rally", pitch = 1.10, gain = 0.80, layer = "mechanical", layerGain = 0.12, layerPitch = 0.74},
+    office = {class = "sport", pitch = 1.08, gain = 0.78, layer = "mechanical", layerGain = 0.11, layerPitch = 0.84},
+}
+
 local MUSIC, ENGINE, WIND, BRAKE, IMPACT, PASS = 1, 2, 3, 4, 5, 6
 local SILENCE = 0.001
 local PAD_WHOOSH_LENGTH = 0.48
+
+local function Finite(value)
+    return type(value) == "number" and value == value and math.abs(value) < math.huge
+end
+
+-- 只生成一秒16kHz单声道PCM，整数周期确保接缝连续；不落盘、不生成音乐。
+-- 录音保留发动机主体，PCM补履带链节/齿轮咬合/旋翼拍击，Sound在管理器中缓存。
+---@param kind string
+---@return Sound?
+local function MechanicalLoop(kind)
+    local rate, count = 16000, 16000
+    local data = VectorBuffer()
+    data:WriteFileID("RIFF"); data:WriteUInt(36 + count * 2); data:WriteFileID("WAVE")
+    data:WriteFileID("fmt "); data:WriteUInt(16); data:WriteUShort(1); data:WriteUShort(1)
+    data:WriteUInt(rate); data:WriteUInt(rate * 2); data:WriteUShort(2); data:WriteUShort(16)
+    data:WriteFileID("data"); data:WriteUInt(count * 2)
+    for index = 0, count - 1 do
+        local t = index / rate
+        local phase = t * math.pi * 2
+        local sample = 0.0
+        if kind == "bass" then
+            local links = math.max(0, math.cos(phase * 24)) ^ 8
+            sample = math.sin(phase * 64) * 0.42 + math.sin(phase * 128) * 0.20
+                + links * (math.sin(phase * 464) * 0.20 + math.sin(phase * 832) * 0.13)
+        elseif kind == "mechanical" then
+            local gears = 0.3 + math.max(0, math.sin(phase * 18)) ^ 6 * 0.7
+            sample = (math.sin(phase * 112) * 0.30 + math.sin(phase * 336) * 0.25
+                + math.sin(phase * 896) * 0.16) * gears
+        else
+            local blades = (0.5 + 0.5 * math.cos(phase * 22)) ^ 3
+            sample = (math.sin(phase * 88) * 0.50 + math.sin(phase * 176) * 0.22
+                + math.sin(phase * 1078) * 0.10) * (0.20 + blades * 0.80)
+        end
+        data:WriteShort(math.floor(sample * 28000))
+    end
+    data:Seek(0)
+    local sound = Sound()
+    if not sound:LoadWav(data --[[@as Deserializer]]) then sound:Dispose(); return nil end
+    sound.looped = true
+    return sound
+end
 
 ---@param value number
 ---@return number
@@ -206,7 +285,29 @@ function RideAudio.CheckPadFeedback()
 end
 
 ---@param scene Scene
----@return RideAudio
+---@---@return table
+function RideAudio:GetStatus()
+    local output = {available = false, initialized = false, playing = false}
+    local ok, device = pcall(GetAudio)
+    if ok and device then
+        output.available, output.initialized, output.playing = true, device.initialized == true, device.playing == true
+        output.effectGain = device:GetMasterGain(SOUND_EFFECT)
+        output.musicGain = device:GetMasterGain(SOUND_MUSIC)
+    end
+    local engine = self.sources[ENGINE]
+    local layer = self.engineLayerSource
+    return {
+        stopped = self.stopped, unlocked = self.unlocked, effectsEnabled = self.effectsEnabled,
+        output = output, engineClass = self.engineClass, vehicleProfile = self.engineProfile,
+        engine = {loaded = self.sounds[ENGINE] ~= nil, frequency = engine and engine:GetFrequency() or 0,
+            gain = engine and engine.gain or 0, playing = engine and engine.playing or false},
+        mechanical = {loaded = self.engineLayerSound ~= nil, kind = self.engineLayerClass,
+            frequency = layer and layer:GetFrequency() or 0, gain = layer and layer.gain or 0,
+            playing = layer and layer.playing or false},
+    }
+end
+
+return RideAudio
 function RideAudio.New(scene)
     local self = setmetatable({}, RideAudio)
     self:Init(scene)
@@ -232,6 +333,11 @@ function RideAudio:Init(scene)
     self.previousElapsed = 0
     self.previousScreen = "menu"
     self.engineClass, self.engineSounds = "", {}
+    self.engineProfile, self.engineSoundFailures = nil, {}
+    self.engineLayerClass, self.engineLayerSound = "", nil
+    self.outputWarningShown = false
+    self.engineLayerSource = self.node:CreateChild("VehicleMechanicalLayer", LOCAL):CreateComponent("SoundSource", LOCAL)
+    self.engineLayerSource.soundType, self.engineLayerSource.gain, self.engineLayerSource.declickEnabled = SOUND_EFFECT, 0, true
     self.padSource = self.node:CreateChild("PadWhoosh", LOCAL):CreateComponent("SoundSource", LOCAL)
     self.padSource.soundType, self.padSource.gain, self.padSource.declickEnabled = SOUND_EFFECT, 0, true
     self.padTimer, self.padGain, self.padSequence, self.padElapsed = 0, 0, 0, 0
@@ -245,11 +351,11 @@ end
 ---@return boolean
 function RideAudio:LoadOne(index)
     if self.stopped or not self.node then return false end
-    if index < 1 or index > RideAudio.Count or index ~= math.floor(index) then return false end
-    if self.sounds[index] then return true end
+    if not Finite(index) or index < 1 or index > RideAudio.Count or index ~= math.floor(index) then return false end
+    if self.sounds[index] and (index > PASS or self.sources[index]) then return true end
     local path = self.Resources[index]
     if not path then return false end
-    local sound = cache:GetResource("Sound", path)
+    local sound = self.sounds[index] or cache:GetResource("Sound", path)
     if not sound or sound:GetFrequency() <= 0 or sound:GetLength() <= 0 then
         print("[音频] 资源加载失败：" .. path)
         return false
@@ -260,7 +366,10 @@ function RideAudio:LoadOne(index)
     self.sounds[index] = sound
     -- 额外歌曲只保留压缩 Sound，切歌复用主音乐通道，不叠加音乐音源。
     if index > PASS then
-        print("[电台] 已准备曲目：" .. path)
+        for key, enginePath in pairs(RideAudio.EngineResources) do
+            if enginePath == path then self.engineSounds[key] = sound end
+        end
+        print("[音频] 已准备循环资源：" .. path)
         return true
     end
     local trackNode = self.node:CreateChild("音轨" .. index, LOCAL)
@@ -296,24 +405,25 @@ function RideAudio:UpdateLoop(index, targetGain, targetPitch, dt)
     local soundIndex = index == MUSIC and self.Tracks[self.trackIndex].resource or index
     local sound = self.sounds[soundIndex]
     if not source or not sound then return end
-    local gain = Smooth(source.gain, targetGain, index == MUSIC and 2.5 or 8, dt)
-    local pitch = Smooth(self.pitches[index] or 1, targetPitch, 7, dt)
+    local allowed = self.unlocked and not self.stopped
+        and (index == MUSIC and self.musicEnabled or index ~= MUSIC and self.effectsEnabled)
+    if not allowed or not Finite(dt) or dt <= 0 then
+        self:SilenceTrack(index)
+        return
+    end
+    local gain = Smooth(source.gain, Unit(targetGain), index == MUSIC and 2.5 or 8, dt)
+    local pitch = Smooth(self.pitches[index] or 1, math.max(0.2, math.min(3, targetPitch)), 7, dt)
     self.pitches[index] = pitch
     if targetGain == 0 and gain < SILENCE then
         source.gain = 0
-        if source.playing then source:Stop() end
+        if source.playing then source:StopImmediate() end
         return
     end
-    if not self.unlocked then return end
 
     -- frequency 是绝对采样率（Hz），绝不能直接传入 pitch 倍率。
     local frequency = sound:GetFrequency() * pitch
-    if not source.playing and targetGain > 0 then
-        source:Play(sound, frequency, gain)
-    else
-        source.gain = gain
-        source.frequency = frequency
-    end
+    if not source.playing and targetGain > 0 then source:Play(sound, frequency, gain) end
+    source.gain, source.frequency = gain, frequency
 end
 
 ---@private
@@ -387,10 +497,20 @@ end
 -- 必须直接在用户点击开始（或等价输入）回调中调用；加载与构造绝不自动播放。
 -- 幂等调用；先解锁后加载同样有效，后续 Update 会启动已就绪的音轨。
 function RideAudio:Unlock()
-    if self.stopped or self.unlocked then return end
+    if self.stopped then return end
+    local firstUnlock = not self.unlocked
     self.unlocked = true
-    if self.musicEnabled then self:UpdateLoop(MUSIC, 0.06, 1, 1) end
-    print("[音频] 用户已解锁声音")
+    -- 仅在手势入口尝试恢复已初始化设备；不重设音频模式，不取消用户或平台静音。
+    local ok, device = pcall(GetAudio)
+    if ok and device then
+        if device.initialized and not device.playing then device:Play() end
+        if not device.initialized and not self.outputWarningShown then
+            print("[音频] 输出设备尚未初始化；音源解锁成功不等于扬声器已有声音")
+            self.outputWarningShown = true
+        end
+    end
+    if firstUnlock and self.musicEnabled then self:UpdateLoop(MUSIC, 0.06, 1, 1) end
+    if firstUnlock then print("[音频] 用户已解锁声音") end
 end
 
 ---@return string
@@ -426,43 +546,104 @@ function RideAudio:ToggleEffects()
     self.effectsEnabled = not self.effectsEnabled
     if not self.effectsEnabled then
         for index = ENGINE, PASS do self:SilenceTrack(index) end
+        self:SilenceEngineLayer()
         self:SilencePad()
     end
     print("[音频] 音效" .. (self.effectsEnabled and "开启" or "关闭"))
     return self.effectsEnabled
 end
 
--- 车型切换只替换ENGINE槽的Sound，六个source对象保持原身份；失败继续使用旧声音。
+-- 车型切换只替换ENGINE槽的Sound，六个基础source对象保持原身份；失败继续使用旧声音。
 ---@param vehicleId string
 ---@return boolean
 function RideAudio:SetVehicle(vehicleId)
-    -- 尚未LoadOne(ENGINE)时不可提前占用sounds[2]，否则旧Loader会误认为source也已就绪。
-    if self.stopped or not self.sources[ENGINE] then return false end
-    -- 必须用真实车型而不是类别：否则18台混合载具都退回sport/cruiser/rally三种声音。
-    local key = RideAudio.EngineFor(vehicleId)
-    if self.engineClass == key then return true end
+    if self.stopped or not self.sources[ENGINE] or type(vehicleId) ~= "string" then return false end
+    local profile = RideAudio.VehicleEngineProfiles[vehicleId]
+    local key = profile and profile.class or RideAudio.EngineFor(vehicleId)
+    profile = profile or {class = key, pitch = RideAudio.EnginePitch[key] or 1, gain = 1}
     local path = RideAudio.EngineResources[key]
     if not path then return false end
-    local sound = self.engineSounds[key] or cache:GetResource("Sound", path)
-    if not sound or sound:GetFrequency() <= 0 or sound:GetLength() <= 0 then return false end
-    sound.looped = true
-    self.engineSounds[key] = sound
-    self:SilenceTrack(ENGINE)
-    self.sounds[ENGINE] = sound
-    self.pitches[ENGINE] = 1
-    self.engineClass = key
-    print("[车型音频] " .. key .. " / " .. path .. " / 复用ENGINE音源")
+    local sound = self.engineSounds[key]
+    if not sound then
+        sound = cache:GetResource("Sound", path)
+        if sound and sound:GetFrequency() > 0 and sound:GetLength() > 0 then
+            sound.looped = true
+            self.engineSounds[key] = sound
+        else
+            self.engineSoundFailures[key] = true
+            if self.engineClass == "" then print("[车型音频] 主发动机资源不可用：" .. path) end
+            return false
+        end
+    end
+    if self.engineClass ~= key then
+        self:SilenceTrack(ENGINE)
+        self.sounds[ENGINE] = sound
+        self.pitches[ENGINE] = 1
+        self.engineClass = key
+        print("[车型音频] " .. tostring(vehicleId) .. " -> " .. key .. " / " .. path)
+    end
+    self.engineProfile = profile
+    self:UpdateEngineLayer(profile)
     return true
 end
 
--- 车型到引擎声音的映射：每个载具有自己的音色，而不是按类别共用。
+-- 生成/缓存与主发动机独立的履带、齿轮或旋翼层；生成失败只禁用层，不影响主发动机。
+---@param profile table
+function RideAudio:UpdateEngineLayer(profile)
+    local kind = profile.layer
+    if not kind then
+        self:SilenceEngineLayer()
+        if self.engineLayerSound then self.engineLayerSound:Dispose() end
+        self.engineLayerClass, self.engineLayerSound = "", nil
+        return
+    end
+    if self.engineLayerClass ~= kind or not self.engineLayerSound then
+        self:SilenceEngineLayer()
+        local old = self.engineLayerSound
+        if old then old:Dispose() end
+        local ok, generated = pcall(MechanicalLoop, kind)
+        if not ok or not generated or generated:GetFrequency() <= 0 or generated:GetLength() <= 0 then
+            self.engineLayerClass, self.engineLayerSound = "", nil
+            print("[车型音频] 机械层生成失败：" .. kind .. "，保留主发动机")
+            return
+        end
+        self.engineLayerClass, self.engineLayerSound = kind, generated
+        print("[车型音频] 已启用独立机械层：" .. kind)
+    end
+end
+
+function RideAudio:SilenceEngineLayer()
+    local source = self.engineLayerSource
+    if source then source.gain = 0; source:StopImmediate() end
+end
+
+---@param targetGain number
+---@param pitch number
+---@param dt number
+function RideAudio:UpdateEngineLayerLoop(targetGain, pitch, dt)
+    local source, sound = self.engineLayerSource, self.engineLayerSound
+    if not source or not sound then return end
+    if not self.unlocked or self.stopped or not self.effectsEnabled or not Finite(dt) or dt <= 0
+        or targetGain <= 0 then
+        self:SilenceEngineLayer()
+        return
+    end
+    local gain = Smooth(source.gain, Unit(targetGain), 8, dt)
+    local frequency = sound:GetFrequency() * math.max(0.2, math.min(3, pitch))
+    if not source.playing then source:Play(sound, frequency, gain) end
+    source.gain, source.frequency = gain, frequency
+end
+
+-- 车型到引擎声音原型的回退映射；完整 vehicleId 优先由 VehicleEngineProfiles 区分。
 ---@param vehicleId string
 ---@return string
 function RideAudio.EngineFor(vehicleId)
+    local profile = RideAudio.VehicleEngineProfiles[vehicleId]
+    if profile then return profile.class end
     local mixed = RideAudio.MixedEngineResources[vehicleId]
     if mixed then return mixed end
-    local classId = vehicleId:match("^(%a+)") or vehicleId
-    return classId
+    local classId = type(vehicleId) == "string" and vehicleId:match("^(%a+)") or "sport"
+    return RideAudio.EngineResources[classId] and classId or "sport"
 end
 
 -- screen 使用主流程已有的 menu / ride / pause / result；未知界面按非驾驶处理。
@@ -484,15 +665,18 @@ function RideAudio:Update(dt, sim, screen)
     local rpmRatio = sim and Unit((sim.rpm - idle) / math.max(1, redline - idle)) or 0
     local throttle = sim and Unit(sim.throttle) or 0
     local effectsActive = self.unlocked and self.effectsEnabled and riding
-    self:UpdatePadFeedback(frameTime, sim, effectsActive)
-
-    local engineGain = effectsActive and (0.10 + rpmRatio * 0.15 + throttle * 0.12) or 0
     local windGain = effectsActive and speedRatio ^ 1.5 * 0.30 or 0
     local brakeGain = effectsActive and sim and
         (sim.burnout and 0.24 or (sim.braking and Unit(speed / 18) * 0.25 or 0)) or 0
-    -- 各原型有独立基频；同一录音也能听出电动车的高转、重型机械的低沉、涡轮的尖啸。
-    local basePitch = RideAudio.EnginePitch[self.engineClass] or 1.0
-    self:UpdateLoop(ENGINE, engineGain, (0.68 + rpmRatio * 0.78 + throttle * 0.10) * basePitch, frameTime)
+    self:UpdatePadFeedback(frameTime, sim, effectsActive)
+
+    local engineProfile = self.engineProfile or {pitch = RideAudio.EnginePitch[self.engineClass] or 1, gain = 1}
+    local engineGain = effectsActive and (0.10 + rpmRatio * 0.15 + throttle * 0.12) * (engineProfile.gain or 1) or 0
+    local enginePitch = (0.68 + rpmRatio * 0.78 + throttle * 0.10) * (engineProfile.pitch or 1)
+    self:UpdateLoop(ENGINE, engineGain, enginePitch, frameTime)
+    local layerGain = effectsActive and (engineProfile.layerGain or 0) * (0.45 + rpmRatio * 0.55 + throttle * 0.25) or 0
+    local layerPitch = (engineProfile.layerPitch or 1) * (0.78 + rpmRatio * 0.48 + throttle * 0.12)
+    self:UpdateEngineLayerLoop(layerGain, layerPitch, frameTime)
     self:UpdateLoop(WIND, windGain, 0.80 + speedRatio * 0.30, frameTime)
     self:UpdateLoop(BRAKE, brakeGain, 0.85 + speedRatio * 0.20, frameTime)
 
@@ -543,6 +727,10 @@ function RideAudio:Stop()
     self.sounds = {}
     self.pitches = {}
     self.engineSounds, self.engineClass = {}, ""
+    self.engineProfile, self.engineSoundFailures = nil, {}
+    if self.engineLayerSound then self.engineLayerSound:Dispose() end
+    self.engineLayerSound, self.engineLayerClass = nil, ""
+    self.engineLayerSource = nil
     if self.node then self.node:Dispose() end
     self.padSource, self.padSim, self.padState = nil, nil, nil
     self.padSequence, self.padElapsed = 0, 0

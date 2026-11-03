@@ -4,11 +4,12 @@ local HUD = require("HUD")
 local RaceVisuals = require("RaceVisuals")
 local UI = require("urhox-libs/UI")
 local Theme = require("RacingTheme")
+local MixedChecks = require("MixedChecks")
 ---@type Scene?
 local scene_ = nil
 local CASES = {
     ready = {active=0,cd=0,result="",title="",status="就绪"},
-    active = {active=1.6,cd=13.6,result="已发射 · 直线弹道，可被躲避",title="导弹已发射",status="持续 1.6s"},
+    active = {active=1.6,cd=13.6,result="锁定完成 · 导弹已发射，持续追踪",title="导弹已发射",status="持续 1.6s"},
     noTarget = {active=0,cd=0,result="前方无有效目标 · 未消耗技能",title="前方无有效目标",status="就绪"},
     hit = {active=1.2,cd=13.2,result="技能命中 · 对手减速20%，失衡3秒",title="技能命中",status="持续 1.2s"},
     shield = {active=1.1,cd=13.1,result="攻击被护盾挡住",title="攻击被护盾挡住",status="持续 1.1s"},
@@ -17,6 +18,7 @@ local CASES = {
 }
 
 function Start()
+    assert(MixedChecks.RunWeapons().passed, "追踪武器快速规则自测失败")
     local selected = "active"
     for _, arg in ipairs(GetArguments()) do selected = arg:match("^%-skill%-case=(.+)$") or selected end
     assert(CASES[selected], "未知技能验收状态")

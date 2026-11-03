@@ -314,90 +314,130 @@ function M.After(sim,dt,controls,world,x0,y0,z0,wasAirborne)
         sim.message,sim.messageTimer=sim.oddSkillResult,2
     end
 end
--- 近战按真实车体高度相交；铁尾覆盖后方及两侧，转椅覆盖周围，同一次释放可命中多个对手。
--- 空战弹体沿发射瞬间确定的三维方向直飞，不追踪；扫掠判定与画面使用同一坐标。
+-- 近战使用真实车体高度；导弹先锁定再起飞，持续预测拦截同一目标。
+-- 扫掠：前一帧目标盒 -> 当前目标盒；导弹每个子步与同一时间段的扩张盒相交。
+--   发射点 -- 抬升弧线 -- 持续转弯追踪 --> [目标半宽/半高 + 弹体半径]
+-- 护盾可挡，终点/淘汰取消；正常变道不直接判定为“闪避成功”。
+local RANGES={tank=300,beetle=5.5,centipede=6,loader=12,jellyfish=28,helicopter=300,office=6}
+local function driveFor(race,racer)
+    return racer.isPlayer and race.sim or racer.driveSim
+end
+local function centerY(race,racer)
+    local drive=driveFor(race,racer)
+    local spec=Data.Get(racer.vehicleId)
+    return racer.y+(drive and drive.oddAltitude or 0)+(spec and spec.size[2] or 1.5)*.5
+end
+local function feedback(sim,text,time)
+    if not sim then return end
+    sim.oddSkillResult,sim.oddSkillResultTimer=text,time or 2
+    sim.message,sim.messageTimer=text,time or 2
+end
+local function selectTarget(race,source,range,ranged)
+    local best,bestD=nil,range*range+.001
+    local yaw=math.rad(source.yaw or 0)
+    local sourceSpec=Data.Get(source.vehicleId)
+    local sourceDrive=driveFor(race,source)
+    local bottom=source.y+(sourceDrive and sourceDrive.oddAltitude or 0)
+    for _,target in ipairs(race.racers) do
+        if target~=source and not target.finished and not target.eliminated then
+            local dx,dz=target.x-source.x,target.z-source.z
+            local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
+            local side=math.abs(dx*math.cos(yaw)-dz*math.sin(yaw))
+            local d=dx*dx+dz*dz
+            local targetDrive=driveFor(race,target)
+            local spec=Data.Get(target.vehicleId)
+            local targetBottom=target.y+(targetDrive and targetDrive.oddAltitude or 0)
+            local vertical=ranged or (targetBottom<bottom+(sourceSpec and sourceSpec.size[2] or 1.5)
+                and targetBottom+(spec and spec.size[2] or 1.5)>bottom)
+            local direction=forward>0 and side<(ranged and math.max(8,forward*1.75) or 3.1)
+            if d<bestD and direction and vertical then best,bestD=target,d end
+        end
+    end
+    return best,math.sqrt(bestD)
+end
+local function launch(race,source,sim,target,v)
+    local y=centerY(race,source)
+    local angle=math.rad(source.yaw or 0)
+    local muzzle=v.size[3]*.5+.35
+    local x,z=source.x+math.sin(angle)*muzzle,source.z+math.cos(angle)*muzzle
+    local dx,dy,dz=target.x-x,centerY(race,target)-y,target.z-z
+    local length=math.max(.01,math.sqrt(dx*dx+dy*dy+dz*dz))
+    local homing=v.id=="helicopter" or v.id=="tank"
+    local speed=homing and math.max(100,(source.speed or 0)+65) or 65
+    -- 水球仍是近程直射；导弹携带独立目标、寿命与续航，不以旧0.8秒限制射程。
+    local projectiles=race.mixedProjectiles or {};race.mixedProjectiles=projectiles
+    projectiles[#projectiles+1]={kind=v.id,x=x,y=y,z=z,vx=dx/length*speed,
+        vy=homing and v.id=="helicopter" and speed*.25 or dy/length*speed,vz=dz/length*speed,
+        ttl=homing and 8 or .8,age=0,speed=speed,homing=homing,distance=0,
+        source=source,target=target}
+    sim.oddLockTimer=0
+    sim.oddLockPending=false
+    feedback(sim,homing and "锁定完成 · 导弹已发射，持续追踪" or "水球已发射 · 直线弹道",2.5)
+    print(string.format("[载具武器] %s 锁定%s 距离%.0fm 追踪=%s",source.id,target.id,length,tostring(homing)))
+    race:Emit("weapon-fire",source.id,target.id)
+end
 function M.Attack(race,source,sim)
     if not sim.oddAttack then return end
     sim.oddAttack=false
     local v=Data.Get(source.vehicleId);if not v then return end
-    local range=({tank=220,beetle=14,centipede=6,loader=12,jellyfish=220,helicopter=220,office=6})[v.id]
-    if not range then return end
-    local area=v.id=="centipede" or v.id=="office"
-    -- 坦克改为远程炮弹：有真实飞行轨迹和爆炸，才符合"能开炮"的直觉。
-    local ranged=v.id=="jellyfish" or v.id=="helicopter" or v.id=="tank"
-    ---@type RaceRacer?
-    local best=nil
-    local bestD=range*range
-    local sourceBottom=source.y+(sim.oddAltitude or 0)
-    for _,target in ipairs(race.racers) do
-        if target~=source and not target.finished and not target.eliminated then
+    local range=RANGES[v.id];if not range then return end
+    if v.id=="centipede" or v.id=="office" then
+        local yaw=math.rad(source.yaw or 0)
+        for _,target in ipairs(race.racers) do
             local dx,dz=target.x-source.x,target.z-source.z
-            local yaw=math.rad(source.yaw or 0)
             local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
-            local side=math.abs(dx*math.cos(yaw)-dz*math.sin(yaw))
-            local d=dx*dx+dz*dz
-            local targetSim=target.isPlayer and race.sim or target.driveSim
-            local spec=Data.Get(target.vehicleId)
-            local bottom=target.y+(targetSim and targetSim.oddAltitude or 0)
-            local height=spec and spec.size[2] or 1.5
-            local vertical=ranged or (bottom<sourceBottom+v.size[2] and bottom+height>sourceBottom)
-            local direction=area and (v.id=="office" or forward<=1.2)
-                or (ranged and forward>-8 and side<24)
-                or (not area and forward>0 and side<3.1)
-            if d<=range*range and vertical and direction then
-                if area then M.Hit(race,source,target,v)
-                elseif d<bestD then best,bestD=target,d end
+            if target~=source and not target.finished and not target.eliminated
+                and dx*dx+dz*dz<=range*range and (v.id=="office" or forward<=1.2)
+                and math.abs(centerY(race,target)-centerY(race,source))<v.size[2] then
+                M.Hit(race,source,target,v)
             end
         end
+        return
     end
-    if area then return end
+    local ranged=v.id=="tank" or v.id=="helicopter" or v.id=="jellyfish"
+    local best,distance=selectTarget(race,source,range,ranged)
+    if v.id=="beetle" then
+        -- 无目标也完整空挥；命中推迟到闭钳关键帧，不能按键瞬间隔空造成伤害。
+        sim.oddGrabTarget,sim.oddGrabTimer,sim.oddGrabDuration=best,1.5,1.5
+        sim.oddGrabHolding,sim.oddGrabResolved=false,false
+        feedback(sim,best and "双钳张开 · 前伸夹击" or "双钳空挥 · 靠近至5.5米再夹击",1.5)
+        return
+    end
     if not best then
-        if not ranged and v.id~="beetle" and v.id~="loader" then return end
         sim.oddActive,sim.oddCooldown,sim.oddSkillFlash=0,0,0
-        sim.oddSkillResult,sim.oddSkillResultTimer="前方无有效目标 · 未消耗技能",2
-        sim.message,sim.messageTimer=sim.oddSkillResult,2
+        sim.oddLockTarget,sim.oddLockTimer,sim.oddLockPending=nil,0,false
+        feedback(sim,"前方无有效目标 · 未消耗技能")
         return
     end
     if ranged then
-        sim.oddSkillResult,sim.oddSkillResultTimer="已发射 · 直线弹道，可被躲避",2
-        sim.message,sim.messageTimer=sim.oddSkillResult,2
-        local projectiles=race.mixedProjectiles or {};race.mixedProjectiles=projectiles
-        local targetSim=best.isPlayer and race.sim or best.driveSim
-        local targetSpec=Data.Get(best.vehicleId)
-        local y=sourceBottom+v.size[2]*.5
-        local targetY=best.y+(targetSim and targetSim.oddAltitude or 0)+(targetSpec and targetSpec.size[2] or 1.5)*.5
-        local dx,dy,dz=best.x-source.x,targetY-y,best.z-source.z
-        local length=math.max(.01,math.sqrt(dx*dx+dy*dy+dz*dz))
-        -- 炮弹比导弹慢，飞行轨迹更清晰可见；导弹快但仍有明显曳光。
-        local speed=v.id=="tank" and 48 or 65
-        local ttl=v.id=="tank" and 1.2 or .8
-        projectiles[#projectiles+1]={kind=v.id,x=source.x,z=source.z,y=y,
-            vx=dx/length*speed,vy=dy/length*speed,vz=dz/length*speed,ttl=ttl,source=source,target=best}
-        race:Emit("weapon-fire",source.id,best.id)
+        if v.id=="tank" or v.id=="helicopter" then
+            sim.oddLockTarget,sim.oddLockTimer,sim.oddLockPending=best,.55,true
+            sim.oddLockDuration,sim.oddLockDistance=.55,distance
+            feedback(sim,string.format("正在锁定 %s · %.0f米",best.name or "对手",distance),.7)
+            race:Emit("weapon-lock",source.id,best.id)
+        else launch(race,source,sim,best,v) end
         return
     end
     M.Hit(race,source,best,v)
 end
 function M.Hit(race,source,best,v)
-    local targetSim=best.isPlayer and race.sim or best.driveSim
-    local sourceSim=source.isPlayer and race.sim or source.driveSim
+    local targetSim=driveFor(race,best)
+    local sourceSim=driveFor(race,source)
     if targetSim and (targetSim.oddShield or 0)>0 then
-        if sourceSim then sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="攻击被护盾挡住",2 end
+        feedback(sourceSim,"攻击被护盾挡住")
         return false
     end
-    if sourceSim then
-        sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="技能命中 · 对手减速20%，失衡3秒",2.5
-        sourceSim.message,sourceSim.messageTimer=sourceSim.oddSkillResult,2.5
-    end
+    feedback(sourceSim,"技能命中 · 对手减速20%，失衡3秒",2.5)
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
     best.boostTimer=0
-    -- 命中表现：记录弹着点供爆炸特效使用，并让被击中的车短暂失控/翻车。
-    local targetSpec0=Data.Get(best.vehicleId)
-    race.mixedExplosions=race.mixedExplosions or {}
-    race.mixedExplosions[#race.mixedExplosions+1]={x=best.x,y=best.y+(targetSpec0 and targetSpec0.size[2] or 1.5)*.5,
-        z=best.z,age=0,scale=(v.id=="tank" or v.id=="helicopter") and 1.35 or 1.0}
-    if race.options and race.options.mixed then
-        best.tumble=(v.id=="tank" or v.id=="beetle" or v.id=="centipede") and 1.1 or 0.55
+    local explosive=v.id=="tank" or v.id=="helicopter" or v.id=="jellyfish"
+    if explosive then
+        race.mixedExplosions=race.mixedExplosions or {}
+        race.mixedExplosions[#race.mixedExplosions+1]={x=best.x,y=centerY(race,best),z=best.z,age=0,
+            scale=v.id=="jellyfish" and 1 or 1.35}
+    end
+    if race.options and race.options.mixed and v.id~="beetle" then
+        best.tumble=(v.id=="tank" or v.id=="centipede") and 1.1 or .55
     end
     local side=best.lane>=source.lane and 1 or -1
     local spec=Data.Get(best.vehicleId)
@@ -406,59 +446,161 @@ function M.Hit(race,source,best,v)
     best.oddDisrupt=3
     if targetSim then
         targetSim.speed=best.speed;targetSim.oddDisrupt=3
-        if v.id=="loader" or v.id=="beetle" then targetSim.oddLaunch=1.2 end
+        if v.id=="loader" then targetSim.oddLaunch=1.2 end
     end
     if best.isPlayer then
         race.sim.heading=(race.sim.heading+side*5)%360
         race.sim.message,race.sim.messageTimer=v.name.."技能命中 · 注意修正方向",2
     end
     race:Collision(best);race:Emit("vehicle-skill",source.id,best.id)
-    race:Emit("weapon-hit",source.id,best.id)
+    if explosive then race:Emit("weapon-hit",source.id,best.id) end
     return true
+end
+local function updateLock(race,source,sim,dt)
+    if not sim then return end
+    local id=source.vehicleId
+    if id~="tank" and id~="helicopter" then return end
+    if source.finished or source.eliminated then
+        sim.oddLockTarget,sim.oddLockTimer,sim.oddLockPending=nil,0,false;return
+    end
+    if sim.oddLockPending then
+        local target=sim.oddLockTarget
+        local distance=target and math.sqrt((target.x-source.x)^2+(target.z-source.z)^2) or math.huge
+        if not target or target.finished or target.eliminated or distance>RANGES[id]+25 then
+            sim.oddLockTarget,sim.oddLockTimer,sim.oddLockPending=nil,0,false
+            sim.oddCooldown,sim.oddActive=0,0
+            feedback(sim,"锁定中断 · 目标离开射程，未消耗技能");return
+        end
+        sim.oddLockDistance=distance
+        sim.oddLockTimer=math.max(0,sim.oddLockTimer-dt)
+        if sim.oddLockTimer<=0 then launch(race,source,sim,target,Data.Get(id)) end
+    elseif (sim.oddCooldown or 0)<=0 then
+        local target,distance=selectTarget(race,source,RANGES[id],true)
+        sim.oddLockTarget,sim.oddLockDistance=target,distance
+    else
+        local tracking=false
+        for _,shot in ipairs(race.mixedProjectiles or {}) do if shot.source==source then tracking=true;break end end
+        if not tracking then sim.oddLockTarget=nil end
+    end
+end
+local function updateGrab(race,source,sim,dt)
+    if not sim or (sim.oddGrabTimer or 0)<=0 then return end
+    local duration=sim.oddGrabDuration or 1.5
+    sim.oddGrabTimer=math.max(0,sim.oddGrabTimer-dt)
+    local elapsed=duration-sim.oddGrabTimer
+    local target=sim.oddGrabTarget
+    if source.finished or source.eliminated or not target or target.finished or target.eliminated then
+        sim.oddGrabHolding=false;return
+    end
+    local dx,dz=target.x-source.x,target.z-source.z
+    if elapsed>=.48 and not sim.oddGrabResolved then
+        sim.oddGrabResolved=true
+        if dx*dx+dz*dz<=6.5^2 and math.abs(centerY(race,target)-centerY(race,source))<2 then
+            sim.oddGrabHolding=M.Hit(race,source,target,Data.Get("beetle"))
+            if sim.oddGrabHolding then feedback(sim,"双钳夹住对手 · 松钳后抛开",1.5) end
+        else feedback(sim,"夹击落空 · 需要贴近对手",1.5) end
+    end
+    if sim.oddGrabHolding and elapsed<1.08 then
+        -- 两车同向夹持：按真实钳口+目标半长留距，以有限速度拉近，不瞬移14米目标。
+        local yaw=math.rad(source.yaw or 0)
+        local spec=Data.Get(target.vehicleId)
+        local offset=1.9+(spec and spec.size[3] or 2)*.35
+        local tx,tz=source.x+math.sin(yaw)*offset,source.z+math.cos(yaw)*offset
+        local blend=math.min(1,dt*10)
+        target.x,target.z=target.x+(tx-target.x)*blend,target.z+(tz-target.z)*blend
+        target.speed=source.speed*.9
+        local targetSim=driveFor(race,target)
+        if targetSim then
+            targetSim.x,targetSim.z,targetSim.speed=target.x,target.z,target.speed
+            targetSim.oddDisrupt=math.max(targetSim.oddDisrupt or 0,.6)
+        end
+    elseif sim.oddGrabHolding then
+        sim.oddGrabHolding=false
+        local targetSim=driveFor(race,target)
+        if targetSim then targetSim.oddLaunch=.65 end
+        target.tumble=.55
+    end
+end
+local function advanceShot(race,p,dt)
+    local target=p.target
+    if not target or target.finished or target.eliminated or p.source.eliminated then return false,true end
+    local targetSim=driveFor(race,target)
+    local spec=Data.Get(target.vehicleId)
+    local radius=p.homing and .8 or .325
+    local hw=(spec and spec.size[1] or .6)*.5+radius
+    local hl=(spec and spec.size[3] or 2)*.5+radius
+    local hh=(spec and spec.size[2] or 1.5)*.5
+    local lift=(targetSim and targetSim.oddAltitude or 0)+hh
+    local angle=math.rad(target.yaw or 0);local sx,sz=math.sin(angle),math.cos(angle)
+    local prevX,prevY,prevZ=target.contactX or target.x,target.contactY or target.y,target.contactZ or target.z
+    -- 120Hz弹道子步只做数值运算，防低帧率穿透与高转速轨迹折返。
+    local steps=math.max(1,math.ceil(dt*120));local step=dt/steps
+    for n=1,steps do
+        local a,b=(n-1)/steps,n/steps
+        local tx0,ty0,tz0=prevX+(target.x-prevX)*a,prevY+(target.y-prevY)*a+lift,prevZ+(target.z-prevZ)*a
+        local tx,ty,tz=prevX+(target.x-prevX)*b,prevY+(target.y-prevY)*b+lift,prevZ+(target.z-prevZ)*b
+        local x0,y0,z0=p.x,p.y,p.z
+        p.age=(p.age or 0)+step
+        if p.homing then
+            local dx,dy,dz=tx-p.x,ty-p.y,tz-p.z
+            local distance=math.sqrt(dx*dx+dy*dy+dz*dz)
+            local targetSpeed=target.speed or 0
+            p.speed=math.min(math.max(155,targetSpeed+105),(p.speed or 100)+step*160)
+            local lead=math.min(.65,distance/math.max(1,p.speed))*math.min(1,distance/18)
+            local heading=math.rad(target.yaw or 0)
+            dx,dz=dx+math.sin(heading)*targetSpeed*lead,dz+math.cos(heading)*targetSpeed*lead
+            -- 首0.25秒抬升离架，然后平滑切入预测点，尾迹体现追踪弧线。
+            if p.kind=="helicopter" then dy=dy+math.max(0,1-p.age/.4)*5 end
+            local len=math.max(.001,math.sqrt(dx*dx+dy*dy+dz*dz))
+            local oldLen=math.max(.001,math.sqrt(p.vx*p.vx+p.vy*p.vy+p.vz*p.vz))
+            local ux,uy,uz=p.vx/oldLen,p.vy/oldLen,p.vz/oldLen
+            local nx,ny,nz=dx/len,dy/len,dz/len
+            local dot=clamp(ux*nx+uy*ny+uz*nz,-1,1)
+            local turn=math.acos(dot)
+            local blend=turn<.0001 and 1 or math.min(1,math.rad(300)*step/turn)
+            local vx,vy,vz=ux+(nx-ux)*blend,uy+(ny-uy)*blend,uz+(nz-uz)*blend
+            local norm=math.max(.001,math.sqrt(vx*vx+vy*vy+vz*vz))
+            p.vx,p.vy,p.vz=vx/norm*p.speed,vy/norm*p.speed,vz/norm*p.speed
+        end
+        p.x,p.y,p.z=p.x+p.vx*step,p.y+p.vy*step,p.z+p.vz*step
+        p.distance=(p.distance or 0)+math.sqrt(p.vx*p.vx+p.vy*p.vy+p.vz*p.vz)*step
+        local ax,az=x0-tx0,z0-tz0;local bx,bz=p.x-tx,p.z-tz
+        local hit,enter,leave=swept(ax*sz-az*sx,ax*sx+az*sz,bx*sz-bz*sx,bx*sx+bz*sz,hw,hl)
+        if hit then
+            local vertical,low,high=swept(y0-ty0,0,p.y-ty,0,hh+radius,1)
+            if vertical and math.max(enter,low)<=math.min(leave,high) then return true,false end
+        end
+    end
+    p.ttl=p.ttl-dt
+    return false,p.ttl<=0 or p.distance>1500
 end
 function M.RaceStep(race,dt)
     if race.phase~="racing" then return end
     local shots=race.mixedProjectiles or {}
     for i=#shots,1,-1 do
-        local p=shots[i];local x0,y0,z0=p.x,p.y,p.z
-        p.x,p.y,p.z=p.x+p.vx*dt,p.y+p.vy*dt,p.z+p.vz*dt
-        p.ttl=p.ttl-dt
-        local target=p.target
-        local targetSim=target.isPlayer and race.sim or target.driveSim
-        local spec=Data.Get(target.vehicleId)
-        local radius=p.kind=="jellyfish" and .325 or .18
-        local halfWidth=(spec and spec.size[1] or .6)*.5+radius
-        local halfLength=(spec and spec.size[3] or 2)*.5+radius
-        local halfHeight=(spec and spec.size[2] or 1.5)*.5
-        local lift=(targetSim and targetSim.oddAltitude or 0)+halfHeight
-        local ax,az=x0-(target.contactX or target.x),z0-(target.contactZ or target.z)
-        local bx,bz=p.x-target.x,p.z-target.z
-        local angle=math.rad(target.yaw or 0);local sx,sz=math.sin(angle),math.cos(angle)
-        local hit,enter,leave=swept(ax*sz-az*sx,ax*sx+az*sz,bx*sz-bz*sx,bx*sx+bz*sz,halfWidth,halfLength)
-        if hit then
-            local ay,by=y0-(target.contactY or target.y)-lift,p.y-target.y-lift
-            local overlap,low,high=swept(ay,0,by,0,halfHeight+radius,1)
-            hit=overlap and math.max(enter,low)<=math.min(leave,high)
-        end
-        hit=hit and not target.finished and not target.eliminated
-        if hit then M.Hit(race,p.source,target,Data.Get(p.kind)) end
-        if not hit and (p.ttl<=0 or target.finished or target.eliminated) then
-            local sourceSim=p.source.isPlayer and race.sim or p.source.driveSim
-            if sourceSim then sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="攻击未命中 · 目标已躲避",2 end
-        end
-        if hit or p.ttl<=0 or target.finished or target.eliminated or p.source.eliminated then
-            if p.node then p.node:Dispose() end
+        local p=shots[i]
+        local hit,expired=advanceShot(race,p,dt)
+        if hit then M.Hit(race,p.source,p.target,Data.Get(p.kind)) end
+        if expired and not hit then feedback(driveFor(race,p.source),"追踪结束 · 目标离场或超出续航") end
+        if hit or expired then
+            if p.node then p.node:Dispose();p.node=nil end
             table.remove(shots,i)
         end
     end
     if race.sim.oddNitroGift then
         race.player.nitro=math.min(100,race.player.nitro+race.sim.oddNitroGift);race.sim.oddNitroGift=nil
     end
-    M.Attack(race,race.player,race.sim)
     for _,r in ipairs(race.racers) do
-        if not r.isPlayer and r.driveSim then M.Attack(race,r,r.driveSim) end
+        local sim=driveFor(race,r)
+        if sim then
+            updateLock(race,r,sim,dt)
+            updateGrab(race,r,sim,dt)
+            if not r.finished and not r.eliminated then M.Attack(race,r,sim) end
+        end
     end
 end
 function M.ResetCourse(world)
     for _,o in ipairs(world.mixedObstacles or {}) do o.active=true;if o.node then o.node:SetEnabledRecursive(true) end end
-    for _,o in ipairs(world.mixedCoins or {}) do
+    for _,o in ipairs(world.mixedCoins or {}) do o.active=true;if o.node then o.node.enabled=true end end
+end
+return M

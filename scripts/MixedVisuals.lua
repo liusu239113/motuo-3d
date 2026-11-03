@@ -11,7 +11,13 @@ M.RiderBindings = {
 }
 M.Cockpits = {
     ebike = {localOffset=V(0,1.64,-.15),pitch=8,fov=72,seatHeight=.996,
-        grip=M.RiderBindings.ebike.right,dash=V(0,1.33,.35)},
+        grip=M.RiderBindings.ebike.right,dash=V(0,1.33,.35),cameraCalibrated=true},
+    tank = {localOffset=V(0,1.43,-.78),pitch=0,fov=72,seatHeight=1.20,
+        grip=V(0,1.18,.30),dash=V(0,1.22,.16),cameraCalibrated=true},
+    beetle = {localOffset=V(0,1.52,-.74),pitch=0,fov=72,seatHeight=1.28,
+        grip=V(0,1.24,.36),dash=V(0,1.30,.20),cameraCalibrated=true},
+    helicopter = {localOffset=V(0,1.52,-.72),pitch=0,fov=74,seatHeight=1.30,
+        grip=V(0,1.28,.28),dash=V(0,1.25,.18),cameraCalibrated=true},
 }
 
 ---@param parent Node 归一化车辆本地米坐标；不得传SourceTransform
@@ -240,6 +246,16 @@ function Adapter:Init(scene,id)
     self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=cockpit.dash
     self.Cockpit=cockpit
     self.firstPerson,self.disposed,self.leanSign=false,false,1
+    ---@type StaticModel[]
+    self.firstPersonMeshes={}
+    -- 首视角去掉封闭驾驶舱/炮塔和头顶旋翼；前方独立巨颚、炮管、车轮
+    -- 及武器挂架继续显示，保留操作时的空间感和真实关节动作。
+    local hidden={Body=true,Turret=true,Rotor=true,DetailedBody=true}
+    for _,draw in ipairs(self.body:GetComponents("StaticModel",true)) do
+        if id~="ebike" and (hidden[draw.node.name] or hidden[draw.node.parent.name]) then
+            self.firstPersonMeshes[#self.firstPersonMeshes+1]=draw
+        end
+    end
     self.riderRig=M.CreateRider(self.visual,id)
         or {visible=false,disposed=false,SetColor=function() return false end,SetVisible=function() end,
             Update=function() end,Dispose=function(rig) rig.disposed=true end}
@@ -253,15 +269,23 @@ function Adapter:SetRiderColor(color)
 end
 function Adapter:SetFirstPerson(firstPerson)
     if self.disposed then return end
-    self.firstPerson=self.vehicleId=="ebike" and firstPerson==true
+    self.firstPerson=firstPerson==true
     self.riderRig:SetVisible(not self.firstPerson)
-    self.body:SetEnabledRecursive(true)
+    for _,draw in ipairs(self.firstPersonMeshes) do
+        -- 只切绘制组件；不禁用Vehicle/SourceTransform和关节节点，
+        -- 这样首视角和追尾视角之间切换不会丢失车轮/巨颚/旋翼状态。
+        draw.enabled=self.firstPerson and false or true
+    end
     self.cockpit.enabled=false
 end
 function Adapter:SetQuality(_) end
 function Adapter:UpdateMirrors(_,_) end
 function Adapter:GetDashboardWorldPosition() return self.dashboardMarker.worldPosition end
 function Adapter:GetCameraWorldPosition() return self.visual:LocalToWorld(self.Cockpit.localOffset) end
+function Adapter:GetGrabWorldPosition()
+    if self.vehicleId~="beetle" then return nil end
+    return require("MixedArticulation").GetGrabWorldPosition(self.body)
+end
 function Adapter:UpdateState(_,sim,firstPerson,clock)
     if self.disposed then return end
     self.node.position=V(sim.x or 0,sim.y or 0,sim.z or 0)

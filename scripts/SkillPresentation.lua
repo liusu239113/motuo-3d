@@ -8,13 +8,26 @@ local MATERIAL = "model/b68c50c6-9177-5315-b53c-3080ad11b4aa/Materials/3e646daa3
 local DIFFUSE_IMAGE = "model/b68c50c6-9177-5315-b53c-3080ad11b4aa/Textures/3e646daa3cdc44148f0153b1fb5bd7b9_00_D.jpg"
 local NORMAL_IMAGE = "model/b68c50c6-9177-5315-b53c-3080ad11b4aa/Textures/3e646daa3cdc44148f0153b1fb5bd7b9_00_N.jpg"
 local TECHNIQUE = "Techniques/PBR/PBRDiffNormal.xml"
-Skill.Resources = {MODEL, MATERIAL, DIFFUSE_IMAGE, NORMAL_IMAGE, TECHNIQUE}
+local TRAIL_TECHNIQUE = "Techniques/NoTextureUnlit.xml"
+Skill.Resources = {MODEL, MATERIAL, DIFFUSE_IMAGE, NORMAL_IMAGE, TECHNIQUE, TRAIL_TECHNIQUE}
 Skill.ResourceTypes = {[MODEL] = "Model", [MATERIAL] = "Material",
-    [DIFFUSE_IMAGE] = "Texture2D", [NORMAL_IMAGE] = "Texture2D", [TECHNIQUE] = "Technique"}
+    [DIFFUSE_IMAGE] = "Texture2D", [NORMAL_IMAGE] = "Texture2D", [TECHNIQUE] = "Technique", [TRAIL_TECHNIQUE] = "Technique"}
+---@type Material?
+local trailMaterial = nil
+local function getTrailMaterial()
+    if trailMaterial then return trailMaterial end
+    local material = Material:new()
+    material:SetTechnique(0, assert(cache:GetResource("Technique", TRAIL_TECHNIQUE)))
+    material:SetShaderParameter("MatDiffColor", Variant(Color(1, .72, .34, 1)))
+    material.cullMode = CULL_NONE
+    trailMaterial = material
+    return material
+end
 
 ---@class SkillProjectilePresentation
 ---@field kind string
 ---@field node? Node
+---@field trail? RibbonTrail
 ---@field x number
 ---@field y number
 ---@field z number
@@ -47,7 +60,21 @@ function Skill.UpdateShot(parent, shot)
         drawable.drawDistance, drawable.shadowDistance = 220, 0
         drawable.castShadows = false
         shot.node = root
-        print("[技能表现] 正式导弹生成 · 等比缩放 · 使用仿真xyz/vxyz")
+        local trail = root:CreateComponent("RibbonTrail")
+        trail:SetMaterial(getTrailMaterial())
+        trail:SetTrailType(TT_FACE_CAMERA)
+        trail:SetWidth(0.16)
+        trail:SetStartColor(Color(1, .72, .34, .95))
+        trail:SetEndColor(Color(1, .14, .02, 0))
+        trail:SetStartScale(1)
+        trail:SetEndScale(.18)
+        trail:SetLifetime(.28)
+        trail:SetVertexDistance(.08)
+        trail:SetSorted(true)
+        trail:SetEmitting(true)
+        trail:Commit()
+        shot.trail = trail
+        print("[技能表现] 正式导弹生成 · 等比缩放 · 追踪尾迹已启用")
     end
     -- 玩家/AI共用同一shot；不积分位置，不增加视觉飞行时间，命中由MixedRace销毁shot.node。
     shot.node.position = Vector3(shot.x, shot.y, shot.z)

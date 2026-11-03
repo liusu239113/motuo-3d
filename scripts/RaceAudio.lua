@@ -4,6 +4,7 @@
 ---@field node Node?
 ---@field sounds table<number, Sound>
 ---@field sources table<number, SoundSource>
+---@field weaponSources table<number, SoundSource>
 ---@field unlocked boolean
 ---@field effectsEnabled boolean
 ---@field stopped boolean
@@ -13,6 +14,7 @@
 ---@field curseIndex integer
 ---@field lastSpeakerId string
 ---@field musicDuck number
+---@field outputWarningShown boolean
 local RaceAudio = {}
 RaceAudio.__index = RaceAudio
 RaceAudio.Resources = {
@@ -33,11 +35,24 @@ RaceAudio.Resources = {
 }
 RaceAudio.Count = #RaceAudio.Resources
 local SIREN, COUNTDOWN, START, CONTACT, BOOST, FINISH = 1, 2, 3, 4, 5, 6
-local CURSE_FIRST, CURSE_COUNT = 7, 4
+local VOICE, CURSE_FIRST, CURSE_COUNT = 7, 7, 4
 local LAUNCH, EXPLOSION = 11, 12
 -- 冷却至少1.2秒且覆盖整段原速语音和尾部留白；playing再兜底音频线程延迟。
 local CURSE_COOLDOWN, CURSE_GAP = 1.2, 0.18
 local function finite(value) return type(value) == "number" and value == value and math.abs(value) < math.huge end
+
+-- 资源 7..10 共用抱怨语音源；技能开火/命中各自有独立 source，不能与语音别名混用。
+local function SourceChannel(index)
+    return index >= CURSE_FIRST and index <= CURSE_FIRST + CURSE_COUNT - 1 and VOICE or index
+end
+
+-- 只读检查音频输出设备，不改全局音量。初始化失败时调用方仍可继续运行无声游戏。
+---@return table
+function RaceAudio.GetOutputStatus()
+    local ok, device = pcall(GetAudio)
+    if not ok or not device then return {available = false, initialized = false, playing = false} end
+    return {available = true, initialized = device.initialized == true, playing = device.playing == true}
+end
 
 -- contact是无方向的车手互撞：优先target AI，target是玩家则取另一位AI。
 -- 单人撞障碍的contact只有player，不得替附近无关AI发言；bash若恢复则仅受击AI发言。
@@ -71,21 +86,22 @@ end
 function RaceAudio:Init(scene)
     self.scene = scene -- 明确持有Scene，不创建游离节点/临时Scene。
     self.node = scene:CreateChild("RaceAudioChannels", LOCAL)
-    self.sounds, self.sources = {}, {}
+    self.sounds, self.sources, self.weaponSources = {}, {}, {}
     self.lastSeq = 0
     self.currentRace = nil
     self.unlocked, self.effectsEnabled, self.stopped = false, true, false
     self.curseTimer, self.curseIndex = 0, 0
     self.lastSpeakerId, self.musicDuck = "", 1
+    self.outputWarningShown = false
     for index = 1, RaceAudio.Count do self:LoadOne(index) end
-    print("[竞速音频] 六效果通道及单语音通道准备完成，等待用户输入解锁")
+    print("[竞速音频] 六效果、单语音及两个独立武器通道准备完成，等待用户输入解锁")
 end
 
 ---@param index integer
 ---@return boolean
 function RaceAudio:LoadOne(index)
     if self.stopped or not self.node then return false end
-    if index < 1 or index > RaceAudio.Count then return false end
+    if not finite(index) or index < 1 or index > RaceAudio.Count or index ~= math.floor(index) then return false end
     if self.sounds[index] then return true end
     local path = RaceAudio.Resources[index]
     if not path then return false end
@@ -96,14 +112,17 @@ function RaceAudio:LoadOne(index)
     end
     sound:SetLooped(index == SIREN)
     -- 四段语音资源共享已有source；重试加载也不重建已经创建的通道。
-    local channel = index >= CURSE_FIRST and CURSE_FIRST or index
+    local channel = SourceChannel(index)
     local source = self.sources[channel]
+    if index == LAUNCH or index == EXPLOSION then
+        source = self.weaponSources[index]
+    end
     if not source then
         source = self.node:CreateChild("RaceChannel_" .. channel, LOCAL):CreateComponent("SoundSource", LOCAL)
         source.soundType = SOUND_EFFECT
         source.gain = 0
         source.declickEnabled = true
-        self.sources[channel] = source
+        if index == LAUNCH or index == EXPLOSION then self.weaponSources[index] = source else self.sources[channel] = source end
     end
     self.sounds[index], self.sources[index] = sound, source
     return true
@@ -111,7 +130,16 @@ end
 
 -- 由主流程用户点击开始时显式调用，与RideAudio.Unlock同一个手势内调用。
 function RaceAudio:Unlock()
-    if not self.stopped then self.unlocked = true end
+    if self.stopped then return end
+    self.unlocked = true
+    -- 只在用户手势内恢复曾停止的输出；不重设设备、不取消任何 SoundType/用户静音。
+    local ok, device = pcall(GetAudio)
+    if ok and device and device.initialized and not device.playing then device:Play() end
+    local status = RaceAudio.GetOutputStatus()
+    if not status.initialized and not self.outputWarningShown then
+        print("[竞速音频] 音源可解锁，但当前音频输出设备未初始化；请检查平台音频状态")
+        self.outputWarningShown = true
+    end
 end
 
 ---@param enabled boolean
@@ -147,10 +175,10 @@ end
 function RaceAudio:GetMusicDuck() return self.musicDuck or 1 end
 
 function RaceAudio:Silence()
-    -- sources[7..10]是同一对象别名，只停止一次。
-    for index = SIREN, CURSE_FIRST do
+    -- sources[7..10]是同一对象别名；11/12各自停止，不能残留在暂停或结束之后。
+    for index = SIREN, RaceAudio.Count do
         local source = self.sources[index]
-        if source then source.gain = 0; source:StopImmediate() end
+        if source and SourceChannel(index) == index then source.gain = 0; source:StopImmediate() end
     end
     self.curseTimer, self.lastSpeakerId, self.musicDuck = 0, "", 1
 end
@@ -158,7 +186,7 @@ end
 ---@param index integer
 ---@param gain number
 function RaceAudio:PlayOnce(index, gain)
-    if self.stopped or not self.unlocked or not self.effectsEnabled or index >= CURSE_FIRST then return end
+    if self.stopped or not self.unlocked or not self.effectsEnabled or index >= CURSE_FIRST and index <= CURSE_FIRST + CURSE_COUNT - 1 then return end
     local source, sound = self.sources[index], self.sounds[index]
     if source and sound then source:Play(sound, 0, gain) end
 end
