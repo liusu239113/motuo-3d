@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "FormalVehicleCheckMain.lua",
+    "result": "PASS",
+    "duration_ms": 27339,
+    "frames_completed": 280,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 13,
+            "component_count": 8,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 10,
+            "components": 5,
+            "hash": 2094744052,
+            "frame_time_ms": 1875.4339599609376
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 2094744052,
+            "frame_time_ms": 86.49700164794922
+        },
+        {
+            "frame": 140,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 2094744052,
+            "frame_time_ms": 79.31300354003906
+        },
+        {
+            "frame": 280,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 2094744052,
+            "frame_time_ms": 80.34300231933594
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 428.1289978027344,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 2,
+        "StaticModel": 3,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 0
+    }
+}

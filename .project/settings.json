@@ -21,7 +21,9 @@
       "../assets",
       "../scripts"
     ],
-    "asset_ignores": []
+    "asset_ignores": [
+      "../assets/image/formal_vehicle_motion"
+    ]
   },
   "@runtime": {
     "multiplayer": {
