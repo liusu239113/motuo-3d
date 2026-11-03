@@ -147,6 +147,8 @@ function Checks.RunDrive(hud,storage,restore)
     local Profile=require("Profile")
     local originalWrites,originalText=storage()
     local stage,frames,rideFrames=0,0,0
+    local screenshotAttempts=0
+    local stopped=false
     local vehicleId="helicopter"
     local screenshotPrefix=""
     for _,arg in ipairs(GetArguments()) do
@@ -171,11 +173,9 @@ function Checks.RunDrive(hud,storage,restore)
         assert(writes==originalWrites and text==originalText,"GM实际发车不得写档或消费试驾")
         assert(Profile.Trials("helicopter")==1 and not Profile.Owns("helicopter") and Profile.Coins()==2300)
     end
-    -- 不抢占主入口唯一的Update订阅；此验收不启用testShot的截图订阅。
-    SubscribeToEvent("PostRenderUpdate",function()
-        if stage==2 then return end
+    local function step()
         frames=frames+1
-        if frames>=1400 then restore();error("GM真实发车流程超时") end
+        assert(frames<1400,"GM真实发车流程超时")
         if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter();return end
         if hud.screen=="ride" then
             verify()
@@ -184,15 +184,22 @@ function Checks.RunDrive(hud,storage,restore)
             if screenshotPrefix~="" then
                 rideFrames=rideFrames+1
                 if rideFrames<2 then return end
+                screenshotAttempts=screenshotAttempts+1
                 local image=Image()
                 local path=screenshotPrefix.."-"..vehicleId.."-ride"..(stage+1)..".png"
                 local captured=graphics:TakeScreenShot(image)
                 local saved=captured and image:SavePNG(path)
                 image:Dispose()
-                if not saved then restore();error("GM正确阶段截图失败："..path) end
+                print(string.format("[GMChecks] 截图尝试 stage=%d attempt=%d captured=%s saved=%s path=%s",
+                    stage+1,screenshotAttempts,tostring(captured),captured and tostring(saved) or "not_attempted",path))
+                if not saved then
+                    assert(screenshotAttempts<3,"GM正确阶段截图连续3次失败："..path)
+                    return
+                end
                 print("[GMChecks] 正确阶段截图 "..path.." / ride PostRender="..rideFrames)
             end
             rideFrames=0
+            screenshotAttempts=0
             if stage==0 then
                 stage=1
                 hud.actions.restart()
@@ -201,9 +208,20 @@ function Checks.RunDrive(hud,storage,restore)
                 hud.actions.menu()
                 Catalog.SetGMFreeExperience(false)
                 hud:SelectVehicle(vehicleId,true)
-                verify();restore();stage=2
+                verify();stopped=true;restore();stage=2
                 print("[GMChecks] "..vehicleId.." 实际加载→发车→缓存重赛两次均不扣币/次数/写档 PASS")
             end
+        end
+    end
+    -- 异步事件不受注册时的pcall保护；任何失败都先停回调再恢复隔离，避免逐帧重复断言。
+    SubscribeToEvent("PostRenderUpdate",function()
+        if stopped then return end
+        local ok,failure=pcall(step)
+        if not ok then
+            stopped=true
+            Catalog.SetGMFreeExperience(false)
+            restore()
+            error(failure,0)
         end
     end)
 end

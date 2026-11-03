@@ -1,0 +1,423 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 286941,
+    "frames_completed": 1450,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1043.2ms (threshold: 1000ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1093.51ms (threshold: 1000ms)",
+                    "frame": 8
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1061.65ms (threshold: 1000ms)",
+                    "frame": 11
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1290.12ms (threshold: 1000ms)",
+                    "frame": 127
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 7925.02ms (threshold: 1000ms)",
+                    "frame": 1035
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1023.13ms (threshold: 1000ms)",
+                    "frame": 1037
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1609.33ms (threshold: 1000ms)",
+                    "frame": 1040
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_01_304][1110] ERROR: Execute Lua function failed: [string \"GMChecks\"]:192: GM正确阶段截图失败：/workspace/screenshots/gm_build12-tank-ride2.png\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:192: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1040
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1559.11ms (threshold: 1000ms)",
+                    "frame": 1041
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_01_338][1111] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1041
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_01_807][1112] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1042
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1940.18ms (threshold: 1000ms)",
+                    "frame": 1043
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_03_782][1113] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1043
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_04_237][1114] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1044
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_04_753][1115] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1045
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_05_239][1116] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1046
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_05_720][1117] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1047
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_06_214][1118] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1048
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_06_791][1119] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1049
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_07_218][1120] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1050
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_07_704][1121] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1051
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_18_361][1142] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1072
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_18_914][1143] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1073
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_19_438][1144] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1074
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_20_092][1145] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1075
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_20_500][1146] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1076
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_20_978][1147] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1077
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_21_476][1148] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1078
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_21_965][1149] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1079
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_22_456][1150] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1080
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_22_966][1151] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1081
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_26_23_449][1152] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1082
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_48_581][1318] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1248
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_49_163][1319] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1249
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_49_547][1320] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1250
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_50_099][1321] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1251
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_50_625][1322] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1252
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_51_123][1323] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1253
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_51_639][1324] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1254
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_52_153][1325] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1255
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_52_620][1326] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1256
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_53_200][1327] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1257
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_27_53_697][1328] ERROR: Execute Lua function failed: [string \"GMChecks\"]:172: assertion failed!\nstack traceback:\n\t[C]: in function 'assert'\n\t[string \"GMChecks\"]:172: in upvalue 'verify'\n\t[string \"GMChecks\"]:181: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1258
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1230.76ms (threshold: 1000ms)",
+                    "frame": 1290
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_08_685][1469] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1399
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_09_134][1470] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1400
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_09_658][1471] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1401
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_10_149][1472] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1402
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_10_724][1473] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1403
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_11_207][1474] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1404
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_11_697][1475] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1405
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_12_192][1476] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1406
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_12_764][1477] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1407
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_13_347][1478] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1408
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_13_827][1479] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1409
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_18_916][1489] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1419
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_19_385][1490] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1420
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_19_907][1491] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1421
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_20_438][1492] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1422
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_20_889][1493] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1423
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_21_340][1494] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1424
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_21_954][1495] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1425
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_22_432][1496] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1426
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_22_885][1497] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1427
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_23_455][1498] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1428
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-03 23_29_23_945][1499] ERROR: Execute Lua function failed: [string \"GMChecks\"]:178: GM真实发车流程超时\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"GMChecks\"]:178: in function <[string \"GMChecks\"]:175>",
+                    "frame": 1429
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 5392,
+            "component_count": 2626,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 5333.77783203125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.63800048828125
+        },
+        {
+            "frame": 725,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 22.92799949645996
+        },
+        {
+            "frame": 1450,
+            "phase": "run",
+            "nodes": 82,
+            "components": 42,
+            "hash": 196301278,
+            "frame_time_ms": 494.7510070800781
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 7925.02099609375,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 1,
+        "Skybox": 1,
+        "StaticModel": 2325,
+        "CustomGeometry": 276,
+        "Camera": 1,
+        "SoundSource": 14,
+        "AnimatedModel": 5
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 56,
+        "resource_errors": 0,
+        "engine_errors": 10,
+        "total_errors": 66
+    }
+}

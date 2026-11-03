@@ -1,0 +1,33 @@
+[2026-11-03 21_06_50_836][0] INFO: DownloadManager initialized
+[2026-11-03 21_06_50_837][0] INFO: a couple of Subsystems registered finish.
+[2026-11-03 21_06_50_838][0] INFO: Engine construct finish.
+[2026-11-03 21_06_50_846][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-11-03 21_06_51_998][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-03 21_06_52_542][21] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 21_06_53_796][37]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-03 21_06_53_802][37]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-03 21_06_53_802][37]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-03 21_06_53_806][37] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 21_06_55_656][63][Script] IsNetworkMode:    false
+[2026-11-03 21_06_55_783][63][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-03 21_06_55_783][63][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-03 21_06_55_783][63][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-03 21_06_55_783][63][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-03 21_06_55_812][63][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-03 21_06_56_182][63][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-03 21_06_56_293][63] WARNING: SurfaceShader assets/BoqZqTZCAJ9j-C95906ouRdn-1b9279e9.shader: Warning: hint_normal on 'arrow_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-03 21_06_56_293][63][Script] [ScenicAssetProps] 正式箭头原D/N、RG重建、diffuse-alpha裁剪 / SurfaceShader
+[2026-11-03 21_06_56_293][63][Script] [环境材质探针] arrow mode=compat instances=2 VSDEF= PSDEF=
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] base VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=AO   PD=PBR IBL AMBIENT AO  ALPHAMASK ALPHAMASK_DIFF_A
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] litbase VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=AO  NORMALMAP PD=PBR IBL AMBIENT AO  NORMALMAP ALPHAMASK ALPHAMASK_DIFF_A
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] light VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=AO  NORMALMAP PD=PBR IBL AO  NORMALMAP ALPHAMASK ALPHAMASK_DIFF_A
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] shadow VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=SURFACE_SHADOW_ONLY   PD=SURFACE_SHADOW_ONLY  ALPHAMASK ALPHAMASK_DIFF_A
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] depth VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=SURFACE_DEPTH_ONLY   PD=SURFACE_DEPTH_ONLY  ALPHAMASK ALPHAMASK_DIFF_A
+[2026-11-03 21_06_56_293][63][Script] [环境探针Pass] deferred VS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 PS=Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9 VD=AO PD=PBR IBL AMBIENT AO DEFERRED
+[2026-11-03 21_06_56_316][63][Script] [环境材质探针] renderer.dynamicInstancing=true minInstances=2；双实例是否合批以实际INSTANCED编译日志为准
+[2026-11-03 21_06_56_317][63][Script] [环境材质探针] READY / 只检真实模型材质，不代表World通过
+[2026-11-03 21_06_58_150][66][Script] [正式环境验收] 正确阶段截图 screenshots/environment-official/probe12-arrow-landscape-phase4.png motion=0.13333333333333
+[2026-11-03 21_06_59_586][90][Script] [正式环境验收] 正确阶段截图 screenshots/environment-official/probe12-arrow-landscape-phase28.png motion=0.93333333333333
+[2026-11-03 21_07_00_536][108]INFO__VALIDATE_UPDATE__:false
