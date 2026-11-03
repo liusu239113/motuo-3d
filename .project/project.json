@@ -6,7 +6,7 @@
     "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "taptap_publish": {
     "title": "公路狂飙",
     "category": "racing",
@@ -42,10 +42,10 @@
     "baseGameplayDemoVideoId": 0
   },
   "metadata": {
-    "updated_at": "2026-11-03T19:31:42.244Z"
+    "updated_at": "2026-11-03T19:35:08.781Z"
   },
   "test_qrcode": {
-    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793734302105.png",
-    "generated_at": "2026-11-03T19:31:42.244Z"
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793734508638.png",
+    "generated_at": "2026-11-03T19:35:08.781Z"
   }
 }
