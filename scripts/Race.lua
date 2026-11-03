@@ -613,7 +613,8 @@ function Race:ValidateProgress(r, oldS, newS, dt, previousSpeed, recovered, road
         if not recovered then r.invalidMoves = r.invalidMoves + 1 end
         r.progress = min(r.progress, newS, r.nextGate - .001)
     end
-    if not r.finished and newS > r.nextGate + min(8, self.gateSpacing * .2) then
+    local gateSpacing = self.gateSpacing or (self.length / math.max(1, self.gateCount or 1))
+    if not r.finished and newS > r.nextGate + min(8, gateSpacing * .2) then
         self:MissGate(r, physical and "待门落后" or "非连续移动越门")
     end
     r.offCourseLast = not onCourse or not physical
