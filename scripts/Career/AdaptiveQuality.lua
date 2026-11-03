@@ -5,9 +5,9 @@ local Quality = {}
 -- 档位从低到高。draw/shadow 缩放真实可见距离（图元数的主要来源），
 -- near 是NPC做完整碰撞的半径；npcScale 缩放人群/行人的更新预算。
 Quality.LEVELS = {
-    { name = "低", hdr = false, specular = false, shadowMap = 512, anisotropy = 1, shadowFar = 40, draw = 0.45, shadow = 0.30, near = 45, npcScale = 0.5, trafficTicks = 1 },
-    { name = "中", hdr = false, specular = true, shadowMap = 768, anisotropy = 2, shadowFar = 50, draw = 0.70, shadow = 0.60, near = 60, npcScale = 0.75, trafficTicks = 2 },
-    { name = "高", hdr = true, specular = true, shadowMap = 1024, anisotropy = 4, shadowFar = 65, draw = 1.00, shadow = 1.00, near = 70, npcScale = 1.0, trafficTicks = 2 },
+    { name = "低", hdr = false, specular = false, shadowMap = 512, anisotropy = 1, shadowFar = 40, draw = 0.28, shadow = 0.0, near = 40, npcScale = 0.5, trafficTicks = 1, cars = 15, people = 3 },
+    { name = "中", hdr = false, specular = true, shadowMap = 768, anisotropy = 2, shadowFar = 50, draw = 0.60, shadow = 0.5, near = 55, npcScale = 0.75, trafficTicks = 2, cars = 15, people = 3 },
+    { name = "高", hdr = true, specular = true, shadowMap = 1024, anisotropy = 4, shadowFar = 65, draw = 1.00, shadow = 1.00, near = 70, npcScale = 1.0, trafficTicks = 2, cars = 15, people = 3 },
 }
 
 Quality.level = 3
@@ -41,6 +41,12 @@ end
 
 ---@return number 当前档位下NPC完整碰撞的半径（米）
 function Quality.NearRadius() return Quality.LEVELS[Quality.level].near end
+
+---@return integer 每帧参与逐帧计算的车辆数上限
+function Quality.ActiveCars() return Quality.LEVELS[Quality.level].cars end
+
+---@return integer 每帧参与完整行走判定的行人数上限
+function Quality.ActivePeople() return Quality.LEVELS[Quality.level].people end
 
 ---@return table
 function Quality.Current() return Quality.LEVELS[Quality.level] end

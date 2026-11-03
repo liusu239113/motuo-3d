@@ -351,8 +351,31 @@ function City:SetSpace(id)
     self.stream:SetVisible(id=="city")
     self.interior:SetSpace(id)
 end
+-- 地形在一帧内不变，而碰撞/接地每帧会查询上千次；按0.25m量化缓存，跨帧清空。
+-- 量化误差远小于轮胎半径与接地容差，且不改变任何后续碰撞判定。
+local SURFACE_QUANT=4
+-- 每帧开始时由 Session 调用，丢弃上一帧的地形查询结果。
+function City:BeginFrameCache()
+    self.surfaceCache={}
+    self.walkCache={}
+end
 function City:Surface(x,z)
     if self.space~="city" then return .085 end
+    local cache=self.surfaceCache
+    local key
+    if cache then
+        key=math.floor(x*SURFACE_QUANT)*100003+math.floor(z*SURFACE_QUANT)
+        local hit=cache[key]
+        if hit~=nil then return hit end
+    end
+    local value=self:ComputeSurface(x,z)
+    if cache then cache[key]=value end
+    return value
+end
+---@param x number
+---@param z number
+---@return number
+function City:ComputeSurface(x,z)
     local environment=Environment.Surface(x,z)
     if environment~=nil then return environment end
     local hill=require("Career.HillDistrict").Surface(x,z)

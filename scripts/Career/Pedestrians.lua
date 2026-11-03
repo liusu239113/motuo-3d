@@ -4,6 +4,7 @@ local Walk=require("Career.LocalWalk")
 ---@class CareerPedestrians
 ---@field Paths number[][]
 local Pedestrians={}
+Pedestrians.MAX_PEOPLE=0
 Pedestrians.__index=Pedestrians
 ---@class CityPedestrianAsset
 ---@field root string
@@ -58,6 +59,8 @@ function Pedestrians:Init(root,city)
     self.poseTime=0
     self.people={}
     for i,p in ipairs(paths) do
+        -- 出生点附近只保留3个行人：够撑起街道人气，又把逐帧碰撞开销压到可控。
+        if #self.people>=Pedestrians.MAX_PEOPLE then break end
         local node=root:CreateChild("老街行人"..i)
         local rig=Rig.New(node,specs[(i-1)%#specs+1])
         rig.ground=city
@@ -96,10 +99,14 @@ function Pedestrians:Update(dt,blockers)
     local outer=traffic and traffic.outer
     local groups={self.people,outer and outer.people or {}}
     local cars={traffic and traffic.cars or {},outer and outer.cars or {}}
-    -- 只有靠近玩家的行人做完整扫掠碰撞；远处的仍沿路线推进，省掉最贵的静态查询。
-    local nearRadius=require("Career.AdaptiveQuality").NearRadius()*.6
+    -- 只有靠近玩家的少数行人做完整扫掠碰撞；其余仍沿路线推进，省掉最贵的静态查询。
+    local Quality=require("Career.AdaptiveQuality")
+    local nearRadius=Quality.NearRadius()*.6
+    local budget=Quality.ActivePeople()
+    local full=0
     for _,p in ipairs(self.people) do
         local near=not viewer or (p.x-viewer.x)^2+(p.z-viewer.z)^2<=nearRadius^2
+        if near and full<budget then full=full+1 else near=false end
         local moved=Walk.Advance(self.city,p,dt,blockers,groups,cars,not near)
         if #p.localWalk.points==0 and (p.s<=.00001 or p.s>=p.length-.00001) then
             p.direction=p.s<=.00001 and 1 or -1

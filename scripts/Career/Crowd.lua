@@ -61,8 +61,8 @@ local CrowdBindType={}
 ---@field enabled boolean
 local Crowd={}
 Crowd.__index=Crowd
--- 同屏活动行人压到个位数并收窄活动半径：出生点不再挤一堆人。
-Crowd.BUDGET,Crowd.HARD_LIMIT=6,8
+-- 人群（骨骼+逐帧碰撞）单帧开销过大，暂缓启用；街道人气由轻量车流与3个行人人承担。
+Crowd.BUDGET,Crowd.HARD_LIMIT=0,0
 Crowd.RANGE,Crowd.RECYCLE,Crowd.SPAWN_MIN=50,70,20
 -- 同一视野内只保留个位数的活动行人：人数少但分布开，比堆一堆在出生点更真实也更省。
 Crowd.MAX_POSES,Crowd.MAX_CREATES,Crowd.MAX_MOVES=3,2,4
@@ -576,6 +576,10 @@ function Crowd:Move(p,dt)
 end
 function Crowd:Update(dt,actor,enabled,camera)
     if self.disposed then return end
+    if Crowd.HARD_LIMIT<=0 then
+        if self.root.enabledSelf then self.root:SetEnabledRecursive(false) end
+        return
+    end
     self.enabled=enabled~=false and self.city.space=="city" and (not self.city.traffic or self.city.traffic.active)
     if self.city.space~="city" then
         if self.root.enabledSelf then self.root:SetEnabledRecursive(false) end

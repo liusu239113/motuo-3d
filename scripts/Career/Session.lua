@@ -304,6 +304,8 @@ function Session:BuildWorld()
     self:UpdateEnvironment(Store.Get().time)
     self:RestorePosition()
     self.traffic=assert(Traffic.New(self.city,self.actor))
+    -- 全城街面车流：扩张区每条路都有车，纯解析运动不做碰撞。
+    self.streetTraffic=require("Career.StreetTraffic").New(self.scene,self.city)
     self.city.traffic=self.traffic
     self.crowd=Crowd.New(self.city,self.city.root)
     self.city.crowd=self.crowd
@@ -959,6 +961,7 @@ function Session:Update(dt)
     end
     if not self.running or not self.actor then return end
     perfLast_ = os.clock()
+    if self.city then self.city:BeginFrameCache() end
     if self.customerCall then
         if self.view.phonePage~="call" then self:EndCustomerCall()
         elseif Calls.Advance(self.customerCall,dt) then
@@ -1046,6 +1049,7 @@ function Session:Update(dt)
     if self.crowd and self.space=="city" then
         self.crowd:Update(dt,self.actor,true,self.camera and self.camera:GetCamera())
     end
+    if self.streetTraffic and self.space=="city" then self.streetTraffic:Update(dt) end
     perfMark("crowd")
     if self.traffic then
         self.traffic:Update(dt)
@@ -1131,6 +1135,7 @@ function Session:DisposeWorld()
     self.shotCameraTarget=nil
     renderer:SetNumViewports(0)
     if self.crowd then self.crowd:Dispose(); self.crowd=nil end
+    if self.streetTraffic then self.streetTraffic:Dispose(); self.streetTraffic=nil end
     if self.traffic then self.traffic:Dispose(); self.traffic=nil end
     if self.city then self.city.traffic=nil; self.city.deliveryPeople=nil; self.city.crowd=nil end
     if self.deliveryPeople then self.deliveryPeople:Dispose(); self.deliveryPeople=nil end

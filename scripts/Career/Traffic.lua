@@ -176,11 +176,11 @@ function Traffic:StaticFree(car)
     return free
 end
 function Traffic:CanPlace(car,blockers)
-    -- 远车只沿路线推进：静态墙和行人判定只对玩家附近的车做（路线固定，不会驶离车道）。
+    -- 老街车辆由 Route.Pose 沿车道中心线推进，静态墙/路缘在设计上不会相交，
+    -- 因此不再逐子步做静态扫掠（这是原先最大的单笔开销）；只保留动态判定。
     local actor=self.actor
     local nearRadius=require("Career.AdaptiveQuality").NearRadius()
     local near=not actor or (car.x-actor.x)^2+(car.z-actor.z)^2<=nearRadius^2
-    if near and self.city.space=="city" and not self:StaticFree(car) then return false end
     if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
     for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
@@ -219,6 +219,9 @@ function Traffic:CollisionShapes(result,area,dx,dz,mode,height)
         carList(self.outer.cars)
         peopleList(self.outer.people)
     end
+    -- 全城街面车流虽然不做逐帧物理模拟，但仍然是实体：玩家不能穿过去。
+    local street=self.city.streetTraffic
+    if street then street:AppendShapes(result,area,dx,dz,mode,height) end
 end
 function Traffic:IsFree(x,z,r,height)
     if not self.active or self.city.space~="city" then return true end
@@ -241,7 +244,8 @@ end
 function Traffic:Step(dt,blockers)
     self.time=self.time+dt
     self.city.signals:Update(self.time)
-    for _,car in ipairs(self.cars) do
+    local cars=self.activeCars or self.cars
+    for _,car in ipairs(cars) do
         local gap=math.huge
         if Routes.Signal(self.time,car.route.axis)~="green" or self:CrossingBusy(car) then gap=Routes.StopGap(car.route,car.s,car.length) end
         for _,other in ipairs(self.cars) do
@@ -285,7 +289,7 @@ local FIXED_TICK=1/30
 -- 只设一个足够宽松的上限防止极端卡顿时雪崩，正常15~60FPS都在真实时间轴上。
 local function maxTicksPerFrame(duration)
     local need = math.ceil((duration or 0) / FIXED_TICK) + 1
-    return math.max(need, require("Career.AdaptiveQuality").TrafficTicks())
+    return math.max(math.min(need, 4), require("Career.AdaptiveQuality").TrafficTicks())
 end
 function Traffic:AdvanceTicks(duration,blockers,nearOld)
     if not nearOld then self.tickCarry=0;return 0 end
@@ -331,6 +335,30 @@ function Traffic:UpdateScoped(duration,blockers)
     local showOld=dx*dx+dz*dz<=450^2
     if self.root:IsEnabled()~=showOld then self.root:SetEnabledRecursive(showOld) end
     tpLast_=os.clock()
+    -- 硬性限量：每帧只推进离玩家最近的若干辆车，其余保持原位（外观不变，只是不参与逐帧计算）。
+    -- 这样 NPC 开销有确定上界，不会随帧率下降而恶性放大。
+    local limit=require("Career.AdaptiveQuality").ActiveCars()
+    self.activeCars=self.activeCars or {}
+    local active=self.activeCars
+    for i=1,#active do active[i]=nil end
+    if #self.cars<=limit then
+        for i,car in ipairs(self.cars) do active[i]=car end
+    else
+        local ax,az=self.actor.x,self.actor.z
+        for _,car in ipairs(self.cars) do
+            local d=(car.x-ax)^2+(car.z-az)^2
+            if #active<limit then
+                active[#active+1]=car
+            else
+                local worst,worse=1,(active[1].x-ax)^2+(active[1].z-az)^2
+                for i=2,#active do
+                    local dd=(active[i].x-ax)^2+(active[i].z-az)^2
+                    if dd>worse then worst,worse=i,dd end
+                end
+                if d<worse then active[worst]=car end
+            end
+        end
+    end
     self:AdvanceTicks(duration,blockers,self.nearOld)
     tpMark("ticks")
     if self.nearOld then
