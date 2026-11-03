@@ -1,0 +1,120 @@
+{
+    "version": 2,
+    "script": "FormalVehicleCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 22201,
+    "frames_completed": 140,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1802.25ms (threshold: 100ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 137.637ms (threshold: 100ms)",
+                    "frame": 5
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 170.327ms (threshold: 100ms)",
+                    "frame": 8
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 117.051ms (threshold: 100ms)",
+                    "frame": 9
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 227.615ms (threshold: 100ms)",
+                    "frame": 23
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 127.734ms (threshold: 100ms)",
+                    "frame": 55
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 136,
+            "component_count": 25,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 19,
+            "components": 6,
+            "hash": 4044823452,
+            "frame_time_ms": 6240.080078125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 19,
+            "components": 6,
+            "hash": 4044823452,
+            "frame_time_ms": 92.25800323486328
+        },
+        {
+            "frame": 70,
+            "phase": "run",
+            "nodes": 19,
+            "components": 6,
+            "hash": 4044823452,
+            "frame_time_ms": 68.2699966430664
+        },
+        {
+            "frame": 140,
+            "phase": "run",
+            "nodes": 19,
+            "components": 6,
+            "hash": 4044823452,
+            "frame_time_ms": 75.12699890136719
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 1802.2540283203126,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 2,
+        "StaticModel": 17,
+        "AnimatedModel": 2,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 6,
+        "total_errors": 6
+    }
+}

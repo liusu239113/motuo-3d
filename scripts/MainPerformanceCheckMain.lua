@@ -16,10 +16,13 @@ return {
     start=Start,
     launch=function()
         Catalog.SetGMFreeExperience(true)
-        selectedTrack_,selectedVehicle_="circuit","beetle"
-        hud_:SelectTrack("circuit",false);hud_:SelectVehicle("beetle",false)
+        local vehicle="beetle"
+        for _,arg in ipairs(GetArguments()) do vehicle=arg:match("^%-performance%-vehicle=(.+)$") or vehicle end
+        assert(VehicleAssets.Vehicles[vehicle],"验收车型必须已正式交付")
+        selectedTrack_,selectedVehicle_="circuit",vehicle
+        hud_:SelectTrack("circuit",false);hud_:SelectVehicle(vehicle,false)
         raceAutodrive_,autoTest_=true,true
-        StartRide(true);ConfirmVehicle("beetle")
+        StartRide(true);ConfirmVehicle(vehicle)
     end,
     finish=MainMenu,
     inspect=function()
@@ -43,6 +46,19 @@ function Start()
             -- 墙钟帧率从日志时间戳取；os.clock只报告本地进程CPU区间。
             print(string.format("[实赛渲染] frames=%d processCPU=%.0fms elapsed=%.2f batches=%d primitives=%d",
                 frames_,(os.clock()-cpuStart_)*1000,state.elapsed,renderer.numBatches,renderer.numPrimitives))
+        end
+        if frames_==30 then
+            for _,arg in ipairs(GetArguments()) do
+                local path=arg:match("^%-performance%-shot=(screenshots/[%w_-]+%.png)$")
+                if path then
+                    local image=Image()
+                    local captured=graphics:TakeScreenShot(image)
+                    local saved=captured and image:SavePNG(path)
+                    image:Dispose()
+                    assert(saved,"真实九车驾驶截图保存失败")
+                    print("[实赛渲染] 驾驶30帧截图 "..path)
+                end
+            end
         end
         if frames_==60 then
             ready_=true
