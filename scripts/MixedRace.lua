@@ -558,7 +558,7 @@ function M.Attack(race,source,sim)
             if target~=source and not target.finished and not target.eliminated
                 and dx*dx+dz*dz<=range*range and (v.id=="office" or forward<=1.2)
                 and math.abs(centerY(race,target)-centerY(race,source))<v.size[2] then
-                M.Hit(race,source,target,v)
+                M.Hit(race,source,target,v,true)
             end
         end
         return
@@ -590,10 +590,11 @@ function M.Attack(race,source,sim)
     end
     M.Hit(race,source,best,v)
 end
-function M.Hit(race,source,best,v)
+function M.Hit(race,source,best,v,areaAttack)
     local targetSim=driveFor(race,best)
     local sourceSim=driveFor(race,source)
-    if (sourceSim and (sourceSim.skillHitLock or 0)>0) or (targetSim and (targetSim.skillHitLock or 0)>0) then
+    if (not areaAttack and sourceSim and (sourceSim.skillHitLock or 0)>0)
+        or (targetSim and (targetSim.skillHitLock or 0)>0) then
         feedback(sourceSim,"技能命中保护中")
         return false
     end
