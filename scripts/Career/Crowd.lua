@@ -602,16 +602,20 @@ function Crowd:Update(dt,actor,enabled,camera)
         for _=1,Crowd.MAX_CREATES do if not self:Acquire(actor,camera) then break end end
     end
     local count=#self.people
+    -- 预算随自适应画质档位缩放：弱设备少走几人、少解几副姿态，人数不减少。
+    local quality=require("Career.AdaptiveQuality").Current()
+    local maxMoves=math.max(2,math.floor(Crowd.MAX_MOVES*quality.npcScale))
+    local maxPoses=math.max(2,math.floor(Crowd.MAX_POSES*quality.npcScale))
     for _,p in ipairs(self.people) do p.poseElapsed=math.min(.2,p.poseElapsed+dt); p.idle=p.idle+dt end
-    for _=1,math.min(Crowd.MAX_MOVES,count) do
+    for _=1,math.min(maxMoves,count) do
         local index=(self.moveCursor-1)%math.max(1,count)+1
         local p=self.people[index]
         self.moveCursor=index+1
-        if d2(p.x,p.z,actor)<=Crowd.RANGE^2 then self:Move(p,math.min(.1,dt*math.max(1,count/Crowd.MAX_MOVES))) end
+        if d2(p.x,p.z,actor)<=Crowd.RANGE^2 then self:Move(p,math.min(.1,dt*math.max(1,count/maxMoves))) end
     end
     local evaluated=0
     for offset=0,count-1 do
-        if evaluated>=Crowd.MAX_POSES then break end
+        if evaluated>=maxPoses then break end
         local index=(self.poseCursor+offset-1)%math.max(1,count)+1
         local p=self.people[index]
         local distance=d2(p.x,p.z,actor)
@@ -623,7 +627,7 @@ function Crowd:Update(dt,actor,enabled,camera)
             p.moved=0; self:Pose(p); evaluated=evaluated+1
         end
     end
-    self.poseCursor=(self.poseCursor+Crowd.MAX_POSES-1)%math.max(1,count)+1
+    self.poseCursor=(self.poseCursor+maxPoses-1)%math.max(1,count)+1
 end
 -- 交通应读取同一people/x/z/radius小圆。玩家可不接实体阻挡，优先行人主动避让。
 function Crowd:GetBlockers()

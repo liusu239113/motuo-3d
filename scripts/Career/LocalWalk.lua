@@ -135,7 +135,9 @@ function Walk.Advance(city,p,dt,blockers,groups,cars)
     state.cooldown=math.max(0,state.cooldown-dt)
     local distance=p.speed*math.min(dt,.25)
     local moved=0
-    local count=math.max(1,math.ceil(distance/.1))
+    -- SegmentFree 对整段做连续扫掠（静态墙+动态圆/OBB），把一段路拆成多个
+    -- 10cm 子段只是重复同一次扫掠判定，不提高精度；一帧一次即可。
+    local count=1
     for _=1,count do
         local target=state.points[state.index]
         local tx,tz

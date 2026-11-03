@@ -151,7 +151,7 @@ function Traffic:Place(car)
 end
 -- 静态城市几何在一次城市生命周期内不变，而老街车辆位姿由 Pose(route,s) 唯一决定，
 -- 因此同一路线位置的静态通畅结论可长期复用；位姿与路线不一致时（外部摆放）不缓存。
-local STATIC_CACHE_STEP=0.05
+local STATIC_CACHE_STEP=0.5
 local staticCalls_,staticHits_=0,0
 local function routeStaticKey(car)
     if not car.route or car.s==nil then return nil end
@@ -272,7 +272,9 @@ end
 -- <=.10m collision substeps). Only the rendering-frame partition is changed.
 -- Fractional time is retained, never rounded up into a second 8.5ms step for
 -- a 17ms frame. Near-old freezing deliberately discards only its <1tick carry.
-local FIXED_TICK=1/60
+-- 30Hz逻辑步：帧率低时同样的真实时间只需一半的补跑次数，
+-- 车流速度仍走真实时间轴；Step内部仍按0.1m做碰撞子步，精度不变。
+local FIXED_TICK=1/30
 -- 低帧率时必须补足真实时间：补不够会让整条街的车变成龟速（世界变慢）。
 -- 只设一个足够宽松的上限防止极端卡顿时雪崩，正常15~60FPS都在真实时间轴上。
 local function maxTicksPerFrame(duration)

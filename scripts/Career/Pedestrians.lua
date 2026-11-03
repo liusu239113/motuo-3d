@@ -86,6 +86,11 @@ function Pedestrians:Update(dt,blockers)
     if self.disposed or self.city.space~="city" or dt<=0 or dt~=dt or dt==math.huge
         or traffic and (traffic.disposed or not traffic.active or traffic.nearOld==false) then return end
     dt=math.min(dt,.25)
+    -- 行人逻辑按15Hz累计推进：位置仍按真实时间前进，只是碰撞扫掠次数减少到约1/4。
+    -- 骨骼姿态本来就有分频，降低逻辑频率不影响可见步态。
+    self.stepAccum=(self.stepAccum or 0)+dt
+    if self.stepAccum<1/15 then return end
+    dt,self.stepAccum=self.stepAccum,0
     blockers=blockers or {}
     local viewer=blockers[1]
     local outer=traffic and traffic.outer
