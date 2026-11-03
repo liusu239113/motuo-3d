@@ -1,0 +1,63 @@
+-- 基于3D场景脚手架的正式载具验收入口，不读取或写入玩家存档。
+local Assets = require("MixedAssets")
+local Visual = require("MixedVisuals")
+---@type Scene?
+local scene_ = nil
+
+function Start()
+    local id, pose = "helicopter", 0
+    for _,arg in ipairs(GetArguments()) do
+        id = arg:match("^%-formal%-vehicle=(.+)$") or id
+        pose = tonumber(arg:match("^%-pose%-time=(.+)$")) or pose
+    end
+    scene_ = Scene()
+    scene_:CreateComponent("Octree")
+    local lightGroup = scene_:CreateChild("LightGroup")
+    lightGroup:LoadXML(assert(cache:GetResource("XMLFile","LightGroup/Daytime.xml")):GetRoot())
+    local zone = lightGroup:GetComponent("Zone",true)
+    if zone then
+        zone.depthFogEnable, zone.heightFogEnable = false, false
+        zone.envTextureDiffIntensity, zone.envTextureSpecIntensity = .7, .65
+    end
+    local light = lightGroup:GetComponent("Light",true)
+    if light then light.brightness=2.2; light.castShadows=false end
+    local fillNode=scene_:CreateChild("Softbox")
+    fillNode.direction=Vector3(-.6,-.3,.5)
+    local fill=fillNode:CreateComponent("Light")
+    fill.lightType,fill.brightness,fill.color=LIGHT_DIRECTIONAL,1.2,Color(.85,.92,1)
+    local vehicle = Visual.Build(scene_,id)
+    local config = assert(Assets.Vehicles[id])
+    local source = assert(cache:GetResource("Model",config.model))
+    local sourceVB=source:GetGeometry(0,0):GetVertexBuffer(0)
+    local count = 0
+    for _,draw in ipairs(vehicle:GetComponents("StaticModel",true)) do
+        assert(draw.material:GetTexture(TU_DIFFUSE) and draw.material:GetTexture(TU_NORMAL),"正式模型不能缺D/N贴图")
+        local geo=draw.model:GetGeometry(0,0)
+        count=count+geo.indexCount
+        assert(geo:GetVertexBuffer(0)==sourceVB,"拆件必须直接保留正式源顶点流和UV/法线/切线")
+    end
+    assert(count==source:GetGeometry(0,0).indexCount,"正式模型必须保留全部原始三角面，不增加替代面")
+    if id=="helicopter" then
+        local rotor=assert(vehicle:GetChild("Rotor",true))
+        local body=assert(vehicle:GetChild("Body",true))
+        local initial=body.rotation
+        Visual.Animate(vehicle,id,0,{oddActive=0})
+        local first=rotor.rotation
+        Visual.Animate(vehicle,id,.037,{oddActive=0})
+        assert(rotor.rotation~=first,"主旋翼必须独立旋转")
+        assert(body.rotation==initial,"禁止转动整架机身冒充旋翼动画")
+    end
+    Visual.Animate(vehicle,id,pose,{oddActive=0})
+    local cameraNode=scene_:CreateChild("Camera")
+    cameraNode.position=Vector3(5.0,3.8,5.6)
+    cameraNode:LookAt(Vector3(0,1,0))
+    local camera=cameraNode:CreateComponent("Camera")
+    camera.nearClip,camera.farClip,camera.fov=.05,60,36
+    renderer.hdrRendering=true
+    renderer:SetViewport(0,Viewport:new(scene_,camera))
+    print(string.format("[正式模型验收] PASS %s / %d原始三角面 / D+N / 独立部件动画 / pose=%.4f",id,count//3,pose))
+end
+
+function Stop()
+    if scene_ then scene_:Dispose(); scene_=nil end
+end
