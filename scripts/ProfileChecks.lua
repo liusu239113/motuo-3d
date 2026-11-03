@@ -98,13 +98,13 @@ function Checks.Run()
         rejected(p.TryLoad, name .. "加载")
         check(type(p.GetLoadError()) == "string", name .. "应记住加载错误")
         local view, message = p.GetForDisplay()
-        check(message == p.GetLoadError() and view.coins == 0 and view.owned.sport
+        check(message == p.GetLoadError() and view.coins == 0 and view.owned.ebike
             and view.ownedRiders.green and view.unlockedTracks.circuit, name .. "应提供明确错误和默认展示占位")
         view.coins, view.owned.cruiser = 9999, true
         local again = p.GetForDisplay()
         check(again ~= view and again.coins == 0 and not again.owned.cruiser, name .. "占位修改不得污染后续视图")
         check(not pcall(p.Get) and not pcall(p.Coins), name .. "业务读取不能默认为新档")
-        check(not pcall(p.Owns, "sport") and not pcall(p.OwnsRider, "green")
+        check(not pcall(p.Owns, "ebike") and not pcall(p.OwnsRider, "green")
             and not pcall(p.TrackUnlocked, "circuit"), name .. "权益业务读取必须严格")
         rejected(p.Save, name .. "保存")
         rejected(function() return p.AddCoins(120) end, name .. "奖励")
