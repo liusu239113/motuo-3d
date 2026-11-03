@@ -136,6 +136,7 @@ function RaceVisuals:CreateRunner(data)
         Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip)
     local colorId = data.colorId or "red"
     rider:SetColor(colorId)
+    if odd then require("MixedVisuals").SetRiderColor(body,colorId) end
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
     -- inView是上一渲染帧结果，不能作为首次提交/重新启用的前置条件。
     rider.model.updateInvisible = true

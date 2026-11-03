@@ -152,6 +152,9 @@ end
 function Preview:SetRiderColor(color)
     -- Selection remains owned by HUD / the actual rider; do not recolor the photo's deck.
     self.riderColor_ = color or self.riderColor_
+    if self.turntable and require("MixedVehicles").Get(self.vehicleId) then
+        require("MixedVisuals").SetRiderColor(self.turntable,self.riderColor_)
+    end
 end
 
 function Preview:BuildScene(id)
@@ -186,6 +189,7 @@ function Preview:BuildScene(id)
     rim.lightType, rim.brightness, rim.color, rim.castShadows = LIGHT_DIRECTIONAL, 0.9, Color(0.76, 0.86, 1), false
     self.turntable = self.previewScene:CreateChild("VehicleTurntable")
     local vehicle = VehicleAssets.Add(self.turntable, id)
+    if require("MixedVehicles").Get(id) then require("MixedVisuals").SetRiderColor(vehicle,self.riderColor_) end
     local drawables=vehicle:GetComponents("StaticModel",true)
     assert(#drawables>0,"载具预览需要真实3D模型")
     local bounds=BoundingBox()

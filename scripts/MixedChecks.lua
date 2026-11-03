@@ -29,7 +29,21 @@ function Checks.Run()
         check(math.abs(bounds.size.x-v.size[1])<.02 and math.abs(bounds.size.z-v.size[3])<.02,
             v.id.."模型尺寸与碰撞目录一致")
         check(math.abs(bounds.min.y)<.02,v.id.."车底贴地")
+        if v.id~="helicopter" then
+            local jacket=model:GetChild("PilotJacket",true):GetComponent("StaticModel")
+            Visual.SetRiderColor(model,"red");local redMaterial=jacket.material
+            Visual.SetRiderColor(model,"green")
+            check(jacket.material~=redMaterial,v.id.."驾驶员配色真实更新")
+        end
         Visual.Animate(model,v.id,2,sim);model:Dispose()
+        -- 平直柏油千米计时只检查基础动力，不冒充六图综合胜率；技能按冷却发动。
+        local run=Sim.New(map);run:SetVehicle(v.id);run:Reset(false)
+        for _=1,4500 do
+            run:Step(.02,{throttle=1,steer=0,skill=run.oddCooldown<=0})
+            if run.z>=1000 then break end
+        end
+        check(run.z>=1000 and run.elapsed<90,v.id.."基础千米不掉队至停滞")
+        print(string.format("[动力基线] %s 千米 %.2fs / 尾速 %.1fkm/h",v.id,run.elapsed,run.speed*3.6))
     end
     scene:Dispose()
     check(Rules.Terrain(map,650,0)=="asphalt" and Rules.Terrain(map,650,6)=="water","中路可绕行，翼侧涉水")

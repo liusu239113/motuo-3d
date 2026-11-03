@@ -5,6 +5,22 @@ local Data = require("MixedVehicles")
 local V = Vector3
 local M = {}
 local palette = {}
+local pilotMaterials = {}
+local pilotColors = {red={168,46,37},blue={44,87,146},yellow={212,164,48},
+    white={215,219,218},green={61,117,84},violet={111,75,137}}
+function M.SetRiderColor(root,color)
+    local rgb=type(color)=="string" and pilotColors[color] or color
+    if type(rgb)~="table" then return false end
+    local key=table.concat(rgb,":")
+    if not pilotMaterials[key] then pilotMaterials[key]=P.Material(rgb[1]/255,rgb[2]/255,rgb[3]/255,.65,.05) end
+    for _,part in ipairs(root:GetChildren(true)) do
+        if part.name=="PilotJacket" then
+            local model=part:GetComponent("StaticModel")
+            if model then model.material=pilotMaterials[key] end
+        end
+    end
+    return true
+end
 local function materials()
     if palette.dark then return palette end
     palette.dark=P.Material(.045,.065,.085,.72,.25)
@@ -274,11 +290,19 @@ function M.Animate(root,id,time,state)
     local active=(state and state.oddActive or 0)>0
     for _,part in ipairs(root:GetChildren(true)) do
         local name=part.name
-        if name=="Rotor" then part.rotation=Quaternion(0,time*1600%360,0)
+        if name=="Rotor" then
+            part.rotation=id=="hovercraft" and Quaternion(0,0,time*1600%360) or Quaternion(0,time*1600%360,0)
+        elseif name=="Wheel" or name=="Hub" then
+            local speed=state and state.speed or 0
+            local radius=math.max(.05,part.scale.x*.5)
+            part.rotation=Quaternion(0,0,90)*Quaternion(0,(time*speed/radius*180/math.pi)%360,0)
         elseif name=="TailRotor" then part.rotation=Quaternion(time*1800%360,0,0)
         elseif name=="ClockKey" then part.rotation=Quaternion(0,time*120%360,0)
         elseif name:match("^Tentacle%d") then part.rotation=Quaternion(math.sin(time*3+#name)*12,0,math.cos(time*2+#name)*10)
-        elseif name:match("^Segment%d") then part.rotation=Quaternion(0,math.sin(time*9+(tonumber(name:match("%d+")) or 0)) * 7,0)
+        elseif name:match("^Segment%d") then
+            local index=tonumber(name:match("%d+")) or 0
+            local sweep=active and math.max(0,4-index)*math.sin(time*16)*24 or 0
+            part.rotation=Quaternion(0,math.sin(time*9+index)*7+sweep,0)
         elseif name=="JawRight" or name=="JawLeft" then part.rotation=Quaternion(0,(name=="JawRight" and 1 or -1)*(active and 24 or math.sin(time*2)*4),0)
         elseif name=="Scoop" then part.rotation=Quaternion(active and -32 or 0,0,0)
         elseif name=="SkillFlame" then part.enabled=active end
@@ -300,7 +324,7 @@ function Adapter:Init(scene,id)
     self.mirrors={SetQuality=function() end,Update=function() end,Dispose=function() end}
     self.effects={pitch=0,bob=0,Dispose=function() end}
 end
-function Adapter:SetRiderColor(_) return true end
+function Adapter:SetRiderColor(color) return M.SetRiderColor(self.body,color) end
 function Adapter:SetFirstPerson(_) self.firstPerson=false;self.cockpit.enabled=false end
 function Adapter:SetQuality(_) end
 function Adapter:UpdateMirrors(_,_) end

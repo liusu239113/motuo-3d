@@ -2,6 +2,25 @@
 -- 不依赖玩家名次、油门或距离，不回收车手，不前向瞬移。
 local Simulation = require("Simulation")
 local Mixed = require("MixedRace")
+local MixedData = require("MixedVehicles")
+local function dimensions(r)
+    local v=MixedData.Get(r.vehicleId)
+    return v and v.size[1]*.5 or .30,v and v.size[3]*.5 or .95,v and v.size[2] or 1.5
+end
+local function halfWidthFor(race,r)
+    return race.options.mixed and dimensions(r) or .30
+end
+local function overlapsHeight(race,r,o)
+    if not race.options.mixed then return math.abs(o.y-r.y)<6 end
+    local _,_,height=dimensions(r)
+    local bottom=r.y+(r.driveSim and r.driveSim.oddAltitude or 0)
+    local source=o.source
+    local otherSim=source.isPlayer and race.sim or source.driveSim
+    local otherBottom=o.y+(otherSim and otherSim.oddAltitude or 0)
+    local otherSpec=MixedData.Get(source.vehicleId)
+    local otherHeight=otherSpec and otherSpec.size[2] or source.height or 1.8
+    return bottom<otherBottom+otherHeight+.15 and bottom+height>otherBottom-.15
+end
 local function vehicleFor(race,r)
     return race.options.mixed and r.driveSim and r.driveSim.vehicle or race.sim.vehicle
 end
@@ -189,7 +208,7 @@ local function eachObstacle(race, r, visit, sensed)
     local perception = r.perception
     local obstacles = sensed and perception and perception.observations or race.aiObstacles
     for _, o in ipairs(obstacles) do
-        if abs(o.y - r.y) < 6 then visit(o) end
+        if overlapsHeight(race,r,o) then visit(o) end
     end
     -- 可选坡是静态可见路障；不模拟AI飞跃，不准免费穿过或领取玩家加速带。
     for _, ramp in ipairs(race.map.Ramps or {}) do
@@ -209,9 +228,10 @@ local function eachObstacle(race, r, visit, sensed)
     for _, other in ipairs(race.racers) do
         if other ~= r and not other.finished and not other.eliminated then
             local spec=require("MixedVehicles").Get(other.vehicleId)
-            visit({source = other, s = other.s, lane = other.lane,
+            local obstacle={source = other, s = other.s, lane = other.lane,
                 destination = other.wantedLane, speed = other.speed, halfWidth = spec and spec.size[1]*.5 or .30,
-                halfLength = spec and spec.size[3]*.5 or 1, y = other.y, bike = true})
+                halfLength = spec and spec.size[3]*.5 or 1, y = other.y, bike = true}
+            if overlapsHeight(race,r,obstacle) then visit(obstacle) end
         end
     end
 end
@@ -253,7 +273,7 @@ function AI.NitroSafe(race, r)
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
         local relativeEnd = d + o.speed * duration - reach
-        local margin = o.halfWidth + 0.30 + 0.65
+        local margin = o.halfWidth + halfWidthFor(race,r) + 0.65
         local low, high = min(r.lane, r.wantedLane) - margin, max(r.lane, r.wantedLane) + margin
         local crossing = o.lane >= low and o.lane <= high
         if o.destination then crossing = crossing
@@ -349,14 +369,14 @@ function AI.Plan(race, r, dt)
     local horizon = max(75, r.speed * 2.8)
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
-        local margin = o.halfWidth + 0.30 + (o.bike and 0.42 or 0.50)
+        local margin = o.halfWidth + halfWidthFor(race,r) + (o.bike and 0.42 or 0.50)
         if d > -o.halfLength - 1 and d < horizon and abs(o.lane - r.lane) < margin then
             if r.speed > o.speed + 0.5 or d < 12 then hazard = true end
         end
     end, true)
     if r.decisionTimer <= 0 then
         r.decisionTimer = r.reactionTime
-        local bound = max(2, race.roadHalfWidth - 0.65)
+        local bound = max(2, race.roadHalfWidth - (race.options.mixed and halfWidthFor(race,r)+.15 or .65))
         local shoulder = min(race.corridor - 0.35,
             race.map.Roads and race.map.Roads[1] and (race.map.Roads[1].shoulder or bound) - 0.5 or bound)
         local outer = hazard and max(bound, shoulder) or bound
@@ -382,7 +402,7 @@ function AI.Plan(race, r, dt)
     -- Longitudinal control remains active while changing lanes, never accelerates THROUGH a car.
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
-        local margin = o.halfWidth + 0.30 + (o.bike and 0.32 or 0.40)
+        local margin = o.halfWidth + halfWidthFor(race,r) + (o.bike and 0.32 or 0.40)
         if d > 0 and d < horizon and abs(o.lane - r.lane) < margin then
             local clear = max(0, d - o.halfLength - 2.5)
             local follow = max(0, o.speed) + clear / (o.bike and 0.65 or 1.0)
@@ -421,12 +441,17 @@ function AI.TrafficContacts(race, r)
             local yaw = (car.yaw or 0) * RAD
             local sx, sz = math.sin(yaw), math.cos(yaw)
             local delta = (r.yaw - (car.yaw or 0)) * RAD
-            local w = obstacle.halfWidth + abs(math.cos(delta)) * 0.30 + abs(math.sin(delta)) * 0.95
-            local l = obstacle.halfLength + abs(math.cos(delta)) * 0.95 + abs(math.sin(delta)) * 0.30
+            local ownWidth,ownLength,ownHeight=.30,.95,1.5
+            if race.options.mixed then ownWidth,ownLength,ownHeight=dimensions(r) end
+            local w = obstacle.halfWidth + abs(math.cos(delta)) * ownWidth + abs(math.sin(delta)) * ownLength
+            local l = obstacle.halfLength + abs(math.cos(delta)) * ownLength + abs(math.sin(delta)) * ownWidth
             local ox, oz = r.lastX - (car.previousX or car.x), r.lastZ - (car.previousZ or car.z)
             local hit = race.sim.SweptHit(ox * sz - oz * sx, dx * sz - dz * sx,
                 ox * sx + oz * sz, dx * sx + dz * sz, w, l)
-            if hit and abs(r.y - (car.y or r.y)) < (car.height or 1.8) then
+            local bottom=r.y+(race.options.mixed and r.driveSim and r.driveSim.oddAltitude or 0)
+            local vertical=race.options.mixed and bottom<(car.y or r.y)+(car.height or 1.8)
+                and bottom+ownHeight>(car.y or r.y) or not race.options.mixed and abs(r.y-(car.y or r.y))<(car.height or 1.8)
+            if hit and vertical then
                 active[car] = true
                 if not r.trafficContacts[car] then
                     r.speed = r.speed * 0.66
