@@ -44,6 +44,27 @@ function Start()
         assert(geo:GetVertexBuffer(0)==sourceVB,"拆件必须直接保留正式源顶点流和UV/法线/切线")
     end
     assert(count==source:GetGeometry(0,0).indexCount,"正式模型必须保留全部原始三角面，不增加替代面")
+    for lod=0,source:GetNumGeometryLodLevels(0)-1 do
+        local total=0
+        local original=source:GetGeometry(0,lod)
+        for _,draw in ipairs(vehicle:GetComponents("StaticModel",true)) do
+            local geometry=assert(draw:GetModel():GetGeometry(0,lod),"每个部件必须保留全部LOD")
+            assert(geometry:GetVertexBuffer(0)==original:GetVertexBuffer(0),"每LOD保留正式源顶点流")
+            total=total+geometry.indexCount
+        end
+        assert(total==original.indexCount,"各LOD拆件不得增加或丢失原三角面")
+    end
+    if id=="ebike" then
+        local front=assert(vehicle:GetChild("FrontWheel",true))
+        local rear=assert(vehicle:GetChild("RearWheel",true))
+        local body=assert(vehicle:GetChild("Body",true))
+        local initial=body.transform
+        Visual.Animate(vehicle,id,0,{distance=0})
+        local first=front.rotation
+        Visual.Animate(vehicle,id,0,{distance=.207})
+        assert(front.rotation~=first and rear.rotation~=first,"前后车轮必须独立转动")
+        assert(body.transform==initial,"车轮转动不得带动车架挡泥板")
+    end
     if id=="helicopter" then
         local rotor=assert(vehicle:GetChild("Rotor",true))
         local body=assert(vehicle:GetChild("Body",true))
@@ -103,6 +124,12 @@ function Start()
     local cameraNode=scene_:CreateChild("Camera")
     cameraNode.position=Vector3(5.0,3.8,5.6)
     cameraNode:LookAt(Vector3(0,1,0))
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-formal-side" then
+            cameraNode.position=Vector3(4.5,1.1,0)
+            cameraNode:LookAt(Vector3(0,.85,0))
+        end
+    end
     local camera=cameraNode:CreateComponent("Camera")
     camera.nearClip,camera.farClip,camera.fov=.05,60,36
     renderer.hdrRendering=true

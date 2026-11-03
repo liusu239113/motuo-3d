@@ -57,6 +57,14 @@ function Checks.Run()
                 local first=rotor.rotation
                 Visual.Animate(model,v.id,.037,{oddActive=0})
                 check(first~=rotor.rotation,"正式主桨真实转动")
+            elseif v.id=="ebike" then
+                local wheel=assert(model:GetChild("FrontWheel",true))
+                local body=assert(model:GetChild("Body",true))
+                local first=wheel.rotation
+                local fixed=body.transform
+                Visual.Animate(model,v.id,0,{distance=.207})
+                check(first~=wheel.rotation,"电动车原网格车轮按里程旋转")
+                check(body.transform==fixed,"电动车轮动画不转动车身")
             end
             model:Dispose()
         else
