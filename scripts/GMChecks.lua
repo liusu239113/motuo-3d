@@ -146,13 +146,20 @@ function Checks.RunDrive(hud,storage,restore)
     local Catalog=require("Catalog")
     local Profile=require("Profile")
     local originalWrites,originalText=storage()
-    local stage,frames=0,0
+    local stage,frames,rideFrames=0,0,0
     local vehicleId="helicopter"
+    local screenshotPrefix=""
     for _,arg in ipairs(GetArguments()) do
         local selected=arg:match("^%-gmdrivevehicle=(.+)$")
         if selected then
             assert(selected=="tank" or selected=="beetle" or selected=="helicopter","GM流程车型参数无效")
             vehicleId=selected
+        end
+        local prefix=arg:match("^%-gmdrivescreenshot=(.+)$")
+        if prefix then
+            assert(prefix:match("^/workspace/screenshots/[%w_/-]+$") and not prefix:find("%.%."),
+                "GM阶段截图只允许screenshots目录下的安全前缀")
+            screenshotPrefix=prefix
         end
     end
     Catalog.SetGMFreeExperience(true)
@@ -169,11 +176,23 @@ function Checks.RunDrive(hud,storage,restore)
         if stage==2 then return end
         frames=frames+1
         if frames>=1400 then restore();error("GM真实发车流程超时") end
-        if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter() end
+        if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter();return end
         if hud.screen=="ride" then
             verify()
             assert(hud.selectedVehicle==vehicleId and Catalog.CanFreeExperience(vehicleId)
                 and not Profile.Owns(vehicleId),"GM实际发车所选车型必须保持免费体验且未获永久所有权")
+            if screenshotPrefix~="" then
+                rideFrames=rideFrames+1
+                if rideFrames<2 then return end
+                local image=Image()
+                local path=screenshotPrefix.."-"..vehicleId.."-ride"..(stage+1)..".png"
+                local captured=graphics:TakeScreenShot(image)
+                local saved=captured and image:SavePNG(path)
+                image:Dispose()
+                if not saved then restore();error("GM正确阶段截图失败："..path) end
+                print("[GMChecks] 正确阶段截图 "..path.." / ride PostRender="..rideFrames)
+            end
+            rideFrames=0
             if stage==0 then
                 stage=1
                 hud.actions.restart()

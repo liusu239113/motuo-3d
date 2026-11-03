@@ -4,6 +4,7 @@ local Assets = require("VehicleAssets")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
 local SkillPresentation = require("SkillPresentation")
+local ScenicAssetProps = require("ScenicAssetProps")
 -- 官方资源库DLl_iWrIXFGnWp6MXMWm5rlt：连续直向金色箭头；BrMPQVbouuJ6tP9-opAx9Z5U：完整交通锥。
 -- 不使用搜索描述中实际为掉头/转弯的箭头，不用Box拼装路标或门架。
 local COURSE_ARROW = "uuid://D_WEUc5wpVo9pjy4U8VhVjVV"
@@ -241,7 +242,7 @@ end
 ---@return Node
 function RaceVisuals:CourseAsset(parent, name, modelPath, materialPath, position, heightOrLength, arrow)
     local model = assert(cache:GetResource("Model", modelPath), "赛事指引模型未预载：" .. modelPath)
-    local material = assert(cache:GetResource("Material", materialPath), "赛事指引材质未预载：" .. materialPath)
+    local material = ScenicAssetProps.MaterialFor(materialPath)
     local bounds = model.boundingBox
     local dimension = arrow and math.max(bounds.size.x, bounds.size.z) or bounds.size.y
     assert(dimension > .0001, "赛事指引包围盒无效")

@@ -451,6 +451,7 @@ function Pages:Collect(widget,budget,context)
     inherited[widget]=true
     local edgePadding=2/math.max(.1,UI.GetScale())
     self:Constrain(widget)
+    for _,record in ipairs(self.constraints) do if record.widget==widget then record.fragmented=true;break end end
     YGNodeStyleSetHeightAuto(widget.node)
     YGNodeStyleSetMinHeight(widget.node,0)
     YGNodeStyleSetMaxHeight(widget.node,YGGetUndefined())
@@ -525,7 +526,44 @@ function Pages:Apply(units)
             YGNodeStyleSetDisplay(widget.node,widget.props.visible~=false and members[widget] and YGDisplayFlex or YGDisplayNone)
         end
     end
+    -- A row continuation is a different visible subset. Yoga can cache the
+    -- auto row height from a shorter previous subset (or before Label.Update
+    -- consumes Render metrics), while a child now has a larger minHeight. Reset
+    -- ONLY the temporary fragmented minimum, then grow enclosing cards to their
+    -- actual visible descendants bottom-up. No child is shrunk or clipped.
+    for _,record in ipairs(self.constraints) do
+        if record.fragmented and record.widget.node then YGNodeStyleSetMinHeight(record.widget.node,0) end
+    end
     UI.MarkLayoutDirty()
+end
+
+function Pages:FitFragmentedParents()
+    for _=1,3 do
+        UI.Layout()
+        local changed=false
+        for i=#self.constraints,1,-1 do
+            local record=self.constraints[i]
+            local widget=record.widget
+            if record.fragmented and widget.node and widget:IsVisible() then
+                local r=widget:GetAbsoluteLayout()
+                local bottom=r.y
+                for _,child in ipairs(widget:GetChildren()) do
+                    if child:IsVisible() then
+                        local c=child:GetAbsoluteLayout()
+                        bottom=math.max(bottom,c.y+c.h+math.max(0,YGNodeLayoutGetMargin(child.node,YGEdgeBottom)))
+                    end
+                end
+                local required=bottom-r.y+YGNodeLayoutGetPadding(widget.node,YGEdgeBottom)
+                    +YGNodeLayoutGetBorder(widget.node,YGEdgeBottom)
+                if required>r.h+.01 then
+                    YGNodeStyleSetMinHeight(widget.node,required+1/math.max(.1,UI.GetScale()))
+                    changed=true
+                end
+            end
+        end
+        if not changed then break end
+    end
+    UI.Layout()
 end
 
 -- Measure the original, unconstrained vertical tree at its ACTUAL wrapping
@@ -601,7 +639,7 @@ function Pages:Paginate()
         end
         local page={}
         local function fits(candidate)
-            self:Apply(candidate);UI.Layout()
+            self:Apply(candidate);self:FitFragmentedParents()
             local top=self:GetAbsoluteLayout().y
             local bottom=top
             local function inspect(widget)
@@ -627,7 +665,7 @@ function Pages:Paginate()
         self.pageIndex=math.max(1,math.min(selected,math.max(1,#self.pages)))
         self.requestedPage=self.pageIndex
         self:Apply(self.pages[self.pageIndex] or {})
-        UI.Layout()
+        self:FitFragmentedParents()
         self.signature=self:SourceSignature()
         self:RefreshPager()
         print(string.format("[手机按钮分页] %d页 / %d组完整控件 / 自然布局 %.1fx%.1f / 无滚动手势",#self.pages,#self.units,bounds.w,bounds.h))
@@ -659,7 +697,7 @@ function Pages:SetPage(page)
     self.pageIndex=math.max(1,math.min(self.requestedPage,math.max(1,#self.pages)))
     self.requestedPage=self.pageIndex
     self:Apply(self.pages[self.pageIndex] or {})
-    UI.Layout()
+    self:FitFragmentedParents()
     self:RefreshPager()
 end
 ---@param target Widget|string

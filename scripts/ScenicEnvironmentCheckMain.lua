@@ -14,6 +14,9 @@ local preparation_ = nil
 ---@type Node?
 local cameraNode_ = nil
 local trackId_ = "lake"
+local view_ = "landscape"
+local shotPrefix_ = ""
+local renderFrames_ = 0
 local finished_ = false
 
 local function checkEnvironment()
@@ -57,14 +60,33 @@ local function checkEnvironment()
     assert(world.root:GetChild("随路线贴地发车标线", true), "起终点棋盘线与发车格必须保留")
     assert(world.mats.terrain:GetSurfaceTexture("grass_color") and world.mats.terrain:GetSurfaceTexture("rock_color"),
         "真实地形颜色贴图必须绑定")
+    -- 必须在运动推进前验真实初相；模块只复制碰撞记录，不改真实World。
+    require("CourseWorldChecks").Run(world)
     print(string.format("[正式环境验收] PASS %s trees=%d plants=%d rocks=%d rails=%d cones=%d / 原MDL四级LOD、原贴图、等比缩放、玩法标线",
         trackId_, treeCount, plantCount, rockCount, railCount, coneCount))
     local p, yaw = Landscape.RoadPoint(trackId_ == "lake" and Landscape.RouteLength * .36 or Landscape.RouteLength * .08)
     local camera = assert(cameraNode_)
-    local angle = math.rad(yaw)
-    camera.position = p + Vector3(-math.sin(angle) * 25, 12, -math.cos(angle) * 25)
-        + Vector3(math.cos(angle) * 11, 0, -math.sin(angle) * 11)
-    camera:LookAt(p + Vector3(0, 2, 0))
+    if view_ == "course" then
+        local found = false
+        for _, obstacle in ipairs(world.mixedObstacles) do
+            if obstacle.kind == "pendulum" then
+                p, yaw = assert(obstacle.node).worldPosition, obstacle.yaw
+                found = true
+                break
+            end
+        end
+        assert(found, "机关近景必须存在真实摆锤/支架，不造展示替代品")
+        local angle = math.rad(yaw)
+        camera.position = p + Vector3(math.cos(angle) * 7 - math.sin(angle) * 10, 6,
+            -math.sin(angle) * 7 - math.cos(angle) * 10)
+        camera:LookAt(p + Vector3(0, 2.7, 0))
+        print("[正式环境验收] course镜头真实摆锤/支架 yaw=" .. yaw)
+    else
+        local angle = math.rad(yaw)
+        camera.position = p + Vector3(-math.sin(angle) * 25, 12, -math.cos(angle) * 25)
+            + Vector3(math.cos(angle) * 11, 0, -math.sin(angle) * 11)
+        camera:LookAt(p + Vector3(0, 2, 0))
+    end
     finished_ = true
 end
 
@@ -72,12 +94,20 @@ function Start()
     local materialsOnly = false
     for _, arg in ipairs(GetArguments()) do
         trackId_ = arg:match("^%-environment%-track=(.+)$") or trackId_
+        view_ = arg:match("^%-environment%-view=(.+)$") or view_
+        shotPrefix_ = arg:match("^%-environment%-shots=(.+)$") or shotPrefix_
         if arg == "-environment-materials-only" then materialsOnly = true end
     end
     if materialsOnly then
         for _, path in ipairs(Props.Resources) do
             if Props.ResourceTypes[path] == "Material" then
-                local material = assert(cache:GetResource("Material", path))
+                local original = assert(cache:GetResource("Material", path))
+                local material = Props.MaterialFor(path)
+                assert(material == Props.MaterialFor(path), "正式资产兼容材质必须共享")
+                assert(material:GetTexture(TU_DIFFUSE) == original:GetTexture(TU_DIFFUSE)
+                    and material:GetTexture(TU_NORMAL) == original:GetTexture(TU_NORMAL), "兼容材质不得替换原贴图")
+                assert(material.cullMode == original.cullMode and material.alphaToCoverage == original.alphaToCoverage,
+                    "兼容材质不得更改alpha/cull状态")
                 local diffuse, normal = material:GetTexture(TU_DIFFUSE), material:GetTexture(TU_NORMAL)
                 print(string.format("[环境材质诊断] %s D=%s N=%s VSDEF=%s PSDEF=%s cull=%s A2C=%s",
                     path, diffuse and diffuse.name or "nil", normal and normal.name or "nil",
@@ -100,6 +130,9 @@ function Start()
         return
     end
     assert(trackId_ == "lake" or trackId_ == "circuit", "仅验收lake/circuit真实环境")
+    assert(view_ == "landscape" or view_ == "course", "仅支持真实环境全景/机关近景")
+    assert(shotPrefix_ == "" or shotPrefix_:match("^screenshots/environment%-official/[%w_-]+$"),
+        "验收图片只写screenshots/environment-official下的显式前缀")
     assert(Landscape.SelectTrack(trackId_))
     scene_ = Scene()
     scene_:CreateComponent("Octree")
@@ -117,6 +150,24 @@ function Start()
         checkEnvironment()
     end)
     SubscribeToEvent("Update", "ScenicEnvironmentCheckUpdate")
+    SubscribeToEvent("PostRenderUpdate", "ScenicEnvironmentCheckPostRender")
+end
+
+-- 完整真实World验收成功后才推进运动，固定1/30秒用于可重复的两个真实相位截图。
+-- 不依赖全局启动帧，不把初始化期间的默认相机画面当作环境通过证据。
+function ScenicEnvironmentCheckPostRender()
+    if not finished_ or not world_ then return end
+    renderFrames_ = renderFrames_ + 1
+    if shotPrefix_ ~= "" and (renderFrames_ == 4 or renderFrames_ == 28) then
+        local image = Image()
+        local path = shotPrefix_ .. "-" .. view_ .. "-phase" .. renderFrames_ .. ".png"
+        local captured = graphics:TakeScreenShot(image)
+        local saved = captured and image:SavePNG(path)
+        image:Dispose()
+        assert(saved, "真实环境完成后截图失败：" .. path)
+        print("[正式环境验收] 正确阶段截图 " .. path .. " motion=" .. (renderFrames_ / 30))
+    end
+    require("MixedCourse").Update(world_, renderFrames_ / 30)
 end
 
 function ScenicEnvironmentCheckUpdate()

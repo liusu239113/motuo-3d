@@ -36,11 +36,74 @@ for _, id in ipairs({"fern", "fernSmall", "rockA", "rockB", "house", "rail", "co
     register(def.model, "Model")
     for _, path in ipairs(def.materials) do register(path, "Material") end
 end
+-- 兼容路径均已核对引擎manifest和实际shader源码，不猜Technique名。
+register("Techniques/PBR/PBRDiffNormal.xml", "Technique")
+register("Techniques/Diff.xml", "Technique")
+register("Techniques/DiffNormal.xml", "Technique")
+-- 发车标记也由此只读服务迁移，RaceVisuals由其负责人接入，避免锥标/箭头绕回旧shader。
+register("uuid://FjoMmROgqb4dDyqNZCf6eElx", "Material")
+for _, path in ipairs({"uuid://CZ5m2ZZu7NXIoVTqR1rzDH41", "uuid://CwWtmXnyHN0l4oJqHqizpG03",
+    "uuid://Fjbt8U0li4rTelgTpAKfPMWx"}) do register(path, "Texture2D") end
+-- 四个实测旧ShaderLab材质的原配贴图显式预载；其他依赖仍沿原材质引用链加载。
+for _, path in ipairs({
+    "uuid://Eo2ZGQibKaQLurWq6ApEOth-", "uuid://AMfYSWYIx_erl5u8dOJv_CLB",
+    "uuid://GbbbgTgSwJZeq0rU2uC7AB5z", "uuid://G55U8ZIbS8ga-hqnXPLhnpox",
+    "uuid://DX6jaS38DuyueUthXYJU3EyU", "uuid://AVfHEeu4uIt3DtYAvbCki8Cg",
+    "uuid://E9QBucD-TEiMCew5pxR5yN0m", "uuid://EsE0mRgjcihUKmc_wGYNjVfM",
+    "uuid://EvOp6TbRWrMs-MIQkHtydFkT", "uuid://DUGDIawAZQht7VnhB7bYI8MB",
+}) do register(path, "Texture2D") end
 
 ---@type table<string, Model>
 local models = {}
 ---@type table<string, Material>
 local materials = {}
+
+-- 仅迁移逐pass/源XML诊断确认不兼容的材质，已是PBRLitSolid的不动。
+local compatibility = {
+    ["uuid://Eqy3wSag5eJmQEQBqWnLcKwL"] = "diffuseAlpha",
+    ["uuid://FjoMmROgqb4dDyqNZCf6eElx"] = "packedNormalAlpha",
+    ["uuid://EuEAqVcEvrhrHsZmdxoee6N6"] = "packedNormal",
+    ["uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF"] = "packedNormal",
+    ["uuid://BbhFaY-oq5NxPUutxC9s5YOQ"] = "packedNormal",
+}
+
+---@param path string
+---@return Material
+function Props.MaterialFor(path)
+    if materials[path] then return materials[path] end
+    local original = assert(cache:GetResource("Material", path), "环境材质未预载：" .. path)
+    local mode = compatibility[path]
+    if not mode then materials[path] = original; return original end
+    local diffuse = assert(original:GetTexture(TU_DIFFUSE), "正式环境原颜色贴图未就绪：" .. path)
+    local techniquePath = mode == "diffuseAlpha" and "Techniques/Diff.xml"
+        or mode == "packedNormalAlpha" and "Techniques/DiffNormal.xml" or "Techniques/PBR/PBRDiffNormal.xml"
+    local technique = assert(cache:GetResource("Technique", techniquePath), "环境兼容Technique未预载：" .. techniquePath)
+    local material = original:Clone()
+    -- 不改cache原材质。Clone保留全部原纹理/UV/参数/cull/shadowcull/A2C，所有实例复用此克隆。
+    material:SetNumTechniques(1)
+    material:SetTechnique(0, technique)
+    material:SetTexture(TU_DIFFUSE, diffuse)
+    if mode == "diffuseAlpha" then
+        -- 实测小蕨无TU_NORMAL；LitSolid直接按diffuse.a<.5裁剪，depth/shadow同样裁剪。
+        -- PBRLitSolid的ALPHAMASK读spec.a，不能拿它冒充原ALPHAMASK_DIFF_A。
+        assert(not original:GetTexture(TU_NORMAL), "小蕨材质签名已变化，需重新检查法线编码")
+        material:SetVertexShaderDefines("AO")
+        material:SetPixelShaderDefines("DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A")
+    else
+        local normal = assert(original:GetTexture(TU_NORMAL), "正式环境原packed法线未就绪：" .. path)
+        material:SetTexture(TU_NORMAL, normal)
+        material:SetVertexShaderDefines("")
+        -- 引擎DecodeNormal的PACKEDNORMAL以RG重建Z；不是普通RGB法线。
+        -- 箭头保留diffuse-alpha的LitSolid路径，不把镂空面改成不透明矩形。
+        material:SetPixelShaderDefines(mode == "packedNormalAlpha"
+            and "PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A" or "PACKEDNORMAL")
+    end
+    assert(material.cullMode == original.cullMode and material.shadowCullMode == original.shadowCullMode
+        and material.alphaToCoverage == original.alphaToCoverage, "环境兼容材质不得改变裁剪状态")
+    materials[path] = material
+    print("[ScenicAssetProps] 原贴图兼容克隆 " .. path .. " -> " .. techniquePath .. " / " .. mode)
+    return material
+end
 
 ---@param id string
 ---@return Model
@@ -88,8 +151,7 @@ function Props.Add(parent, id, position, height, yaw, options)
     local drawable = mesh:CreateComponent("StaticModel")
     drawable:SetModel(model)
     for i, path in ipairs(def.materials) do
-        if not materials[path] then materials[path] = assert(cache:GetResource("Material", path), "环境材质未预载：" .. path) end
-        assert(drawable:SetMaterial(i - 1, materials[path]), "环境资产材质槽不匹配：" .. id)
+        assert(drawable:SetMaterial(i - 1, Props.MaterialFor(path)), "环境资产材质槽不匹配：" .. id)
     end
     drawable.castShadows = options ~= nil and options.shadow == true
     drawable.shadowDistance = drawable.castShadows and 45 or 0
