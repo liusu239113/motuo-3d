@@ -314,22 +314,22 @@ function Checks.RunCircuitGates()
         string.format("真实有限外侧带为13..16.47m（合法%.3fm/非法%.3fm）", legalLane, illegalLane))
     local function seed(s, lane, nextGate)
         local p, yaw = race:Pose(s, lane)
-        p.y = Landscape.Height(p.x, p.z)
+        local y = Landscape.Height(p.x, p.z)
         player.s, player.progress, player.safeS = s, s, s
         player.nextGate, player.started, player.completedLaps = nextGate, true, 0
         player.finished, player.eliminated, player.missedGate = false, false, false
         player.invalidMoves, player.offCourse = 0, false
-        player.x, player.y, player.z = p.x, p.y, p.z
-        player.lastX, player.lastY, player.lastZ = p.x, p.y, p.z
-        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p.x, p.y, p.z, yaw, yaw, speed
+        player.x, player.y, player.z = p.x, y, p.z
+        player.lastX, player.lastY, player.lastZ = p.x, y, p.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p.x, y, p.z, yaw, yaw, speed
         race.lastPlayerSpeed = speed
     end
     local function cross(lane, from, to)
         local p0, yaw0 = race:Pose(from, lane)
         local p1 = race:Pose(to, lane)
-        p0.y, p1.y = Landscape.Height(p0.x, p0.z), Landscape.Height(p1.x, p1.z)
-        player.lastX, player.lastY, player.lastZ = p0.x, p0.y, p0.z
-        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p1.x, p1.y, p1.z, yaw0, yaw0, speed
+        local y0, y1 = Landscape.Height(p0.x, p0.z), Landscape.Height(p1.x, p1.z)
+        player.lastX, player.lastY, player.lastZ = p0.x, y0, p0.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p1.x, y1, p1.z, yaw0, yaw0, speed
         race.elapsed = race.elapsed + dt
         race:TrackPlayer(dt)
     end
@@ -382,7 +382,13 @@ function Checks.RunCircuitGates()
         end
     end
     -- Both player and AI consume the same finite sweep/continuity validator.
-    local opponent = race.racers[1]
+    local opponent = assert((function()
+        for _, candidate in ipairs(race.racers) do
+            if not candidate.isPlayer then return candidate end
+        end
+    end)(), "真实竞速夹具必须包含AI")
+    opponent.driveSim = Sim.New(Landscape)
+    check(opponent.driveSim:SetVehicle("ebike"), "玩家AI比较使用相同真实车型")
     for _, lane in ipairs({15, illegalLane}) do
         seed(gate - .6, lane, gate)
         local a, b = race:Pose(gate - .6, lane), race:Pose(gate + .6, lane)
