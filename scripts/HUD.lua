@@ -613,14 +613,14 @@ function HUD:SelectVehicle(id, notify)
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
     local owned = profile.owned[id] == true
     local trials = profile.trials[id] or 0
-    self.trialButton:SetVisible(not profileError and not owned)
-    self.trialButton:SetDisabled(require("RewardedAds").IsBusy())
+    self.trialButton:SetVisible(not profileError and not owned and item.available~=false)
+    self.trialButton:SetDisabled(item.available==false or require("RewardedAds").IsBusy())
     local price = item.price or 0
     self.coinLabel:SetText(profileError and "竞速进度不可用 · 原档已保留" or "金币 " .. tostring(profile.coins))
-    self.buyButton:SetVisible(not profileError and not owned and price > 0)
+    self.buyButton:SetVisible(not profileError and not owned and price > 0 and item.available~=false)
     self.buyButton:SetText("购买 · " .. tostring(price) .. " 金币")
-    self.buyButton:SetDisabled(profileError~=nil)
-    self.confirmButton:SetDisabled(profileError~=nil and not self.careerRace)
+    self.buyButton:SetDisabled(profileError~=nil or item.available==false)
+    self.confirmButton:SetDisabled(item.available==false or (profileError~=nil and not self.careerRace))
     self.confirmButton:SetText(profileError and not self.careerRace and "进度读取失败 · 暂不可出发" or item.available == false and "独立车型准备中"
         or (not owned and trials<=0 and ("未拥有 · " .. tostring(price) .. " 金币")) or (not owned and ("试驾剩余 "..trials.." 局 · 出发 →")) or "确认座驾 · 出发 →")
     if self.screen == "garage" then self.preview:Select(id, item.available) end

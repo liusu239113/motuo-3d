@@ -3,8 +3,24 @@ local Checks={}
 function Checks.Run()
     local Data=require("MixedVehicles")
     local Rules=require("MixedRace")
-    local Sim=require("Simulation")
+    -- 未交付车型只测规则：隔离加载仿真源码，不改正式目录开放状态，也不开放购买。
+    local catalog=require("Catalog")
+    local logicalCatalog={Get=function(id)
+        local entry=catalog.Get(id)
+        if not entry then return nil end
+        local copy={};for key,value in pairs(entry) do copy[key]=value end
+        copy.available=true
+        return copy
+    end}
+    local file=assert(cache:GetFile("Simulation.lua"))
+    local lines={};while not file:IsEof() do lines[#lines+1]=file:ReadLine() end;file:Dispose()
+    local environment=setmetatable({require=function(name)
+        if name=="Catalog" then return logicalCatalog end
+        return require(name)
+    end},{__index=_G})
+    local Sim=assert(load(table.concat(lines,"\n"),"MixedRulesSimulation","t",environment))()
     local Visual=require("MixedVisuals")
+    local Formal=require("MixedAssets")
     local map={RouteLength=2400,Roads={{width=8,shoulder=11.5}},Track={theme="lake"},Goals={},
         RoadPoint=function(s) return {x=0,y=0,z=s},0 end,
         Height=function() return 0,true end,
@@ -23,21 +39,29 @@ function Checks.Run()
         local cooldown=sim.oddCooldown
         Rules.Before(sim,.02,{skill=true},map)
         check(sim.oddCooldown<cooldown,v.id.."长按不重复刷新")
-        local model=Visual.Build(scene,v.id)
-        local bounds=BoundingBox()
-        local parts=model:GetComponents("StaticModel",true)
-        check(#parts>4,v.id.."必须具有独立多部件3D模型")
-        for _,p in ipairs(parts) do bounds:Merge(p.worldBoundingBox) end
-        check(math.abs(bounds.size.x-v.size[1])<.02 and math.abs(bounds.size.z-v.size[3])<.02,
-            v.id.."模型尺寸与碰撞目录一致")
-        check(math.abs(bounds.min.y)<.02,v.id.."车底贴地")
-        if v.id~="helicopter" then
-            local jacket=model:GetChild("PilotJacket",true):GetComponent("StaticModel")
-            Visual.SetRiderColor(model,"red");local redMaterial=jacket.material
-            Visual.SetRiderColor(model,"green")
-            check(jacket.material~=redMaterial,v.id.."驾驶员配色真实更新")
+        if Formal.IsReady(v.id) then
+            local model=Visual.Build(scene,v.id)
+            local parts=model:GetComponents("StaticModel",true)
+            check(#parts>0,v.id.."必须使用正式MDL")
+            check(model:GetVar("FormalModel"):GetString()==Formal.Vehicles[v.id].model,v.id.."禁止占位几何回退")
+            local size=model:GetVar("VehicleSize"):GetVector3()
+            check(math.abs(size.x-v.size[1])<.02 and math.abs(size.z-v.size[3])<.02,
+                v.id.."正式源三角面实测尺寸匹配碰撞")
+            for _,part in ipairs(parts) do
+                local mat=part:GetMaterial()
+                check(mat and mat:GetTexture(TU_DIFFUSE) and mat:GetTexture(TU_NORMAL),v.id.."完整原始D/N贴图")
+            end
+            if v.id=="helicopter" then
+                local rotor=model:GetChild("Rotor",true)
+                check(rotor~=nil,"正式主桨独立节点")
+                local first=rotor.rotation
+                Visual.Animate(model,v.id,.037,{oddActive=0})
+                check(first~=rotor.rotation,"正式主桨真实转动")
+            end
+            model:Dispose()
+        else
+            check(catalog.Get(v.id).available==false,v.id.."正式资产未交付时禁止驾驶或几何占位")
         end
-        Visual.Animate(model,v.id,2,sim);model:Dispose()
         -- 平直柏油千米计时只检查基础动力，不冒充六图综合胜率；技能按冷却发动。
         local run=Sim.New(map);run:SetVehicle(v.id);run:Reset(false)
         for _=1,4500 do
@@ -92,8 +116,9 @@ function Checks.Run()
         if not r.isPlayer then
             check(not seen[r.vehicleId],"同场对手种类不重复")
             seen[r.vehicleId]=true
-            local v=Data.Get(r.vehicleId)
-            check(v~=nil and math.abs(r.driveSim.vehicle.maxSpeed-v.top/3.6)<.001,"AI使用自身动力而非玩家引擎")
+            local entry=catalog.Get(r.vehicleId)
+            check(entry and entry.available and math.abs(r.driveSim.vehicle.maxSpeed-entry.speedStat/3.6)<.001,
+                "AI只用已交付正式车型及自身动力")
         end
     end
     race:Stop()
@@ -140,7 +165,7 @@ function Checks.Run()
     end
     check(require("ProfileChecks").Run().passed,"旧档和三局试驾事务")
     check(require("RewardedAdsChecks").Run().passed,"广告完成/关闭/拒绝/超时/重复回调")
-    print(string.format("[混合验收] PASS %d项 / %d种独立3D载具 / 技能、地形、破障、存档和广告隔离回归",count,#Data.List))
+    print(string.format("[混合验收] PASS %d项 / %d种规则 / 正式资产与未交付车型分离 / 存档和广告隔离回归",count,#Data.List))
     return true
 end
 return Checks

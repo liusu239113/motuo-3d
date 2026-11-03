@@ -15,8 +15,8 @@ M.Vehicles = {
         material="model/873a3764f21f49e4b717387160d13d19/Materials/873a3764f21f49e4b717387160d13d19_00_tripo_material_a843f27f-7dc0-48b9-b818-99d319a20274.xml",
         diffuse="model/873a3764f21f49e4b717387160d13d19/Textures/873a3764f21f49e4b717387160d13d19_00_D.jpg",
         normal="model/873a3764f21f49e4b717387160d13d19/Textures/873a3764f21f49e4b717387160d13d19_00_N.png",
-        rotation=226.1, targetLength=2.1, targetSize=Vector3(.9,1.7,2.1),
-        measuredSize=Vector3(1,1,1), label="疾风电动车", class="mixed", resources={}, articulated=true,
+        rotation=226.1, targetLength=2.1, targetSize=Vector3(1.060,1.601,2.1),
+        measuredSize=Vector3(.966796875,.998046875,.951171875), label="疾风电动车", class="mixed", resources={}, articulated=true,
     },
 }
 function M.IsReady(id) return M.Vehicles[id] ~= nil end

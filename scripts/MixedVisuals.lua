@@ -3,6 +3,29 @@ local Assets = require("MixedAssets")
 local V = Vector3
 local M = {}
 local materials = {}
+local measuredBounds = {}
+
+---@param source Model
+---@param id string
+---@param rotation Quaternion
+---@return BoundingBox
+local function sourceBounds(source,id,rotation)
+    if measuredBounds[id] then return measuredBounds[id] end
+    local bounds=BoundingBox()
+    for slot=0,source.numGeometries-1 do
+        local geo=source:GetGeometry(slot,0)
+        local vb,ib=geo:GetVertexBuffer(0),geo:GetIndexBuffer()
+        local vertices,indices=vb:GetData(),ib:GetData()
+        indices:Seek(geo.indexStart*ib.indexSize)
+        for _=1,geo.indexCount do
+            local index=ib.indexSize==2 and indices:ReadUShort() or indices:ReadUInt()
+            vertices:Seek(index*vb.vertexSize+vb:GetElementOffset(SEM_POSITION))
+            bounds:Merge(rotation*vertices:ReadVector3())
+        end
+    end
+    measuredBounds[id]=bounds
+    return bounds
+end
 
 local function material(c)
     if materials[c.material] then return materials[c.material] end
@@ -36,13 +59,7 @@ function M.Build(parent, id)
     local c = assert(Assets.Vehicles[id], "正式模型尚未交付："..tostring(id))
     local source = assert(cache:GetResource("Model", c.model), c.model)
     local rotation = Quaternion(0, c.rotation, 0)
-    local bounds = BoundingBox()
-    local box = source.boundingBox
-    for _,x in ipairs({box.min.x,box.max.x}) do
-        for _,y in ipairs({box.min.y,box.max.y}) do
-            for _,z in ipairs({box.min.z,box.max.z}) do bounds:Merge(rotation*V(x,y,z)) end
-        end
-    end
+    local bounds = sourceBounds(source,id,rotation)
     local scale = c.targetLength / bounds.size.z
     local root = parent:CreateChild("Vehicle_"..id)
     local canonical = root:CreateChild("SourceTransform")

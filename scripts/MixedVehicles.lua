@@ -3,7 +3,7 @@ local M = {}
 -- top 为无技能平路极速；最终速度还受风阻、弯道和地形影响。
 M.List = {
     {id="ebike", name="疾风电动车", class="rally", price=0, top=205, accel=1.08, grip=1.12, armor=48, rough=.84,
-        skill="电驱超频", passive="轻巧易控，出弯加速快", active="电驱爆发4秒，同时补充15点氮气", weakness="车轻，受到侧撞更容易偏航", cooldown=12, duration=4, size={.9,1.7,2.1}},
+        skill="电驱超频", passive="轻巧易控，出弯加速快", active="电驱爆发4秒，同时补充15点氮气", weakness="车轻，受到侧撞更容易偏航", cooldown=12, duration=4, size={1.060,1.601,2.1}},
     {id="tank", name="轻型突击坦克", class="cruiser", price=2400, top=245, accel=.91, grip=.72, armor=94, rough=1,
         skill="助推喷射", passive="碎石烂路不掉速，正面碾碎杂物；直道蓄势提速", active="助推喷射4秒，正面压制对手", weakness="急弯转向笨重，侧面受击更易失衡", cooldown=15, duration=4, size={2.25,1.9,3.4}},
     {id="beetle", name="蒸汽锹甲", class="rally", price=2900, top=232, accel=.82, grip=.94, armor=76, rough=.95,

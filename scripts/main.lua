@@ -760,7 +760,7 @@ function Start()
         buyVehicle = function(id)
             if not RequireRaceProfile() then return end
             local item = Catalog.Get(id)
-            if not item then return end
+            if not item or item.available==false then return end
             local ok, message = Profile.Buy(id, item.price or 0)
             hud_:RefreshOwnership()
             hud_:SelectVehicle(id, false)

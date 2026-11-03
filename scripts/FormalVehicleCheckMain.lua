@@ -74,7 +74,11 @@ function Start()
     local camera=cameraNode:CreateComponent("Camera")
     camera.nearClip,camera.farClip,camera.fov=.05,60,36
     renderer.hdrRendering=true
-    renderer:SetViewport(0,Viewport:new(scene_,camera))
+    local viewport=Viewport:new(scene_,camera)
+    local renderPath=viewport:GetRenderPath():Clone()
+    assert(renderPath:Load(assert(cache:GetResource("XMLFile","RenderPaths/Forward.xml"))))
+    viewport:SetRenderPath(renderPath)
+    renderer:SetViewport(0,viewport)
     print(string.format("[正式模型验收] PASS %s / %d原始三角面 / D+N / 独立部件动画 / pose=%.4f",id,count//3,pose))
 end
 

@@ -65,7 +65,7 @@ RaceVisuals.__index = RaceVisuals
 -- 主流程在VehicleAssets登记police后调用；避免模块require时抢先索引尚未接好的资源。
 ---@return string[]
 function RaceVisuals.GetResources()
-    local ids = {"sport", "cruiser", "rally"}
+    local ids = require("MixedAssets").RaceIds()
     if Assets.Vehicles.police then ids[#ids + 1] = "police" end
     local paths = Assets.ResourcesFor(ids)
     for _, path in ipairs(Rider.Resources) do paths[#paths + 1] = path end
@@ -130,7 +130,7 @@ function RaceVisuals:CreateRunner(data)
     local node = self.rosterRoot:CreateChild("RaceRival_" .. id, LOCAL)
     local visual = node:CreateChild("RivalLean", LOCAL)
     local body = Assets.Add(visual, vehicleId, nil, "distant")
-    -- 混合模型自带适配座位的驾驶员，不套用摩托骨骼及其握把验证。
+    -- 混合车使用正式独立车体；封闭座舱不套摩托骨骼，也不创建几何小人。
     local rider = odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
         drawDistance=260,shadowDistance=65,inView=true}, SetColor=function() end,
         Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip)
