@@ -27,7 +27,7 @@ M.List = {
     {id="skateboard", name="街头滑板", class="rally", price=1000, top=214, accel=1.10, grip=1.25, armor=35, rough=.78,
         skill="腾空豚跳", passive="轻巧转向，过弯损速少", active="跳过低障碍，落地获得短时冲刺", weakness="怕重型碰撞与连续碎石", cooldown=8, duration=2, size={.85,1.85,1.6}},
     {id="helicopter", name="武装直升机", class="sport", price=4200, top=237, accel=.95, grip=.91, armor=60, rough=1,
-        skill="空战脉冲", passive="沿赛道低空飞行，避开低矮路障和油污", active="攻击前方32米内一个对手，使其短时减速偏航", weakness="强风与高空悬锤仍有威胁，过弯半径较大", cooldown=14, duration=2, size={2.7,1.85,3.5}},
+        skill="空战脉冲", passive="沿赛道低空飞行，避开低矮路障和油污", active="攻击前方32米内一个对手，使其短时减速偏航", weakness="强风与高空悬锤仍有威胁，过弯半径较大", cooldown=14, duration=2, size={3.226,2.062,3.5}},
     {id="sled", name="极地雪橇", class="rally", price=1600, top=228, accel=1.0, grip=1.07, armor=62, rough=.86,
         skill="冰刃冲刺", passive="冰面和湿滑地带不掉速，冰面速度提升", active="冰刃稳向并冲刺4秒", weakness="干燥碎石地带加速稍弱", cooldown=12, duration=4, size={1.4,1.3,2.7}},
     {id="cart", name="暴走购物车", class="rally", price=1300, top=216, accel=1.11, grip=1.05, armor=43, rough=.83,
@@ -72,7 +72,7 @@ function M.CatalogEntries()
             description="被动："..v.passive.."。主动："..v.active.."。短板："..v.weakness.."。",
             speed=v.top, speedStat=v.top, acceleration=math.floor(v.accel*85), handling=math.floor(v.grip*75),
             accelStat=v.accel, durability=v.armor, offroadStat=v.rough, handlingStat=v.grip,
-            available=true, price=v.price, odd=true, skillName=v.skill, skillDescription=v.active,
+            available=require("MixedAssets").IsReady(v.id), price=v.price, odd=true, skillName=v.skill, skillDescription=v.active,
             passiveDescription=v.passive, weakness=v.weakness, skillCooldown=v.cooldown, skillDuration=v.duration}
     end
     return entries

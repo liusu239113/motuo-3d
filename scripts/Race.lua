@@ -353,7 +353,8 @@ function Race:Start(laps)
     self.mixedProjectiles={}
     self.nitroHeld = false
     local names = {"凌风", "山猫", "霓虹", "白隼", "牧歌", "赤轮", "雾影", "雷鸟"}
-    local cars = self.options.mixed and require("MixedVehicles").Ids() or self.options.vehicleIds or {"sport", "cruiser", "rally"}
+    ---@type string[]
+    local cars = self.options.mixed and require("MixedAssets").RaceIds() or self.options.vehicleIds or {"sport", "cruiser", "rally"}
     local rosterOffset=self.options.rosterOffset or 0
     if #cars == 0 then cars = {"sport", "cruiser", "rally"} end
     for i = 1, 9 do

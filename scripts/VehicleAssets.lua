@@ -212,11 +212,9 @@ VehicleAssets.Vehicles.rally.class = "rally"
 -- 街道车流按车型轮换。新增车型必须同时在 Career/VehicleContact 里做胎面标定，
 -- 否则城市构建会因缺少标定而失败，所以这里只列已标定的三种。
 VehicleAssets.TrafficIds = {"sedan", "suv", "truck"}
--- 混合载具使用独立3D几何模型，车库/实战/AI保持一致。
-for _, v in ipairs(require("MixedVehicles").List) do
-    VehicleAssets.Vehicles[v.id]={label=v.name,class=v.class,procedural=true,model="",material="",diffuse="",normal="",
-        rotation=0,targetLength=v.size[3],targetSize=Vector3(v.size[1],v.size[2],v.size[3]),
-        measuredSize=Vector3(v.size[1],v.size[2],v.size[3]),resources={}}
+-- 正式混合载具走统一资源清单，禁止基础几何占位模型。
+for id, config in pairs(require("MixedAssets").Vehicles) do
+    VehicleAssets.Vehicles[id] = config
 end
 VehicleAssets.ResourceTypes = {}
 
@@ -299,7 +297,7 @@ end
 ---@return Node
 function VehicleAssets.Add(parent, id, length, detailTier)
     local c = assert(VehicleAssets.Vehicles[id], "Unknown vehicle: " .. tostring(id))
-    if c.procedural then return require("MixedVisuals").Build(parent,id) end
+    if require("MixedAssets").IsReady(id) then return require("MixedVisuals").Build(parent,id) end
     local model = assert(cache:GetResource("Model", c.model), "Missing vehicle model: " .. c.model)
     local rotation = Quaternion(0, c.rotation, 0)
     local bounds = BoundingBox()
