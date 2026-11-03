@@ -5,6 +5,7 @@ local function clamp(x,a,b) return math.max(a,math.min(b,x)) end
 local function gap(a,b,length) return (a-b+length*.5)%length-length*.5 end
 function M.Reset(sim)
     sim.oddActive,sim.oddCooldown,sim.oddAltitude,sim.oddSkillFlash=0,0,0,0
+    sim.oddLaunch,sim.oddHopDuration=0,.85
     sim.oddSteam,sim.oddSpring,sim.oddCombo,sim.oddComboTimer=0,22,0,0
     sim.oddHop,sim.oddHitLock,sim.oddDisrupt,sim.oddShield=0,0,0,0
     sim.oddSkillHeld,sim.oddAttack=false,false
@@ -35,6 +36,9 @@ function M.CreateCourse(map)
     return list
 end
 function M.Terrain(map,s,lane)
+    local half=map.Roads and map.Roads[1] and map.Roads[1].width or 8
+    -- 中央至少7米柏油通路，特殊地形沿两翼形成可选线路；物理与绘制共用采样。
+    if math.abs(lane or 0)<half*.45 then return "asphalt" end
     local theme=map.Track and map.Track.theme or "circuit"
     local section=math.floor((s%math.max(1,map.RouteLength or 1))/145)%8
     if section==0 then return "asphalt" end
@@ -51,7 +55,9 @@ local function activate(sim,v,controls)
     sim.oddActive,sim.oddCooldown,sim.oddSkillFlash=v.duration,v.cooldown,.65
     sim.oddAttack=true
     if v.id=="cicada" then sim.oddSpring=22 end
-    if v.id=="frog" or v.id=="skateboard" then sim.oddHop=v.id=="frog" and 2.4 or 1.5 end
+    if v.id=="frog" or v.id=="skateboard" then
+        sim.oddHopDuration=v.id=="frog" and 2.4 or 1.5;sim.oddHop=sim.oddHopDuration
+    end
     if v.id=="bathtub" or v.id=="office" then sim.oddShield=v.duration end
     if v.id=="ebike" then sim.oddNitroGift=15 end
     if v.id=="hovercraft" then
@@ -64,7 +70,13 @@ local function activate(sim,v,controls)
 end
 function M.Before(sim,dt,controls,map)
     local v=Data.Get(sim.vehicleId)
+    sim.oddHitLock=math.max(0,(sim.oddHitLock or 0)-dt)
     if not v then
+        if (map.RouteLength or 0)<300 then
+            sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1;return
+        end
+        sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
+        sim.oddAltitude=sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0
         sim.oddDisrupt=math.max(0,(sim.oddDisrupt or 0)-dt)
         sim.oddTerrain=M.Terrain(map,sim.roadS or 0,sim.lateral or 0)
         sim.oddSpeedScale=sim.oddTerrain=="asphalt" and 1 or .88
@@ -75,7 +87,7 @@ function M.Before(sim,dt,controls,map)
     end
     sim.oddSkillName=v.skill
     sim.oddActive=math.max(0,sim.oddActive-dt);sim.oddCooldown=math.max(0,sim.oddCooldown-dt)
-    sim.oddSkillFlash=math.max(0,sim.oddSkillFlash-dt);sim.oddHitLock=math.max(0,sim.oddHitLock-dt)
+    sim.oddSkillFlash=math.max(0,sim.oddSkillFlash-dt)
     sim.oddDisrupt=math.max(0,sim.oddDisrupt-dt);sim.oddShield=math.max(0,sim.oddShield-dt)
     sim.oddComboTimer=math.max(0,sim.oddComboTimer-dt)
     if sim.oddComboTimer==0 then sim.oddCombo=0 end
@@ -115,11 +127,22 @@ function M.Before(sim,dt,controls,map)
     elseif id=="hovercraft" then grip=grip*.92
     elseif id=="buggy" then speed=speed*(1+.055*sim.oddCombo)
     end
-    if id=="frog" and sim.oddHop<=0 and (sim.speed or 0)>8 then sim.oddHop=.85 end
+    if id=="frog" and sim.oddHop<=0 and (sim.speed or 0)>8 then sim.oddHop=.85;sim.oddHopDuration=.85 end
+    local wasHopping=sim.oddHop>0
     sim.oddHop=math.max(0,sim.oddHop-dt)
+    if wasHopping and sim.oddHop<=0 then
+        if id=="frog" or id=="skateboard" then
+            if math.abs(controls.steer or 0)>.8 then
+                sim.speed=sim.speed*.87;sim.oddDisrupt=.6;sim.message,sim.messageTimer="落地侧偏 · 提前回正方向",1.2
+            else
+                sim.oddCombo=math.min(3,sim.oddCombo+1);sim.oddComboTimer=5
+                sim.speed=math.min(sim.vehicle.maxSpeed*1.12,sim.speed+1.4)
+            end
+        end
+    end
     local altitude=id=="helicopter" and 2.5 or (id=="jellyfish" and 1.65 or (id=="hovercraft" and .2 or 0))
     if sim.oddHop>0 then
-        local total=id=="frog" and (sim.oddHop>.85 and 2.4 or .85) or 1.5
+        local total=sim.oddHopDuration or .85
         altitude=math.max(altitude,math.sin(clamp(sim.oddHop/total,0,1)*math.pi)*(total>1 and 2.2 or .65))
     end
     if sim.oddActive>0 then
@@ -130,6 +153,12 @@ function M.Before(sim,dt,controls,map)
         if id=="toilet" then altitude=math.max(altitude,1.8) end
     end
     if sim.oddDisrupt>0 then speed=speed*.84;grip=grip*.58 end
+    if sim.oddHop>0 then grip=grip*.78 end
+    if id=="frog" then speed=speed*(1+sim.oddCombo*.035) end
+    if id=="toilet" and sim.oddActive>0 then grip=grip*.72 end
+    if id=="loader" and (sim.crashCooldown or 0)>0 then drive=drive*.75 end
+    sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
+    if sim.oddLaunch>0 then altitude=altitude+math.sin(sim.oddLaunch/1.2*math.pi)*2.4;grip=grip*.5 end
     sim.oddAltitude=altitude
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=speed,drive,grip
     sim.oddLastImpact=sim.impactSerial or 0
@@ -150,8 +179,8 @@ end
 function M.Obstacles(sim,world,x0,y0,z0)
     if not world or not world.mixedObstacles then return end
     local v=Data.Get(sim.vehicleId)
-    local hw=v and math.min(1.05,v.size[1]*.4) or .3
-    local hl=v and math.min(1.8,v.size[3]*.4) or .95
+    local hw=v and v.size[1]*.5 or .3
+    local hl=v and v.size[3]*.5 or .95
     local altitude=sim.oddAltitude or 0
     local contacts={}
     for _,o in ipairs(world.mixedObstacles) do
@@ -236,7 +265,10 @@ function M.Attack(race,source,sim)
     local side=best.lane>=source.lane and 1 or -1
     best.wantedLane=clamp(best.lane+side*1.4,-race.roadHalfWidth+.8,race.roadHalfWidth-.8)
     best.oddDisrupt=3
-    if targetSim then targetSim.oddDisrupt=3 end
+    if targetSim then
+        targetSim.oddDisrupt=3
+        if v.id=="loader" or v.id=="beetle" then targetSim.oddLaunch=1.2 end
+    end
     if best.isPlayer then
         race.sim.speed=best.speed
         race.sim.heading=(race.sim.heading+side*5)%360

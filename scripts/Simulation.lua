@@ -2,6 +2,18 @@
 -- 单位：米、秒；所有角度为度，+Z=0、+X=90；y 是车轮最低点。
 -- 主流程先 World:Update(dt, sim, clock)，再 Step；本模块不更新/移动世界。
 ---@class RideSimulation
+---@field oddAltitude number
+---@field oddActive number
+---@field oddCooldown number
+---@field oddSteam number
+---@field oddSpring number
+---@field oddDisrupt number
+---@field oddShield number
+---@field oddLaunch number
+---@field oddPickups integer
+---@field oddDriveScale number
+---@field oddSpeedScale number
+---@field oddGripScale number
 ---@field speed number 以米每秒计，不能由Reset的0推断为integer。
 ---@field raceMode boolean 比赛仅接管规则，不改自由驾驶输入和转向。
 ---@field impactSerial number 每次有效碰撞递增，Race用于一次性宽限。
@@ -725,13 +737,16 @@ function Sim:Traffic(world, x0, y0, z0, alpha0, alpha1)
             local lx1, lz1 = rx1 * sz - rz1 * sx, rx1 * sx + rz1 * sz
             local delta = (self.yaw - (car.yaw or 0)) * RAD
             local carWidth = car.width or (car.halfWidth and car.halfWidth * 2) or 1.85
-            local halfWidth = carWidth * 0.5 + math.abs(math.cos(delta)) * 0.29 + math.abs(math.sin(delta)) * 0.95
-            local halfLength = (car.halfLength or 2.125) + math.abs(math.cos(delta)) * 0.95 + math.abs(math.sin(delta)) * 0.29
+            local mixed=require("MixedVehicles").Get(self.vehicleId)
+            local ownW=mixed and mixed.size[1]*.5 or .29
+            local ownL=mixed and mixed.size[3]*.5 or .95
+            local halfWidth = carWidth * 0.5 + math.abs(math.cos(delta)) * ownW + math.abs(math.sin(delta)) * ownL
+            local halfLength = (car.halfLength or 2.125) + math.abs(math.cos(delta)) * ownL + math.abs(math.sin(delta)) * ownW
             local hit, enter, leave = Sim.SweptHit(lx0, lx1, lz0, lz1, halfWidth, halfLength)
             local height = car.height or 1.8
             if hit then
-                hit = interval(y0 + 0.725 - cy0 - height * 0.5,
-                    self.y + 0.725 - cy1 - height * 0.5, (height + 1.45) * 0.5, enter, leave)
+                hit = interval(y0 + (self.oddAltitude or 0) + 0.725 - cy0 - height * 0.5,
+                    self.y + (self.oddAltitude or 0) + 0.725 - cy1 - height * 0.5, (height + 1.45) * 0.5, enter, leave)
             end
             if hit then
                 active[car] = true

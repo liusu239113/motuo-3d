@@ -279,6 +279,10 @@ function Preview:Update(dt)
     self.angle = (self.angle + self.frameTimer * 9) % 360
     self.frameTimer = 0
     self.turntable.rotation = Quaternion(0, self.angle, 0)
+    if require("MixedVehicles").Get(self.vehicleId or "") then
+        local body=self.turntable:GetChild("Vehicle_"..self.vehicleId)
+        if body then require("MixedVisuals").Animate(body,self.vehicleId,self.angle/9,{oddActive=0}) end
+    end
     self.previewSurface:QueueUpdate()
 end
 

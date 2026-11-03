@@ -19,6 +19,8 @@ local function trackList()
 end
 
 ---@class HUD : ControlEditor, RouteSelect, RacingDialogs
+---@field trialButton Button
+---@field skillButton Button
 ---@field activeModal Modal?
 ---@field settingsReturn string
 ---@field OpenSettings fun(self:HUD)
@@ -493,7 +495,7 @@ local function help()
     return UI.Column {width = "100%", gap = 7, padding = 0, children = {
         PageText("驾驶与竞速", 12, AMBER),
         PageText("左右滑动转向，按住油门加速、刹车制动。点按氮气消耗45点，喷射2.5秒，尾焰与视野冲刺会明显放大。Q/侧键位为翘头，按住抬起前轮。多指互不抢占。", 11, MUTED),
-        PageText("键盘 W/S 油刹，A/D 转向，Shift 氮气，C 视角，Q 翘头 / Z 烧胎按住，X 180° / V 360°点按起跳旋转。比赛与练习都可用。本版不提供撞人攻击。", 11, MUTED),
+        PageText("键盘 W/S 油刹，A/D 转向，Shift 氮气，C 视角，Q 翘头 / Z 烧胎按住，X 180° / V 360°点按起跳旋转。比赛与练习都可用。混合载具按 E 或右上专属技能键，冷却结束后可再次发动。", 11, MUTED),
         PageText("青色箭头带提供有限加速；橙黄飞坡可绕行，腾空后注意控制落地。", 11, MUTED),
         PageText("翘头自动配合油门；烧胎自动配合油刹。旋转可在平稳行驶至15km/h后辅助起跳，也可在腾空时点按。按键有接收反馈，不满足条件不会假装成功。虚拟竞速，请勿现实模仿。", 10, MUTED)}}
 end
@@ -599,6 +601,7 @@ function HUD:SelectVehicle(id, notify)
             backgroundGradient = RacingTheme.Gradient(selected and {39, 57, 61, 245} or {30, 37, 43, 235},
                 selected and {20, 33, 39, 245} or {17, 21, 26, 235})})
         self.vehicleBadges[v.id]:SetText(v.available == false and "准备中 · 不可驾驶"
+        or ((profile.trials[v.id] or 0)>0 and ("试驾剩余 "..profile.trials[v.id].." 局"))
             or (not owned and ("未拥有 · " .. tostring(v.price or 0) .. " 金币"))
             or (selected and "已选中" or "点按选择"))
         self.vehicleBadges[v.id]:SetFontColor(not owned and (selected and AMBER or MUTED) or (selected and AMBER or MUTED))

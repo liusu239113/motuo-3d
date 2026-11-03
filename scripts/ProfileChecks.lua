@@ -358,6 +358,22 @@ function Checks.Run()
     check(grants.RetryPendingSave() and fresh().TrackUnlocked("alpine") and fresh().Coins() == 2300,
         "免费权益补存不增加金币")
 
+    seed(valid)
+    local trial=fresh()
+    check(trial.Owns("ebike") and trial.Trials("tank")==0 and not trial.CanDrive("tank"),"旧档迁移保留免费电动车且不赠送付费载具")
+    check(trial.GrantTrials("tank") and trial.Trials("tank")==3,"一次广告发放三局并保存")
+    check(fresh().Trials("tank")==3,"试驾次数重启不丢失")
+    failWrite=true
+    check(not trial.ConsumeTrial("tank") and trial.Trials("tank")==3,"扣次保存失败应回滚并禁止出发")
+    failWrite=false
+    for i=1,3 do check(trial.ConsumeTrial("tank") and trial.Trials("tank")==3-i,"每次实际开赛扣一局") end
+    check(not trial.ConsumeTrial("tank") and not trial.CanDrive("tank"),"第四次出发必须被拦截")
+    failWrite=true
+    local saved,_,applied=trial.GrantTrials("tank")
+    check(not saved and applied and trial.Trials("tank")==3 and trial.HasPendingSave(),"奖励保存失败保留内存，不重复观看")
+    failWrite=false
+    check(trial.RetryPendingSave() and fresh().Trials("tank")==3,"补存不重复授予试驾")
+    check(trial.Buy("tank",0) and trial.ConsumeTrial("tank") and trial.Trials("tank")==3,"永久拥有后不再消耗试驾")
     print(string.format("[ProfileChecks] PASS %d项，%d次内存写入，含严格旧格式/坏档禁写/加载重试/写入回滚/参数边界/组合权益，玩家档未访问", assertions, writes))
     return {passed = true, assertions = assertions}
 end
@@ -384,7 +400,7 @@ function Checks.BeginUnavailableProfile()
         profile.TryLoad = function() return false, message end
         profile.GetLoadError = function() return message end
         profile.GetForDisplay = function()
-            return {coins = 0, owned = {[profile.FREE_VEHICLE] = true},
+            return {coins = 0, owned = {[profile.FREE_VEHICLE] = true},trials={},
                 ownedRiders = {[profile.FREE_RIDER] = true}, unlockedTracks = {[profile.FREE_TRACK] = true}}, message
         end
         profile.HasPendingSave = function() return false end

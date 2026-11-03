@@ -1,6 +1,14 @@
 -- 车型目录与实车资产分离；available 只在真实 MDL 交付并登记后开放。
 local Catalog = {}
 ---@class MotorcycleEntry
+---@field odd? boolean
+---@field baseClass? string
+---@field skillName? string
+---@field passiveDescription? string
+---@field skillDescription? string
+---@field weakness? string
+---@field skillCooldown? number
+---@field skillDuration? number
 ---@field id string
 ---@field class string
 ---@field name string

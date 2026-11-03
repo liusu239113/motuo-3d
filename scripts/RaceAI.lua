@@ -166,6 +166,14 @@ function AI.Snapshot(race)
                 halfLength = car.halfLength or 2.2, y = car.y or 0, bike = false}
         end
     end
+    if race.options.mixed and race.options.world then
+        for _,o in ipairs(race.options.world.mixedObstacles or {}) do
+            if o.active then
+                obstacles[#obstacles+1]={source=o,s=o.s,lane=o.lane,speed=0,
+                    halfWidth=o.halfWidth,halfLength=o.halfLength,y=o.y,bike=false,mixed=true}
+            end
+        end
+    end
 end
 
 -- Avoidance geometry in route space (metres):
@@ -199,9 +207,10 @@ local function eachObstacle(race, r, visit, sensed)
     end
     for _, other in ipairs(race.racers) do
         if other ~= r and not other.finished and not other.eliminated then
+            local spec=require("MixedVehicles").Get(other.vehicleId)
             visit({source = other, s = other.s, lane = other.lane,
-                destination = other.wantedLane, speed = other.speed, halfWidth = 0.30,
-                halfLength = 1, y = other.y, bike = true})
+                destination = other.wantedLane, speed = other.speed, halfWidth = spec and spec.size[1]*.5 or .30,
+                halfLength = spec and spec.size[3]*.5 or 1, y = other.y, bike = true})
         end
     end
 end
@@ -395,7 +404,7 @@ function AI.TrafficContacts(race, r)
     for _, obstacle in ipairs(race.aiObstacles) do
         local car = obstacle.source
         local dx, dz = r.x - car.x, r.z - car.z
-        if dx * dx + dz * dz < 1600 then
+        if not obstacle.mixed and dx * dx + dz * dz < 1600 then
             local yaw = (car.yaw or 0) * RAD
             local sx, sz = math.sin(yaw), math.cos(yaw)
             local delta = (r.yaw - (car.yaw or 0)) * RAD
@@ -437,7 +446,13 @@ function AI.Update(race, r, dt)
     local target = AI.Plan(race, r, dt)
     AI.Drive(race, r, target, dt)
     local oldLane, oldS = r.lane, r.s
-    r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
+    if not race.options.mixed then
+        r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
+    else
+        local own=require("MixedVehicles").Get(r.vehicleId)
+        local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)
+        r.lane=approach(r.lane,r.wantedLane,min(r.speed*dt*.45,dt*(2.5+r.skill)*agility))
+    end
     -- 走宽、换线和上坡都消耗实际行程，不把更长的外线仍当中心线免费前进。
     local sample = race.aiProfile[math.floor((r.s % race.length) / race.aiProfileStep) + 1]
     local lateralSpeed = (r.lane - oldLane) / max(dt, 0.00001)

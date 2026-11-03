@@ -671,9 +671,21 @@ function Race:Contacts(dt)
                     local dx1, dz1 = b.x - a.x, b.z - a.z
                     local lx0, lx1 = dx0 * sz - dz0 * sx, dx1 * sz - dz1 * sx
                     local f0, f1 = dx0 * sx + dz0 * sz, dx1 * sx + dz1 * sz
-                    local hit, enter, leave = self.sim.SweptHit(lx0, lx1, f0, f1, 0.65, 2.1)
+                    local va=require("MixedVehicles").Get(a.vehicleId)
+                    local vb=require("MixedVehicles").Get(b.vehicleId)
+                    local halfWidth=va and va.size[1]*.5 or .3
+                    local halfLength=va and va.size[3]*.5 or 1
+                    local delta=(b.yaw-a.yaw)*RAD
+                    halfWidth=halfWidth+(vb and vb.size[1]*.5 or .3)*abs(math.cos(delta))
+                        +(vb and vb.size[3]*.5 or 1)*abs(math.sin(delta))+.05
+                    halfLength=halfLength+(vb and vb.size[3]*.5 or 1)*abs(math.cos(delta))
+                        +(vb and vb.size[1]*.5 or .3)*abs(math.sin(delta))+.1
+                    local hit, enter, leave = self.sim.SweptHit(lx0, lx1, f0, f1, halfWidth, halfLength)
                     if hit then
-                        local y0, y1 = b.contactY - a.contactY, b.y - a.y
+                        local da=(a.isPlayer and self.sim or a.driveSim) --[[@as RideSimulation?]]
+                        local db=(b.isPlayer and self.sim or b.driveSim) --[[@as RideSimulation?]]
+                        local lift=(db and db.oddAltitude or 0)-(da and da.oddAltitude or 0)
+                        local y0, y1 = b.contactY - a.contactY+lift, b.y - a.y+lift
                         local dy = y1 - y0
                         if abs(dy) < 1e-8 then hit = abs(y0) <= 1.5
                         else
@@ -685,6 +697,23 @@ function Race:Contacts(dt)
                     if hit then
                         local retained = clamp(0.92 - abs(a.speed - b.speed) * 0.006, 0.64, 0.92)
                         a.speed, b.speed = a.speed * retained, b.speed * retained
+                        if self.options.mixed then
+                            local function response(r,spec,forward,sideDistance)
+                                local drive=r.isPlayer and self.sim or r.driveSim
+                                if drive and (drive.oddShield or 0)>0 then return end
+                                local heavy=spec and (spec.id=="tank" or spec.id=="loader")
+                                if heavy and abs(forward)>abs(sideDistance)*1.2 then r.speed=r.speed/retained*.98
+                                elseif spec and spec.armor<55 then
+                                    r.speed=r.speed*.88
+                                    r.wantedLane=clamp(r.lane+(sideDistance>0 and -1 or 1)*1.1,-self.roadHalfWidth+1,self.roadHalfWidth-1)
+                                    if drive then drive.oddDisrupt=1.4 end
+                                elseif spec and spec.id=="tank" then
+                                    r.speed=r.speed*.82
+                                    if drive then drive.oddDisrupt=1.8 end
+                                end
+                            end
+                            response(a,va,f1,lx1);response(b,vb,-f1,-lx1)
+                        end
                         a.immunity, b.immunity = 2, 2
                         -- 撞车表现：按相对位置分左右，给出车身猛晃/偏航，而不是只掉速度。
                         local side = ((b.x - a.x) * math.cos(a.yaw * RAD)

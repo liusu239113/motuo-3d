@@ -51,13 +51,16 @@ function M.Build(world)
     local colors={gravel=P.Material(.38,.33,.24,.96),water=P.Material(.08,.37,.52,.38),
         mud=P.Material(.25,.14,.07,.95),slime=P.Material(.27,.54,.12,.65),ice=P.Material(.48,.72,.85,.28),
         dry=P.Material(.62,.43,.23,.95),wind=P.Material(.38,.4,.48,.8)}
+    local half=world.landscape.Roads[1].width
     for s=0,world.landscape.RouteLength-8,8 do
-        local terrain=Rules.Terrain(world.landscape,s,0)
-        local mat=colors[terrain]
-        if mat then
-            local p,yaw,pitch=world.landscape.TrafficPose(s+4,0)
-            local half=world.landscape.Roads[1].width
-            P.Add(root,"Terrain_"..terrain,"Box",mat,p+V(0,.018,0),V(half*2-.4,.025,8.1),Quaternion(pitch,yaw,0),false)
+        for _,side in ipairs({-1,1}) do
+            local lane=side*half*.725
+            local terrain=Rules.Terrain(world.landscape,s,lane)
+            local mat=colors[terrain]
+            if mat then
+                local p,yaw,pitch=world.landscape.TrafficPose(s+4,lane)
+                P.Add(root,"Terrain_"..terrain,"Box",mat,p+V(0,.018,0),V(half*.55,.025,8.1),Quaternion(pitch,yaw,0),false)
+            end
         end
     end
     for _,model in ipairs(root:GetComponents("StaticModel",true)) do model.drawDistance=230;model.shadowDistance=60 end
@@ -68,9 +71,14 @@ function M.Update(world,clock)
     for _,o in ipairs(world.mixedObstacles or {}) do
         if o.kind=="pendulum" and o.node then
             local arm=o.node:GetChild("SwingArm")
-            if arm then arm.rotation=Quaternion(0,0,math.sin(clock*1.7+o.phase)*32) end
-            -- 扫掠判定只在锤头进入中央车道时启用，支架不挡整路。
-            o.active=math.abs(math.sin(clock*1.7+o.phase))<.52
+            local angle=math.sin(clock*1.7+o.phase)*32
+            if arm then arm.rotation=Quaternion(0,0,angle) end
+            local offset=math.sin(math.rad(angle))*2.8
+            local yaw=math.rad(o.yaw)
+            local base=world.landscape.TrafficPose(o.s,o.lane)
+            o.x,o.z=base.x+math.cos(yaw)*offset,base.z-math.sin(yaw)*offset
+            o.y=base.y+4.33-math.cos(math.rad(angle))*2.8-.625
+            o.height=1.25;o.halfWidth=.625;o.halfLength=.625;o.active=true
         end
     end
 end

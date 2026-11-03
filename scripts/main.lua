@@ -111,70 +111,12 @@ local testAudio_ = nil
 local testSources_ = {}
 local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
 
--- 只读诊断：TimeStep 是未在本脚本截断的事件间隔，不是最终手机呈现 FPS 验收。
--- os.clock 仅包围生涯脚本调用，CPU 不含 GPU，也不代表整帧耗时。
--- 状态仅保存数值/布尔量，不持有 session、actor 或 scene；复用容器避免逐帧分配。
-local careerPerf_ = {active = false, pendingPost = false, seconds = 0.0, frames = 0,
-    maxInterval = 0.0, over50 = 0, over100 = 0,
-    updateSum = 0.0, updateMax = 0.0, postSum = 0.0, postMax = 0.0, postFrames = 0}
-
--- 临时性能诊断：定位卡顿来源后整段删除。只累计数值，不分配临时对象。
+-- 剧情暂时关闭，保留未来恢复入口所需的生命周期钩子。
+local function ResetCareerPerf() end
+local function IsCareerPerfActive() return false end
+local function RecordCareerPerfUpdate() end
+local function RecordCareerPerfPost() end
 local diag_ = {seconds = 0.0, frames = 0, maxInterval = 0.0, careerSum = 0.0, careerMax = 0.0}
-
-local function ResetCareerPerf()
-    careerPerf_.active, careerPerf_.pendingPost = false, false
-    careerPerf_.seconds, careerPerf_.frames, careerPerf_.maxInterval = 0.0, 0, 0.0
-    careerPerf_.over50, careerPerf_.over100 = 0, 0
-    careerPerf_.updateSum, careerPerf_.updateMax = 0.0, 0.0
-    careerPerf_.postSum, careerPerf_.postMax, careerPerf_.postFrames = 0.0, 0.0, 0
-end
-
-local function IsCareerPerfActive()
-    return careerMode_ and career_ ~= nil and not career_.disposed and career_.running
-        and not career_.loading and career_.actor ~= nil and not career_.view:IsBlocking()
-end
-
----@param rawDt number
----@param cpu number
-local function RecordCareerPerfUpdate(rawDt, cpu)
-    if not careerPerf_.active then
-        -- 进入/恢复的首个间隔可能来自加载、暂停或其他模式，丢弃后再开始采样。
-        careerPerf_.active = true
-        return
-    end
-    if rawDt <= 0 then ResetCareerPerf(); return end
-    careerPerf_.seconds = careerPerf_.seconds + rawDt
-    careerPerf_.frames = careerPerf_.frames + 1
-    careerPerf_.maxInterval = math.max(careerPerf_.maxInterval, rawDt)
-    if rawDt > .05 then careerPerf_.over50 = careerPerf_.over50 + 1 end
-    if rawDt > .1 then careerPerf_.over100 = careerPerf_.over100 + 1 end
-    careerPerf_.updateSum = careerPerf_.updateSum + cpu
-    careerPerf_.updateMax = math.max(careerPerf_.updateMax, cpu)
-    careerPerf_.pendingPost = true
-end
-
----@param cpu number
-local function RecordCareerPerfPost(cpu)
-    if not careerPerf_.pendingPost then return end
-    careerPerf_.pendingPost = false
-    careerPerf_.postFrames = careerPerf_.postFrames + 1
-    careerPerf_.postSum = careerPerf_.postSum + cpu
-    careerPerf_.postMax = math.max(careerPerf_.postMax, cpu)
-    if careerPerf_.seconds < 5 then return end
-    -- 仅到期时格式化、读取 renderer 最新已完成渲染统计及当前坐标；不遍历场景。
-    local actor = career_ and career_.actor
-    local location = actor and string.format(" xz=(%.1f,%.1f)", actor.x, actor.z) or ""
-    print(string.format("[生涯性能] eventWindow=%.2fs frames=%d eventFPS=%.2f intervalMean/Max=%.1f/%.1fms >50ms=%d >100ms=%d UpdateCPU(mean/max)=%.2f/%.2fms PostCPU(mean/max)=%.2f/%.2fms postCalls=%d rendererLast.numBatches=%d numPrimitives=%d%s；CPU不含GPU；FPS为事件间隔观测，非最终真机验收",
-        careerPerf_.seconds, careerPerf_.frames, careerPerf_.frames / careerPerf_.seconds,
-        careerPerf_.seconds * 1000 / careerPerf_.frames, careerPerf_.maxInterval * 1000,
-        careerPerf_.over50, careerPerf_.over100,
-        careerPerf_.updateSum * 1000 / careerPerf_.frames, careerPerf_.updateMax * 1000,
-        careerPerf_.postSum * 1000 / careerPerf_.postFrames, careerPerf_.postMax * 1000,
-        careerPerf_.postFrames, renderer.numBatches, renderer.numPrimitives, location))
-    -- 不追赶补打日志；每个新窗口重新累计约 5 秒，下一帧无需再次暖身。
-    ResetCareerPerf()
-    careerPerf_.active = true
-end
 
 local function ApplyQuality()
     renderer.dynamicInstancing = true
@@ -907,6 +849,7 @@ function Start()
     end
     local autoStart, challenge = false, false
     for _, arg in ipairs(GetArguments()) do
+        if arg == "-mixedchecks" then assert(require("MixedChecks").Run()) end
         if arg == "-autotest" then autoTest_ = true end
         if arg == "-benchmark" then benchmark_ = true; autoTest_ = true end
         if arg == "-quality-high" then highQuality_ = true end
@@ -1121,7 +1064,7 @@ function HandleUpdate(eventType, eventData)
     diag_.seconds = diag_.seconds + rawDt
     diag_.frames = diag_.frames + 1
     if rawDt > diag_.maxInterval then diag_.maxInterval = rawDt end
-    CareerStore.UpdateCloud(rawDt)
+    if careerMode_ then CareerStore.UpdateCloud(rawDt) end
     local dt = math.min(rawDt, 0.1)
     -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
     RewardedAds.Update(dt)
@@ -1295,7 +1238,7 @@ function HandleUpdate(eventType, eventData)
             rideInput_.wheelie = touch_.wheelie or input:GetKeyDown(KEY_Q) or testTrick_ == "wheelie"
             rideInput_.burnout = touch_.burnout or input:GetKeyDown(KEY_Z) or testTrick_ == "burnout"
             rideInput_.spin180, rideInput_.spin360 = pendingActions_.spin180, pendingActions_.spin360
-            rideInput_.skill = pendingActions_.skill
+            rideInput_.skill = pendingActions_.skill or (autoTest_ and require("MixedVehicles").Get(selectedVehicle_)~=nil and (sim_.oddCooldown or 0)<=0)
             rideInput_.nitro = nitro or pendingActions_.nitro
             if pendingChallenge_ and race_ then
                 local drive = race_:BeforeStep(0.02, rideInput_)
@@ -1393,19 +1336,6 @@ end
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
-    -- 临时性能诊断：每 5 秒输出一次，定位卡顿来源后连带 diag_ 一起删除。
-    if diag_.seconds >= 5 then
-        local gcNow = collectgarbage("count")
-        local gcRate = diag_.gcKB and (gcNow - diag_.gcKB) / diag_.seconds or 0
-        diag_.gcKB = gcNow
-        print(string.format("[诊断FPS] %.2f fps | 帧时 平均%.1f 最大%.1f ms | career脚本 平均%.2f 最大%.2f ms/帧 | GC=%.0fKB/s | batches=%d primitives=%d | 模式=%s",
-            diag_.frames / diag_.seconds, diag_.seconds * 1000 / diag_.frames,
-            diag_.maxInterval * 1000, diag_.careerSum * 1000 / diag_.frames,
-            diag_.careerMax * 1000, gcRate, renderer.numBatches, renderer.numPrimitives,
-            careerMode_ and "生涯" or screen_))
-        diag_.seconds, diag_.frames, diag_.maxInterval = 0.0, 0, 0.0
-        diag_.careerSum, diag_.careerMax = 0.0, 0.0
-    end
     if careerMode_ and career_ then
         if not IsCareerPerfActive() then ResetCareerPerf() end
         local dt = math.min(eventData:GetFloat("TimeStep"), .1)

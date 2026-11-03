@@ -259,6 +259,13 @@ function M.Build(parent,id)
         ball(root,"Headlight",m.white,0,1.07,.7,.3,.23,.15)
         seat(root,.86,-.35);pilot(root,1,-.35)
     end
+    -- 用实测联合包围盒统一底部/尺寸，使车库、实赛和碰撞配置一致。
+    local bounds=BoundingBox()
+    for _,model in ipairs(root:GetComponents("StaticModel",true)) do bounds:Merge(model.worldBoundingBox) end
+    local size=bounds.size
+    local sx,sy,sz=(v.size[1] or 1)/math.max(.01,size.x),(v.size[2] or 1)/math.max(.01,size.y),(v.size[3] or 1)/math.max(.01,size.z)
+    root.scale=V(sx,sy,sz)
+    root.position=V(-bounds.center.x*sx,-bounds.min.y*sy,-bounds.center.z*sz)
     root:SetVar("VehicleId",Variant(id))
     root:SetVar("VehicleSize",Variant(V(v.size[1] or 1,v.size[2] or 1,v.size[3] or 1)))
     return root
