@@ -46,9 +46,11 @@ end
 -- 没有驾驶员的封闭座舱不伪造几何小人；保留调用兼容，后续接正式驾驶员骨骼。
 function M.SetRiderColor(_, _) return false end
 
-local function helicopterPart(x,y,_)
-    -- 来自LOD0真实三角面投影：旋翼平面下界0.126，尾梁位于-X；雷达罩不随桨叶旋转。
-    if y > .126 and y < .194 and x > -.40 then return "Rotor" end
+local function helicopterPart(x,y,z)
+    -- 四片原始桨叶有下垂，不能只按桨毂高度切，否则会留下静止的桨尖。
+    local radius=math.sqrt((x-.023)^2+(z+.004)^2)
+    if y<.194 and ((y>.080 and radius>.10) or y>.140) then return "Rotor" end
+    if math.abs(z)>.112 and x>-.14 and x<.19 and y<-.075 then return "WeaponPods" end
     return "Body"
 end
 
@@ -104,8 +106,13 @@ function M.Animate(root, id, time, state)
     if id ~= "helicopter" then return end
     local rotor = root:GetChild("Rotor",true)
     if rotor then
-        local active = state and (state.oddActive or 0)>0
-        rotor.rotation = Quaternion(0,time*(active and 2200 or 1600)%360,0)
+        rotor.rotation = Quaternion(0,time*1600%360,0)
+    end
+    local pods=root:GetChild("WeaponPods",true)
+    if pods then
+        local active=state and (state.oddActive or 0)>0
+        local recoil=active and math.max(0,math.sin(time*32))*.023 or 0
+        pods.position=V(-recoil,0,0)
     end
 end
 

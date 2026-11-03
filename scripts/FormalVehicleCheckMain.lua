@@ -5,8 +5,9 @@ local Visual = require("MixedVisuals")
 local scene_ = nil
 
 function Start()
-    local id, pose = "helicopter", 0
+    local id, pose, active = "helicopter", 0, false
     for _,arg in ipairs(GetArguments()) do
+        if arg=="-formal-skill" then active=true end
         id = arg:match("^%-formal%-vehicle=(.+)$") or id
         pose = tonumber(arg:match("^%-pose%-time=(.+)$")) or pose
     end
@@ -67,7 +68,7 @@ function Start()
         root.position=Vector3(0,1,0)
         vehicle.enabled=false
     end
-    Visual.Animate(vehicle,id,pose,{oddActive=0})
+    Visual.Animate(vehicle,id,pose,{oddActive=active and 1 or 0})
     local cameraNode=scene_:CreateChild("Camera")
     cameraNode.position=Vector3(5.0,3.8,5.6)
     cameraNode:LookAt(Vector3(0,1,0))
