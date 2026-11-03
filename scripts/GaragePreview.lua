@@ -110,6 +110,14 @@ function Preview:Select(id, available)
     self:ChangeStatus("preparing", "正在准备真实车型…")
     local token = self.generation
     local paths = VehicleAssets.ResourcesFor({id})
+    if id=="ebike" then
+        local rider=require("Rider")
+        for _,path in ipairs(rider.Resources) do
+            -- 纹理导入XML不作为DWP运行时根；Model/Material/Texture/Technique需要提前准备。
+            local kind=rider.ResourceTypes[path]
+            if kind~="XMLFile" then paths[#paths+1]=path;VehicleAssets.ResourceTypes[path]=kind end
+        end
+    end
     for _, path in ipairs(Preview.Resources) do paths[#paths + 1] = path end
     print("[车库预览] 按需准备 " .. id .. "，不构建驾驶世界")
     local function onDownloaded(success, failedCount)
@@ -156,8 +164,8 @@ end
 function Preview:SetRiderColor(color)
     -- Selection remains owned by HUD / the actual rider; do not recolor the photo's deck.
     self.riderColor_ = color or self.riderColor_
-    if self.turntable and require("MixedVehicles").Get(self.vehicleId) then
-        require("MixedVisuals").SetRiderColor(self.turntable,self.riderColor_)
+    if self.riderRig then
+        self.riderRig:SetColor(MixedVisuals.RiderColorId(self.riderColor_) or "red")
     end
 end
 
@@ -197,7 +205,10 @@ function Preview:BuildScene(id)
     rimNode.position=Vector3(2,3,-4)
     self.turntable = self.previewScene:CreateChild("VehicleTurntable")
     local vehicle = VehicleAssets.Add(self.turntable, id)
-    if require("MixedVehicles").Get(id) then require("MixedVisuals").SetRiderColor(vehicle,self.riderColor_) end
+    if id=="ebike" then
+        self.riderRig=assert(MixedVisuals.CreateRider(vehicle,id))
+        self.riderRig:SetColor(MixedVisuals.RiderColorId(self.riderColor_) or "red")
+    end
     local drawables=vehicle:GetComponents("StaticModel",true)
     assert(#drawables>0,"载具预览需要真实3D模型")
     local bounds=BoundingBox()
@@ -205,6 +216,9 @@ function Preview:BuildScene(id)
     local size = bounds.size
     vehicle.position = Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z)
     self.vehicleHeight = size.y
+    if self.riderRig then
+        self.vehicleHeight=math.max(size.y,self.riderRig.model.worldBoundingBox.max.y-bounds.min.y)
+    end
     self.footprintWidth, self.footprintLength = size.x, size.z
     self.stageRadius = math.sqrt(size.x * size.x + size.z * size.z) * 0.5
     for _,drawable in ipairs(drawables) do drawable.lodBias=3;drawable:SetMaxLights(3) end
@@ -291,6 +305,7 @@ function Preview:Update(dt)
     self.angle = (self.angle + self.frameTimer * 9) % 360
     self.frameTimer = 0
     self.turntable.rotation = Quaternion(0, self.angle, 0)
+    if self.riderRig then MixedVisuals.UpdateRiderBinding(self.riderRig,0) end
     if require("MixedVehicles").Get(self.vehicleId or "") then
         local body=self.turntable:GetChild("Vehicle_"..self.vehicleId)
         if body then require("MixedVisuals").Animate(body,self.vehicleId,self.angle/9,{oddActive=0}) end

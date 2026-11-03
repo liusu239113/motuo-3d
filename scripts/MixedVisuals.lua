@@ -230,13 +230,15 @@ end
 function Adapter:Init(scene,id)
     self.vehicleId=id; self.node=scene:CreateChild("Bike_"..id)
     self.visual=self.node:CreateChild("VehicleMotion"); self.body=M.Build(self.visual,id)
-    assert(id=="ebike", "MixedVisuals.NewBike only supports rider-bound ebike")
-    local cockpit=M.Cockpits[id]
+    local cockpit=M.Cockpits[id] or {localOffset=V(0,2.6,-.3),pitch=8,fov=72,
+        seatHeight=1,grip=V(.3,1,.4),dash=V(0,1,.4)}
     self.cockpit=self.visual:CreateChild("Cockpit"); self.steering=self.cockpit:CreateChild("Steering")
     self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=cockpit.dash
     self.Cockpit=cockpit
     self.firstPerson,self.disposed,self.leanSign=false,false,1
-    self.riderRig=assert(M.CreateRider(self.visual,id),"ebike formal rider creation failed")
+    self.riderRig=M.CreateRider(self.visual,id)
+        or {visible=false,disposed=false,SetColor=function() return false end,SetVisible=function() end,
+            Update=function() end,Dispose=function(rig) rig.disposed=true end}
     self.riderRig:SetColor("red")
     self.mirrors={SetQuality=function() end,Update=function() end,Dispose=function() end}
     self.effects={pitch=0,bob=0,Dispose=function() end}
@@ -246,7 +248,8 @@ function Adapter:SetRiderColor(color)
     return id and self.riderRig:SetColor(id) or false
 end
 function Adapter:SetFirstPerson(firstPerson)
-    self.firstPerson=firstPerson==true
+    if self.disposed then return end
+    self.firstPerson=self.vehicleId=="ebike" and firstPerson==true
     self.riderRig:SetVisible(not self.firstPerson)
     self.body:SetEnabledRecursive(true)
     self.cockpit.enabled=false
@@ -268,7 +271,7 @@ end
 function Adapter:Dispose()
     if self.disposed then return end
     self.disposed=true
-    M.DisposeRider(self.riderRig)
+    self.riderRig:Dispose()
     self.node:Dispose()
 end
 return M

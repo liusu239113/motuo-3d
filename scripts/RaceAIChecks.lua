@@ -21,7 +21,7 @@ local function fixture(seed, vehicleId, level, difficulty, riderIndex)
     sim.raceMode = true
     local race = {sim = sim, map = map, options = {aiLevel = level or 0.72,
         difficulty = difficulty or "normal", quiet = true}, length = map.RouteLength,
-        roadHalfWidth = 4.8, corridor = 5.6, aiProfileStep = 5, aiProfile = {},
+        gateSpacing = 85, roadHalfWidth = 4.8, corridor = 5.6, gateCorridor = 5.6, aiProfileStep = 5, aiProfile = {},
         aiObstacles = {}, racers = {}, traffic = {}, phase = "racing", elapsed = 0,
         rng = seed or 31, events = {}, eventSeq = 0}
     setmetatable(race, {__index = Race})
@@ -29,7 +29,7 @@ local function fixture(seed, vehicleId, level, difficulty, riderIndex)
     local r = {id = "ai1", isPlayer = false, finished = false, eliminated = false,
         x = 0, y = 0, z = 0, yaw = 0, s = 0, speed = 0, lane = 0, wantedLane = 0,
         boostTimer = 0, nitro = 100, slipstream = 0, immunity = 0,
-        decisionTimer = 0, mistakes = 0, progress = 0, nextGate = 85,
+        decisionTimer = 0, mistakes = 0, progress = 0, safeS = 0, invalidMoves = 0, nextGate = 85,
         lastX = 0, lastY = 0, lastZ = 0, mistakeDuration = 0, recoveryTimer = 0}
     AI.Configure(race, r, riderIndex or 1)
     race.racers = {r}

@@ -385,6 +385,9 @@ end
 ---@param force? boolean 保留原接口；手动pose现在每次调用完整重置/提交，不以steer缓存跳过父变换。
 ---@param lean? number 向弯内带符号的倾角（度）；省略时保留上次值，兼容Update(angle,true)。
 function Rider:Update(steerAngle, force, lean)
+    if self.disposed then return end
+    -- ebike原始车把没有转向关节，任何外部调试舵角都不能让手离开它。
+    if self.vehicleId=="ebike" then steerAngle=0 end
     self.lastSteer = steerAngle
     self.lastLean = math.max(-55, math.min(55, lean or self.lastLean))
     if not self.visible then return end

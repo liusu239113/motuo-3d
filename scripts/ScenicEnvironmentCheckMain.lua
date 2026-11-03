@@ -115,8 +115,10 @@ local function checkEnvironment()
         elseif model == rockA or model == rockB then rockCount = rockCount + 1
         elseif draw.node:GetVar("LightweightRail"):GetBool() then
             railCount = railCount + 1
-            assert(not draw.castShadows and model:GetGeometry(0,0).indexCount==144,
-                "轻量护栏必须48三角面且关闭阴影")
+            local geometry=model:GetGeometry(0,0)
+            local submitted=geometry.indexCount>0 and geometry.indexCount or geometry.vertexCount
+            assert(not draw.castShadows and submitted==144,
+                "轻量护栏必须48三角面且关闭阴影："..tostring(submitted))
             local material=assert(draw:GetMaterial(0))
             assert(not material:GetTexture(TU_DIFFUSE) and not material:GetTexture(TU_NORMAL),
                 "轻量护栏不得加载外部贴图")

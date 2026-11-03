@@ -1,6 +1,11 @@
 -- 基于3D场景脚手架的正式载具验收入口，不读取或写入玩家存档。
 local Assets = require("MixedAssets")
 local Visual = require("MixedVisuals")
+local Rider = require("Rider")
+---@type table[]
+local riderOwners_ = {}
+---@type Node?
+local riderCameraAnchor_ = nil
 ---@type Scene?
 local scene_ = nil
 ---@class FormalSequence
@@ -81,6 +86,105 @@ local function checkArticulation(vehicle,id)
     end
     assert(body.worldTransform==bodyRest and source.transform==sourceRest,"禁止整块Body或源变换晃动冒充关节动画")
     print("[正式关节断言] PASS "..id.." / 原部件运动 / 停驶冻结 / 技能复位 / Body稳固")
+end
+
+-- ebike专用隔离夹具：执行生产Bike适配、AI CreateRunner/Reset/Update/Destroy，
+-- 不创建World/Race仿真，不require main/Profile/RewardedAds，也不读写存档。
+---@param scene Scene
+---@param selected string player|ai|garage
+---@param firstPerson boolean
+---@param lean number
+---@param pitch number
+---@param skin boolean
+local function checkEbikeRiders(scene,selected,firstPerson,lean,pitch,skin)
+    ---@param rig Rider
+    local function pose(rig)
+        assert(rig.model:GetModel()==cache:GetResource("Model",Rider.ModelPath),"必须复用正式Rider源模型")
+        assert(rig.model:GetSkeleton():GetNumBones()==41,"ebike骑手必须为41骨AnimatedModel")
+        assert(rig.model:GetMaterial():GetTexture(TU_NORMAL),"骑手保留原Normal")
+        assert(rig.mesh.scale.x==rig.mesh.scale.y and rig.mesh.scale.y==rig.mesh.scale.z,"骑手只能整人等比")
+        local actual=rig:ReadPose()
+        assert((actual.hip-Rider.Poses.ebike.hip):Length()<.002,"电动车骨盆离座")
+        assert(actual.leftGripError<.005 and actual.rightGripError<.005,"电动车腕点脱离真实左右握把")
+        assert((actual.leftFoot-Vector3(-.19,.44,-.08)):Length()<.004
+            and (actual.rightFoot-Vector3(.19,.44,-.08)):Length()<.004,"电动车脚踝离开平踏板目标")
+        assert((rig.poseFailures or 0)==0 and (rig.reachClampedFrames or 0)==0,"ebike骑姿不可依赖失败回退或骨长夹取")
+    end
+    local player=require("Bike").New(scene,"ebike")
+    riderOwners_[#riderOwners_+1]=player
+    local rig=player.riderRig
+    pose(rig)
+    assert(player:SetRiderColor("blue") and rig.colorId=="blue","玩家骑手选色必须有效")
+    local original=rig.material:GetTexture(TU_DIFFUSE)
+    assert(not player:SetRiderColor("invalid") and rig.material:GetTexture(TU_DIFFUSE)==original,"无效色不改骑手材质")
+    local drive={x=1400,y=42,z=-3100,heading=179,lean=40,pitch=20,distance=.207}
+    player:UpdateState(.02,drive,true,1)
+    assert(player.firstPerson and not rig.visible and not rig.node.enabledSelf,"首视角必须隐藏自身完整骑手")
+    assert(player.body.enabledSelf,"首视角不能隐藏正式整车")
+    player:UpdateState(.02,drive,false,2)
+    assert(not player.firstPerson and rig.visible and rig.node.enabledSelf,"第三人称立即恢复完整骑姿")
+    pose(rig)
+    if skin then rig:TestTransforms();pose(rig) end
+    player:UpdateState(0,{x=0,y=0,z=0,heading=0,lean=lean,pitch=pitch,distance=.207},false,0)
+    local rivalData={id="ebike-fixture",vehicleId="ebike",colorId="yellow",x=3,y=0,z=1,
+        heading=0,lean=lean,pitch=pitch,speed=12,steer=1,index=1,driveSim={distance=.207}}
+    local RV=require("RaceVisuals")
+    local root=scene:CreateChild("IsolatedRiderRacePresentation")
+    local visuals=setmetatable({scene=scene,root=root,rosterRoot=root:CreateChild("RaceRivals"),
+        runners={},markers={},materials={},world={},race={racers={rivalData}},clock=0,visibilityClock=0,
+        highQuality=false,leanSign=1,disposed=false,visible=true,EnsurePolice=function() end},RV)
+    riderOwners_[#riderOwners_+1]=visuals
+    visuals:Reset()
+    local ai=assert(visuals.runners[rivalData.id]);pose(ai.rider)
+    assert(ai.rider.colorId=="yellow" and ai.poseRefreshes>0,"AI ebike必须真正创建并刷新Rider")
+    assert(not ai.node:GetChild("Cockpit",true) and not ai.node:GetChild("BurnoutSmokePool",true),"AI禁止创建完整玩家座舱")
+    visuals:SetVisible(false);visuals:SetVisible(true);pose(ai.rider)
+    rivalData.colorId="green";visuals:Update(.04,{x=0,z=0});pose(ai.rider)
+    assert(ai.rider.colorId=="green","AI配色变更应用到真实Rider")
+    rivalData.x=1000;visuals:Update(.04,{x=0,z=0});assert(not ai.active,"远AI应隐藏")
+    rivalData.x=3;visuals:Update(.04,{x=0,z=0});assert(ai.active,"AI应从距离隐藏恢复");pose(ai.rider)
+    local retired=ai.rider
+    rivalData.vehicleId="helicopter";visuals:Reset()
+    assert(retired.disposed,"AI重赛换车先释放旧Rider")
+    assert(not visuals.runners[rivalData.id].node:GetChild("ThirdPersonRider",true),"封闭座舱不生成骑手")
+    rivalData.vehicleId="ebike";visuals:Reset();ai=assert(visuals.runners[rivalData.id]);pose(ai.rider)
+    local disposable=Visual.NewBike(scene,"ebike");local dead=disposable.riderRig
+    disposable:Dispose();disposable:Dispose()
+    assert(dead.disposed,"玩家Dispose显式释放Rider")
+    disposable:UpdateState(.02,{},false,0);dead:Update(0,false,0)
+    if selected=="ai" then
+        player.node:SetEnabledRecursive(false)
+        ai.node.position=Vector3.ZERO
+        ai.visual.rotation=Quaternion(pitch*.5,0,lean*.22)
+        ai.rider:Update(0,true,lean)
+        riderCameraAnchor_=ai.visual
+    elseif selected=="garage" then
+        player.node:SetEnabledRecursive(false);visuals:SetVisible(false)
+        -- 使用车库真实BuildScene/SetRiderColor/Dispose方法；不发异步网络请求。
+        local UI=require("urhox-libs/UI")
+        UI.Init({theme="default-dark",scale=UI.Scale.DEFAULT})
+        local preview=require("GaragePreview").New({width=640,height=400})
+        preview.vehicleId,preview.active="ebike",true
+        preview:BuildScene("ebike")
+        local garageRig=assert(preview.riderRig);pose(garageRig)
+        preview:SetRiderColor({42,115,245,255})
+        assert(garageRig.colorId=="blue","车库RGB配色映射到正式骑手")
+        preview:Dispose();preview:Dispose()
+        assert(garageRig.disposed and preview.riderRig==nil,"车库Dispose释放骑手且清空引用")
+        preview:Destroy();UI.Shutdown()
+        -- 截图复用同一工厂的车库坐姿；真实RT生命周期已在上方独立执行。
+        local garage=scene:CreateChild("GarageEbikeRiderReview")
+        Visual.Build(garage,"ebike")
+        local garageRider=assert(Visual.CreateRider(garage,"ebike"))
+        garageRider:SetColor("blue");pose(garageRider)
+        riderOwners_[#riderOwners_+1]=garageRider
+        riderCameraAnchor_=garage
+    else
+        visuals:SetVisible(false)
+        player:SetFirstPerson(firstPerson)
+        riderCameraAnchor_=player.visual
+    end
+    print("[电动车驾驶员断言] PASS 玩家/AI/车库同正式41骨源模型 / 双手双脚与座面 / 首视角 / 配色 / 隐藏恢复 / 换车释放 / 幂等Dispose")
 end
 
 function Start()
@@ -206,6 +310,22 @@ function Start()
         if arg=="-formal-no-model" then vehicle.enabled=false end
         if arg=="-formal-one-light" then fill.enabled=false end
     end
+    local riderReview,firstPerson,skin=false,false,false
+    local riderCase,lean,pitch="player",0,0
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-formal-riders" then riderReview=true end
+        if arg=="-rider-first-person" then firstPerson=true end
+        if arg=="-rider-skin" then skin=true end
+        riderCase=arg:match("^%-rider%-case=(.+)$") or riderCase
+        lean=tonumber(arg:match("^%-rider%-lean=(.+)$")) or lean
+        pitch=tonumber(arg:match("^%-rider%-pitch=(.+)$")) or pitch
+    end
+    assert(riderCase=="player" or riderCase=="ai" or riderCase=="garage","未知骑手验收场景")
+    if riderReview then
+        assert(id=="ebike","-formal-riders仅用于正式电动车")
+        checkEbikeRiders(scene_,riderCase,firstPerson,lean,pitch,skin)
+        vehicle:SetEnabledRecursive(false)
+    end
     local cameraNode=scene_:CreateChild("Camera")
     cameraNode.position=Vector3(5.0,3.8,5.6)
     cameraNode:LookAt(Vector3(0,1,0))
@@ -217,6 +337,12 @@ function Start()
     end
     local camera=cameraNode:CreateComponent("Camera")
     camera.nearClip,camera.farClip,camera.fov=.05,60,36
+    if riderReview and riderCase=="player" and firstPerson then
+        local anchor=assert(riderCameraAnchor_)
+        cameraNode.position=anchor:LocalToWorld(Visual.Cockpits.ebike.localOffset)
+        cameraNode.worldRotation=anchor.worldRotation*Quaternion(Visual.Cockpits.ebike.pitch,0,0)
+        camera.fov=Visual.Cockpits.ebike.fov
+    end
     renderer.hdrRendering=true
     local viewport=Viewport:new(scene_,camera)
     local renderPath=viewport:GetRenderPath():Clone()
@@ -291,5 +417,7 @@ end
 function Stop()
     UnsubscribeFromEvent("Update")
     sequence_=nil
+    for _,owner in ipairs(riderOwners_) do owner:Dispose() end
+    riderOwners_,riderCameraAnchor_={},nil
     if scene_ then scene_:Dispose(); scene_=nil end
 end

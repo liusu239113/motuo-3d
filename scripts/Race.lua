@@ -550,7 +550,9 @@ function Race:AdvanceGates(r, oldS, newS, dt)
         local cx, cz = r.lastX + (r.x - r.lastX) * t, r.lastZ + (r.z - r.lastZ) * t
         local lateral = (cx - p.x) * fz - (cz - p.z) * fx
         local cy = r.lastY + (r.y - r.lastY) * t
-        local altitude = cy - p.y
+        -- Use the surface at the crossing, not centre-line y: runoff/shoulders
+        -- can be lower, and the same altitude contract is used by TrackPlayer.
+        local altitude = cy - self.map.Height(cx, cz)
         if abs(lateral) > self:GateCorridorFor(r) or altitude < -Race.Rules.gateBelow
             or altitude > Race.Rules.gateAbove then
             self:MissGate(r, "穿门超出有限走廊")
@@ -569,8 +571,8 @@ end
 ---@param r RaceRacer?
 ---@return number
 function Race:GateCorridorFor(r)
-    local corridor = self.gateCorridor
-    if self.options.mixed and r then
+    local corridor = self.gateCorridor or self.corridor
+    if r then
         local spec = require("MixedVehicles").Get(r.vehicleId)
         if spec then corridor = corridor - spec.size[1] * .5 end
     end
@@ -595,7 +597,7 @@ function Race:ValidateProgress(r, oldS, newS, dt, previousSpeed, recovered, road
     local altitude = r.y - self.map.Height(r.x, r.z)
     local delta = newS - oldS
     local courseDistance = roadDistance or abs(r.lane)
-    local onCourse = courseDistance <= (self.gateCorridor or self.corridor)
+    local onCourse = courseDistance <= self:GateCorridorFor(r)
         and altitude >= -Race.Rules.gateBelow and altitude <= Race.Rules.gateAbove
     r.wrongWay, r.offCourse = delta < -.03, not onCourse
     if physical then
@@ -648,19 +650,25 @@ function Race:RecoverPlayer(grantGrace)
     if not r or r.finished or r.eliminated then return false end
     local before = r.progress
     sim:Recover(nil)
-    -- 脱困保留当前绝对圈域，并回到尚未通过的检查点前，允许真实重过漏门。
-    local projected = self:Project(sim.x, sim.z)
-    local unwrapped = r.s + (projected - r.s % self.length + self.length * .5) % self.length - self.length * .5
-    -- 模长坐标必须先解到当前圈域；起跑的负s不能被当作首圈末尾。
-    -- 脱困回到最后可信门前，漏门不会因复位而自动获得进度。
+    -- Recovery returns to the last trusted coordinate. Nearest-road projection
+    -- is never a forward placement authority after a shortcut or rejected jump.
     local anchor = r.missedGate and (r.nextGate - min(6, self.gateSpacing * .1))
-        or min(max(r.safeS, unwrapped), r.nextGate - .5)
+        or min(r.safeS, r.nextGate - .5)
     local recoveryLane = r.missedGate and 0 or 1.55
     local p, yaw = self:Pose(anchor, recoveryLane)
+    local origin, direction = self.map.RoadPoint(r.nextGate)
+    local side = (p.x - origin.x) * math.sin((direction or 0) * RAD)
+        + (p.z - origin.z) * math.cos((direction or 0) * RAD)
+    if side >= -1e-6 and r.nextGate - anchor < min(6, self.gateSpacing * .1) then
+        -- A lane normal at a sharp bend may put s=gate-.5 AFTER its plane.
+        -- Fall back to the centre before it, never fabricate the missing crossing.
+        anchor, recoveryLane = r.nextGate - min(6, self.gateSpacing * .1), 0
+        p, yaw = self:Pose(anchor, recoveryLane)
+    end
     sim.x, sim.y, sim.z, sim.heading, sim.yaw = p.x, p.y, p.z, yaw, yaw
     sim.previousX, sim.previousY, sim.previousZ = p.x, p.y, p.z
     sim:UpdateNavigation(p.x, p.z, nil, false)
-    r.s, r.progress, r.x, r.y, r.z = anchor, min(before, r.safeS, anchor), p.x, p.y, p.z
+    r.s, r.progress, r.safeS, r.x, r.y, r.z = anchor, min(before, r.safeS, anchor), min(r.safeS, anchor), p.x, p.y, p.z
     r.lastX, r.lastY, r.lastZ = p.x, p.y, p.z
     r.contactX, r.contactY, r.contactZ = p.x, p.y, p.z
     r.speed, r.yaw, r.lane, r.roadS = 0, yaw, recoveryLane, r.s % self.length
