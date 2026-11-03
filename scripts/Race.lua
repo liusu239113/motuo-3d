@@ -1081,23 +1081,20 @@ function Race:AfterStep(dt)
     prof.Begin("snapshot")
     RaceAI.Snapshot(self)
     prof.End()
-    -- Internal AI/pursuit steps are<=.02s even if host dt is long; no speed/attack spikes.
-    -- 上限4步(80ms)：否则帧越卡→步数越多→更卡，形成正反馈死循环。
-    local count = max(1, min(4, math.ceil(dt / 0.02)))
-    local step = min(dt, 0.08) / count
-    for index = 1, count do
-        self.elapsed = frameStart + index * step
-        prof.Begin("aiUpdate")
-        for _, r in ipairs(self.racers) do self:UpdateAI(r, step) end
-        prof.End()
-        prof.Begin("rank")
-        self:Rank()
-        prof.End()
-        prof.Begin("pursuit")
-        self:UpdatePursuit(step)
-        prof.End()
-        if self.player.eliminated then break end
-    end
+    -- 对手AI基于dt而不是固定物理步：每帧只跑一次。
+    -- 原来慢帧会被拆成最多4个内部步，每步都重跑8车完整决策，
+    -- 使aiUpdate从14ms膨胀到56ms——这正是帧越卡越卡的主因。
+    local aiDt = min(dt, 0.08)
+    self.elapsed = frameStart + aiDt
+    prof.Begin("aiUpdate")
+    for _, r in ipairs(self.racers) do self:UpdateAI(r, aiDt) end
+    prof.End()
+    prof.Begin("rank")
+    self:Rank()
+    prof.End()
+    prof.Begin("pursuit")
+    self:UpdatePursuit(aiDt)
+    prof.End()
     for _, r in ipairs(self.racers) do
         r.hitTimer = max(0, (r.hitTimer or 0) - dt)
         if r.hitTimer <= 0 then r.hitShake, r.hitYaw = 0, 0 end

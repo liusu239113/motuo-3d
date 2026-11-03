@@ -343,14 +343,31 @@ function AI.NitroSafe(race, r)
     return peakSpeed > startSpeed + 2
 end
 
-local function laneScore(race, r, candidate, horizon)
+-- 决策时先收集一次范围内障碍，供所有候选车道评分复用。
+-- 原来每个候选都重新遍历全量障碍（5候选×每次全扫），是决策热点。
+local function collectNearby(race, r, horizon)
+    local list = r.nearbyCache
+    if not list then list = {}; r.nearbyCache = list end
+    local n = 0
+    eachObstacle(race, r, function(o)
+        local d = gap(o.s, r.s, race.length)
+        if abs(d) <= horizon then n = n + 1; list[n] = o end
+    end, true)
+    for i = n + 1, #list do list[i] = nil end
+    return list, n
+end
+
+---@param nearby table[]
+---@param count number
+local function laneScore(race, r, candidate, horizon, nearby, count)
     local own=MixedData.Get(r.vehicleId)
     local ownWidth=own and own.size[1]*.5 or .30
     local score = abs(candidate - r.preferredLane) * 0.18 + abs(candidate - r.lane) * 0.22
     local laneTime = abs(candidate - r.lane) / (2.5 + r.skill) + 0.32
-    eachObstacle(race, r, function(o)
+    for index = 1, count do
+        local o = nearby[index]
         local d = gap(o.s, r.s, race.length)
-        if abs(d) > horizon then return end
+        if abs(d) > horizon then goto continue end
         local margin = o.halfWidth + ownWidth + (o.bike and 0.48 or 0.55)
         local closing = r.speed - o.speed
         local arrival = closing > 0.1 and (d - o.halfLength - 2) / closing or 99
@@ -368,7 +385,8 @@ local function laneScore(race, r, candidate, horizon)
         if o.bike and o.destination and abs(candidate - o.destination) < 0.8 and abs(d) < 12 then
             score = score + 35 -- reservation, not mutual parking priority.
         end
-    end, true)
+        ::continue::
+    end
     local spec=MixedData.Get(r.vehicleId)
     if race.options.mixed and spec then
         local laneTerrain=Mixed.Terrain(race.map,r.s,candidate)
@@ -419,17 +437,20 @@ function AI.Plan(race, r, dt)
         local shoulder = min(race.corridor - 0.35,
             race.map.Roads and race.map.Roads[1] and (race.map.Roads[1].shoulder or bound) - 0.5 or bound)
         local outer = hazard and max(bound, shoulder) or bound
-        local candidates = {r.wantedLane, -bound, -2.4, 0, 2.4, bound, r.preferredLane, -outer, outer}
-        local best, bestScore = r.wantedLane, laneScore(race, r, r.wantedLane, horizon)
+        -- 9个候选×每个再遍历全部障碍是决策热点的另一半；收敛到当前/目标/中/两侧边界这5个，
+        -- 覆盖实际可用的换线选择，视觉与走线差异不可察觉。
+        local candidates = {r.wantedLane, 0, r.preferredLane, -outer, outer}
+        local nearby, nearCount = collectNearby(race, r, horizon)
+        local best, bestScore = r.wantedLane, laneScore(race, r, r.wantedLane, horizon, nearby, nearCount)
         for _, lane in ipairs(candidates) do
             local candidate = clamp(lane, -outer, outer)
-            local score = laneScore(race, r, candidate, horizon)
+            local score = laneScore(race, r, candidate, horizon, nearby, nearCount)
                 + (abs(candidate) > bound + 0.1 and 5 or 0)
             if r.laneHold > 0 and abs(candidate - r.wantedLane) > 0.2 then score = score + 14 end
             if score < bestScore - 0.05 then best, bestScore = candidate, score end
         end
         if r.mistakeDuration > 0 and not hazard
-            and laneScore(race, r, r.mistakeLane, horizon) < 100 then
+            and laneScore(race, r, r.mistakeLane, horizon, nearby, nearCount) < 100 then
             -- 目标相对失误起点固定；有并行车辆时优先避让，不故意往邻车身上撞。
             best = r.mistakeLane
         end
