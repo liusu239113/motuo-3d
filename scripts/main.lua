@@ -304,9 +304,14 @@ local function FinishRidePreparation()
     end
     if not careerRace_ and not autoTest_ and testShot_=="" then
         local allowed,trialMessage=Profile.ConsumeTrial(selectedVehicle_)
-        if not allowed then LoadingError(trialMessage or "车辆体验次数不足");return end
+        if not allowed then
+            if race_ then race_:Stop() end
+            LoadingError(trialMessage or "车辆体验次数不足");return
+        end
         hud_:RefreshOwnership()
     end
+    -- 发车入口只接受一次提交；防止就绪按钮重复点击重复扣次。
+    loadPhase_="running"
     sound_:Unlock()
     if raceAudio_ then raceAudio_:Unlock() end
     hud_:SyncRadio(sound_:GetTrackTitle(), sound_.musicEnabled)
@@ -740,16 +745,9 @@ function Start()
         skill = function() if screen_=="ride" then pendingActions_.skill=true end end,
         watchVehicleAd = function(id)
             if screen_~="garage" or not RequireRaceProfile() or Profile.Owns(id) then return end
-            RewardedAds.Show{
-                isValid=function() return screen_=="garage" and selectedVehicle_==id end,
-                setBusy=function(busy) hud_.trialButton:SetDisabled(busy) end,
-                onReward=function()
-                    local saved,message,applied=Profile.GrantTrials(id)
-                    hud_:RefreshOwnership();hud_:SelectVehicle(id,false)
-                    hud_:ShowNotice(applied and "已获得三局试驾" or "奖励未入账",
-                        applied and (saved and "已保存。实际出发扣一次，重新比赛也会扣一次。" or "奖励已记入，存档待补存，请勿退出；不需要再看广告。") or (message or "请稍后重试"))
-                end,
-                onFailure=function(message) hud_:ShowNotice("广告未完成",(message or "广告暂不可用").."，未增加试驾次数。") end}
+            require("MixedGarage").WatchTrial(hud_,id,function()
+                return screen_=="garage" and selectedVehicle_==id
+            end)
         end,
         selectVehicle = function(id)
             if screen_ ~= "loading" and Catalog.Get(id) then selectedVehicle_ = id end

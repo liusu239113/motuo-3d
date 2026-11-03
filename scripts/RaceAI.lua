@@ -78,7 +78,8 @@ function AI.CurveSpeed(race, r, boosting)
     local top = vehicleFor(race,r).maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
         *(r.driveSim and r.driveSim.oddSpeedScale or 1)
     local level = r.aiLevel or 0.72
-    local budget = 12 + level * 6 + r.skill * 2
+    local budget = (12 + level * 6 + r.skill * 2)*(race.options.mixed and vehicleFor(race,r).steering or 1)
+        *(r.driveSim and r.driveSim.oddGripScale or 1)
     local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
     -- 反应距离先从可用制动距离扣除；入弯前收油，不等到弯心突然锁速。
     local reaction = r.speed * r.reactionTime + 5
@@ -441,6 +442,8 @@ function AI.Update(race, r, dt)
         local useSkill=(drive.oddCooldown or 0)<=0 and (r.speed>10 or r.vehicleId=="cicada")
             and (math.floor(race.elapsed*2+r.index)%7==0)
         Mixed.Before(drive,dt,{skill=useSkill,steer=r.steer or 0},race.map)
+        if drive.oddNitroGift then r.nitro=math.min(100,r.nitro+drive.oddNitroGift);drive.oddNitroGift=nil end
+        r.speed=drive.speed
     end
     AI.Mistake(race, r, dt)
     local target = AI.Plan(race, r, dt)
@@ -470,6 +473,9 @@ function AI.Update(race, r, dt)
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading,drive.speed=r.x,r.y,r.z,r.yaw,r.speed
         Mixed.After(drive,dt,{},race.options.world,r.lastX,r.lastY,r.lastZ,false)
+        local _,lane=race:Project(drive.x,drive.z)
+        r.lane=clamp(lane,-race.corridor+1,race.corridor-1)
+        r.x,r.y,r.z=drive.x,drive.y,drive.z
         r.speed=drive.speed
     end
     race:AdvanceGates(r, oldS, r.s, dt)

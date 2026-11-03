@@ -159,6 +159,7 @@ function M.Before(sim,dt,controls,map)
     if id=="loader" and (sim.crashCooldown or 0)>0 then drive=drive*.75 end
     sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
     if sim.oddLaunch>0 then altitude=altitude+math.sin(sim.oddLaunch/1.2*math.pi)*2.4;grip=grip*.5 end
+    if sim.oddHitLock>0 then drive=drive*.82 end
     sim.oddAltitude=altitude
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=speed,drive,grip
     sim.oddLastImpact=sim.impactSerial or 0
@@ -182,6 +183,7 @@ function M.Obstacles(sim,world,x0,y0,z0)
     local hw=v and v.size[1]*.5 or .3
     local hl=v and v.size[3]*.5 or .95
     local altitude=sim.oddAltitude or 0
+    local bodyHeight=v and v.size[2] or 1.5
     local contacts={}
     for _,o in ipairs(world.mixedObstacles) do
         if o.active and math.abs(o.x-sim.x)<12 and math.abs(o.z-sim.z)<12 then
@@ -189,7 +191,7 @@ function M.Obstacles(sim,world,x0,y0,z0)
             local ax,az=x0-o.x,z0-o.z;local bx,bz=sim.x-o.x,sim.z-o.z
             local hit=swept(ax*fz-az*fx,ax*fx+az*fz,bx*fz-bz*fx,bx*fx+bz*fz,o.halfWidth+hw,o.halfLength+hl)
             local height=sim.y+altitude-o.y
-            if hit and height<o.height and height>-1.5 then
+            if hit and height<o.height and height>-bodyHeight then
                 contacts[o.id]=true
                 if not sim.oddContacts[o.id] and (sim.oddHitLock or 0)<=0 then
                     local id=sim.vehicleId
@@ -259,6 +261,19 @@ function M.Attack(race,source,sim)
         end
     end
     if not best then return end
+    if v.id=="jellyfish" or v.id=="helicopter" then
+        local projectiles=race.mixedProjectiles or {};race.mixedProjectiles=projectiles
+        local targetSim=best.isPlayer and race.sim or best.driveSim
+        local dx,dz=best.x-source.x,best.z-source.z
+        local length=math.max(.01,math.sqrt(dx*dx+dz*dz))
+        projectiles[#projectiles+1]={kind=v.id,x=source.x,z=source.z,y=source.y+(sim.oddAltitude or 0)+1,
+            vx=dx/length*65,vz=dz/length*65,ttl=.8,source=source,target=best,
+            targetHeight=best.y+(targetSim and targetSim.oddAltitude or 0)+1}
+        return
+    end
+    M.Hit(race,source,best,v)
+end
+function M.Hit(race,source,best,v)
     local targetSim=best.isPlayer and race.sim or best.driveSim
     if targetSim and (targetSim.oddShield or 0)>0 then return end
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
@@ -278,6 +293,22 @@ function M.Attack(race,source,sim)
 end
 function M.RaceStep(race,dt)
     if race.phase~="racing" then return end
+    local shots=race.mixedProjectiles or {}
+    for i=#shots,1,-1 do
+        local p=shots[i];local x0,z0=p.x,p.z
+        p.x,p.z=p.x+p.vx*dt,p.z+p.vz*dt
+        p.ttl=p.ttl-dt
+        local target=p.target
+        local dx,dz=p.x-x0,p.z-z0
+        local t=clamp(((target.x-x0)*dx+(target.z-z0)*dz)/math.max(.001,dx*dx+dz*dz),0,1)
+        local ex,ez=x0+dx*t-target.x,z0+dz*t-target.z
+        local hit=ex*ex+ez*ez<2.2*2.2 and not target.finished and not target.eliminated
+        if hit then M.Hit(race,p.source,target,Data.Get(p.kind)) end
+        if hit or p.ttl<=0 then
+            if p.node then p.node:Dispose() end
+            table.remove(shots,i)
+        end
+    end
     if race.sim.oddNitroGift then
         race.player.nitro=math.min(100,race.player.nitro+race.sim.oddNitroGift);race.sim.oddNitroGift=nil
     end

@@ -462,6 +462,15 @@ function RaceVisuals:Update(dt, sim)
         end
     end
     self:EnsurePolice()
+    for _,shot in ipairs(self.race.mixedProjectiles or {}) do
+        if not shot.node then
+            shot.node=P.Add(self.root,"SkillProjectile","Sphere",
+                shot.kind=="jellyfish" and self.blueMaterial or self.greenMaterial,V.ZERO,
+                shot.kind=="jellyfish" and V(.65,.65,.65) or V(.2,.2,1),nil,false)
+        end
+        shot.node.position=V(shot.x,shot.targetHeight+(shot.y-shot.targetHeight)*math.max(0,shot.ttl/.8),shot.z)
+        shot.node.rotation=Quaternion(0,math.deg(math.atan(shot.vx,shot.vz)),0)
+    end
     local police = self.race.pursuit or self.race.police
     if self.policeNode then
         local enabled = police ~= nil and police.active == true and self.race.phase ~= "idle"

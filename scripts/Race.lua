@@ -349,6 +349,8 @@ function Race:Start(laps)
     self.rng = max(1, math.floor(tonumber(self.options.seed) or 4817) % 2147483647)
     self.racers, self.ranking, self.standings, self.results = {}, {}, {}, {}
     self.runners, self.result = self.racers, nil
+    for _,p in ipairs(self.mixedProjectiles or {}) do if p.node then p.node:Dispose() end end
+    self.mixedProjectiles={}
     self.nitroHeld = false
     local names = {"凌风", "山猫", "霓虹", "白隼", "牧歌", "赤轮", "雾影", "雷鸟"}
     local cars = self.options.mixed and require("MixedVehicles").Ids() or self.options.vehicleIds or {"sport", "cruiser", "rally"}
@@ -686,10 +688,13 @@ function Race:Contacts(dt)
                         local db=(b.isPlayer and self.sim or b.driveSim) --[[@as RideSimulation?]]
                         local lift=(db and db.oddAltitude or 0)-(da and da.oddAltitude or 0)
                         local y0, y1 = b.contactY - a.contactY+lift, b.y - a.y+lift
+                        local clearance=((va and va.size[2] or 1.5)+(vb and vb.size[2] or 1.5))*.5
+                        local centre=((vb and vb.size[2] or 1.5)-(va and va.size[2] or 1.5))*.5
+                        y0,y1=y0+centre,y1+centre
                         local dy = y1 - y0
-                        if abs(dy) < 1e-8 then hit = abs(y0) <= 1.5
+                        if abs(dy) < 1e-8 then hit = abs(y0) <= clearance
                         else
-                            local ta, tb = (-1.5 - y0) / dy, (1.5 - y0) / dy
+                            local ta, tb = (-clearance - y0) / dy, (clearance - y0) / dy
                             if ta > tb then ta, tb = tb, ta end
                             hit = max(enter, ta) <= min(leave, tb)
                         end
