@@ -123,6 +123,14 @@ function Checks.Run(hud,storage)
     check(calls==1,"GM下底层车库入口不请求SDK")
     Catalog.SetGMFreeExperience(false)
     hud:SelectVehicle("sport",true)
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-gmshowcase" then
+            hud.actions.start(false);hud:SelectVehicle("helicopter",true)
+            hud.actions.toggleGMFreeExperience()
+        elseif arg=="-gmsettingsshowcase" then
+            hud:OpenSettings();hud.actions.toggleGMFreeExperience()
+        end
+    end
     print(string.format("[GMChecks] PASS %d项 / %d台正式车型 / 玩家档和真实SDK未访问",count,ready))
     return true
 end
