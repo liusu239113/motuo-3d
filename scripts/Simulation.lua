@@ -128,8 +128,9 @@ function Sim:SetVehicle(id)
             -- 混合车不能沿用基础摩托的末挡速比上限，否则高极速坦克会被旧巡航档位卡在约208km/h。
             -- 按本车极速留出技能/氮气余量，复制速比避免污染同类车辆共享表。
             local ratios={}
-            -- 末挡极速 = redline / ratio[6]，先算出能让本车跑到 maxSpeed*1.15 的速比。
-            local targetTop=vehicle.maxSpeed*1.15
+            -- 末挡极速 = redline / ratio[6]；保留足够转速给技能/氮气，
+            -- 回归夹具还会以1.25倍极速检查末挡余量。
+            local targetTop=vehicle.maxSpeed*1.4
             local scale=vehicle.redline/(targetTop*vehicle.ratios[6])
             for i,ratio in ipairs(vehicle.ratios) do ratios[i]=ratio*scale end
             vehicle.ratios=ratios
