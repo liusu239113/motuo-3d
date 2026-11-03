@@ -88,6 +88,8 @@ function Props.MaterialFor(path)
         for _, name in ipairs({"depth", "shadow"}) do
             local pass = assert(paired:GetPass(name))
             pass:SetVertexShaderDefineExcludes(pass.vertexShaderDefineExcludes .. " PACKEDNORMAL")
+            -- alpha PS需要颜色图UV；VS也显式选择对应cutout变体，保留两侧原裁剪。
+            pass:SetVertexShaderDefines(pass.vertexShaderDefines .. " ALPHAMASK ALPHAMASK_DIFF_A")
         end
         technique = paired
     end
