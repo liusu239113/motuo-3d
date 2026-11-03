@@ -58,6 +58,14 @@ for _,path in ipairs(Environment.Resources) do
     City.Resources[#City.Resources+1]=path
     City.ResourceTypes[path]=Environment.ResourceTypes[path]
 end
+-- 城市绿化复用赛道已用的写实阔叶树模型，不再用代码绘制的球体树冠。
+local Trees=require("ScenicTrees")
+for _,path in ipairs(Trees.Resources) do
+    if not City.ResourceTypes[path] then
+        City.Resources[#City.Resources+1]=path
+        City.ResourceTypes[path]=Trees.ResourceTypes[path]
+    end
+end
 
 ---@param scene Scene
 ---@return CareerCity
@@ -100,6 +108,7 @@ function City:Init(scene)
     self:BuildRoads()
     self.expansionSeams=Expansion.BuildSeams(self.details)
     self:BuildBlocks()
+    Trees.Begin()
     self:BuildPlaces()
     self.streetDressing=StreetDressing.New(self)
     Environment.BuildCore(self)
@@ -273,12 +282,8 @@ function City:BuildPlaces()
     for _,pos in ipairs({{116,-51},{137,-28},{145,-52},{121,-62}}) do
         d:Box("stone",pos[1],.25,pos[2],3,.5,3)
         d:Bar("wood",Vector3(pos[1],.5,pos[2]),Vector3(pos[1],4,pos[2]),.32)
-        -- 共享球网格作多层树冠，不用墙面贴纸代替立体绿化。
-        local tree=self.root:CreateChild("公园树")
-        tree.position=Vector3(pos[1],4.6,pos[2]); tree.scale=Vector3(4.5,4,4.5)
-        local mesh=tree:CreateComponent("StaticModel")
-        mesh.model=cache:GetResource("Model","Models/Sphere.mdl"); mesh.material=self.mats.foliage
-        mesh.castShadows=true; mesh.drawDistance=200
+        -- 写实阔叶树模型（与赛道同一套资产），替换原代码绘制的球体树冠。
+        Trees.Add(self.root,pos[1],.09,pos[2],8.5+pos[1]%3,pos[1]*13,true,false)
         self:Obstacle(pos[1],pos[2],.6,.6)
         d.trees=d.trees+1
     end

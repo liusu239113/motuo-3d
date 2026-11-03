@@ -105,7 +105,8 @@ local nodes = {}
 ---@type table<string, number>
 local nodeKeys = {}
 
-local function key(x,z) return x..":"..z end
+-- 数值键：DescribeCell 每帧被外域碰撞裁剪调用，字符串键会持续产生GC垃圾。
+local function key(x,z) return x*131072+z end
 local function clamp(n,a,b) return math.max(a,math.min(b,n)) end
 local function distance(x,z,tx,tz) return math.sqrt((tx-x)^2+(tz-z)^2) end
 local function hash(x,z,salt)

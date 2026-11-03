@@ -4,6 +4,7 @@
 local World=require("Career.WorldData")
 local Environment=require("Career.CityEnvironment")
 local Hills=require("Career.HillDistrict")
+local Details=require("Career.CityDetails")
 local Flat={}
 local function overlap(a,x1,z1,x2,z2)
     return a.x1<=x2 and a.x2>=x1 and a.z1<=z2 and a.z2>=z1
@@ -31,7 +32,7 @@ function Flat.Height(city,x1,z1,x2,z2)
     local seen={}
     for gx=math.floor(x1/16),math.floor(x2/16) do
         for gz=math.floor(z1/16),math.floor(z2/16) do
-            for _,s in ipairs(city.details.surfaceCells[gx..":"..gz] or {}) do
+            for _,s in ipairs(city.details.surfaceCells[Details.CellKey(gx,gz)] or {}) do
                 if not seen[s] then
                     seen[s]=true
                     if not inspect(s.x-s.w/2,s.x+s.w/2,s.z-s.d/2,s.z+s.d/2,s.y) then return nil end
@@ -110,7 +111,7 @@ function Flat.Compile(city,x1,z1,x2,z2)
         local row={};grid[gx]=row
         for gz=gz1,gz2 do
             local candidates={}
-            for _,s in ipairs(cells[gx..":"..gz] or {}) do
+            for _,s in ipairs(cells[Details.CellKey(gx,gz)] or {}) do
                 if s.y>0 then candidates[#candidates+1]=s end
             end
             table.sort(candidates,function(a,b) return a.y>b.y end)

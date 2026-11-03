@@ -15,6 +15,14 @@ local DisplayLod=require("Career.BuildingLod")
 ---@field Dispose fun(self:CityTraffic)
 local Traffic={}
 Traffic.__index=Traffic
+-- 临时交通分项计时：定位卡顿来源后整段删除。
+local tpOrder_={"blockers","ticks","contact","peds","lods","outer"}
+local tpAcc_,tpFrames_,tpSeconds_,tpLast_={},0,0,0
+local function tpMark(name)
+    local now=os.clock()
+    if tpLast_>0 then tpAcc_[name]=(tpAcc_[name] or 0)+(now-tpLast_) end
+    tpLast_=now
+end
 Traffic.Resources=Assets.ResourcesFor(Assets.TrafficIds)
 Traffic.ResourceTypes={}
 for _,path in ipairs(Traffic.Resources) do Traffic.ResourceTypes[path]=Assets.ResourceTypes[path] end
@@ -141,8 +149,34 @@ function Traffic:Place(car)
     car.x,car.z,car.yaw=Routes.Pose(car.route,car.s)
     self:ApplyContact(car)
 end
+-- 静态城市几何在一次城市生命周期内不变，而老街车辆位姿由 Pose(route,s) 唯一决定，
+-- 因此同一路线位置的静态通畅结论可长期复用；位姿与路线不一致时（外部摆放）不缓存。
+local STATIC_CACHE_STEP=0.05
+local staticCalls_,staticHits_=0,0
+local function routeStaticKey(car)
+    if not car.route or car.s==nil then return nil end
+    local s=car.s%Routes.LENGTH
+    local ok,x,z,yaw=pcall(Routes.Pose,car.route,s)
+    if not ok or car.x~=x or car.z~=z or car.yaw~=yaw then return nil end
+    return math.floor(s/STATIC_CACHE_STEP+.5)
+end
+function Traffic:StaticFree(car)
+    staticCalls_=staticCalls_+1
+    local key=routeStaticKey(car)
+    if not key then return Motion.StaticFree(self.city,car) end
+    local cache=car.staticFreeCache
+    if not cache then cache={};car.staticFreeCache=cache end
+    local free=cache[key]
+    if free==nil then
+        free=Motion.StaticFree(self.city,car)
+        cache[key]=free
+    else
+        staticHits_=staticHits_+1
+    end
+    return free
+end
 function Traffic:CanPlace(car,blockers)
-    if self.city.space=="city" and not OuterTraffic.StaticFree(self.city,car) then return false end
+    if self.city.space=="city" and not self:StaticFree(car) then return false end
     if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
     for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
@@ -239,26 +273,45 @@ end
 -- Fractional time is retained, never rounded up into a second 8.5ms step for
 -- a 17ms frame. Near-old freezing deliberately discards only its <1tick carry.
 local FIXED_TICK=1/60
+-- 低帧率时必须补足真实时间：补不够会让整条街的车变成龟速（世界变慢）。
+-- 只设一个足够宽松的上限防止极端卡顿时雪崩，正常15~60FPS都在真实时间轴上。
+local function maxTicksPerFrame(duration)
+    local need = math.ceil((duration or 0) / FIXED_TICK) + 1
+    return math.max(need, require("Career.AdaptiveQuality").TrafficTicks())
+end
 function Traffic:AdvanceTicks(duration,blockers,nearOld)
     if not nearOld then self.tickCarry=0;return 0 end
     local remaining=(self.tickCarry or 0)+duration
     local count=0
-    while remaining>=FIXED_TICK do
+    local limit=math.min(maxTicksPerFrame(duration),24)
+    while remaining>=FIXED_TICK and count<limit do
         self:Step(FIXED_TICK,blockers)
         remaining=remaining-FIXED_TICK
         count=count+1
     end
+    if remaining>=FIXED_TICK then remaining=FIXED_TICK end
     self.tickCarry=remaining
     return count
 end
 function Traffic:Update(dt)
     if not self.active or self.disposed or self.city.space~="city" or dt<=0 or dt~=dt then return end
     local duration=math.min(dt,.25)
+    tpLast_=os.clock()
     local blockers=self:Blockers()
+    tpMark("blockers")
     Motion.BeginStaticScope(self.city)
     local ok,message=pcall(self.UpdateScoped,self,duration,blockers)
     Motion.EndStaticScope()
     if not ok then error(message,0) end
+    tpFrames_=tpFrames_+1
+    tpSeconds_=tpSeconds_+duration
+    if tpSeconds_>=5 then
+        local out={}
+        for i,name in ipairs(tpOrder_) do out[i]=string.format("%s=%.1f",name,(tpAcc_[name] or 0)*1000/tpFrames_) end
+        print(string.format("[交通分项] 帧数=%d %s | 静态查询=%d 命中=%d | ms/帧",tpFrames_,table.concat(out," "),staticCalls_,staticHits_))
+        tpAcc_,tpFrames_,tpSeconds_={},0,0
+        staticCalls_,staticHits_=0,0
+    end
 end
 -- 即使推进抛错也由Update释放同步静态缓存；不吞掉原错误。
 function Traffic:UpdateScoped(duration,blockers)
@@ -269,17 +322,23 @@ function Traffic:UpdateScoped(duration,blockers)
     local dx,dz=math.max(0,math.abs(self.actor.x)-180),math.max(0,math.abs(self.actor.z)-180)
     local showOld=dx*dx+dz*dz<=450^2
     if self.root:IsEnabled()~=showOld then self.root:SetEnabledRecursive(showOld) end
+    tpLast_=os.clock()
     self:AdvanceTicks(duration,blockers,self.nearOld)
+    tpMark("ticks")
     if self.nearOld then
         for _,car in ipairs(self.cars) do self:ApplyContact(car) end
+        tpMark("contact")
         self.pedestrians:Update(duration,blockers)
+        tpMark("peds")
     end
     -- 只切显示网格，不停碰撞或移动；屏外老街仍保留原有位置/车型。
     for _,car in ipairs(self.cars) do
         for _,entry in ipairs(car.displayLods or {}) do entry.x,entry.z=car.x,car.z end
         DisplayLod.Update(car.displayLods or {},self.actor.x,self.actor.z)
     end
+    tpMark("lods")
     self.outer:Update(duration,blockers)
+    tpMark("outer")
 end
 -- Explicit restore hook. Saved static parking has priority over ephemeral NPCs.
 -- Validate a bounded plan first, commit only when every old-street slot has a

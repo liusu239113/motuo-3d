@@ -7,13 +7,17 @@ local Housing=require("Career.HousingData")
 local Environment=require("Career.CityEnvironment")
 local Motion=require("Career.TrafficMotion")
 local Q={}
--- 16m格仅裁剪旧城静态候选，最终仍走原多边形/连续扫掠；不合并、不缩小障碍。
+-- 网格仅裁剪静态候选，最终仍走原多边形/连续扫掠；不合并、不缩小障碍。
+-- 4m格：车辆/行人查询只波及贴身格，候选数比16m格少一个量级。
+local CELL=4
+local CELL_STRIDE=131072
+local function cellKey(ix,iz) return ix*CELL_STRIDE+iz end
 function Q.Index(city)
     local index={source=city.obstacles,count=#city.obstacles,cells={}}
     for _,o in ipairs(city.obstacles) do
-        for ix=math.floor(o.x1/16),math.floor(o.x2/16) do
-            for iz=math.floor(o.z1/16),math.floor(o.z2/16) do
-                local id=ix..":"..iz
+        for ix=math.floor(o.x1/CELL),math.floor(o.x2/CELL) do
+            for iz=math.floor(o.z1/CELL),math.floor(o.z2/CELL) do
+                local id=cellKey(ix,iz)
                 local list=index.cells[id] or {};list[#list+1]=o;index.cells[id]=list
             end
         end
@@ -55,11 +59,19 @@ local function collect(city,shape,dx,dz,mode,height,ignoreId,staticOnly)
     local index=rawget(city,"collisionIndex")
     if index then
         if index.source~=city.obstacles or index.count~=#city.obstacles then index=Q.Index(city) end
-        local seen={}
-        for ix=math.floor((x1-C.SKIN)/16),math.floor((x2+C.SKIN)/16) do
-            for iz=math.floor((z1-C.SKIN)/16),math.floor((z2+C.SKIN)/16) do
-                for _,o in ipairs(index.cells[ix..":"..iz] or {}) do
-                    if not seen[o] then seen[o]=true;add(o) end
+        -- 单格查询占绝大多数，此时逐格去重表纯属每次调用的临时分配，按需创建。
+        local seen=nil
+        for ix=math.floor((x1-C.SKIN)/CELL),math.floor((x2+C.SKIN)/CELL) do
+            for iz=math.floor((z1-C.SKIN)/CELL),math.floor((z2+C.SKIN)/CELL) do
+                local list=index.cells[cellKey(ix,iz)]
+                if list then
+                    if seen then
+                        for _,o in ipairs(list) do if not seen[o] then seen[o]=true;add(o) end end
+                    else
+                        for _,o in ipairs(list) do add(o) end
+                        seen={}
+                        for _,o in ipairs(list) do seen[o]=true end
+                    end
                 end
             end
         end

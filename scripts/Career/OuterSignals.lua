@@ -56,7 +56,7 @@ Signals.EPSILON=.00001
 Signals.Junctions={}
 ---@type table<string, OuterSignalJunction>
 local junctionByPosition={}
-local function key(x,z) return x..":"..z end
+local function key(x,z) return x*131072+z end
 
 -- 区域设计（俯视，米；hx=NS最大半宽，hz=EW最大半宽）：
 --           P [灯杆/底座]       NS车道       [灯杆] P

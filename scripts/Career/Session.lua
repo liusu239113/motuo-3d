@@ -1,4 +1,12 @@
 -- 生涯协调器：单一Update入口、独立场景、独立存档，不改旧竞速模拟器。
+-- 临时分项计时：定位骑行卡顿来源后整段删除。
+local perfOrder_ = {"stream","contacts","people","markers","ui","crowd","traffic","audio","save","refresh"}
+local perfAcc_, perfFrames_, perfSeconds_, perfLast_ = {}, 0, 0, 0
+local function perfMark(name)
+    local now = os.clock()
+    if perfLast_ > 0 then perfAcc_[name] = (perfAcc_[name] or 0) + (now - perfLast_) end
+    perfLast_ = now
+end
 local UI = require("urhox-libs/UI")
 require "urhox-libs.Camera.ThirdPersonCamera"
 local Store = require("Career.Store")
@@ -264,6 +272,7 @@ function Session:BuildWorld()
     light.castShadows=true; light.shadowCascade=CascadeParameters(8,65,0,0,.85)
     light.shadowBias=BiasParameters(.0001,.25,0)
     self.zone,self.sun=zone,light
+    require("Career.AdaptiveQuality").AttachSunlight(light)
     -- 太阳落到地平线以下后不再照地面；独立冷色月光保证手游夜跑的基础可读性。
     local moonNode=self.scene:CreateChild("南城夜间月光")
     moonNode.direction=Vector3(.35,-.8,.25)
@@ -892,6 +901,24 @@ function Session:LoadCloud()
             self.view:Notice(message)
         end}})
 end
+-- 暂停页内的画面与性能设置：自动按设备推荐，也可手动锁档。
+function Session:QualityDialog()
+    local Quality=require("Career.AdaptiveQuality")
+    local current=Quality.auto and "自动（按设备推荐）" or Quality.Current().name
+    local function apply(level)
+        Quality.Set(level)
+        self:QualityDialog()
+    end
+    self.view:ShowDialog("画面与性能",
+        string.format("当前：%s\n自动模式会按实测帧时自动升降档，优先保证流畅；手动可固定档位。",current),
+        {
+            {text="自动（推荐）",primary=Quality.auto,onClick=function() Quality.SetAuto(true); self:QualityDialog() end},
+            {text="高",primary=(not Quality.auto) and Quality.level==3,onClick=function() apply(3) end},
+            {text="中",primary=(not Quality.auto) and Quality.level==2,onClick=function() apply(2) end},
+            {text="低",primary=(not Quality.auto) and Quality.level==1,onClick=function() apply(1) end},
+            {text="返回",onClick=function() self:Pause() end},
+        },true)
+end
 function Session:Pause()
     if not self.running then return end
     if self.audio then self.audio:SetPaused(true);CareerAudio.StopPhone(self.audio) end
@@ -899,6 +926,7 @@ function Session:Pause()
     local _,message=Store.Save()
     self.view:ShowDialog("暂时歇一歇",message.."\n完整手机与暂停期间不推进时间和订单。",{
         {text="继续生活",primary=true},
+        {text="画面与性能",onClick=function() self:QualityDialog() end},
         {text="保存到账号云端",onClick=function() self:SaveCloud() end},
         {text="回到生涯主页",onClick=function()
             if not self:SaveBeforeLeave() then return end
@@ -927,6 +955,7 @@ function Session:Update(dt)
         return
     end
     if not self.running or not self.actor then return end
+    perfLast_ = os.clock()
     if self.customerCall then
         if self.view.phonePage~="call" then self:EndCustomerCall()
         elseif Calls.Advance(self.customerCall,dt) then
@@ -936,17 +965,22 @@ function Session:Update(dt)
         end
     end
     if self.city then self.city:UpdateStreaming(self.actor.x,self.actor.z) end
+    perfMark("stream")
     self.city.contacts:Update(dt,self.actor,self.environmentHour,
         self.space=="city" and not self.view:IsBlocking() and not self.options.test)
+    perfMark("contacts")
     if self.deliveryPeople then
         self.deliveryPeople:Update(dt,self.actor,not self.view:IsBlocking() and not self.options.test)
     end
+    perfMark("people")
     if self.deliveryMarkers then
         self.deliveryMarkers:Update(dt,self.actor,not self.view:IsBlocking() and not self.options.test)
     end
+    perfMark("markers")
     self.view:UpdateSpeech(dt)
     self.view:LayoutControls()
     self.view.controls:UpdateFeedback(dt)
+    perfMark("ui")
     local blocked=self.view:IsBlocking()
     if self.crowd and (blocked or self.space~="city" or self.options.test) then
         self.crowd:Update(dt,self.actor,false,self.camera and self.camera:GetCamera())
@@ -1009,15 +1043,18 @@ function Session:Update(dt)
     if self.crowd and self.space=="city" then
         self.crowd:Update(dt,self.actor,true,self.camera and self.camera:GetCamera())
     end
+    perfMark("crowd")
     if self.traffic then
         self.traffic:Update(dt)
         require("Career.RoadReactions").Update(self.traffic,dt,self.audio)
     end
+    perfMark("traffic")
     if self.audio then
         self.audio.musicHour=state.time
         self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.audioOffer,
             Environment.AudioContext(self.actor.x,self.actor.z))
     end
+    perfMark("audio")
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
     self:SavePosition()
     local wasPending=Store.GetSaveStatus().pendingSave
@@ -1026,6 +1063,7 @@ function Session:Update(dt)
     elseif ok and wasPending and not Store.GetSaveStatus().pendingSave then
         self.view:Notice("本地进度已补存成功；账号云存档仍需单独确认")
     end
+    perfMark("save")
     self.timer=self.timer+dt
     if self.timer>=.2 then
         self.timer=0; self:Refresh()
@@ -1033,6 +1071,17 @@ function Session:Update(dt)
             local alert=Life.PollAlerts(self.lifeMonitor,Store.Get())
             if alert then self.view:Notice(alert.title.." · "..alert.detail) end
         end
+    end
+    perfMark("refresh")
+    perfFrames_ = perfFrames_ + 1
+    perfSeconds_ = perfSeconds_ + dt
+    if perfSeconds_ >= 5 then
+        local out = {}
+        for i,name in ipairs(perfOrder_) do
+            out[i] = string.format("%s=%.1f", name, (perfAcc_[name] or 0) * 1000 / perfFrames_)
+        end
+        print(string.format("[分项计时] 帧数=%d %s | ms/帧", perfFrames_, table.concat(out, " ")))
+        perfAcc_, perfFrames_, perfSeconds_ = {}, 0, 0
     end
 end
 function Session:PostUpdate(dt)

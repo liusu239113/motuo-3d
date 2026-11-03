@@ -1,6 +1,9 @@
 -- City detail builder, adapted from scaffold-3d-scene's content/material ownership.
 -- Only scenery: no camera, UI, input subscription, player or global lighting changes.
 local V = Vector3
+-- 16m地表网格键用数值而非字符串拼接：Surface每帧被地形采样大量调用，避免逐次分配。
+local CELL_STRIDE = 131072
+local function cellKey(gx, gz) return gx * CELL_STRIDE + gz end
 
 ---@class CityBatch
 ---@field geometry CustomGeometry
@@ -24,6 +27,7 @@ local V = Vector3
 ---@field indexSurfaces boolean
 ---@field deferVisibility boolean
 local Details = {}
+Details.CellKey = cellKey
 Details.__index = Details
 
 ---@param root Node
@@ -193,7 +197,7 @@ function Details:Ground(material,x,z,w,d,y)
         -- 16m格只筛候选，最终仍按真实矩形判断，不做高度量化或插值。
         for gx=math.floor((x-w/2)/16),math.floor((x+w/2)/16) do
             for gz=math.floor((z-d/2)/16),math.floor((z+d/2)/16) do
-                local key=gx..":"..gz
+                local key=Details.CellKey(gx,gz)
                 local list=self.surfaceCells[key] or {}
                 list[#list+1]=surface
                 self.surfaceCells[key]=list
@@ -205,7 +209,7 @@ end
 
 function Details:Surface(x,z)
     local height=0
-    local candidates=self.surfaceCells[math.floor(x/16)..":"..math.floor(z/16)]
+    local candidates=self.surfaceCells[cellKey(math.floor(x/16),math.floor(z/16))]
     if not candidates then return height end
     for _,s in ipairs(candidates) do
         if math.abs(x-s.x)<=s.w/2 and math.abs(z-s.z)<=s.d/2 then

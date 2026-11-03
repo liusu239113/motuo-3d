@@ -209,6 +209,8 @@ VehicleAssets.Vehicles.sport.class = "sport"
 VehicleAssets.Vehicles.cruiser.class = "cruiser"
 VehicleAssets.Vehicles.rally.class = "rally"
 
+-- 街道车流按车型轮换。新增车型必须同时在 Career/VehicleContact 里做胎面标定，
+-- 否则城市构建会因缺少标定而失败，所以这里只列已标定的三种。
 VehicleAssets.TrafficIds = {"sedan", "suv", "truck"}
 VehicleAssets.ResourceTypes = {}
 

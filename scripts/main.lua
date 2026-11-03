@@ -18,6 +18,7 @@ local Race = require("Race")
 local RaceVisuals = require("RaceVisuals")
 local RaceAudio = require("RaceAudio")
 local CareerSession = require("Career.Session")
+local CareerQuality = require("Career.AdaptiveQuality")
 ---@type CareerSession?
 local career_ = nil
 local careerMode_ = false
@@ -116,6 +117,9 @@ local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
 local careerPerf_ = {active = false, pendingPost = false, seconds = 0.0, frames = 0,
     maxInterval = 0.0, over50 = 0, over100 = 0,
     updateSum = 0.0, updateMax = 0.0, postSum = 0.0, postMax = 0.0, postFrames = 0}
+
+-- 临时性能诊断：定位卡顿来源后整段删除。只累计数值，不分配临时对象。
+local diag_ = {seconds = 0.0, frames = 0, maxInterval = 0.0, careerSum = 0.0, careerMax = 0.0}
 
 local function ResetCareerPerf()
     careerPerf_.active, careerPerf_.pendingPost = false, false
@@ -1141,6 +1145,9 @@ end
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
     local rawDt = eventData:GetFloat("TimeStep")
+    diag_.seconds = diag_.seconds + rawDt
+    diag_.frames = diag_.frames + 1
+    if rawDt > diag_.maxInterval then diag_.maxInterval = rawDt end
     CareerStore.UpdateCloud(rawDt)
     local dt = math.min(rawDt, 0.1)
     -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
@@ -1160,11 +1167,14 @@ function HandleUpdate(eventType, eventData)
         end
     else profileRetrySeconds_=0 end
     if careerMode_ and career_ then
+        CareerQuality.Update(rawDt)
         local sample = IsCareerPerfActive()
         if not sample then ResetCareerPerf() end
         local started = os.clock()
         career_:Update(dt)
         local cpu = os.clock() - started
+        diag_.careerSum = diag_.careerSum + cpu
+        if cpu > diag_.careerMax then diag_.careerMax = cpu end
         if sample and IsCareerPerfActive() then RecordCareerPerfUpdate(rawDt, cpu)
         else ResetCareerPerf() end
         return
@@ -1408,12 +1418,27 @@ end
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
+    -- 临时性能诊断：每 5 秒输出一次，定位卡顿来源后连带 diag_ 一起删除。
+    if diag_.seconds >= 5 then
+        local gcNow = collectgarbage("count")
+        local gcRate = diag_.gcKB and (gcNow - diag_.gcKB) / diag_.seconds or 0
+        diag_.gcKB = gcNow
+        print(string.format("[诊断FPS] %.2f fps | 帧时 平均%.1f 最大%.1f ms | career脚本 平均%.2f 最大%.2f ms/帧 | GC=%.0fKB/s | batches=%d primitives=%d | 模式=%s",
+            diag_.frames / diag_.seconds, diag_.seconds * 1000 / diag_.frames,
+            diag_.maxInterval * 1000, diag_.careerSum * 1000 / diag_.frames,
+            diag_.careerMax * 1000, gcRate, renderer.numBatches, renderer.numPrimitives,
+            careerMode_ and "生涯" or screen_))
+        diag_.seconds, diag_.frames, diag_.maxInterval = 0.0, 0, 0.0
+        diag_.careerSum, diag_.careerMax = 0.0, 0.0
+    end
     if careerMode_ and career_ then
         if not IsCareerPerfActive() then ResetCareerPerf() end
         local dt = math.min(eventData:GetFloat("TimeStep"), .1)
         local started = os.clock()
         career_:PostUpdate(dt)
         local cpu = os.clock() - started
+        diag_.careerSum = diag_.careerSum + cpu
+        if cpu > diag_.careerMax then diag_.careerMax = cpu end
         if IsCareerPerfActive() then RecordCareerPerfPost(cpu)
         else ResetCareerPerf() end
         return
