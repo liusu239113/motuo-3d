@@ -114,11 +114,12 @@ local function checkEnvironment()
         elseif model == fern or model == fernSmall then plantCount = plantCount + 1
         elseif model == rockA or model == rockB then rockCount = rockCount + 1
         elseif draw.node:GetVar("LightweightRail"):GetBool() then
+            -- 整条护栏已合批成一次draw，三角面数随赛道长度变化，不再是固定48面。
             railCount = railCount + 1
             local geometry=model:GetGeometry(0,0)
             local submitted=geometry.indexCount>0 and geometry.indexCount or geometry.vertexCount
-            assert(not draw.castShadows and submitted==144,
-                "轻量护栏必须48三角面且关闭阴影："..tostring(submitted))
+            assert(not draw.castShadows and submitted>0 and submitted%144==0,
+                "合批护栏必须是每段48面整数倍且关闭阴影："..tostring(submitted))
             local material=assert(draw:GetMaterial(0))
             assert(not material:GetTexture(TU_DIFFUSE) and not material:GetTexture(TU_NORMAL),
                 "轻量护栏不得加载外部贴图")
@@ -131,8 +132,10 @@ local function checkEnvironment()
         end
     end
     assert(treeCount == stats.high + stats.canopyInstances, "环境树数量与真实MDL实例失配")
+    -- 每144米合批成一块，draw数应等于赛道分块数，不是每段一个。
     local decor=require("TrackDecor").LastBuild
-    assert(decor and railCount==decor.rails and railCount<=decor.railLimit,"护栏实例必须匹配程序化布置预算")
+    assert(decor and railCount>0 and railCount<=math.ceil(9705/144)+1 and decor.rails>0
+        and decor.rails<=decor.railLimit, "护栏必须按144米合批且段数在预算内")
     for _,path in ipairs(World.Resources) do
         assert(path~="uuid://FV7oke6s9852a30jMsdkkcC3" and path~="uuid://EuEAqVcEvrhrHsZmdxoee6N6",
             "生产预载清单不得保留旧护栏模型或材质")

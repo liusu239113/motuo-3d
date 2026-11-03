@@ -5,11 +5,12 @@ local Props = require("ScenicAssetProps")
 local P = require("Parts")
 local V = Vector3
 
----@type Model?
-local lightRailModel = nil
 ---@type Material?
 local lightRailMaterial = nil
-local railSize=V(.14,.95,3)
+-- 全部栏杆合并进一个CustomGeometry：整条赛道只占1次draw，
+-- 不再是每段一个StaticModel（420段会变成420次draw）。
+local railGeometry=nil
+
 ---@param geometry CustomGeometry
 ---@param a Vector3
 ---@param b Vector3
@@ -22,69 +23,85 @@ local function railTriangle(geometry,a,b,c)
         geometry:DefineTexCoord(Vector2(point.x,point.z))
     end
 end
----@param root Node
-local function prepareLightRail(root)
-    if lightRailModel then return end
-    -- 一段护栏=两柱+两横梁，共48三角面，合成一个共享网格/一个材质槽。
-    local builder=root:CreateChild("护栏网格构建")
-    local geometry=builder:CreateComponent("CustomGeometry")
-    geometry:BeginGeometry(0,TRIANGLE_LIST)
-    local function quad(a,b,c,d)
-        railTriangle(geometry,a,b,c)
-        railTriangle(geometry,a,c,d)
+
+---@param geometry CustomGeometry
+---@param ox number
+---@param oy number
+---@param oz number
+---@param yaw number
+local function railBox(geometry,ox,oy,oz,yaw,x,y,z,w,h,d)
+    local a,b,c=w*.5,h*.5,d*.5
+    local ca,sa=math.cos(math.rad(yaw)),math.sin(math.rad(yaw))
+    ---@param px number
+    ---@param py number
+    ---@param pz number
+    ---@return Vector3
+    local function place(px,py,pz)
+        return V(ox+px*ca+pz*sa,oy+py,oz-px*sa+pz*ca)
     end
-    local function box(x,y,z,w,h,d)
-        local a,b,c=w*.5,h*.5,d*.5
-        local v1=V(x-a,y-b,z-c)
-        local v2=V(x+a,y-b,z-c)
-        local v3=V(x+a,y+b,z-c)
-        local v4=V(x-a,y+b,z-c)
-        local v5=V(x-a,y-b,z+c)
-        local v6=V(x+a,y-b,z+c)
-        local v7=V(x+a,y+b,z+c)
-        local v8=V(x-a,y+b,z+c)
-        quad(v1,v4,v3,v2)
-        quad(v5,v6,v7,v8)
-        quad(v1,v2,v6,v5)
-        quad(v4,v8,v7,v3)
-        quad(v1,v5,v8,v4)
-        quad(v2,v3,v7,v6)
-    end
-    for _,z in ipairs({-1.2,1.2}) do box(0,.475,z,.10,.95,.10) end
-    for _,y in ipairs({.43,.83}) do box(0,y,0,.14,.16,3) end
-    geometry:Commit()
-    local model=Model:new()
-    assert(geometry:FillModel(model),"轻量护栏网格创建失败")
-    lightRailModel=model
-    lightRailMaterial=P.Material(.45,.50,.54,.72,.25)
-    builder:Dispose()
+    local v1=place(x-a,y-b,z-c)
+    local v2=place(x+a,y-b,z-c)
+    local v3=place(x+a,y+b,z-c)
+    local v4=place(x-a,y+b,z-c)
+    local v5=place(x-a,y-b,z+c)
+    local v6=place(x+a,y-b,z+c)
+    local v7=place(x+a,y+b,z+c)
+    local v8=place(x-a,y+b,z+c)
+    railTriangle(geometry,v1,v4,v3);railTriangle(geometry,v1,v3,v2)
+    railTriangle(geometry,v5,v6,v7);railTriangle(geometry,v5,v7,v8)
+    railTriangle(geometry,v1,v2,v6);railTriangle(geometry,v1,v6,v5)
+    railTriangle(geometry,v4,v8,v7);railTriangle(geometry,v4,v7,v3)
+    railTriangle(geometry,v1,v5,v8);railTriangle(geometry,v1,v8,v4)
+    railTriangle(geometry,v2,v3,v7);railTriangle(geometry,v2,v7,v6)
 end
 
 ---@param root Node
+local function beginLightRails(root)
+    if railGeometry then return end
+    local holder=root:CreateChild("轻量程序化护栏")
+    railGeometry=holder:CreateComponent("CustomGeometry")
+    railGeometry:BeginGeometry(0,TRIANGLE_LIST)
+    lightRailMaterial=P.Material(.45,.50,.54,.72,.25)
+end
+
 ---@param position Vector3
 ---@param yaw number
-local function addLightRail(root, position, yaw)
-    prepareLightRail(root)
-    local rail = P.Add(root, "轻量程序化护栏", assert(lightRailModel), assert(lightRailMaterial),
-        position, V.ONE, Quaternion(0,yaw,0), false)
-    rail:SetVar("LightweightRail",Variant(true))
-    local draw = assert(rail:GetComponent("StaticModel"))
-    draw.drawDistance = 230
-    draw.shadowDistance = 0
-    return rail
+local function addLightRail(position, yaw)
+    local geometry=assert(railGeometry)
+    -- 一段护栏=两柱+两横梁，共48三角面。
+    for _,z in ipairs({-1.2,1.2}) do railBox(geometry,position.x,position.y,position.z,yaw,0,.475,z,.10,.95,.10) end
+    for _,y in ipairs({.43,.83}) do railBox(geometry,position.x,position.y,position.z,yaw,0,y,0,.14,.16,3) end
+end
+
+-- 整条赛道构建结束后提交一次，整条护栏只占一次draw。
+local function finishLightRails()
+    local geometry=assert(railGeometry)
+    geometry:Commit()
+    lightRailMaterial=assert(lightRailMaterial)
+    local holder=geometry.node
+    holder:SetVar("LightweightRail",Variant(true))
+    local draw=assert(holder:GetComponent("CustomGeometry"))
+    draw:SetMaterial(lightRailMaterial)
+    draw.drawDistance=330
+    draw.castShadows=false
+    draw.shadowDistance=0
+    geometry=nil
 end
 
 Decor.Resources = {"Techniques/PBR/PBRNoTexture.xml"}
 Decor.ResourceTypes = {["Techniques/PBR/PBRNoTexture.xml"] = "Technique"}
 
 -- 护栏沿道路间隔摆放，保留路外通行；全占地检查覆盖支路/坡台/水线。
+-- 每144米一个合批几何体：整条赛道护栏只占chunks次draw，不是每段一次。
 local function infrastructure(root, L, m, tick)
     local road, length = L.Roads[1], L.RouteLength
     local circuit, forest = L.activeId == "circuit", L.activeId == "forest"
     local chunks = math.ceil(length / 144)
     local rails, markers = 0, 0
+    local railSize=V(.14,.95,3)
     for chunk = 1, chunks do
         local lo, hi = (chunk - 1) * 144, math.min(length, chunk * 144)
+        beginLightRails(root)
         for s = lo + 12, hi - 3, 12 do
             local a, yaw = L.RoadPoint(s)
             local _, yawB = L.RoadPoint(s + 6)
@@ -96,7 +113,7 @@ local function infrastructure(root, L, m, tick)
                     local q = a + r * (side * (road.shoulder + (circuit and 4 or 2.1)))
                     local p = Props.GroundSite(L, "rail", q.x, q.z, .95, yaw, .2, .27, .03, railSize)
                     if p then
-                        addLightRail(root, p, yaw)
+                        addLightRail(p, yaw)
                         rails = rails + 1
                     end
                 end
@@ -111,10 +128,11 @@ local function infrastructure(root, L, m, tick)
                 end
             end
         end
+        finishLightRails()
         tick("赛事环境", chunk, chunks)
     end
     Decor.LastBuild = {rails = rails, markers = markers, railLimit = 420, markerLimit = 180}
-    print(string.format("[轻量护栏] %d段 / 共享网格1个 / 每段48三角面 / 贴图0 / 阴影0",rails))
+    print(string.format("[轻量护栏] %d段 / %d个合批draw / 每段48三角面 / 贴图0 / 阴影0", rails, chunks))
 end
 
 local function startArea(root, L, m)

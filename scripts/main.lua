@@ -113,6 +113,9 @@ local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
 
 local function ApplyQuality()
     renderer.dynamicInstancing = true
+    -- 机关/锥标/护栏共608个共享网格实例；minInstances=1让它们全部走INSTANCED合批，
+    -- 而不是每个实例一次draw。这是赛事场景最大的一笔draw削减。
+    renderer.minInstances = 1
     renderer:SetShadowMapSize(highQuality_ and 2048 or 1024)
     renderer.textureFilterMode = FILTER_ANISOTROPIC
     renderer.textureAnisotropy = highQuality_ and 8 or 2
