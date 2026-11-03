@@ -1,5 +1,6 @@
 -- 正式环境独立验收：不加载Profile/Store、不读写玩家存档，不生成替代展示几何。
--- 直接构建真实World；构建与产品相同按进度回调yield，-environment-track=lake/circuit选择。
+-- 直接构建真实World；所有阶段/yield完整执行，独立验收每Update最多推进8次。
+-- 只验证完整静态环境与真实像素，不是产品加载性能测试。-environment-track=lake/circuit选择。
 local World = require("World")
 local Landscape = require("Landscape")
 local Trees = require("ScenicTrees")
@@ -92,7 +93,8 @@ end
 function ScenicEnvironmentCheckUpdate()
     if finished_ then return end
     local task = preparation_
-    if task and coroutine.status(task) ~= "dead" then
+    for _ = 1, 8 do
+        if finished_ or not task or coroutine.status(task) == "dead" then break end
         local ok, message = coroutine.resume(task)
         assert(ok, "真实环境构建失败：" .. tostring(message))
     end

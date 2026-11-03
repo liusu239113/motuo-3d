@@ -23,7 +23,8 @@
     ],
     "asset_ignores": [
       "../assets/image/formal_vehicle_motion",
-      "../assets/image/formal_vehicle_review"
+      "../assets/image/formal_vehicle_review",
+      "../assets/model/course-official"
     ]
   },
   "@runtime": {

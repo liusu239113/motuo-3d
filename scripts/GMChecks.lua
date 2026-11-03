@@ -147,9 +147,18 @@ function Checks.RunDrive(hud,storage,restore)
     local Profile=require("Profile")
     local originalWrites,originalText=storage()
     local stage,frames=0,0
+    local vehicleId="helicopter"
+    for _,arg in ipairs(GetArguments()) do
+        local selected=arg:match("^%-gmdrivevehicle=(.+)$")
+        if selected then
+            assert(selected=="tank" or selected=="beetle" or selected=="helicopter","GM流程车型参数无效")
+            vehicleId=selected
+        end
+    end
     Catalog.SetGMFreeExperience(true)
-    hud.actions.start(false);hud:SelectVehicle("helicopter",true)
-    hud.actions.confirmVehicle("helicopter")
+    assert(Catalog.CanFreeExperience(vehicleId),"GM流程所选车型尚未正式开放："..vehicleId)
+    hud.actions.start(false);hud:SelectVehicle(vehicleId,true)
+    hud.actions.confirmVehicle(vehicleId)
     local function verify()
         local writes,text=storage()
         assert(writes==originalWrites and text==originalText,"GM实际发车不得写档或消费试驾")
@@ -163,6 +172,8 @@ function Checks.RunDrive(hud,storage,restore)
         if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter() end
         if hud.screen=="ride" then
             verify()
+            assert(hud.selectedVehicle==vehicleId and Catalog.CanFreeExperience(vehicleId)
+                and not Profile.Owns(vehicleId),"GM实际发车所选车型必须保持免费体验且未获永久所有权")
             if stage==0 then
                 stage=1
                 hud.actions.restart()
@@ -170,9 +181,9 @@ function Checks.RunDrive(hud,storage,restore)
             else
                 hud.actions.menu()
                 Catalog.SetGMFreeExperience(false)
-                hud:SelectVehicle("helicopter",true)
+                hud:SelectVehicle(vehicleId,true)
                 verify();restore();stage=2
-                print("[GMChecks] 实际加载→发车→缓存重赛两次均不扣币/次数/写档 PASS")
+                print("[GMChecks] "..vehicleId.." 实际加载→发车→缓存重赛两次均不扣币/次数/写档 PASS")
             end
         end
     end)

@@ -1,0 +1,370 @@
+[2026-11-03 19_44_47_881][0] INFO: DownloadManager initialized
+[2026-11-03 19_44_47_883][0] INFO: a couple of Subsystems registered finish.
+[2026-11-03 19_44_47_884][0] INFO: Engine construct finish.
+[2026-11-03 19_44_47_890][0] INFO: Engine initialize begin.
+[2026-11-03 19_44_47_890][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+[2026-11-03 19_44_47_890][0] INFO: Rendering pipeline: forward
+[2026-11-03 19_44_47_892][0] INFO: Engine resourcePrefixPath: /resources/runtime/cli/, resource: Res
+[2026-11-03 19_44_47_892][0] INFO: Added resource path /resources/runtime/cli/Res/
+[2026-11-03 19_44_47_892][0] INFO: Now resource dir: 
+[2026-11-03 19_44_47_892][0] INFO: 0 - /resources/runtime/cli/Res/
+[2026-11-03 19_44_47_893][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/CoreData.pak' to cache
+[2026-11-03 19_44_47_893][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/CoreData.pak, 0
+[2026-11-03 19_44_47_895][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/CoreData.pak, 127 entries (126 unique blocks), decompressed 66503 -> 153288 bytes, dict 8043 bytes
+[2026-11-03 19_44_47_895][0] INFO: Added resource package CoreData
+[2026-11-03 19_44_47_895][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Data.pak' to cache
+[2026-11-03 19_44_47_895][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Data.pak, 0
+[2026-11-03 19_44_48_021][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Data.pak, 1381 entries (1294 unique blocks), decompressed 16681130 -> 32316443 bytes, dict 22080 bytes
+[2026-11-03 19_44_48_021][0] INFO: Added resource package Data
+[2026-11-03 19_44_48_021][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Res.pak' to cache
+[2026-11-03 19_44_48_021][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Res.pak, 0
+[2026-11-03 19_44_48_342][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Res.pak, 664 entries (642 unique blocks), decompressed 28773920 -> 75977860 bytes, dict 58076 bytes
+[2026-11-03 19_44_48_342][0] INFO: Added resource package Res
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-11-03 19_44_48_639][0] INFO: computeShaderSupport 1,caps->supported:4,aps->supported & BGFX_CAPS_INDEX32:4096
+[2026-11-03 19_44_48_639][0] INFO: Detected 1 GPUs
+[2026-11-03 19_44_48_639][0] INFO: GPU 0 Name: llvmpipe (LLVM 20.1.2, 256 bits)
+[2026-11-03 19_44_48_639][0] INFO: Selected GPU name: llvmpipe (LLVM 20.1.2, 256 bits)
+[2026-11-03 19_44_48_639][0] INFO: Renderer Type: OpenGL ES 3.1
+[2026-11-03 19_44_48_639][0] INFO: CheckFeatureSupport => CpuInstance=1, _R32I=1, _R32U=1, _R32F=1, _RGBA16F=1, _RGBA32F=1, MaxTextureSizeLimit=16384
+[2026-11-03 19_44_48_639][0] INFO: Graphics mode: 960x640 (logic=960x640, dpr=1) windowed monitor 0
+[2026-11-03 19_44_48_639][0] INFO: Initialized input
+[2026-11-03 19_44_48_639][0] INFO: Initialized user interface
+[2026-11-03 19_44_48_644][0] INFO: Initialized renderer
+[2026-11-03 19_44_48_649][0] INFO: Initialized graphics & audio output.
+[2026-11-03 19_44_48_649][0] INFO: Initialized engine
+[2026-11-03 19_44_48_649][0] INFO: LogUploader: auto-upload disabled (no SLS URL), UploadLogPack still available on demand
+[2026-11-03 19_44_48_651][0] INFO: Device Max Storage Block Binding Range: 16
+[2026-11-03 19_44_48_653][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-03 19_44_48_653][0] INFO: UrhoXRuntime: using local ProjectBuilder manifest: /workspace/dist/latest.json
+[2026-11-03 19_44_48_653][0] INFO: PackageFile::Open, /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak, 0
+[2026-11-03 19_44_48_757][0] INFO: UZSD MemoryLess package opened: /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak, 32492 entries (7526 unique blocks), compressed 9195873 bytes, dict 65536 bytes
+[2026-11-03 19_44_48_758][0] INFO: Added resource package shadercache_runtime
+[2026-11-03 19_44_48_795][0] INFO: Loaded shader cache package: /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak
+[2026-11-03 19_44_48_795][0] INFO: Custom Lua require system installed (module cache active)
+[2026-11-03 19_44_48_807][0] INFO: Lua 5.4: Generational GC enabled.
+[2026-11-03 19_44_48_808][0] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-11-03 19_44_48_807.log
+[2026-11-03 19_44_48_808][0] INFO: LobbyBridge Lua API registered
+[2026-11-03 19_44_48_808][0] INFO: [Validate] Mode enabled: frames=125, timeout=110s
+[2026-11-03 19_44_48_808][0] INFO: [Screenshot] enabled: frame=120 -> /workspace/screenshots/skill_miss.png
+[2026-11-03 19_44_48_809][0] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-11-03 19_44_48_809][0] INFO: BootstrapManager: Localization initialized, language=en
+[2026-11-03 19_44_48_809][0] INFO: LoadingUI::Show()
+[2026-11-03 19_44_48_811][0] INFO: BootstrapPipeline: starting with 5 steps, total weight 1.00
+[2026-11-03 19_44_48_812][0] INFO: BootstrapPipeline: executing step [1/5] 'LoadVersion'
+[2026-11-03 19_44_48_812][0] INFO: [Bootstrap/LoadVersion] Starting...
+[2026-11-03 19_44_48_812][0] INFO: [Bootstrap/LoadVersion] Loading local version: /workspace/dist/latest.json
+[2026-11-03 19_44_48_815][0] INFO: [Bootstrap/LoadVersion] Version: 1.0.29, Manifest (client): 254c198f
+[2026-11-03 19_44_48_815][0] INFO: [Bootstrap/LoadVersion] Completed successfully (3 ms)
+[2026-11-03 19_44_48_815][0] INFO: BootstrapPipeline: step 'LoadVersion' completed successfully
+[2026-11-03 19_44_48_815][1] INFO: BootstrapPipeline: executing step [2/5] 'LoadProjectManifest'
+[2026-11-03 19_44_48_815][1] INFO: [Bootstrap/LoadProjectManifest] Starting...
+[2026-11-03 19_44_48_815][1] INFO: Manifest Lua API registered successfully
+[2026-11-03 19_44_48_815][1] INFO: [Bootstrap/LoadProjectManifest] Loading local manifest: /workspace/dist/1.0.29/manifest-254c198f.json
+[2026-11-03 19_44_48_827][1] INFO: ManifestData: loaded 726 files, 3 sources, 0 paks, entry=main.lua
+[2026-11-03 19_44_48_827][1] INFO: [Bootstrap/LoadProjectManifest] Added builtin source engine-startup: https://.../src/engine-startup/ (tag=stable, priority=1000000)
+[2026-11-03 19_44_48_827][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source engine-res: https://<engine-res>/ (tag=1.36, priority=1000001)
+[2026-11-03 19_44_48_827][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source urhox-libs: https://<urhox-libs>/ (tag=1.0, priority=1000002)
+[2026-11-03 19_44_48_829][1] INFO: ManifestResolver: loaded game manifest with 726 files, 0 paks
+[2026-11-03 19_44_48_829][1] INFO: [Bootstrap/LoadProjectManifest] Loaded manifest with 726 files, entry: SkillPresentationCheckMain.lua
+[2026-11-03 19_44_48_829][1] INFO: [Bootstrap/LoadProjectManifest] Completed successfully (14 ms)
+[2026-11-03 19_44_48_829][1] INFO: BootstrapPipeline: step 'LoadProjectManifest' completed successfully
+[2026-11-03 19_44_48_829][1] INFO: BootstrapPipeline: executing step [3/5] 'LoadSourceManifests'
+[2026-11-03 19_44_48_829][1] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-11-03 19_44_48_829][1] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-startup (https://.../src/engine-startup/, stable)
+[2026-11-03 19_44_48_829][1] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/1]: engine-startup
+[2026-11-03 19_44_48_832][1] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://.../src/engine-startup/stable.json
+[2026-11-03 19_44_48_832][1] INFO: HttpManager initialized (Native with libhv HttpClient)
+[2026-11-03 19_44_48_833][1] INFO: Shader::BeginLoad: /Shaders/BLGL/UI.glsl
+[2026-11-03 19_44_48_833][1] INFO: Shader::EndLoad
+[2026-11-03 19_44_48_834][1] INFO: Loaded vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR)
+[2026-11-03 19_44_48_834][1] INFO: Loaded pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR)
+[2026-11-03 19_44_48_834][1] INFO: Loaded vertex shader UI(DIFFMAP)
+[2026-11-03 19_44_48_834][1] INFO: Loaded pixel shader UI(DIFFMAP OPACITY)
+[2026-11-03 19_44_48_834][1] INFO: BXLOG:/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+
+[2026-11-03 19_44_48_834][1] INFO: BXLOG:/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+
+[2026-11-03 19_44_50_843][120] INFO: [Screenshot] captured at frame 120 -> /workspace/screenshots/skill_miss.png
+[2026-11-03 19_45_18_808][1122] INFO: ManifestData: loaded 6 files, 0 sources, 0 paks, entry=engine-startup/main.lua
+[2026-11-03 19_45_18_808][1122] INFO: ManifestResolver: loaded source manifest 'engine-startup' with 6 files, 0 paks
+[2026-11-03 19_45_18_808][1122] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-startup manifest with 6 files
+[2026-11-03 19_45_18_808][1122] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (29980 ms)
+[2026-11-03 19_45_18_808][1122] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-11-03 19_45_18_808][1122] INFO: BootstrapPipeline: executing step [4/5] 'InitializeResource'
+[2026-11-03 19_45_18_808][1122] INFO: [Bootstrap/InitializeResource] Starting...
+[2026-11-03 19_45_18_808][1122] INFO: [Bootstrap/InitializeResource] ManifestResolver registered to DownloadManager
+[2026-11-03 19_45_18_808][1122] INFO: Added resource path /home/Maker/update/
+[2026-11-03 19_45_18_808][1122] INFO: Now resource dir: 
+[2026-11-03 19_45_18_808][1122] INFO: 0 - /home/Maker/update/
+[2026-11-03 19_45_18_808][1122] INFO: 1 - /resources/runtime/cli/Res/
+[2026-11-03 19_45_18_809][1122] INFO: Added resource path /workspace/dist/
+[2026-11-03 19_45_18_809][1122] INFO: Now resource dir: 
+[2026-11-03 19_45_18_809][1122] INFO: 0 - /workspace/dist/
+[2026-11-03 19_45_18_809][1122] INFO: 1 - /home/Maker/update/
+[2026-11-03 19_45_18_809][1122] INFO: 2 - /resources/runtime/cli/Res/
+[2026-11-03 19_45_18_809][1122] INFO: [Bootstrap/InitializeResource] Resource system initialized
+[2026-11-03 19_45_18_809][1122] INFO: [Bootstrap/InitializeResource] Completed successfully (0 ms)
+[2026-11-03 19_45_18_809][1122] INFO: BootstrapPipeline: step 'InitializeResource' completed successfully
+[2026-11-03 19_45_18_809][1122] INFO: BootstrapPipeline: executing step [5/5] 'Startup'
+[2026-11-03 19_45_18_809][1122] INFO: [Bootstrap/Startup] Starting...
+[2026-11-03 19_45_18_809][1122] INFO: [Bootstrap/Startup] Found engine-startup manifest with 6 files
+[2026-11-03 19_45_18_809][1122] INFO: [Bootstrap/Startup] Downloading 4 startup resources
+[2026-11-03 19_45_18_811][1122] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 19_45_18_811][1122] INFO: [Bootstrap/Startup] Entry script: engine-startup/main.lua -> .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 19_45_18_812][1122] INFO: Custom Lua require system installed (module cache active)
+[2026-11-03 19_45_18_830][1122] INFO: Lua 5.4: Generational GC enabled.
+[2026-11-03 19_45_18_831][1122] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-11-03 19_45_18_830.log
+[2026-11-03 19_45_18_831][1122] INFO: Manifest Lua API registered successfully
+[2026-11-03 19_45_18_831][1122] INFO: [BootstrapLuaAPI] Registered successfully
+[2026-11-03 19_45_18_831][1122] INFO: [Bootstrap/Startup] Startup Lua VM created
+[2026-11-03 19_45_18_833][1122] INFO: Loaded Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 19_45_18_833][1122] INFO: Executed Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 19_45_18_833][1122] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-11-03 19_45_18_836][1122] INFO: Loaded Lua script engine-startup/loading_ui.lua
+[2026-11-03 19_45_18_842][1122] INFO: LoadingUI::Hide()
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/Startup] Pipeline reconfigured by Lua script
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/Startup] Completed successfully (33 ms)
+[2026-11-03 19_45_18_842][1122] INFO: BootstrapPipeline: step 'Startup' completed successfully
+[2026-11-03 19_45_18_842][1122] INFO: BootstrapPipeline: skipping step 'UpdateProjectInfo'
+[2026-11-03 19_45_18_842][1122] INFO: BootstrapPipeline: executing step [7/16] 'LoadSourceManifests'
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-res (https://<engine-res>/, 1.36)
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/LoadSourceManifests] Found source: urhox-libs (https://<urhox-libs>/, 1.0)
+[2026-11-03 19_45_18_842][1122] INFO: [Bootstrap/LoadSourceManifests] Found source: official-res (https://<official-res>/, stable)
+[2026-11-03 19_45_18_854][1122] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/3]: official-res
+[2026-11-03 19_45_18_855][1122] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<official-res>/stable.json
+[2026-11-03 19_45_18_855][1122] INFO: Shader::BeginLoad: /Shaders/BLGL/NanoVGFill.glsl
+[2026-11-03 19_45_18_855][1122] INFO: Shader::EndLoad
+[2026-11-03 19_45_18_855][1122] INFO: Loaded vertex shader NanoVGFill()
+[2026-11-03 19_45_18_855][1122] INFO: Loaded pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1)
+[2026-11-03 19_45_18_855][1122] INFO: Loaded pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1)
+[2026-11-03 19_45_19_655][1124] INFO: ManifestData: loaded 38888 files, 1 sources, 3 paks, entry=
+[2026-11-03 19_45_19_989][1124] INFO: ManifestResolver: loaded source manifest 'official-res' with 38888 files, 3 paks
+[2026-11-03 19_45_19_990][1124] INFO: [Bootstrap/LoadSourceManifests] Loaded official-res manifest with 38888 files
+[2026-11-03 19_45_19_990][1124] INFO: [Bootstrap/LoadSourceManifests] Loading source [2/3]: engine-res
+[2026-11-03 19_45_20_023][1124] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<engine-res>/1.36.json
+[2026-11-03 19_45_57_908][1126] INFO: ManifestData: loaded 1199 files, 0 sources, 0 paks, entry=
+[2026-11-03 19_45_57_924][1126] INFO: ManifestResolver: loaded source manifest 'engine-res' with 1199 files, 0 paks
+[2026-11-03 19_45_57_924][1126] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-res manifest with 1199 files
+[2026-11-03 19_45_57_924][1126] INFO: [Bootstrap/LoadSourceManifests] Loading source [3/3]: urhox-libs
+[2026-11-03 19_45_57_924][1126] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<urhox-libs>/1.0.json
+[2026-11-03 19_45_58_071][1131] INFO: ManifestData: loaded 160 files, 0 sources, 0 paks, entry=
+[2026-11-03 19_45_58_072][1131] INFO: ManifestResolver: loaded source manifest 'urhox-libs' with 160 files, 0 paks
+[2026-11-03 19_45_58_072][1131] INFO: [Bootstrap/LoadSourceManifests] Loaded urhox-libs manifest with 160 files
+[2026-11-03 19_45_58_072][1131] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (39231 ms)
+[2026-11-03 19_45_58_072][1131] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-11-03 19_45_58_072][1131] INFO: BootstrapPipeline: executing step [8/16] 'ClearShaderCache'
+[2026-11-03 19_45_58_072][1131] INFO: [Bootstrap/ClearShaderCache] Starting...
+[2026-11-03 19_45_58_073][1131] INFO: [Bootstrap/ClearShaderCache] shader group unchanged
+[2026-11-03 19_45_58_073][1131] INFO: [Bootstrap/ClearShaderCache] Completed successfully (0 ms)
+[2026-11-03 19_45_58_073][1131] INFO: BootstrapPipeline: step 'ClearShaderCache' completed successfully
+[2026-11-03 19_45_58_073][1131] INFO: BootstrapPipeline: skipping step 'DownloadInitialPackage'
+[2026-11-03 19_45_58_073][1131] INFO: BootstrapPipeline: executing step [10/16] 'PreloadI18nStep'
+[2026-11-03 19_45_58_073][1131] INFO: [Bootstrap/PreloadI18nStep] Starting...
+[2026-11-03 19_45_58_074][1131]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-03 19_45_58_080][1131]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-03 19_45_58_080][1131]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-03 19_45_58_080][1131] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 19_45_58_080][1131] INFO: [Bootstrap/PreloadI18nStep] Completed successfully (8 ms)
+[2026-11-03 19_45_58_080][1131] INFO: BootstrapPipeline: step 'PreloadI18nStep' completed successfully
+[2026-11-03 19_45_58_080][1131] INFO: BootstrapPipeline: executing step [11/16] 'LoadPreloadResources'
+[2026-11-03 19_45_58_080][1131] INFO: [Bootstrap/LoadPreloadResources] Starting...
+[2026-11-03 19_45_58_081][1131] INFO: DownloadWhilePlayingManager: loaded 16 render blocking exts
+[2026-11-03 19_45_58_081][1131] INFO: [Bootstrap/LoadPreloadResources] Loaded RenderBlockingTypes.json
+[2026-11-03 19_45_58_089][1131] INFO: ManifestResolver: 预加载 1670 个文件 (manifest 总计 40716)
+[2026-11-03 19_45_58_090][1131] INFO: [Bootstrap/LoadPreloadResources] Found 1670 preload files
+[2026-11-03 19_45_58_096][1131] INFO: [Bootstrap/LoadPreloadResources] All resources already cached
+[2026-11-03 19_45_58_096][1131] INFO: [Bootstrap/LoadPreloadResources] Completed successfully (16 ms)
+[2026-11-03 19_45_58_096][1131] INFO: BootstrapPipeline: step 'LoadPreloadResources' completed successfully
+[2026-11-03 19_45_58_096][1131] INFO: BootstrapPipeline: skipping step 'Cleanup'
+[2026-11-03 19_45_58_096][1131] INFO: BootstrapPipeline: skipping step 'RecordProjectSize'
+[2026-11-03 19_45_58_096][1131] INFO: BootstrapPipeline: skipping step 'CleanupOtherProjects'
+[2026-11-03 19_45_58_096][1131] INFO: BootstrapPipeline: executing step [15/16] 'Ready'
+[2026-11-03 19_45_58_096][1131] INFO: [Bootstrap/Ready] Starting...
+[2026-11-03 19_45_58_096][1131] INFO: [Bootstrap/Ready] No project_id (-game=), project-scoped Lobby requests will be rejected
+[2026-11-03 19_45_58_119][1131] INFO: [Bootstrap/Ready] Multiplayer mode: false, max_players: 4
+[2026-11-03 19_45_58_119][1131] INFO: [Bootstrap/Ready] AdConfig: status=1, ad_spaces=2, top_on_placements=0, url=
+[2026-11-03 19_45_58_120][1132] INFO: [Bootstrap/Ready] Completed successfully (23 ms)
+[2026-11-03 19_45_58_120][1132] INFO: BootstrapPipeline: step 'Ready' completed successfully
+[2026-11-03 19_45_58_225][1133] INFO: BootstrapPipeline: executing step [16/16] 'FadeOutLoading'
+[2026-11-03 19_45_58_225][1133] INFO: [Bootstrap/FadeOutLoading] Starting...
+[2026-11-03 19_45_58_769][1156] INFO: [Bootstrap/FadeOutLoading] Completed successfully (545 ms)
+[2026-11-03 19_45_58_770][1156] INFO: BootstrapPipeline: step 'FadeOutLoading' completed successfully
+[2026-11-03 19_45_58_786][1157] INFO: BootstrapPipeline: completed successfully
+[2026-11-03 19_45_58_786][1157] INFO: BootstrapManager: pipeline completed successfully
+[2026-11-03 19_45_58_786][1157] INFO: BootstrapManager: using provided scriptFileName: SkillPresentationCheckMain.lua
+[2026-11-03 19_45_58_789][1157] INFO: Removed resource package shadercache_runtime
+[2026-11-03 19_45_58_808][1157] INFO: PackageFile::Open, /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak, 0
+[2026-11-03 19_45_59_209][1157] INFO: UZSD MemoryLess package opened: /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak, 32492 entries (7526 unique blocks), compressed 9195873 bytes, dict 65536 bytes
+[2026-11-03 19_45_59_209][1157] INFO: Added resource package shadercache_runtime
+[2026-11-03 19_45_59_302][1157] INFO: Loaded shader cache package: /resources/runtime/cli/Res/shadercache_runtime/shadercache_essl.pak
+[2026-11-03 19_45_59_312][1157] INFO: RuntimeRetargeterCache: Loaded 5 body types, 210 animation mappings
+[2026-11-03 19_45_59_314][1157] INFO: Loaded Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-11-03 19_45_59_315][1157][Script] IsNetworkMode:    false
+[2026-11-03 19_45_59_322][1157] INFO: Loaded Lua script urhox-libs/Engine/init.lua
+[2026-11-03 19_45_59_329][1157] INFO: Loaded Lua script urhox-libs/Engine/InputExtensions.lua
+[2026-11-03 19_45_59_340][1157] INFO: Loaded Lua script urhox-libs/Engine/ResourceCacheExtensions.lua
+[2026-11-03 19_45_59_343][1157] INFO: Loaded Lua script urhox-libs/Engine/i18n.lua
+[2026-11-03 19_45_59_355][1157] INFO: [i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-03 19_45_59_355][1157] INFO: [i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-03 19_45_59_355][1157] INFO: [i18n] GetLanguage: resolved='zh_CN'
+[2026-11-03 19_45_59_355][1157] INFO: [i18n] SetLanguage: actualLang='zh_CN' explicit=nil
+[2026-11-03 19_45_59_355][1157] INFO: [i18n] SetVariantTag: priority=2000, tag=''
+[2026-11-03 19_45_59_355][1157] INFO: SetVariantTag: priority=2000, tag=''
+[2026-11-03 19_45_59_363][1157] INFO: [i18n] init: lang='zh_CN' translations=true hooks=true
+[2026-11-03 19_45_59_364][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/InputAdaptor.lua
+[2026-11-03 19_45_59_364][1157][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-03 19_45_59_364][1157][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-03 19_45_59_364][1157][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-03 19_45_59_364][1157][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-03 19_45_59_365][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/Scene.lua
+[2026-11-03 19_45_59_366][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/SceneGuard.lua
+[2026-11-03 19_45_59_367][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UIGuard.lua
+[2026-11-03 19_45_59_368][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UserInfo.lua
+[2026-11-03 19_45_59_369][1157] INFO: Loaded Lua script LuaScripts/Utilities/Previews/TextModeration.lua
+[2026-11-03 19_45_59_369][1157][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-03 19_45_59_369][1157] INFO: Executed Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-11-03 19_45_59_369][1157] INFO: Loaded Lua script Validate/cloud_stub.lua
+[2026-11-03 19_45_59_369][1157] INFO: Executed Lua script Validate/cloud_stub.lua
+[2026-11-03 19_45_59_370][1157] INFO: Loaded Lua script Validate/servercloud_stub.lua
+[2026-11-03 19_45_59_370][1157] INFO: Executed Lua script Validate/servercloud_stub.lua
+[2026-11-03 19_45_59_382][1157] INFO: Loaded Lua script SkillPresentationCheckMain.lua
+[2026-11-03 19_45_59_384][1157] INFO: Loaded Lua script SkillPresentation.lua
+[2026-11-03 19_45_59_390][1157] INFO: Loaded Lua script HUD.lua
+[2026-11-03 19_45_59_391][1157] INFO: Loaded Lua script urhox-libs/UI/init.lua
+[2026-11-03 19_45_59_395][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UI.lua
+[2026-11-03 19_45_59_414][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Theme.lua
+[2026-11-03 19_45_59_415][1157] INFO: Loaded Lua script urhox-libs/UI/Core/ImageCache.lua
+[2026-11-03 19_45_59_416][1157] INFO: Loaded Lua script urhox-libs/UI/Core/PointerEvent.lua
+[2026-11-03 19_45_59_417][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Input.lua
+[2026-11-03 19_45_59_419][1157] INFO: Loaded Lua script urhox-libs/UI/Core/InputAdapter.lua
+[2026-11-03 19_45_59_420][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Gesture.lua
+[2026-11-03 19_45_59_421][1157] INFO: Loaded Lua script urhox-libs/UI/Core/GestureEvent.lua
+[2026-11-03 19_45_59_428][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Widget.lua
+[2026-11-03 19_45_59_441][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Style.lua
+[2026-11-03 19_45_59_443][1157] INFO: Loaded Lua script urhox-libs/UI/Core/Transition.lua
+[2026-11-03 19_45_59_457][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UILoader.lua
+[2026-11-03 19_45_59_457][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UISerializer.lua
+[2026-11-03 19_45_59_459][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/init.lua
+[2026-11-03 19_45_59_460][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Context.lua
+[2026-11-03 19_45_59_463][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/ColorPicker.lua
+[2026-11-03 19_45_59_466][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Schema.lua
+[2026-11-03 19_45_59_489][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Selection.lua
+[2026-11-03 19_45_59_491][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Overlay.lua
+[2026-11-03 19_45_59_493][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Report.lua
+[2026-11-03 19_45_59_495][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/QuickTweak.lua
+[2026-11-03 19_45_59_498][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/EditTool.lua
+[2026-11-03 19_45_59_515][1157] INFO: Loaded Lua script urhox-libs/UI/Core/UIInspector/Panel.lua
+[2026-11-03 19_45_59_529][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Panel.lua
+[2026-11-03 19_45_59_532][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Label.lua
+[2026-11-03 19_45_59_545][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Button.lua
+[2026-11-03 19_45_59_548][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/TextField.lua
+[2026-11-03 19_45_59_549][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/EditMenu.lua
+[2026-11-03 19_45_59_551][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Checkbox.lua
+[2026-11-03 19_45_59_553][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toggle.lua
+[2026-11-03 19_45_59_554][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Slider.lua
+[2026-11-03 19_45_59_556][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/ProgressBar.lua
+[2026-11-03 19_45_59_568][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/ScrollView.lua
+[2026-11-03 19_45_59_586][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Dropdown.lua
+[2026-11-03 19_45_59_592][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Modal.lua
+[2026-11-03 19_45_59_594][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Toast.lua
+[2026-11-03 19_45_59_597][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tabs.lua
+[2026-11-03 19_45_59_612][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tooltip.lua
+[2026-11-03 19_45_59_614][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Badge.lua
+[2026-11-03 19_45_59_616][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Avatar.lua
+[2026-11-03 19_45_59_618][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Card.lua
+[2026-11-03 19_45_59_620][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/List.lua
+[2026-11-03 19_45_59_626][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Divider.lua
+[2026-11-03 19_45_59_628][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Skeleton.lua
+[2026-11-03 19_45_59_630][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Chip.lua
+[2026-11-03 19_45_59_632][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Accordion.lua
+[2026-11-03 19_45_59_634][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Stepper.lua
+[2026-11-03 19_45_59_650][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Rating.lua
+[2026-11-03 19_45_59_652][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Breadcrumb.lua
+[2026-11-03 19_45_59_667][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Pagination.lua
+[2026-11-03 19_45_59_669][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Alert.lua
+[2026-11-03 19_45_59_671][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Timeline.lua
+[2026-11-03 19_45_59_674][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Menu.lua
+[2026-11-03 19_45_59_676][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Tree.lua
+[2026-11-03 19_45_59_679][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/DatePicker.lua
+[2026-11-03 19_45_59_706][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/TimePicker.lua
+[2026-11-03 19_45_59_709][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Table.lua
+[2026-11-03 19_45_59_711][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Carousel.lua
+[2026-11-03 19_45_59_713][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Drawer.lua
+[2026-11-03 19_45_59_715][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Popover.lua
+[2026-11-03 19_45_59_718][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Calendar.lua
+[2026-11-03 19_45_59_730][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/FileUpload.lua
+[2026-11-03 19_45_59_747][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/RichText.lua
+[2026-11-03 19_45_59_749][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/SafeAreaView.lua
+[2026-11-03 19_45_59_750][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/SimpleGrid.lua
+[2026-11-03 19_45_59_752][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Spine.lua
+[2026-11-03 19_45_59_753][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Svg.lua
+[2026-11-03 19_45_59_755][1157] INFO: Loaded Lua script urhox-libs/Sprite/SpriteSheet.lua
+[2026-11-03 19_45_59_757][1157] INFO: Loaded Lua script urhox-libs/UI/Widgets/Sprite.lua
+[2026-11-03 19_45_59_759][1157] INFO: Loaded Lua script urhox-libs/Sprite/SpriteAnimator.lua
+[2026-11-03 19_45_59_760][1157] INFO: Loaded Lua script urhox-libs/UI/Components/VirtualList.lua
+[2026-11-03 19_45_59_761][1157] INFO: Loaded Lua script urhox-libs/UI/Components/DragDropContext.lua
+[2026-11-03 19_45_59_763][1157] INFO: Loaded Lua script urhox-libs/UI/Components/ItemSlot.lua
+[2026-11-03 19_45_59_767][1157] INFO: Loaded Lua script urhox-libs/UI/Components/InventoryManager.lua
+[2026-11-03 19_45_59_768][1157] INFO: Loaded Lua script urhox-libs/UI/Components/SkillTree.lua
+[2026-11-03 19_45_59_790][1157] INFO: Loaded Lua script urhox-libs/UI/Components/ChatWindow.lua
+[2026-11-03 19_45_59_802][1157] INFO: Loaded Lua script urhox-libs/UI/Components/ItemTooltip.lua
+[2026-11-03 19_45_59_805][1157] INFO: Loaded Lua script RacingTheme.lua
+[2026-11-03 19_45_59_808][1157] INFO: Loaded Lua script Career/PhoneKit.lua
+[2026-11-03 19_45_59_811][1157] INFO: Loaded Lua script Catalog.lua
+[2026-11-03 19_45_59_814][1157] INFO: Loaded Lua script MixedVehicles.lua
+[2026-11-03 19_45_59_815][1157] INFO: Loaded Lua script MixedAssets.lua
+[2026-11-03 19_45_59_818][1157] INFO: Loaded Lua script Profile.lua
+[2026-11-03 19_45_59_820][1157] INFO: Loaded Lua script ControlSettings.lua
+[2026-11-03 19_45_59_822][1157] INFO: Loaded Lua script GaragePreview.lua
+[2026-11-03 19_45_59_825][1157] INFO: Loaded Lua script VehicleAssets.lua
+[2026-11-03 19_45_59_827][1157] INFO: Loaded Lua script VehicleFinish.lua
+[2026-11-03 19_45_59_829][1157] INFO: Loaded Lua script VehicleWheelRefinement.lua
+[2026-11-03 19_45_59_843][1157] INFO: Loaded Lua script MobileControls.lua
+[2026-11-03 19_45_59_855][1157] INFO: Loaded Lua script RaceInstruments.lua
+[2026-11-03 19_45_59_857][1157] INFO: Loaded Lua script RouteSelect.lua
+[2026-11-03 19_45_59_860][1157] INFO: Loaded Lua script Tracks.lua
+[2026-11-03 19_46_00_085][1157] INFO: Loaded Lua script RacingDialogs.lua
+[2026-11-03 19_46_00_088][1157] INFO: Loaded Lua script ControlEditor.lua
+[2026-11-03 19_46_00_091][1157] INFO: Loaded Lua script RaceVisuals.lua
+[2026-11-03 19_46_00_093][1157] INFO: Loaded Lua script Rider.lua
+[2026-11-03 19_46_00_095][1157] INFO: Loaded Lua script RideEffects.lua
+[2026-11-03 19_46_00_097][1157] INFO: Loaded Lua script Parts.lua
+[2026-11-03 19_46_00_100][1157] INFO: Loaded Lua script Bike.lua
+[2026-11-03 19_46_00_102][1157] INFO: Loaded Lua script RearMirrors.lua
+[2026-11-03 19_46_00_107][1157] INFO: Loaded Lua script Landscape.lua
+[2026-11-03 19_46_00_109][1157] INFO: Loaded Lua script ScenicTrees.lua
+[2026-11-03 19_46_00_110][1157] INFO: Loaded Lua script ScenicMesh.lua
+[2026-11-03 19_46_00_113][1157] INFO: Loaded Lua script TrackFeatures.lua
+[2026-11-03 19_46_01_016][1157][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-03 19_46_01_016][1157] INFO: Executed Lua script SkillPresentationCheckMain.lua
+[2026-11-03 19_46_01_328][1157][Script] [技能表现] 正式导弹生成 · 1米等比 · 使用仿真xyz/vxyz
+[2026-11-03 19_46_01_328][1157][Script] [技能表现] 正式导弹生成 · 1米等比 · 使用仿真xyz/vxyz
+[2026-11-03 19_46_01_356][1157][Script] [技能专项验收] PASS 正式D/N / 1m等比 / xyz+vxyz / 暂停冻结 / 释放 / 水母无占位 / HUD就绪发动无目标命中护盾失误冷却
+[2026-11-03 19_46_01_356][1157] INFO: UrhoXRuntime: Game started successfully
+[2026-11-03 19_46_01_359][1157] INFO: Shader::BeginLoad: <engine-res>/assets/DYHiabeZkC9TeN8InBKDJdKz-980cf882.glsl
+[2026-11-03 19_46_01_359][1157] INFO: Shader::EndLoad
+[2026-11-03 19_46_01_426][1157] INFO: Shader::BeginLoad: <engine-res>/assets/C0MrgZ4KRyMtqJBeQgWkhasm-c40ccbf2.glsl
+[2026-11-03 19_46_01_426][1157] INFO: Shader::EndLoad
+[2026-11-03 19_46_01_427][1157] INFO: Loaded vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z)
+[2026-11-03 19_46_01_428][1157] INFO: Loaded pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PERPIXEL RENDER_QUALITY=2 REVERSED_Z)
+[2026-11-03 19_46_01_618][1157] INFO: Shader::BeginLoad: <engine-res>/assets/HRNx6WwGUWaCcYTcVjtHCfXv-13514704.glsl
+[2026-11-03 19_46_01_618][1157] INFO: Shader::EndLoad
+[2026-11-03 19_46_01_618][1157] INFO: Loaded vertex shader BloomHDR(BRIGHT REVERSED_Z)
+[2026-11-03 19_46_01_618][1157] INFO: Loaded pixel shader BloomHDR(BRIGHT2 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_618][1157] INFO: Loaded pixel shader BloomHDR(BRIGHT4 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(BRIGHT8 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(BRIGHT16 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(BRIGHT32 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded vertex shader BloomHDR(COMBINE32 REVERSED_Z)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(COMBINE32 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded vertex shader BloomHDR(COMBINE16 REVERSED_Z)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(COMBINE16 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded vertex shader BloomHDR(COMBINE8 REVERSED_Z)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(COMBINE8 REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded vertex shader BloomHDR(COMBINE2 REVERSED_Z)
+[2026-11-03 19_46_01_619][1157] INFO: Loaded pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z TONEMAP_LUT)
+[2026-11-03 19_46_30_290][1282]INFO__VALIDATE_UPDATE__:false
+[2026-11-03 19_46_30_855][1282] INFO: DownloadManager: all tasks cancelled

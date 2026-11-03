@@ -82,7 +82,7 @@ function Pages:Constrain(widget)
     local record={widget=widget,dimensions={},enums={},padding={}}
     for i,spec in ipairs(DIMENSIONS) do record.dimensions[i]=spec[2](widget.node) end
     for i,spec in ipairs(ENUM_STYLES) do record.enums[i]=spec[1](widget.node) end
-    for _,edge in ipairs({YGEdgeTop,YGEdgeBottom}) do record.padding[edge]=YGNodeStyleGetPadding(widget.node,edge) end
+    for _,edge in ipairs({YGEdgeTop,YGEdgeBottom,YGEdgeRight}) do record.padding[edge]=YGNodeStyleGetPadding(widget.node,edge) end
     self.constraints[#self.constraints+1]=record
 end
 
@@ -336,7 +336,29 @@ function Pages:SplitText(widget,budget)
         local measured=UI.MeasureTextFit(text,{fontSize=size,minFontSize=size,
             fontFace=UI.Theme.FontFace(p.fontFamily,p.fontWeight),width=math.max(1,width-2),
             multiline=true,lineHeight=p.lineHeight or 1.35,letterSpacing=p.letterSpacing or 0})
-        return measured.height and measured.height>0 and math.ceil(measured.height)+vertical<=budget
+        -- Match Label.Render's two overhang correction passes. Glyph bounds at
+        -- the nominal width can include a wrap-triggering glyph; Render narrows
+        -- the break width, sometimes adding a complete extra line. Never infer
+        -- the continuation's height from nominal-width measurement alone.
+        local vg=UI.GetNVGContext()
+        nvgSave(vg);nvgResetTransform(vg)
+        nvgFontFace(vg,UI.Theme.FontFace(p.fontFamily,p.fontWeight));nvgFontSize(vg,size)
+        nvgTextLetterSpacing(vg,p.letterSpacing or 0);nvgTextLineHeight(vg,p.lineHeight or 1.35)
+        local align=p.textAlign=="center" and NVG_ALIGN_CENTER or p.textAlign=="right" and NVG_ALIGN_RIGHT or NVG_ALIGN_LEFT
+        nvgTextAlign(vg,align+NVG_ALIGN_TOP)
+        local breakWidth=math.max(1,width)
+        local rect=nvgTextBoxBounds(vg,0,0,breakWidth,text,nil,nil,false)
+        for _=1,2 do
+            if not rect then break end
+            local left,right=math.max(0,-rect[1]),math.max(0,rect[3]-breakWidth)
+            if left<=0 and right<=0 then break end
+            breakWidth=math.max(1,breakWidth-(left>0 and left+1 or 0)-(right>0 and right+1 or 0))
+            rect=nvgTextBoxBounds(vg,0,0,breakWidth,text,nil,nil,false)
+        end
+        nvgRestore(vg)
+        local actual=rect and rect[4]-rect[2] or 0
+        local height=math.ceil(math.max(measured.height or 0,actual))+vertical
+        return measured.height and measured.height>0 and actual>0 and height<=budget,height
     end
     local result={}
     local first=1
@@ -352,7 +374,9 @@ function Pages:SplitText(widget,budget)
         local props={}
         for key,value in pairs(p) do if type(key)=="string" then rawset(props,key,value) end end
         props.id=p.id and p.id.."-continuation-"..(#result+1) or nil
-        props.height=nil;props.minHeight=nil;props.maxHeight=nil
+        props.height=nil;props.maxHeight=nil
+        local _,renderHeight=fits(source:sub(positions[first],positions[last+1]-1))
+        props.minHeight=renderHeight
         -- A flex-basis=0 label may itself be a row column. After masking the
         -- source, its continuations must retain the measured column width, not
         -- become width=100% beside the same avatar/action context.
@@ -538,6 +562,22 @@ function Pages:Paginate()
             for _,child in ipairs(self:GetChildren()) do updateNatural(child) end
             UI.Layout()
         end
+        -- Yoga rounds each sibling's edges independently. Reserve physical
+        -- trailing space INSIDE rows before measuring/packing; otherwise the
+        -- last full button or flex label can cross its parent by >1 base px at
+        -- scale<1 although nominal widths sum correctly. This is real layout
+        -- space, restored with the other temporary constraints, not clipping.
+        local function protectRows(widget)
+            if widget.props.visible==false then return end
+            local direction=YGNodeStyleGetFlexDirection(widget.node)
+            if direction==YGFlexDirectionRow or direction==YGFlexDirectionRowReverse then
+                self:Constrain(widget)
+                local padding=YGNodeLayoutGetPadding(widget.node,YGEdgeRight)
+                YGNodeStyleSetPadding(widget.node,YGEdgeRight,padding+2/math.max(.1,UI.GetScale()))
+            end
+            for _,child in ipairs(widget:GetChildren()) do protectRows(child) end
+        end
+        for _,child in ipairs(self:GetChildren()) do protectRows(child);settleNatural(child) end
         local bounds=self:GetLayout()
         assert(bounds.w>0 and bounds.h>0,"手机分页需要先挂载到有界布局")
         -- Two physical pixels protect independent Yoga edge rounding.

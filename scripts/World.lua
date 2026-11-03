@@ -280,33 +280,26 @@ function World:BuildOptionalRamp(r)
         Landscape.Triangle(marks,roadPoint(s+3,r.lateral-.65,.035),
             roadPoint(s+5,r.lateral,.035),roadPoint(s+3,r.lateral+.65,.035))
     end
-    -- 两块路肩立式跳台图标牌（100m/45m前）；没有跨路门架、支柱或横梁。
+    -- 提前100/45m的完整正式警示牌；不再手写立柱/牌面/图标。
+    -- 绕行箭头保留为原路曲面上的玩法标线，指向中央安全车道而非伪造标牌模型。
     local side=r.lateral<0 and -1 or 1
     for _,offset in ipairs({-100,-45}) do
-        local p,yaw=Landscape.RoadPoint(r.s+offset)
+        local station=r.s+offset
+        local p,yaw=Landscape.RoadPoint(station)
         local angle=math.rad(yaw)
         local lateral=side*(Landscape.Roads[1].width+1.35)
         local x,z=p.x+math.cos(angle)*lateral,p.z-math.sin(angle)*lateral
         local y=Landscape.RoadHeight(x,z) or Landscape.TerrainHeight(x,z)
-        local right=V(math.cos(angle),0,-math.sin(angle))
-        local forward=V(math.sin(angle),0,math.cos(angle))
-        local center=V(x,y+2.6,z)
-        local function sign(u,v,front) return center+right*u+V(0,v,0)-forward*front end
-        P.Add(root,"飞坡预告路肩立柱","Box",m.rampBlack,V(x,y+1.2,z),V(.13,2.4,.13),Quaternion(0,yaw,0),false)
-        -- 双面黄底黑框；面向来车的黑色升坡+抛物线图标，不依赖小字可读性。
-        local tl,tr,bl,br=sign(-1.05,.82,0),sign(1.05,.82,0),sign(-1.05,-.82,0),sign(1.05,-.82,0)
-        quad(dark,bl,tl,br,tr);quad(dark,br,tr,bl,tl)
-        local l,t,rr,bm=-.94,.71,.94,-.71
-        quad(marks,sign(l,bm,.012),sign(l,t,.012),sign(rr,bm,.012),sign(rr,t,.012))
-        Landscape.Triangle(dark,sign(-.78,-.39,.024),sign(.05,.22,.024),sign(.05,-.39,.024))
-        for i=0,5 do
-            local u0,u1=.10+i*.115,.10+(i+1)*.115
-            local v0,v1=.28+.48*(i/6)-.66*(i/6)^2,.28+.48*((i+1)/6)-.66*((i+1)/6)^2
-            quad(dark,sign(u0,v0-.045,.025),sign(u0,v0+.045,.025),sign(u1,v1-.045,.025),sign(u1,v1+.045,.025))
-        end
-        -- 牌底箭头指向路中绕行通道，保留不飞跃的明确选择。
-        local direction=-side
-        Landscape.Triangle(dark,sign(-direction*.55,-.55,.025),sign(direction*.62,-.55,.025),sign(direction*.23,-.34,.025))
+        local warning=assert(CourseAssets.Add(root,"warning","正式飞坡预告_"..math.abs(offset).."m"),"正式飞坡警示牌未预载")
+        warning.position=V(x,y-.02,z)
+        warning.rotation=Quaternion(0,yaw,0)
+        -- 路肩内侧的贴地三角箭头向中央指示可绕行；不新增路面或碰撞体。
+        local edge=side*(Landscape.Roads[1].width-.45)
+        local inward=edge-side*1.45
+        Landscape.Triangle(marks,roadPoint(station-1,edge,.045),
+            roadPoint(station+1,edge,.045),roadPoint(station,inward,.045))
+        Landscape.Triangle(marks,roadPoint(station,inward,.045),
+            roadPoint(station+1,edge,.045),roadPoint(station-1,edge,.045))
     end
     g:GenerateTangents();g:Commit();marks:GenerateTangents();marks:Commit();dark:GenerateTangents();dark:Commit()
     g.drawDistance,marks.drawDistance,dark.drawDistance=520,520,520

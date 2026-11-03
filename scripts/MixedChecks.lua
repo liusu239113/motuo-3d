@@ -334,7 +334,8 @@ function Checks.Run()
     local function aiAir(id,lane,obstacles)
         local test={map=map,sim=Sim.New(map),length=map.RouteLength,elapsed=0,rng=4817,
             roadHalfWidth=8,corridor=8.8,options={mixed=true,quiet=true,world=obstacles},
-            aiObstacles={},traffic={},AdvanceGates=function() end}
+            aiObstacles={},traffic={},AdvanceGates=function() end,
+            Project=function(_,x,z) return map.NearestRoad(x,z) end}
         setmetatable(test,{__index=Race})
         AI.Build(test)
         local template=assert(race.racers[1])

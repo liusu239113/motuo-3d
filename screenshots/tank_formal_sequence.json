@@ -1,0 +1,98 @@
+{
+    "version": 2,
+    "script": "FormalVehicleCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 41675,
+    "frames_completed": 80,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1285.17ms (threshold: 500ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 512.508ms (threshold: 500ms)",
+                    "frame": 80
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 45,
+            "component_count": 24,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 25,
+            "components": 5,
+            "hash": 2111435457,
+            "frame_time_ms": 10235.81640625
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 25,
+            "components": 5,
+            "hash": 2111435457,
+            "frame_time_ms": 213.1959991455078
+        },
+        {
+            "frame": 40,
+            "phase": "run",
+            "nodes": 25,
+            "components": 5,
+            "hash": 2111435457,
+            "frame_time_ms": 332.9649963378906
+        },
+        {
+            "frame": 80,
+            "phase": "run",
+            "nodes": 25,
+            "components": 5,
+            "hash": 2111435457,
+            "frame_time_ms": 512.5079956054688
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 1285.166015625,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 2,
+        "StaticModel": 19,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 2,
+        "total_errors": 2
+    }
+}
