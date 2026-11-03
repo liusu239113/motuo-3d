@@ -8,9 +8,10 @@ local shared = {}
 
 ---@param source Model
 ---@param key string
----@param select fun(x:number,y:number,z:number):string
+---@param select fun(x:number,y:number,z:number,bounds:BoundingBox?):string
+---@param connected? boolean 按原位置连通件提供边界；只用于归属判断，不焊接或改写顶点
 ---@return table<string,MixedMeshPart>
-function M.Extract(source, key, select)
+function M.Extract(source, key, select, connected)
     if shared[key] then return shared[key] end
     assert(source.numGeometries == 1 and source.numMorphs == 0, "正式载具拆件需要静态单图集源网格")
     ---@type table<string,MixedMeshPart>
@@ -36,14 +37,68 @@ function M.Extract(source, key, select)
         end
         ---@type table<string,table>
         local groups = {}
+        ---@type integer[][]
+        local triangles = {}
+        ---@type table<number,integer>
+        local parents = {}
+        ---@type table<string,integer>
+        local welded = {}
+        ---@param index integer
+        ---@return integer
+        local function representative(index)
+            local root = index
+            while parents[root] ~= root do root = parents[root] end
+            while parents[index] ~= index do
+                local nextIndex = parents[index]
+                parents[index] = root
+                index = nextIndex
+            end
+            return root
+        end
+        ---@param index integer
+        ---@return integer
+        local function positionId(index)
+            local p = point(index)
+            local key = string.format("%.5f/%.5f/%.5f",p.x,p.y,p.z)
+            if not welded[key] then
+                local nextId = #parents + 1
+                parents[nextId] = nextId
+                welded[key] = nextId
+            end
+            return welded[key]
+        end
         indices:Seek(original.indexStart * ib.indexSize)
         for _ = 1, original.indexCount // 3 do
             local a = ib.indexSize == 2 and indices:ReadUShort() or indices:ReadUInt()
             local b = ib.indexSize == 2 and indices:ReadUShort() or indices:ReadUInt()
             local c = ib.indexSize == 2 and indices:ReadUShort() or indices:ReadUInt()
+            local triangle = {a,b,c}
+            if connected then
+                local ia,ib,ic = positionId(a),positionId(b),positionId(c)
+                parents[representative(ib)] = representative(ia)
+                parents[representative(ic)] = representative(ia)
+                triangle[4] = ia
+            end
+            triangles[#triangles+1] = triangle
+        end
+        ---@type table<number,BoundingBox>
+        local componentBounds = {}
+        if connected then
+            for _,triangle in ipairs(triangles) do
+                local component = representative(triangle[4])
+                triangle[4] = component
+                if not componentBounds[component] then componentBounds[component] = BoundingBox() end
+                local bounds = componentBounds[component]
+                bounds:Merge(point(triangle[1])); bounds:Merge(point(triangle[2])); bounds:Merge(point(triangle[3]))
+            end
+        end
+        for _,triangle in ipairs(triangles) do
+            local a,b,c = triangle[1],triangle[2],triangle[3]
             local pa, pb, pc = point(a), point(b), point(c)
             local center = (pa + pb + pc) / 3
-            local name = select(center.x, center.y, center.z)
+            local component = triangle[4] or 0
+            local bounds = connected and componentBounds[component] or nil
+            local name = select(center.x, center.y, center.z, bounds)
             if not groups[name] then groups[name] = {data=VectorBuffer(), count=0, bounds=BoundingBox()} end
             local group = groups[name]
             group.data:WriteUInt(a); group.data:WriteUInt(b); group.data:WriteUInt(c)

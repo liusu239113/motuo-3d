@@ -8,6 +8,7 @@ function Start()
     local id, pose, active = "helicopter", 0, false
     for _,arg in ipairs(GetArguments()) do
         if arg=="-formal-skill" then active=true end
+        if arg=="-formal-no-instancing" then renderer.dynamicInstancing=false end
         id = arg:match("^%-formal%-vehicle=(.+)$") or id
         pose = tonumber(arg:match("^%-pose%-time=(.+)$")) or pose
     end

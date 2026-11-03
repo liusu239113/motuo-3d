@@ -46,11 +46,16 @@ end
 -- 没有驾驶员的封闭座舱不伪造几何小人；保留调用兼容，后续接正式驾驶员骨骼。
 function M.SetRiderColor(_, _) return false end
 
-local function helicopterPart(x,y,z)
+---@param bounds BoundingBox?
+local function helicopterPart(x,y,z,bounds)
     -- 四片原始桨叶有下垂，不能只按桨毂高度切，否则会留下静止的桨尖。
     local radius=math.sqrt((x-.023)^2+(z+.004)^2)
     if y<.194 and ((y>.080 and radius>.10) or y>.140) then return "Rotor" end
-    if math.abs(z)>.112 and x>-.14 and x<.19 and y<-.075 then return "WeaponPods" end
+    -- 只移动完整、独立的发射筒连通件。旧中心阈值误带机身侧面和半只轮胎，
+    -- 这里按整件边界排除机身、机翼挂架、起落架和跨左右的连接杆。
+    if bounds and bounds.min.x>-.06 and bounds.max.x<.14
+        and bounds.min.y>-.235 and bounds.max.y<-.14
+        and (bounds.max.z<-.15 or bounds.min.z>.15) then return "WeaponPods" end
     return "Body"
 end
 
@@ -70,7 +75,7 @@ function M.Build(parent, id)
     canonical.position = V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
     local mat = material(c)
     if id == "helicopter" then
-        local parts = require("MixedMeshParts").Extract(source,id,helicopterPart)
+        local parts = require("MixedMeshParts").Extract(source,id,helicopterPart,true)
         assert(parts.Rotor and parts.Body,"正式直升机必须有独立原始桨叶")
         for name,part in pairs(parts) do
             local pivot = canonical:CreateChild(name)
