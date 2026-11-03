@@ -1,4 +1,4 @@
--- 真实World机关专项验收；只复制判定记录并创建Lua夹具，不读取/写入存档。
+-- 轻量程序化机关专项验收；只复制判定记录并创建Lua夹具，不读取/写入存档。
 -- 接入：require("CourseWorldChecks").Run(world)，须在World构建完成、正式发车前调用。
 local Assets=require("CourseAssets")
 local Rules=require("MixedRace")
@@ -91,18 +91,22 @@ function M.RunInitialization()
         end
         local chainCount=0
         for _,swing in ipairs(fixture.mixedSwings) do
+            assert(#swing.parts==2,"[轻量机关初始化] 每锤必须保留摆球和单根可见连杆")
             for _,part in ipairs(swing.parts) do
                 local record=part.record
                 assert(record.previousX==record.x and record.previousY==record.y and record.previousZ==record.z,
-                    "[正式机关初始化] previous必须初始化为当前真实坐标")
-                if tostring(record.id):find("_swingchain",1,true) then chainCount=chainCount+1 end
+                    "[轻量机关初始化] previous必须初始化为当前坐标")
+                if tostring(record.id):find("_swingchain",1,true) then
+                    chainCount=chainCount+1
+                    assert(record.node and record.node:GetChild("连杆"),"[轻量机关初始化] 连杆判定必须有对应可见几何")
+                end
             end
         end
-        assert(chainCount>=12,"[正式机关初始化] 不能删除动态链段规避初始化回归")
+        assert(chainCount==#fixture.mixedSwings,"[轻量机关初始化] 每锤必须恰有一根连杆判定")
     end)
     scene:Dispose()
     assert(ok,tostring(message))
-    print(string.format("[正式机关初始化] PASS records=%d / 生产Build、真资源、动态链段先bounds后投影",count))
+    print(string.format("[轻量机关初始化] PASS records=%d / 生产Build、摆球与单连杆先bounds后投影",count))
     return count
 end
 
@@ -120,30 +124,39 @@ function M.Run(world)
         checks=checks+1
     end
     check(#source>0,"真实赛道机关不可为空")
-    ---@type table<Model, boolean>
-    local allowed={}
-    for _,spec in pairs(Assets.Assets) do
-        local model=assert(cache:GetResource("Model",spec.model),"正式机关源MDL不可载入 "..spec.model)
-        allowed[model]=true
-    end
-    -- 仅白名单Course模型检查D/N：这些材质已从生成bundle/官方XML逐一核实，
-    -- 不对场景树、蕨等无N的原生资产施加错误条件。
+    -- 新契约：共享低面数网格、共享无贴图材质；关闭机关阴影。
     ---@type table<Node, boolean>
     local checkedNodes={}
+    ---@type table<Model, boolean>
+    local sharedModels={}
+    ---@type table<Material, boolean>
+    local sharedMaterials={}
+    local drawsCount,triangles=0,0
+    ---@type table<StaticModel, boolean>
+    local checkedDraws={}
     local function formalNode(node)
         if checkedNodes[node] then return end
         checkedNodes[node]=true
         local draws=node:GetComponents("StaticModel",true)
-        check(#draws>0,"碰撞记录必须挂接可见正式MDL："..node.name)
+        check(#draws>0,"碰撞记录必须挂接可见程序化网格："..node.name)
         for _,draw in ipairs(draws) do
+            if not checkedDraws[draw] then
+            checkedDraws[draw]=true
             local model=draw:GetModel()
-            check(model and allowed[model],"禁止未知模型或代码占位："..node.name)
+            check(model and Assets.IsSharedModel(model),"机关必须使用共享轻量网格："..node.name)
+            sharedModels[model]=true
             local scale=draw.node.scale
-            check(math.abs(scale.x-scale.y)<1e-5 and math.abs(scale.y-scale.z)<1e-5,"正式MDL必须等比缩放")
+            check(scale.x>0 and scale.y>0 and scale.z>0,"网格缩放必须为正")
+            check(not draw.castShadows and draw.drawDistance<=210,"机关阴影与可视距离超出预算")
+            drawsCount=drawsCount+1
             for slot=0,model.numGeometries-1 do
                 local material=draw:GetMaterial(slot)
-                check(material and material:GetTexture(TU_DIFFUSE) and material:GetTexture(TU_NORMAL),
-                    "Course正式材质槽必须保留已核实的D/N："..node.name.." slot="..slot)
+                check(material and not material:GetTexture(TU_DIFFUSE) and not material:GetTexture(TU_NORMAL),
+                    "轻量机关不得加载D/N贴图："..node.name)
+                sharedMaterials[material]=true
+                local geometry=assert(model:GetGeometry(slot,0))
+                triangles=triangles+geometry.indexCount/3
+            end
             end
         end
     end
@@ -223,7 +236,17 @@ function M.Run(world)
         check(record.x==before.x and record.y==before.y and record.z==before.z and record.active==before.active
             and record.node==before.node and record.node.enabled==before.enabled,"隔离验收不得修改真实World")
     end
-    print(string.format("[正式机关验收] PASS checks=%d owners=%d supports=%d air=%d coins=%d safe=%d doors=%d / 真实World记录、正式MDL、D/N、等比、双侧扫掠、门洞与柱体",
+    -- 也检查预警牌，确保整条机关资源链没有残留实模、贴图或阴影。
+    formalNode(world.mixedRoot)
+    local modelCount,materialCount=0,0
+    for _ in pairs(sharedModels) do modelCount=modelCount+1 end
+    for _ in pairs(sharedMaterials) do materialCount=materialCount+1 end
+    check(modelCount<=4 and materialCount<=5,"共享网格/材质数量超过预算")
+    check(drawsCount<=owners*9+coinCount,"机关可渲染部件数量超过预算")
+    check(triangles<=owners*400+coinCount*40,"机关三角面超过预算")
+    print(string.format("[轻量机关预算] draws=%d triangles=%d sharedModels=%d materials=%d shadows=0",
+        drawsCount,triangles,modelCount,materialCount))
+    print(string.format("[轻量机关验收] PASS checks=%d owners=%d supports=%d air=%d coins=%d safe=%d doors=%d / 程序化网格、共享材质、双侧扫掠、门洞与柱体",
         checks,owners,supports,airCount,coinCount,safeCount,doorCount))
     return {checks=checks,owners=owners,supports=supports,air=airCount,coins=coinCount,safe=safeCount,doors=doorCount}
 end

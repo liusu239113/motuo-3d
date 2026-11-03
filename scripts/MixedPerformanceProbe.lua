@@ -141,7 +141,7 @@ function Start()
     end)
     print("[竞速CPU] COMPLETE / CPU对照，不是手机FPS或GPU计时")
     checkSpatial(world)
-    require("CourseWorldChecks").RunInitialization()
+    require("CourseWorldChecks").Run(world)
     local Assets=require("VehicleAssets")
     local ids=require("Catalog").AvailableIds()
     local stages=0

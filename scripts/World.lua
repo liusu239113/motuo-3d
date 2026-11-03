@@ -44,7 +44,7 @@ end
 mergeResources(Landscape.Resources, Landscape.ResourceTypes)
 mergeResources(Decor.Resources, Decor.ResourceTypes)
 mergeResources(Props.Resources, Props.ResourceTypes)
--- CourseAssets由赛事资产模块提供；统一预载其模型/材质/贴图，禁止静默遗漏或回退拼模。
+-- 轻量程序化机关仅预载共享纯色Technique，不再预载高面数机关模型及贴图。
 mergeResources(CourseAssets.Resources, CourseAssets.ResourceTypes)
 mergeResources(Assets.ResourcesFor(Assets.TrafficIds), Assets.ResourceTypes)
 World.BuildStages = {}
@@ -280,7 +280,7 @@ function World:BuildOptionalRamp(r)
         Landscape.Triangle(marks,roadPoint(s+3,r.lateral-.65,.035),
             roadPoint(s+5,r.lateral,.035),roadPoint(s+3,r.lateral+.65,.035))
     end
-    -- 提前100/45m的完整正式警示牌；不再手写立柱/牌面/图标。
+    -- 提前100/45m使用共享轻量警示牌，避免重载正式机关模型。
     -- 绕行箭头保留为原路曲面上的玩法标线，指向中央安全车道而非伪造标牌模型。
     local side=r.lateral<0 and -1 or 1
     for _,offset in ipairs({-100,-45}) do

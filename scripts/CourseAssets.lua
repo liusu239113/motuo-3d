@@ -1,144 +1,109 @@
--- 正式赛道资源：只加载资源库MDL/原配贴图，不创建程序化几何或占位回退。
--- 原始尺寸已用 UrhoXCLI model-info 校验；所有缩放均等比，判定反向消费模型尺寸。
-local M = {Resources = {}, ResourceTypes = {}}
-
----@class CourseAssetSpec
----@field model string
----@field materials string[]
----@field height? number
----@field width? number
----@field rotation? number
----@field textures? string[]
-
----@type table<string, CourseAssetSpec>
-M.Assets = {
-    cone = {
-        model="model/b1a9c6c1-17ff-570b-b138-cc3c56687aca/Meshes/405e39c58b744fb880a9a57077c20f52.mdl",
-        materials={"model/b1a9c6c1-17ff-570b-b138-cc3c56687aca/Materials/405e39c58b744fb880a9a57077c20f52_00_tripo_material_647d9e83-f79f-4971-b5da-638a8b2a8a5c.xml"},
-        height=1,
-        textures={
-            "model/b1a9c6c1-17ff-570b-b138-cc3c56687aca/Textures/405e39c58b744fb880a9a57077c20f52_00_D.jpg",
-            "model/b1a9c6c1-17ff-570b-b138-cc3c56687aca/Textures/405e39c58b744fb880a9a57077c20f52_00_N.jpg",
-        },
-    },
-    barrier = {
-        model="model/e4605b5e-8039-5227-b526-b156e6079809/Meshes/38f72a8b1652444c9fa5d6f56662864d.mdl",
-        materials={"model/e4605b5e-8039-5227-b526-b156e6079809/Materials/38f72a8b1652444c9fa5d6f56662864d_00_tripo_material_b1723786-54a8-471c-8e54-5ca76e5b6c83.xml"},
-        width=1.8,
-        textures={
-            "model/e4605b5e-8039-5227-b526-b156e6079809/Textures/38f72a8b1652444c9fa5d6f56662864d_00_D.jpg",
-            "model/e4605b5e-8039-5227-b526-b156e6079809/Textures/38f72a8b1652444c9fa5d6f56662864d_00_N.jpg",
-        },
-    },
-    barrel = {
-        model="model/01d791df-3e8a-569b-815a-98f265362dfd/Meshes/16ba202f8524403ea1039454396e80e9.mdl",
-        materials={"model/01d791df-3e8a-569b-815a-98f265362dfd/Materials/16ba202f8524403ea1039454396e80e9_00_tripo_material_8a4d5cd8-f45e-4766-9ba7-bab9f4b55722.xml"},
-        height=1.1,
-        textures={
-            "model/01d791df-3e8a-569b-815a-98f265362dfd/Textures/16ba202f8524403ea1039454396e80e9_00_D.jpg",
-            "model/01d791df-3e8a-569b-815a-98f265362dfd/Textures/16ba202f8524403ea1039454396e80e9_00_N.jpg",
-        },
-    },
-    crate = {model="uuid://AcrtETrXQRNdAJwJjHFTC0zj",materials={"uuid://BZMgKQ65FvgNzgqauakPtC3i"},height=1},
-    pendulum = {model="uuid://D7n_6V_rtPwQLt40dZNjA0kR",materials={"uuid://HpOt4UebshHMGRAj_4H_4myd","uuid://A5geaR2uRsC4dxLIpCrZRqjS"}},
-    support = {model="uuid://FBr3IdQFvT3mFeVmvX9okC2x",materials={"uuid://HrIh2dtEAc443DDrUiLRBIp_","uuid://D9ZkWSeDQ4blSbR7bs3DCeaH"}},
-    chain = {model="uuid://DsZVQVzbVqTJ3CzCGGxMCfC2",materials={"uuid://HpOt4UebshHMGRAj_4H_4myd"}},
-    warning = {model="uuid://GIhnKbxaG5H188E6gfht6oDq",materials={"uuid://ABu8UQaYGrrdXFY-GKPOKtVC"},height=.95},
-    coin = {model="uuid://HbNZMUix9tNCcOnf8cw8DCxx",materials={"uuid://G5K1oVd2mzbIBfDC8nalwrwk"},width=.6,rotation=90},
-}
-
-local function resource(path, kind)
-    if not M.ResourceTypes[path] then
-        M.Resources[#M.Resources+1]=path
-        M.ResourceTypes[path]=kind
-    end
-end
-resource("Techniques/PBR/PBRDiffNormal.xml","Technique")
-resource("Techniques/PBR/PBRDiffNormalAlpha.xml","Technique")
-for _, key in ipairs({"cone","barrier","barrel","crate","pendulum","support","chain","warning","coin"}) do
-    local spec=M.Assets[key]
-    resource(spec.model,"Model")
-    for _, path in ipairs(spec.materials) do resource(path,"Material") end
-    for _, path in ipairs(spec.textures or {}) do resource(path,"Texture2D") end
-end
--- 官方材质原配D/N明确预热；其余spec/AO/Technique仍沿官方资源引用链加载。
-for _, path in ipairs({
-    "uuid://GHxCSX91PxRvA5fO0oSDme8W","uuid://HVPhAeYdnCxj_G8YNUgrAwuk",
-    "uuid://Ah-0eZdZdDk15PS8nvLpabiI","uuid://AyG9CVoSLiq8UXLR09jQLU9u",
-    "uuid://Choa0eyJ9qWoEmbo5gq7SAN5","uuid://Cu8rSQwwWP8QgDuJwC_rAtIq",
-    "uuid://Fmhd6fx_TS3yGCsWCxlHEJrH","uuid://EriCsffMirBGZfqhneJ6ue_g",
-}) do resource(path,"Texture2D") end
-
--- 老官方PBR_PackedNormal/GrayLevel族在bgfx中存在VS/PS TEXCOORD不匹配。
--- 仅克隆本模块使用的官方材质，保留原D/N、alpha、cull、UV和各材质槽；
--- 替换整个Technique列表，不修改cache共享材质，也不将错误隐藏为无贴图回退。
+-- 轻量赛道资源：基础网格和纯色材质共享，障碍不加载外部MDL或D/N贴图。
+-- 基于Parts及原程序化赛道实现；每种网格只生成一次，所有机关关闭投影阴影。
+local P=require("Parts")
+local V=Vector3
+local M={Resources={"Techniques/PBR/PBRNoTexture.xml"},
+    ResourceTypes={["Techniques/PBR/PBRNoTexture.xml"]="Technique"}}
+---@type table<string, Model>
+local models={}
 ---@type table<string, Material>
-local compatibleMaterials={}
----@param path string
----@return Material?
-local function loadMaterial(path)
-    local original=cache:GetResource("Material",path)
-    if not original then return nil end
-    if not path:match("^uuid://") then return original end
-    if compatibleMaterials[path] then return compatibleMaterials[path] end
-    local diffuse=original:GetTexture(TU_DIFFUSE)
-    local normal=original:GetTexture(TU_NORMAL)
-    if not diffuse or not normal then
-        print("[CourseAssets] 官方材质D/N未就绪 "..path)
-        return nil
+local materials={}
+local colors={orange={.95,.30,.035},dark={.055,.065,.075},yellow={.98,.76,.08},
+    steel={.32,.39,.44},wood={.43,.24,.10}}
+
+local function prepare()
+    if models.box then return end
+    models.box=BoxGeometry(1,1,1):ToModel()
+    models.cylinder=CylinderGeometry(.5,.5,1,10):ToModel()
+    models.sphere=SphereGeometry(.5,12,8):ToModel()
+    models.cone=ConeGeometry(.5,1,12):ToModel()
+    for key,rgb in pairs(colors) do
+        materials[key]=P.Material(rgb[1],rgb[2],rgb[3],.8,key=="steel" and .2 or 0)
     end
-    local color=original:GetShaderParameter("MatDiffColor")
-    local alpha=not color:IsEmpty() and color:GetColor().a or 1
-    local techniquePath=alpha<.999 and "Techniques/PBR/PBRDiffNormalAlpha.xml" or "Techniques/PBR/PBRDiffNormal.xml"
-    local technique=cache:GetResource("Technique",techniquePath)
-    if not technique then print("[CourseAssets] 兼容Technique未就绪 "..techniquePath);return nil end
-    local material=original:Clone()
-    material:SetNumTechniques(1)
-    material:SetTechnique(0,technique)
-    -- 此清单仅含实测不透明的木箱/金属/金币/警示牌，不是通用alpha-mask材质迁移。
-    -- 老官方Technique均指定PACKEDNORMAL；保留RG重建Z，不能按普通RGB法线解码。
-    -- 实渲染单/双实例probe确认VS/PS必须成对，否则bgfx varying链接失败。
-    material:SetVertexShaderDefines("PACKEDNORMAL")
-    material:SetPixelShaderDefines("PACKEDNORMAL")
-    material:SetTexture(TU_DIFFUSE,diffuse)
-    material:SetTexture(TU_NORMAL,normal)
-    compatibleMaterials[path]=material
-    print("[CourseAssets] 官方材质兼容克隆 "..path.." -> "..techniquePath)
-    return material
+    print("[轻量机关] 共享网格4种 / 材质5种 / 外部模型与贴图0 / 投影阴影关闭")
+end
+
+---@param parent Node
+---@param name string
+---@param shape string
+---@param color string
+---@param position Vector3
+---@param size Vector3
+---@param rotation? Quaternion
+local function add(parent,name,shape,color,position,size,rotation)
+    local model=assert(models[shape])
+    local bounds=model.boundingBox
+    local source=bounds.size
+    local scale=V(size.x/source.x,size.y/source.y,size.z/source.z)
+    local center=bounds.center
+    local offset=V(center.x*scale.x,center.y*scale.y,center.z*scale.z)
+    local node=P.Add(parent,name,model,assert(materials[color]),
+        position-(rotation and rotation*offset or offset),scale,rotation,false)
+    local draw=assert(node:GetComponent("StaticModel"))
+    draw.drawDistance=210
+    draw.shadowDistance=0
+    return node
 end
 
 ---@param parent Node
 ---@param key string
 ---@param name string
 ---@param scaleOverride? number
----@return Node?, Vector3?, number?
+---@return Node?, Vector3?
 function M.Add(parent,key,name,scaleOverride)
-    local spec=M.Assets[key]
-    if not spec then print("[CourseAssets] 未知正式资源 "..key);return nil end
-    local model=cache:GetResource("Model",spec.model)
-    if not model then print("[CourseAssets] 正式模型未就绪 "..spec.model);return nil end
-    ---@type Material[]
-    local materials={}
-    for _,path in ipairs(spec.materials) do
-        local mat=loadMaterial(path)
-        if not mat then print("[CourseAssets] 正式材质未就绪 "..path);return nil end
-        materials[#materials+1]=mat
-    end
-    local rotation=Quaternion(spec.rotation or 0,0,0)
-    local box=model.boundingBox:Transformed(rotation:RotationMatrix())
-    local size,center=box.size,box.center
-    local scale=scaleOverride or (spec.height and spec.height/size.y) or (spec.width and spec.width/size.x) or 1
+    prepare()
     local node=parent:CreateChild(name)
-    local mesh=node:CreateChild("FormalMesh")
-    mesh.rotation=rotation
-    mesh.scale=Vector3(scale,scale,scale)
-    mesh.position=Vector3(-center.x*scale,-box.min.y*scale,-center.z*scale)
-    local drawable=mesh:CreateComponent("StaticModel")
-    drawable.model=model
-    for i,mat in ipairs(materials) do drawable:SetMaterial(i-1,mat) end
-    drawable.castShadows=true
-    drawable.drawDistance=280
-    drawable.shadowDistance=65
-    return node,size*scale,scale
+    local size=V(1,1,1)
+    if key=="cone" then
+        add(node,"锥体","cone","orange",V(0,.55,0),V(.9,.9,.9))
+        add(node,"底座","box","dark",V(0,.05,0),V(1.1,.1,1.1))
+        size=V(1.1,1,1.1)
+    elseif key=="barrel" then
+        add(node,"桶体","cylinder","orange",V(0,.55,0),V(1,1.1,1))
+        add(node,"桶箍","cylinder","steel",V(0,.55,0),V(1.04,.12,1.04))
+        size=V(1.04,1.1,1.04)
+    elseif key=="crate" then
+        add(node,"木箱","box","wood",V(0,.5,0),V(1.3,1,1.2))
+        add(node,"束带","box","yellow",V(0,.5,0),V(.14,1.01,1.21))
+        size=V(1.3,1.01,1.21)
+    elseif key=="barrier" or key=="airbarrier" then
+        size=key=="airbarrier" and V(2.6,1.684149,1.694326) or V(1.81,1.1,.46)
+        add(node,"挡板","box","orange",V(0,size.y*.5,0),size)
+        add(node,"警示带","box","yellow",V(0,size.y*.5,0),V(size.x+.01,.22,size.z+.01))
+        size=V(size.x+.01,size.y,size.z+.01)
+    elseif key=="support" then
+        for _,side in ipairs({-1,1}) do
+            add(node,"支柱","box","yellow",V(side*1.75,2.6,0),V(.16,5.2,.16))
+        end
+        add(node,"横梁","box","steel",V(0,5.2,0),V(3.66,.16,.16))
+        size=V(3.66,5.28,.16)
+    elseif key=="pendulum" then
+        -- 挂点即局部原点；球和单根连杆随同一个节点旋转。
+        add(node,"摆球","sphere","orange",V(0,-4.2,0),V(1.25,1.25,1.25))
+        add(node,"连杆","box","steel",V(0,-1.7875,0),V(.08,3.575,.08))
+        size=V(1.25,4.825,1.25)
+    elseif key=="chain" then
+        add(node,"悬杆","box","steel",V(0,.5,0),V(.08,1,.08))
+        size=V(.08,1,.08)
+    elseif key=="warning" then
+        add(node,"警示柱","box","dark",V(0,.45,0),V(.08,.9,.08))
+        add(node,"警示牌","box","yellow",V(0,.8,0),V(.65,.4,.06))
+        size=V(.65,1,.08)
+    elseif key=="coin" then
+        add(node,"金币","cylinder","yellow",V(0,.3,0),V(.6,.1,.6),Quaternion(90,0,0))
+        size=V(.6,.6,.1)
+    else
+        node:Dispose()
+        error("未知轻量机关："..key)
+    end
+    if scaleOverride then node:SetScale(scaleOverride) end
+    return node,size*(scaleOverride or 1)
+end
+
+---@param model Model
+---@return boolean
+function M.IsSharedModel(model)
+    for _,shared in pairs(models) do if model==shared then return true end end
+    return false
 end
 return M
