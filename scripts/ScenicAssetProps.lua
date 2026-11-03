@@ -78,6 +78,13 @@ function Props.MaterialFor(path)
     local techniquePath = mode == "diffuseAlpha" and "Techniques/Diff.xml"
         or mode == "packedNormalAlpha" and "Techniques/DiffNormal.xml" or "Techniques/PBR/PBRDiffNormal.xml"
     local technique = assert(cache:GetResource("Technique", techniquePath), "环境兼容Technique未预载：" .. techniquePath)
+    if mode == "packedNormalAlpha" then
+        -- 原DiffNormal的base只给PS NORMALMAP；成对补上VS宏，避免本次要修的varying不匹配。
+        local paired = technique:Clone()
+        local base = assert(paired:GetPass("base"))
+        base:SetVertexShaderDefines(base.vertexShaderDefines .. " NORMALMAP")
+        technique = paired
+    end
     local material = original:Clone()
     -- 不改cache原材质。Clone保留全部原纹理/UV/参数/cull/shadowcull/A2C，所有实例复用此克隆。
     material:SetNumTechniques(1)
