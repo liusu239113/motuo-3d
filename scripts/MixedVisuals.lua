@@ -74,9 +74,30 @@ function M.Build(parent, id)
     canonical:SetScale(scale)
     canonical.position = V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
     local mat = material(c)
-    if id == "helicopter" then
-        local parts = require("MixedMeshParts").Extract(source,id,helicopterPart,true)
-        assert(parts.Rotor and parts.Body,"正式直升机必须有独立原始桨叶")
+    if id == "helicopter" or id == "ebike" then
+        local offset=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)
+        ---@param p Vector3
+        ---@return Vector3
+        local function toFrame(p) return (rotation*p+offset)*scale end
+        ---@param _ number
+        ---@param _ number
+        ---@param _ number
+        ---@param piece BoundingBox?
+        ---@return string
+        local function ebikePart(_,_,_,piece)
+            -- 实测前轮心z=.792/y=.265，后轮心z=-.704/y=.262米。
+            -- 整个连通件必须落在轮域内；挡泥板、减震、排气和跨车架件保持静止。
+            if piece and piece.min.x>-.115 and piece.max.x<.115 and piece.max.y<.54 then
+                if piece.min.z>.52 and piece.max.z<1.06 then return "FrontWheel" end
+                if piece.min.z>-.98 and piece.max.z<-.43 then return "RearWheel" end
+            end
+            return "Body"
+        end
+        local selector=id=="helicopter" and helicopterPart or ebikePart
+        local parts = require("MixedMeshParts").Extract(source,id,selector,true,id=="ebike" and toFrame or nil)
+        assert(parts.Body,"正式载具必须保留原始车体")
+        if id=="helicopter" then assert(parts.Rotor,"正式直升机必须有独立原始桨叶") end
+        if id=="ebike" then assert(parts.FrontWheel and parts.RearWheel,"正式电动车必须有独立原始车轮") end
         for name,part in pairs(parts) do
             local pivot = canonical:CreateChild(name)
             local mesh = pivot:CreateChild("OriginalMesh")
@@ -84,6 +105,11 @@ function M.Build(parent, id)
                 local center = V(.023,.162,-.004)
                 pivot.position = center
                 mesh.position = -center
+            elseif name=="FrontWheel" or name=="RearWheel" then
+                local center=rotation:Inverse()*(V(0,name=="FrontWheel" and .265 or .262,
+                    name=="FrontWheel" and .792 or -.704)/scale-offset)
+                pivot.position=center
+                mesh.position=-center
             end
             local draw = mesh:CreateComponent("StaticModel")
             draw:SetModel(part.model)
@@ -108,6 +134,16 @@ function M.Build(parent, id)
 end
 
 function M.Animate(root, id, time, state)
+    if id=="ebike" then
+        local distance=state and state.distance or 0
+        local angle=distance/.264*180/math.pi%360
+        local axis=Quaternion(0,Assets.Vehicles.ebike.rotation,0):Inverse()*V.RIGHT
+        for _,name in ipairs({"FrontWheel","RearWheel"}) do
+            local wheel=root:GetChild(name,true)
+            if wheel then wheel.rotation=Quaternion(angle,axis) end
+        end
+        return
+    end
     if id ~= "helicopter" then return end
     local rotor = root:GetChild("Rotor",true)
     if rotor then

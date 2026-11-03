@@ -10,8 +10,9 @@ local shared = {}
 ---@param key string
 ---@param select fun(x:number,y:number,z:number,bounds:BoundingBox?):string
 ---@param connected? boolean 按原位置连通件提供边界；只用于归属判断，不焊接或改写顶点
+---@param toFrame? fun(point:Vector3):Vector3 连通件边界的测量坐标系，不修改渲染顶点
 ---@return table<string,MixedMeshPart>
-function M.Extract(source, key, select, connected)
+function M.Extract(source, key, select, connected, toFrame)
     if shared[key] then return shared[key] end
     assert(source.numGeometries == 1 and source.numMorphs == 0, "正式载具拆件需要静态单图集源网格")
     ---@type table<string,MixedMeshPart>
@@ -89,7 +90,10 @@ function M.Extract(source, key, select, connected)
                 triangle[4] = component
                 if not componentBounds[component] then componentBounds[component] = BoundingBox() end
                 local bounds = componentBounds[component]
-                bounds:Merge(point(triangle[1])); bounds:Merge(point(triangle[2])); bounds:Merge(point(triangle[3]))
+                for corner=1,3 do
+                    local p=point(triangle[corner])
+                    bounds:Merge(toFrame and toFrame(p) or p)
+                end
             end
         end
         for _,triangle in ipairs(triangles) do
@@ -122,8 +126,14 @@ function M.Extract(source, key, select, connected)
             assert(geometry:SetDrawRange(TRIANGLE_LIST, 0, group.count, 0, vb.vertexCount))
             geometry.lodDistance = original.lodDistance
             assert(part.model:SetGeometry(0, lod, geometry))
-            part.model.boundingBox = source.boundingBox
-            part.model:SetGeometryCenter(0, source:GetGeometryCenter(0))
+            if lod == 0 then
+                part.model.boundingBox = group.bounds
+            else
+                local bounds = part.model.boundingBox
+                bounds:Merge(group.bounds)
+                part.model.boundingBox = bounds
+            end
+            part.model:SetGeometryCenter(0, group.bounds.center)
             part.buffers[#part.buffers+1] = buffer
             part.geometry[#part.geometry+1] = geometry
             total = total + group.count

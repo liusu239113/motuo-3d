@@ -5,12 +5,13 @@ local Visual = require("MixedVisuals")
 local scene_ = nil
 
 function Start()
-    local id, pose, active = "helicopter", 0, false
+    local id, pose, active, distance = "helicopter", 0, false, 0
     for _,arg in ipairs(GetArguments()) do
         if arg=="-formal-skill" then active=true end
         if arg=="-formal-no-instancing" then renderer.dynamicInstancing=false end
         id = arg:match("^%-formal%-vehicle=(.+)$") or id
         pose = tonumber(arg:match("^%-pose%-time=(.+)$")) or pose
+        distance=tonumber(arg:match("^%-wheel%-distance=(.+)$")) or distance
     end
     scene_ = Scene()
     scene_:CreateComponent("Octree")
@@ -25,6 +26,7 @@ function Start()
     if light then light.brightness=2.2; light.castShadows=false end
     local fillNode=scene_:CreateChild("Softbox")
     fillNode.direction=Vector3(-.6,-.3,.5)
+    -- 单方向主光 + 局部补光；避免附加方向光pass在当前GLES运行时链接失败。
     local fill=fillNode:CreateComponent("Light")
     fill.lightType,fill.brightness,fill.color=LIGHT_POINT,18,Color(.85,.92,1)
     fill.range=18
@@ -51,6 +53,15 @@ function Start()
         Visual.Animate(vehicle,id,.037,{oddActive=0})
         assert(rotor.rotation~=first,"主旋翼必须独立旋转")
         assert(body.rotation==initial,"禁止转动整架机身冒充旋翼动画")
+        local pods=assert(vehicle:GetChild("WeaponPods",true))
+        local bodyPosition=body.position
+        Visual.Animate(vehicle,id,.049,{oddActive=0})
+        local resting=pods.position
+        Visual.Animate(vehicle,id,.049,{oddActive=1})
+        assert((pods.position-resting):Length()>.02,"技能必须驱动独立发射筒后坐")
+        assert(body.position==bodyPosition and body.rotation==initial,"技能后坐不能移动机身")
+        Visual.Animate(vehicle,id,.049,{oddActive=0})
+        assert(pods.position==resting,"技能结束后发射筒必须复位")
     end
     local originalOnly=false
     for _,arg in ipairs(GetArguments()) do if arg=="-formal-original" then originalOnly=true end end
@@ -71,7 +82,12 @@ function Start()
         root.position=Vector3(0,1,0)
         vehicle.enabled=false
     end
-    Visual.Animate(vehicle,id,pose,{oddActive=active and 1 or 0})
+    Visual.Animate(vehicle,id,pose,{oddActive=active and 1 or 0,distance=distance})
+    for _,arg in ipairs(GetArguments()) do
+        local rotorPose=tonumber(arg:match("^%-rotor%-angle=(.+)$"))
+        local rotor=vehicle:GetChild("Rotor",true)
+        if rotorPose and rotor then rotor.rotation=Quaternion(0,rotorPose,0) end
+    end
     for _,draw in ipairs(vehicle:GetComponents("StaticModel",true)) do
         local mat=draw:GetMaterial()
         for _,pass in ipairs(mat:GetTechnique(0):GetPasses()) do

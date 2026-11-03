@@ -182,11 +182,15 @@ function Preview:BuildScene(id)
     local fillNode = self.previewScene:CreateChild("NeutralSoftbox")
     fillNode.direction = Vector3(-0.7, -0.35, 0.6)
     local fill = fillNode:CreateComponent("Light")
-    fill.lightType, fill.brightness, fill.color, fill.castShadows = LIGHT_DIRECTIONAL, 1.25, Color(0.89, 0.94, 1.0), false
+    fill.lightType, fill.brightness, fill.color, fill.castShadows = LIGHT_POINT, 24, Color(0.89, 0.94, 1.0), false
+    fill.range=16
+    fillNode.position=Vector3(-3,4,3)
     local rimNode = self.previewScene:CreateChild("CoolRim")
     rimNode.direction = Vector3(-0.4, -0.55, -0.7)
     local rim = rimNode:CreateComponent("Light")
-    rim.lightType, rim.brightness, rim.color, rim.castShadows = LIGHT_DIRECTIONAL, 0.9, Color(0.76, 0.86, 1), false
+    rim.lightType, rim.brightness, rim.color, rim.castShadows = LIGHT_POINT, 20, Color(0.76, 0.86, 1), false
+    rim.range=14
+    rimNode.position=Vector3(2,3,-4)
     self.turntable = self.previewScene:CreateChild("VehicleTurntable")
     local vehicle = VehicleAssets.Add(self.turntable, id)
     if require("MixedVehicles").Get(id) then require("MixedVisuals").SetRiderColor(vehicle,self.riderColor_) end
