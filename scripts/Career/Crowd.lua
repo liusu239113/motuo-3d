@@ -619,7 +619,8 @@ function Crowd:Update(dt,actor,enabled,camera)
         local index=(self.poseCursor+offset-1)%math.max(1,count)+1
         local p=self.people[index]
         local distance=d2(p.x,p.z,actor)
-        local period=distance<28^2 and .05 or .15
+        -- 低档位拉长骨骼重解间隔：人数不变，只降低每人的姿态刷新率。
+        local period=(distance<28^2 and .05 or .15)/math.max(.35,quality.npcScale)
         if distance<=Crowd.RANGE^2 and p.poseElapsed>=period then
             local target=p.moved>.00001 and 1 or 0
             p.blend=p.blend+(target-p.blend)*(1-math.exp(-p.poseElapsed*12))

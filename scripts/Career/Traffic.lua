@@ -176,11 +176,16 @@ function Traffic:StaticFree(car)
     return free
 end
 function Traffic:CanPlace(car,blockers)
-    if self.city.space=="city" and not self:StaticFree(car) then return false end
+    -- 远车只沿路线推进：静态墙和行人判定只对玩家附近的车做（路线固定，不会驶离车道）。
+    local actor=self.actor
+    local near=not actor or (car.x-actor.x)^2+(car.z-actor.z)^2<=70^2
+    if near and self.city.space=="city" and not self:StaticFree(car) then return false end
     if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
     for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
-    for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius,self.city,p.height) then return false end end
+    if near then
+        for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius,self.city,p.height) then return false end end
+    end
     return true
 end
 function Traffic:CollisionShapes(result,area,dx,dz,mode,height)
@@ -328,7 +333,16 @@ function Traffic:UpdateScoped(duration,blockers)
     self:AdvanceTicks(duration,blockers,self.nearOld)
     tpMark("ticks")
     if self.nearOld then
-        for _,car in ipairs(self.cars) do self:ApplyContact(car) end
+        -- 远车不做轮胎接地解算（四次地形采样）：沿用上次高度直接摆位，位置仍随路线更新。
+        local ax,az=self.actor.x,self.actor.z
+        for _,car in ipairs(self.cars) do
+            if (car.x-ax)^2+(car.z-az)^2<=70^2 then
+                self:ApplyContact(car)
+            elseif car.node then
+                car.node.position=Vector3(car.x,car.contactY or car.node.position.y,car.z)
+                car.node.rotation=Quaternion(0,car.yaw,0)
+            end
+        end
         tpMark("contact")
         self.pedestrians:Update(duration,blockers)
         tpMark("peds")

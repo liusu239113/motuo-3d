@@ -129,7 +129,8 @@ local function plan(city,p,blockers,groups,cars)
     return false
 end
 
-function Walk.Advance(city,p,dt,blockers,groups,cars)
+---@param cheap boolean? true=远距行人只沿路线推进，不做逐段碰撞扫掠
+function Walk.Advance(city,p,dt,blockers,groups,cars,cheap)
     if not p.localWalk then Walk.Reset(p) end
     local state=p.localWalk
     state.cooldown=math.max(0,state.cooldown-dt)
@@ -156,7 +157,8 @@ function Walk.Advance(city,p,dt,blockers,groups,cars)
             end
         else
             local nx,nz=p.x+dx/remaining*step,p.z+dz/remaining*step
-            if Walk.SegmentFree(city,p,p.x,p.z,nx,nz,blockers,groups,cars) then
+            -- 远距行人不需要逐段碰撞：仍沿既有折线推进，只是不做扫掠判定。
+            if cheap or Walk.SegmentFree(city,p,p.x,p.z,nx,nz,blockers,groups,cars) then
                 p.x,p.z=nx,nz
                 p.s=math.max(0,math.min(p.length,(projection(p,nx,nz))))
                 p.yaw=math.deg(math.atan(dx,dz))
