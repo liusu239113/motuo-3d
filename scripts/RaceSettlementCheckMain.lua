@@ -1,8 +1,12 @@
 -- 可终止专项入口：只执行主结算接线隔离验收，不加载main.Start或创建任何Scene。
 function Start()
-    local gateOnly = false
-    for _, argument in ipairs(GetArguments()) do if argument == "-racegates" then gateOnly = true end end
-    if gateOnly then assert(require("Race").RunChecks().passed)
+    local gateOnly, circuitOnly = false, false
+    for _, argument in ipairs(GetArguments()) do
+        if argument == "-racegates" then gateOnly = true end
+        if argument == "-racecircuit" then circuitOnly = true end
+    end
+    if circuitOnly then assert(require("RaceSettlementChecks").RunCircuitGates().passed)
+    elseif gateOnly then assert(require("Race").RunChecks().passed)
     else assert(require("RaceSettlementChecks").Run().passed) end
     print("[RaceSettlementCheckMain] 全部断言通过")
     -- validate必须等帧循环自动退出，Start内Exit会早于报告器初始化而没有JSON。

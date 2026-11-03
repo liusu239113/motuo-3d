@@ -106,6 +106,13 @@ local function checkEbikeRiders(scene,selected,firstPerson,lean,pitch,skin)
         local actual=rig:ReadPose()
         assert((actual.hip-Rider.Poses.ebike.hip):Length()<.002,"电动车骨盆离座")
         assert(actual.leftGripError<.005 and actual.rightGripError<.005,"电动车腕点脱离真实左右握把")
+        for _,side in ipairs({"left","right"}) do
+            local bone=assert(rig.model:GetSkeleton():GetBone(side=="left" and "L_Hand" or "R_Hand"))
+            local fixed=Visual.RiderBindings.ebike[side]+Vector3(0,.012,-.045)
+            local expected=rig.parent:LocalToWorld(fixed)
+            local actualWorld=bone:GetFinalWorldTransform():Translation()
+            assert((actualWorld-expected):Length()<.008,"实际世界腕点离开固定车把："..side)
+        end
         assert((actual.leftFoot-Vector3(-.19,.44,-.08)):Length()<.004
             and (actual.rightFoot-Vector3(.19,.44,-.08)):Length()<.004,"电动车脚踝离开平踏板目标")
         assert((rig.poseFailures or 0)==0 and (rig.reachClampedFrames or 0)==0,"ebike骑姿不可依赖失败回退或骨长夹取")
@@ -184,7 +191,8 @@ local function checkEbikeRiders(scene,selected,firstPerson,lean,pitch,skin)
         player:SetFirstPerson(firstPerson)
         riderCameraAnchor_=player.visual
     end
-    print("[电动车驾驶员断言] PASS 玩家/AI/车库同正式41骨源模型 / 双手双脚与座面 / 首视角 / 配色 / 隐藏恢复 / 换车释放 / 幂等Dispose")
+    print("[电动车驾驶员断言] PASS 玩家/AI同正式41骨源模型 / 双手双脚与座面 / 首视角 / 配色 / 隐藏恢复 / 换车释放 / 幂等Dispose / selected="..selected
+        ..(selected=="garage" and " / 真实车库BuildScene+配色+Dispose通过" or " / 车库生命周期需-rider-case=garage单独验收"))
 end
 
 function Start()

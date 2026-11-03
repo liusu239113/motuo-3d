@@ -286,9 +286,159 @@ function Checks.Run()
     print(string.format("[RaceSettlementChecks] PASS %d项；真实main业务接线/局部Profile与Store/局部SDK %d次；未启动实赛或真实UI", assertions, sdkCalls))
     return {passed = true, assertions = assertions}
 end
--- Gate-only suite: NO main/Profile/Store/SDK or player saves. This entry is also
--- called by Race.RunChecks; synthetic plane boundaries are labelled separately
--- from the full laps driven exclusively with throttle/brake/steer via Sim.Step.
+-- Production circuit/e-bike gate regression. This uses Landscape's real sampled
+-- road and Simulation's real vehicle dimensions, but no Scene, HUD, Profile or
+-- save path. It is intentionally separate from the synthetic circular sweep tests.
+function Checks.RunCircuitGates()
+    local Race, Sim, Landscape = require("Race"), require("Simulation"), require("Landscape")
+    local previousTrack = Landscape.activeId
+    local assertions = 0
+    local function check(ok, message)
+        assert(ok, "[Race.CircuitGateChecks] " .. message)
+        assertions = assertions + 1
+    end
+    assert(Landscape.SelectTrack("circuit"), "无法选择真实circuit")
+    local sim = Sim.New(Landscape)
+    check(sim:SetVehicle("ebike"), "真实ebike车型可交付")
+    local race = Race.New(Landscape, sim, {quiet = true, professional = true, mixed = true, laps = 2})
+    race:Start()
+    race:BeforeStep(3, {}); race:AfterStep(3)
+    local player = race.player
+    check(race.phase == "racing" and player.vehicleId == "ebike", "真实circuit/ebike进入冻结倒计时后的比赛")
+    local gate = race.gateSpacing
+    local speed = 192 / 3.6
+    local dt = 0.04
+    local legalLane = race:GateCorridorFor(player) - 0.04
+    local illegalLane = race:GateCorridorFor(player) + 0.12
+    check(math.abs(legalLane - 16.47) < 0.08 and illegalLane > 16.47,
+        string.format("真实有限外侧带为13..16.47m（合法%.3fm/非法%.3fm）", legalLane, illegalLane))
+    local function seed(s, lane, nextGate)
+        local p, yaw = race:Pose(s, lane)
+        p.y = Landscape.Height(p.x, p.z)
+        player.s, player.progress, player.safeS = s, s, s
+        player.nextGate, player.started, player.completedLaps = nextGate, true, 0
+        player.finished, player.eliminated, player.missedGate = false, false, false
+        player.invalidMoves, player.offCourse = 0, false
+        player.x, player.y, player.z = p.x, p.y, p.z
+        player.lastX, player.lastY, player.lastZ = p.x, p.y, p.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p.x, p.y, p.z, yaw, yaw, speed
+        race.lastPlayerSpeed = speed
+    end
+    local function cross(lane, from, to)
+        local p0, yaw0 = race:Pose(from, lane)
+        local p1 = race:Pose(to, lane)
+        p0.y, p1.y = Landscape.Height(p0.x, p0.z), Landscape.Height(p1.x, p1.z)
+        player.lastX, player.lastY, player.lastZ = p0.x, p0.y, p0.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p1.x, p1.y, p1.z, yaw0, yaw0, speed
+        race.elapsed = race.elapsed + dt
+        race:TrackPlayer(dt)
+    end
+    -- Screenshot reproduction: 192km/h crosses checkpoint 2 on the legal
+    -- outer runoff, so it must not become a false missed checkpoint/rank 09.
+    race.elapsed = 86.63 - dt
+    seed(gate - 0.6, legalLane, gate)
+    cross(legalLane, gate - 0.6, gate + 0.6)
+    check(player.nextGate > gate and not player.missedGate and player.completedLaps == 0,
+        "192km/h真实电动车在13..16.47m外侧正向跨检查点2")
+    check(player.offCourse == false and player.invalidMoves == 0,
+        "合法外侧通过不被标记离轨或非法跳跃")
+    for _, other in ipairs(race.racers) do
+        if other ~= player then other.progress, other.finished, other.eliminated = -100, false, false end
+    end
+    race:Rank()
+    check(player.rank == 1, "合法外侧正向过门后排名可保持第1，不被错误压到09/09")
+    -- Real movement smoke check: start one metre before the gate; subsequent
+    -- crossing is produced solely by Sim.Step, not by post-step pose writes.
+    seed(gate - 1, 15.0, gate)
+    local serial = sim.recoverySerial
+    local drive = race:BeforeStep(.02, {throttle = .8})
+    sim:Step(.02, drive)
+    race:TrackPlayer(.02)
+    check(player.nextGate > gate and not player.missedGate and player.invalidMoves == 0
+        and sim.recoverySerial == serial, "真实Sim.Step 192km/h外侧通行没有复位/写位置补门")
+    -- Projection index must agree with an independent full-road scan at cell
+    -- seams and both sides of every physical checkpoint, including the start wrap.
+    local samples = race.samples
+    local function brute(x, z)
+        local best, s = math.huge, 0
+        for i = 1, #samples - 1 do
+            local a, b = samples[i], samples[i + 1]
+            local dx, dz = b.x - a.x, b.z - a.z
+            local den = dx * dx + dz * dz
+            if den > 1e-8 then
+                local t = math.max(0, math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / den))
+                local d = (x - a.x - dx * t)^2 + (z - a.z - dz * t)^2
+                if d < best then best, s = d, a.s + (b.s - a.s) * t end
+            end
+        end
+        return s % race.length
+    end
+    for _, checkpoint in ipairs(race.checkpoints) do
+        for _, lane in ipairs({-16.4, 0, 16.4}) do
+            local p = race:Pose(checkpoint.s + .17, lane)
+            local indexed, expected = race:Project(p.x, p.z), brute(p.x, p.z)
+            local error = math.abs((indexed - expected + race.length * .5) % race.length - race.length * .5)
+            check(error < 1e-6, "真实全路门位投影候选与全扫描一致 " .. checkpoint.index)
+        end
+    end
+    -- Both player and AI consume the same finite sweep/continuity validator.
+    local opponent = race.racers[1]
+    for _, lane in ipairs({15, illegalLane}) do
+        seed(gate - .6, lane, gate)
+        local a, b = race:Pose(gate - .6, lane), race:Pose(gate + .6, lane)
+        opponent.lastX, opponent.lastY, opponent.lastZ = a.x, Landscape.Height(a.x, a.z), a.z
+        opponent.x, opponent.y, opponent.z = b.x, Landscape.Height(b.x, b.z), b.z
+        opponent.s, opponent.progress, opponent.safeS = gate + .6, gate - .6, gate - .6
+        opponent.speed, opponent.lane = speed, lane
+        opponent.nextGate, opponent.started, opponent.completedLaps = gate, true, 0
+        opponent.finished, opponent.eliminated, opponent.missedGate, opponent.invalidMoves = false, false, false, 0
+        opponent.vehicleId = "ebike"
+        race:ValidateProgress(opponent, gate - .6, gate + .6, dt, speed, false)
+        cross(lane, gate - .6, gate + .6)
+        check(opponent.nextGate == player.nextGate and opponent.missedGate == player.missedGate
+            and opponent.completedLaps == player.completedLaps, "玩家AI合法带与抄近路相同判定 " .. lane)
+    end
+    -- Deliberate shortcut: just beyond the physical centre boundary is rejected,
+    -- and a complete loop cannot advance the blocked ordered gate.
+    local missedGate = gate * 2
+    seed(missedGate - 0.6, illegalLane, missedGate)
+    cross(illegalLane, missedGate - 0.6, missedGate + 0.6)
+    check(player.nextGate == missedGate and player.missedGate and player.offCourse,
+        "16.47m外故意抄近路越过检查点仍漏门并保持待门")
+    local cappedProgress = missedGate - .001
+    for cursor = missedGate + 1, missedGate + race.length, 1 do
+        local s = cursor
+        local p, yaw = race:Pose(s, 0)
+        player.lastX, player.lastY, player.lastZ = player.x, player.y, player.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw = p.x, p.y, p.z, yaw, yaw
+        race.elapsed = race.elapsed + dt
+        race:TrackPlayer(dt)
+    end
+    check(player.nextGate == missedGate and player.completedLaps == 0 and player.progress <= cappedProgress,
+        "故意抄近路绕完整圈不能自动补门或增加有效进度")
+    for _, other in ipairs(race.racers) do
+        if other ~= player then other.progress = player.progress + 500 end
+    end
+    race:Rank()
+    check(player.rank == #race.racers and player.progress < missedGate,
+        "漏门时排名按封顶有效进度显示末位，不能把物理位置冒充完赛")
+    -- Reverse crossing is never a gate event, including at the same high speed.
+    local reverseGate = missedGate + race.gateSpacing
+    seed(reverseGate + 0.6, 0, reverseGate)
+    player.missedGate = true
+    cross(0, reverseGate + 0.6, reverseGate - 0.6)
+    check(player.nextGate == reverseGate and player.completedLaps == 0 and player.missedGate,
+        "高速倒车穿过待门不计检查点/圈数")
+    check(race:RecoverPlayer(false) and player.nextGate == reverseGate and player.s < reverseGate
+        and player.completedLaps == 0 and player.missedGate,
+        "漏门复位回到同一待门前，不自动授予门或圈")
+    Landscape.SelectTrack(previousTrack)
+    print(string.format("[Race.CircuitGateChecks] PASS %d项；真实circuit/ebike 192km/h 外侧/抄近路/排名/倒车/复位", assertions))
+    return {passed = true, assertions = assertions}
+end
+
+-- Gate-only suite: no main/Profile/Store/SDK or player saves. Synthetic sweeps
+-- are labelled separately from laps driven with throttle/brake/steer via Sim.Step.
 function Checks.RunGates()
     local Race, Sim, F = require("Race"), require("Simulation"), require("TrackFeatures")
     local report = {passed = false, assertions = 0, laps = {}, flights = {}, boundaries = 0}

@@ -140,7 +140,7 @@ Rider.Poses.rally_3 = {hip = V(0, 1.39, -0.26), foot = V(0.29, 0.63, -0.16),
     kneeHint = V(0.25, 0, 1), elbowHint = V(1, -0.4, -0.4)}
 
 -- 正式电动车是平踏板坐姿；接触点位于MixedVisuals归一化后的本地米坐标。
--- 座面z=-.22处约.996m，Hip骨盆中心高于接触面9cm；靴底高于踝点约8cm。
+-- 座面z=-.22处约.996m，Hip骨盆中心高于接触面9cm；踝点高于靴底约8cm。
 Rider.Poses.ebike = {hip = V(0, 1.086, -0.22), foot = V(0.19, 0.44, -0.08),
     waist = 30, spine = 40, chest = 46, head = 5,
     kneeHint = V(0.3, 0.2, 1), elbowHint = V(1, -0.4, -0.4)}

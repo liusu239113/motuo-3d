@@ -184,7 +184,7 @@ end
 function RaceVisuals:RefreshPose(runner, data, verify)
     if require("MixedVehicles").Get(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
-    if runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
+    if runner.vehicleId == "ebike" or runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0
     runner.rider:Update(steer, true, runner.lean)
     if (runner.rider.poseFailures or 0) > before then
