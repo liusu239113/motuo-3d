@@ -39,7 +39,7 @@ end
 -- 兼容路径均已核对引擎manifest和实际shader源码，不猜Technique名。
 register("Techniques/PBR/PBRDiffNormal.xml", "Technique")
 register("Techniques/Diff.xml", "Technique")
-register("Techniques/DiffNormal.xml", "Technique")
+register("ScenicArrowCutout.shader", "SurfaceShader")
 -- 发车标记也由此只读服务迁移，RaceVisuals由其负责人接入，避免锥标/箭头绕回旧shader。
 register("uuid://FjoMmROgqb4dDyqNZCf6eElx", "Material")
 for _, path in ipairs({"uuid://CZ5m2ZZu7NXIoVTqR1rzDH41", "uuid://CwWtmXnyHN0l4oJqHqizpG03",
@@ -75,24 +75,34 @@ function Props.MaterialFor(path)
     local mode = compatibility[path]
     if not mode then materials[path] = original; return original end
     local diffuse = assert(original:GetTexture(TU_DIFFUSE), "正式环境原颜色贴图未就绪：" .. path)
-    local techniquePath = mode == "diffuseAlpha" and "Techniques/Diff.xml"
-        or mode == "packedNormalAlpha" and "Techniques/DiffNormal.xml" or "Techniques/PBR/PBRDiffNormal.xml"
-    local technique = assert(cache:GetResource("Technique", techniquePath), "环境兼容Technique未预载：" .. techniquePath)
     if mode == "packedNormalAlpha" then
-        -- 原DiffNormal的base只给PS NORMALMAP；成对补上VS宏，避免本次要修的varying不匹配。
-        local paired = technique:Clone()
-        local base = assert(paired:GetPass("base"))
-        base:SetVertexShaderDefines(base.vertexShaderDefines .. " NORMALMAP")
-        -- DiffNormal原depth/shadow只排除PS packed；alpha PS需UV时会暴露两侧接口差异。
-        -- 主材质仍保留RG法线；深度/阴影不解码法线，两侧对称排除同一宏。
-        for _, name in ipairs({"depth", "shadow"}) do
-            local pass = assert(paired:GetPass(name))
-            pass:SetVertexShaderDefineExcludes(pass.vertexShaderDefineExcludes .. " PACKEDNORMAL")
-            -- alpha PS需要颜色图UV；VS也显式选择对应cutout变体，保留两侧原裁剪。
-            pass:SetVertexShaderDefines(pass.vertexShaderDefines .. " ALPHAMASK ALPHAMASK_DIFF_A")
+        local normal = assert(original:GetTexture(TU_NORMAL), "正式箭头原RG法线未就绪：" .. path)
+        local material = original:Clone()
+        -- 旧LitSolid cutout的varying接口不兼容；由SurfaceShader统一生成颜色/深度/阴影。
+        -- 不改cache原材质，不沿用失败的VS/PS宏实验，也不将镂空改成透明混合。
+        material:SetVertexShaderDefines("")
+        material:SetPixelShaderDefines("")
+        assert(material:SetSurfaceShader("ScenicArrowCutout.shader"), "正式箭头兼容SurfaceShader未就绪")
+        assert(material:SetSurfaceTexture("arrow_diffuse", diffuse), "正式箭头颜色图绑定失败")
+        assert(material:SetSurfaceTexture("arrow_normal", normal), "正式箭头RG法线绑定失败")
+        for name, source in pairs({arrow_tint = "MatDiffColor", arrow_specular = "MatSpecColor",
+            arrow_emission = "MatEmissiveColor", arrow_roughness = "Roughness", arrow_metallic = "Metallic"}) do
+            local value = original:GetShaderParameter(source)
+            if not value:IsEmpty() then material:SetShaderParameter(name, value) end
         end
-        technique = paired
+        -- SetSurfaceShader会重设FillMode；完整回写原状态，不动原UV/纹理设置。
+        material.cullMode, material.shadowCullMode = original.cullMode, original.shadowCullMode
+        material.fillMode, material.depthBias = original.fillMode, original.depthBias
+        material.alphaToCoverage, material.lineAntiAlias = original.alphaToCoverage, original.lineAntiAlias
+        material.renderOrder, material.occlusion = original.renderOrder, original.occlusion
+        assert(material:GetSurfaceTexture("arrow_diffuse") == diffuse
+            and material:GetSurfaceTexture("arrow_normal") == normal, "正式箭头不得丢失原D/N")
+        materials[path] = material
+        print("[ScenicAssetProps] 正式箭头原D/N、RG重建、diffuse-alpha裁剪 / SurfaceShader")
+        return material
     end
+    local techniquePath = mode == "diffuseAlpha" and "Techniques/Diff.xml" or "Techniques/PBR/PBRDiffNormal.xml"
+    local technique = assert(cache:GetResource("Technique", techniquePath), "环境兼容Technique未预载：" .. techniquePath)
     local material = original:Clone()
     -- 不改cache原材质。Clone保留全部原纹理/UV/参数/cull/shadowcull/A2C，所有实例复用此克隆。
     material:SetNumTechniques(1)
@@ -110,9 +120,7 @@ function Props.MaterialFor(path)
         -- 真实cone单/双实例对照：仅PS packed链接失败；VS/PS成对则0Error且可见。
         material:SetVertexShaderDefines("PACKEDNORMAL")
         -- 引擎DecodeNormal的PACKEDNORMAL以RG重建Z；不是普通RGB法线。
-        -- 箭头保留diffuse-alpha的LitSolid路径，不把镂空面改成不透明矩形。
-        material:SetPixelShaderDefines(mode == "packedNormalAlpha"
-            and "PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A" or "PACKEDNORMAL")
+        material:SetPixelShaderDefines("PACKEDNORMAL")
     end
     assert(material.cullMode == original.cullMode and material.shadowCullMode == original.shadowCullMode
         and material.alphaToCoverage == original.alphaToCoverage, "环境兼容材质不得改变裁剪状态")

@@ -1,0 +1,138 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 282260,
+    "frames_completed": 1450,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1099.68ms (threshold: 1000ms)",
+                    "frame": 8
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1057.28ms (threshold: 1000ms)",
+                    "frame": 11
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1298.88ms (threshold: 1000ms)",
+                    "frame": 127
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6941.95ms (threshold: 1000ms)",
+                    "frame": 1025
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 7632.31ms (threshold: 1000ms)",
+                    "frame": 1034
+                },
+                {
+                    "category": "engine",
+                    "message": "[2026-11-03 20_54_25_743][1103] ERROR: bgfx invalid shader => /workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp:5555 errmsg:glLinkProgram error:0:error: fragment shader input `vs_TEXCOORD0' has no matching output in the previous stage\n",
+                    "frame": 1035
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 4446.08ms (threshold: 1000ms)",
+                    "frame": 1036
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6530.79ms (threshold: 1000ms)",
+                    "frame": 1038
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2691.74ms (threshold: 1000ms)",
+                    "frame": 1042
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 5392,
+            "component_count": 2626,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 6256.626953125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.67099952697754
+        },
+        {
+            "frame": 725,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 21.968000411987306
+        },
+        {
+            "frame": 1450,
+            "phase": "run",
+            "nodes": 82,
+            "components": 42,
+            "hash": 2204981183,
+            "frame_time_ms": 462.8489990234375
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 7632.31396484375,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 1,
+        "Skybox": 1,
+        "StaticModel": 2325,
+        "CustomGeometry": 276,
+        "Camera": 1,
+        "SoundSource": 14,
+        "AnimatedModel": 5
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 9,
+        "total_errors": 9
+    }
+}
