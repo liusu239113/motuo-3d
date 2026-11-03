@@ -29,8 +29,16 @@ function M.CreateCourse(map)
         -- 飞坡入口和落地走廊不叠随机路障，宽车不会被迫撞侧壁。
         local blocked=false
         for _,ramp in ipairs(map.Ramps or {}) do
-            local d=(s-ramp.s)%length
-            if d<(ramp.landingEndS and ramp.landingEndS-ramp.s or (ramp.length or 12)+25) or d>length-30 then blocked=true end
+            -- 旧路肩坡台只有世界x/z；先投影里程，不能对缺失的s直接做减法。
+            local rampS=ramp.s
+            if type(rampS)~="number" and map.NearestRoad and ramp.x and ramp.z then
+                rampS=map.NearestRoad(ramp.x,ramp.z)
+            end
+            if type(rampS)=="number" then
+                local d=(s-rampS)%length
+                local reserved=ramp.landingEndS and ramp.landingEndS-rampS or (ramp.length or 12)+25
+                if d<reserved or d>length-30 then blocked=true end
+            end
         end
         if not blocked then
         local p,yaw=map.RoadPoint(s)

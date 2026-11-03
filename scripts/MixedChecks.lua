@@ -233,6 +233,40 @@ function Checks.Run()
     end
     local Race=require("Race")
     local Landscape=require("Landscape")
+    -- 单独加载真实Landscape源码保留六图/旧lake坡配置；不切换共享模块，不污染活动地图状态。
+    local landscapeFile=assert(cache:GetFile("Landscape.lua"))
+    local landscapeLines={}
+    while not landscapeFile:IsEof() do landscapeLines[#landscapeLines+1]=landscapeFile:ReadLine() end
+    landscapeFile:Dispose()
+    local courseMap=assert(load(table.concat(landscapeLines,"\n"),"MixedCourseLandscape","t",
+        setmetatable({},{__index=_G})))()
+    local originalTrack,originalRamps=Landscape.activeId,Landscape.Ramps
+    local legacyCount=0
+    for _,track in ipairs(tracks) do
+        assert(courseMap.SelectTrack(track.id))
+        local planned=Rules.CreateCourse(courseMap)
+        check(#planned>0,"六图真实配置CreateCourse无nil且生成机关："..track.id)
+        for _,ramp in ipairs(courseMap.Ramps) do
+            local rampS=ramp.s
+            if type(rampS)~="number" and ramp.x and ramp.z then
+                rampS=courseMap.NearestRoad(ramp.x,ramp.z)
+                if track.id=="lake" then legacyCount=legacyCount+1 end
+            end
+            if type(rampS)=="number" then
+                local reserved=ramp.landingEndS and ramp.landingEndS-rampS or (ramp.length or 12)+25
+                for _,o in ipairs(planned) do
+                    local d=(o.s-rampS)%courseMap.RouteLength
+                    check(d>=reserved and d<=courseMap.RouteLength-30,
+                        track.id.."正式空地机关避开真实坡入口/落地走廊")
+                end
+            end
+        end
+    end
+    check(legacyCount>=2,"真实lake保留两座只有世界x/z的旧坡配置并执行投影")
+    check(Landscape.activeId==originalTrack and Landscape.Ramps==originalRamps,
+        "六图检查不改变共享Landscape地图及坡表身份")
+    local invalidMap={RouteLength=map.RouteLength,Roads=map.Roads,RoadPoint=map.RoadPoint,Ramps={{}}}
+    check(#Rules.CreateCourse(invalidMap)==#course,"无法投影的无效旧坡记录不误排机关")
     -- 只隔离车型登记和AI配置来覆盖任意长度；其余构造/发车仍执行真实Race源码。
     -- 虚构ID不进入动力/资产加载，也不修改共享MixedAssets或Catalog。
     local raceFile=assert(cache:GetFile("Race.lua"))

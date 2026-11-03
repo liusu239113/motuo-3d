@@ -291,7 +291,12 @@ local function paginationCheck()
                         if not widget:IsVisible() then return end
                         local r=widget:GetAbsoluteLayout()
                         assert(contains(r,pages:GetAbsoluteLayout()),"regression clipped full unit "..kind.." / "..tostring(widget.props.id))
-                        if widget.parent then assert(contains(r,widget.parent:GetAbsoluteLayout()),"regression outside parent "..kind.." / "..tostring(widget.props.id)) end
+                        if widget.parent then
+                            local parent=widget.parent:GetAbsoluteLayout()
+                            assert(contains(r,parent),string.format("regression outside parent %s / %s:%s child=(%.4f,%.4f,%.4f,%.4f) parent=%s:(%.4f,%.4f,%.4f,%.4f) scale=%.5f page=%d",
+                                kind,tostring(widget._className),tostring(widget.props.id),r.x,r.y,r.w,r.h,tostring(widget.parent.props.id),
+                                parent.x,parent.y,parent.w,parent.h,scale,page))
+                        end
                         assert(widget._className~="ScrollView","phone regression must not use scroll")
                         local hit=widget:GetAbsoluteLayoutForHitTest()
                         assert(near(r.x,hit.x) and near(r.y,hit.y) and near(r.w,hit.w) and near(r.h,hit.h),"render/hit boundaries differ")

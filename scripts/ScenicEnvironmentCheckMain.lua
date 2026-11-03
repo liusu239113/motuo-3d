@@ -69,7 +69,36 @@ local function checkEnvironment()
 end
 
 function Start()
-    for _, arg in ipairs(GetArguments()) do trackId_ = arg:match("^%-environment%-track=(.+)$") or trackId_ end
+    local materialsOnly = false
+    for _, arg in ipairs(GetArguments()) do
+        trackId_ = arg:match("^%-environment%-track=(.+)$") or trackId_
+        if arg == "-environment-materials-only" then materialsOnly = true end
+    end
+    if materialsOnly then
+        for _, path in ipairs(Props.Resources) do
+            if Props.ResourceTypes[path] == "Material" then
+                local material = assert(cache:GetResource("Material", path))
+                local diffuse, normal = material:GetTexture(TU_DIFFUSE), material:GetTexture(TU_NORMAL)
+                print(string.format("[环境材质诊断] %s D=%s N=%s VSDEF=%s PSDEF=%s cull=%s A2C=%s",
+                    path, diffuse and diffuse.name or "nil", normal and normal.name or "nil",
+                    material.vertexShaderDefines, material.pixelShaderDefines,
+                    tostring(material.cullMode), tostring(material.alphaToCoverage)))
+                for i = 0, material:GetNumTechniques() - 1 do
+                    local technique = material:GetTechnique(i)
+                    print("[环境材质Technique] " .. path .. " " .. technique.name)
+                    for _, name in ipairs({"base", "litbase", "light", "shadow", "prepass", "deferred", "alpha"}) do
+                        local pass = technique:GetPass(name)
+                        if pass then print(string.format("[环境材质Pass] %s %s VS=%s PS=%s VD=%s PD=%s blend=%s",
+                            path, name, pass.vertexShader, pass.pixelShader, pass.vertexShaderDefines,
+                            pass.pixelShaderDefines, tostring(pass.blendMode))) end
+                    end
+                end
+            end
+        end
+        print("[环境材质诊断] COMPLETE")
+        finished_ = true
+        return
+    end
     assert(trackId_ == "lake" or trackId_ == "circuit", "仅验收lake/circuit真实环境")
     assert(Landscape.SelectTrack(trackId_))
     scene_ = Scene()

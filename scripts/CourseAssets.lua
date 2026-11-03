@@ -54,6 +54,7 @@ local function resource(path, kind)
     end
 end
 resource("Techniques/PBR/PBRDiffNormal.xml","Technique")
+resource("Techniques/PBR/PBRDiffNormalAlpha.xml","Technique")
 for _, key in ipairs({"cone","barrier","barrel","crate","pendulum","support","chain","warning","coin"}) do
     local spec=M.Assets[key]
     resource(spec.model,"Model")
@@ -68,6 +69,43 @@ for _, path in ipairs({
     "uuid://Fmhd6fx_TS3yGCsWCxlHEJrH","uuid://EriCsffMirBGZfqhneJ6ue_g",
 }) do resource(path,"Texture2D") end
 
+-- 老官方PBR_PackedNormal/GrayLevel族在bgfx中存在VS/PS TEXCOORD不匹配。
+-- 仅克隆本模块使用的官方材质，保留原D/N、alpha、cull、UV和各材质槽；
+-- 替换整个Technique列表，不修改cache共享材质，也不将错误隐藏为无贴图回退。
+---@type table<string, Material>
+local compatibleMaterials={}
+---@param path string
+---@return Material?
+local function loadMaterial(path)
+    local original=cache:GetResource("Material",path)
+    if not original then return nil end
+    if not path:match("^uuid://") then return original end
+    if compatibleMaterials[path] then return compatibleMaterials[path] end
+    local diffuse=original:GetTexture(TU_DIFFUSE)
+    local normal=original:GetTexture(TU_NORMAL)
+    if not diffuse or not normal then
+        print("[CourseAssets] 官方材质D/N未就绪 "..path)
+        return nil
+    end
+    local color=original:GetShaderParameter("MatDiffColor")
+    local alpha=not color:IsEmpty() and color:GetColor().a or 1
+    local techniquePath=alpha<.999 and "Techniques/PBR/PBRDiffNormalAlpha.xml" or "Techniques/PBR/PBRDiffNormal.xml"
+    local technique=cache:GetResource("Technique",techniquePath)
+    if not technique then print("[CourseAssets] 兼容Technique未就绪 "..techniquePath);return nil end
+    local material=original:Clone()
+    material:SetNumTechniques(1)
+    material:SetTechnique(0,technique)
+    -- 此清单仅含实测不透明的木箱/金属/金币/警示牌，不是通用alpha-mask材质迁移。
+    -- 老官方Technique均指定PACKEDNORMAL；保留RG重建Z，不能按普通RGB法线解码。
+    material:SetVertexShaderDefines("")
+    material:SetPixelShaderDefines("PACKEDNORMAL")
+    material:SetTexture(TU_DIFFUSE,diffuse)
+    material:SetTexture(TU_NORMAL,normal)
+    compatibleMaterials[path]=material
+    print("[CourseAssets] 官方材质兼容克隆 "..path.." -> "..techniquePath)
+    return material
+end
+
 ---@param parent Node
 ---@param key string
 ---@param name string
@@ -81,7 +119,7 @@ function M.Add(parent,key,name,scaleOverride)
     ---@type Material[]
     local materials={}
     for _,path in ipairs(spec.materials) do
-        local mat=cache:GetResource("Material",path)
+        local mat=loadMaterial(path)
         if not mat then print("[CourseAssets] 正式材质未就绪 "..path);return nil end
         materials[#materials+1]=mat
     end
