@@ -426,7 +426,7 @@ function RaceVisuals:SetVisible(visible)
         runner.effects:Reset()
     end
     if self.policeNode then self.policeNode:SetEnabledRecursive(false) end
-    if self.visible then self:Update(0, self.race.sim) end
+    if self.visible then self.visibilityClock = 1; self:Update(0, self.race.sim) end
 end
 
 ---@param high boolean
@@ -607,6 +607,8 @@ function RaceVisuals:Destroy()
     self.disposed = true
     for _, runner in pairs(self.runners) do
         runner.effects:Dispose()
+        -- 远景时 runner.rider 是空壳，完整骑手必须单独释放，否则换图会泄漏骨骼模型。
+        if runner.fullRider then runner.fullRider:Dispose() end
         runner.rider:Dispose()
     end
     self.runners = {}
