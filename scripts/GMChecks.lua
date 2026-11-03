@@ -148,7 +148,8 @@ function Checks.RunDrive(hud,storage,restore)
         assert(writes==originalWrites and text==originalText,"GM实际发车不得写档或消费试驾")
         assert(Profile.Trials("helicopter")==1 and not Profile.Owns("helicopter") and Profile.Coins()==2300)
     end
-    SubscribeToEvent("Update",function()
+    -- 不抢占主入口唯一的Update订阅；此验收不启用testShot的截图订阅。
+    SubscribeToEvent("PostRenderUpdate",function()
         frames=frames+1
         if frames>1600 then restore();error("GM真实发车流程超时") end
         if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter() end

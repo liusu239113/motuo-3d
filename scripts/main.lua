@@ -723,7 +723,7 @@ end
 
 function Start()
     graphics.windowTitle = "公路狂飙"
-    input.mouseMode = MM_ABSOLUTE
+    input.mouseMode = MM_ABSOLUTE;Catalog.SetGMFreeExperience(false)
     ---@type fun()?
     local restoreUnavailableProfile=nil
     ---@type fun()?, fun():integer,string
@@ -737,13 +737,7 @@ function Start()
     local hudCreated,hudOrError=pcall(function()
         return HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         watchResultAd = WatchResultAdBonus,
-        toggleGMFreeExperience = function()
-            RewardedAds.Cancel()
-            local enabled=Catalog.SetGMFreeExperience(not Catalog.IsGMFreeExperience())
-            hud_:SelectVehicle(hud_.selectedVehicle,false)
-            print("[GM免费体验] "..(enabled and "开启：正式车型免费，不扣金币或试驾，不改永久所有权" or "关闭：恢复原有购买与试驾权益"))
-            return enabled
-        end,
+        toggleGMFreeExperience = function() return require("MixedGarage").ToggleGM(hud_) end,
         skill = function() if screen_=="ride" then pendingActions_.skill=true end end,
         watchVehicleAd = function(id)
             if screen_~="garage" or not RequireRaceProfile() or Catalog.CanFreeExperience(id) or Profile.Owns(id) then return end
@@ -752,7 +746,10 @@ function Start()
             end)
         end,
         selectVehicle = function(id)
-            if screen_ ~= "loading" and Catalog.Get(id) then selectedVehicle_ = id end
+            if screen_ ~= "loading" and Catalog.Get(id) then
+                if selectedVehicle_~=id then RewardedAds.Cancel();hud_.trialButton:SetDisabled(false) end
+                selectedVehicle_ = id
+            end
         end,
         selectRider = function(id)
             if screen_ == "loading" then return end
@@ -1482,6 +1479,7 @@ function CaptureTestFrame()
 end
 
 function Stop()
+    RewardedAds.Cancel();Catalog.SetGMFreeExperience(false)
     if career_ then career_:Dispose(); career_=nil end
     if loader_ then loader_:Cancel() end
     touch_:SetEnabled(false)

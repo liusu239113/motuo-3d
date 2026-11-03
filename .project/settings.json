@@ -22,7 +22,8 @@
       "../scripts"
     ],
     "asset_ignores": [
-      "../assets/image/formal_vehicle_motion"
+      "../assets/image/formal_vehicle_motion",
+      "../assets/image/formal_vehicle_review"
     ]
   },
   "@runtime": {
