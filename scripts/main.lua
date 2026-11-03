@@ -17,7 +17,14 @@ local Profile = require("Profile")
 local Race = require("Race")
 local RaceVisuals = require("RaceVisuals")
 local RaceAudio = require("RaceAudio")
-local Profile_ = require("RaceFrameProfile")
+-- 帧剖析按需加载。隔离验收在受限env里加载main源码，
+-- 那里没有剖析模块；此时降级为空实现，主流程行为完全不变。
+local Profile_ = setmetatable({}, {__index = function(self, key)
+    local ok, module = pcall(function() return require("RaceFrameProfile") end)
+    local fn = ok and type(module) == "table" and module[key] or nil
+    self[key] = type(fn) == "function" and fn or function() end
+    return self[key]
+end})
 local CareerSession = require("Career.Session")
 local CareerQuality = require("Career.AdaptiveQuality")
 ---@type CareerSession?

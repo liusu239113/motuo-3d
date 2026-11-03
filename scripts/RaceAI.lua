@@ -43,13 +43,13 @@ function AI.Configure(race, r, index)
     r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48
         + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.98)
     -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
-    -- speedFactor上限提到1.0：高强度局AI应该能跑到与玩家同级的极速。
-    r.speedFactor = clamp(0.48 + level * 0.20 + r.skill * 0.25 + difficulty * 0.02, 0.6, 1.0)
-    local efficiency = clamp(0.36 + level * 0.24 + r.skill * 0.38 + difficulty * 0.025, 0.58, 0.98)
+    -- AI不跑到玩家同级极速：留出可超车空间，强车局仍有挑战但不至于无法取胜。
+    r.speedFactor = clamp(0.44 + level * 0.18 + r.skill * 0.22 + difficulty * 0.02, 0.55, 0.94)
+    local efficiency = clamp(0.34 + level * 0.22 + r.skill * 0.34 + difficulty * 0.025, 0.55, 0.94)
     r.acceleration = vehicleFor(race,r).acceleration * efficiency
-    -- 高级图仍有真实断油、走宽和恢复窗口，不能用满级技术消除失误。
-    r.mistakeTimer = 6 + race:Random() * 10
-    r.mistakeGrace = 6 + level * 4 + r.skill * 4
+    -- AI保留真实失误窗口，不能变成无懈可击的机器。
+    r.mistakeTimer = 5 + race:Random() * 9
+    r.mistakeGrace = 5 + level * 3.5 + r.skill * 3.5
     r.reactionTime = 0.26 + (1 - r.skill) * 0.28 + (1 - level) * 0.28 - difficulty * 0.03
     r.mistakeDuration, r.recoveryTimer, r.mistakeSeverity, r.mistakes = 0, 0, 0, 0
     r.mistakeLane, r.mistakeBias = r.lane, 0

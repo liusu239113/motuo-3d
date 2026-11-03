@@ -411,7 +411,23 @@ local fixedPages = RacingTheme.FixedPages
 
 function HUD:BuildGarage()
     local cards = UI.Column {width = "100%", gap = 5, padding = 0}
-    for index, item in ipairs(Catalog.List) do
+    -- 排序：已拥有/可驾驶的排前面，其余按价格从低到高，方便玩家看到先能买什么。
+    local Profile = require("Profile")
+    local ordered = {}
+    for i, item in ipairs(Catalog.List) do ordered[i] = item end
+    table.sort(ordered, function(a, b)
+        local aOwned = Profile.Owns(a.id) or Profile.CanDrive(a.id)
+        local bOwned = Profile.Owns(b.id) or Profile.CanDrive(b.id)
+        if aOwned ~= bOwned then return aOwned end
+        if aOwned then
+            local pa, pb = a.price or 0, b.price or 0
+            return pa < pb
+        end
+        local pa, pb = a.price or 0, b.price or 0
+        if pa ~= pb then return pa < pb end
+        return a.id < b.id
+    end)
+    for index, item in ipairs(ordered) do
         local v = item
         local badge = label(v.available == false and "准备中 · 不可驾驶" or (v.price and v.price > 0 and ("未拥有 · " .. v.price .. " 金币") or "点按选择"), 9, MUTED,
             {height = 18, maxLines = 1})

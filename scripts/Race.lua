@@ -1079,7 +1079,14 @@ function Race:AfterStep(dt)
         self:Emit("contact", "player")
     end
     -- World has updated its LIVE traffic before sim:Step; snapshot once, then plan all AI.
-    local prof = require("RaceFrameProfile")
+    -- 惰性加载：真实运行时才需要。受限验收环境可能没有该模块，降级为空实现。
+    local prof = Race.FrameProfile
+    if not prof then
+        local ok, module = pcall(function() return require("RaceFrameProfile") end)
+        prof = ok and type(module) == "table" and module.Begin and module
+            or {Begin = function() end, End = function() end, Tick = function() end}
+        Race.FrameProfile = prof
+    end
     prof.Begin("snapshot")
     RaceAI.Snapshot(self)
     prof.End()

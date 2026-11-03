@@ -39,13 +39,13 @@ local Tracks = {}
 
 ---@type TrackDefinition[]
 local definitions = {
-    {id = "lake", aiLevel = 0.72, laps = 3, reward = 34, price = 1200, requires = "circuit", name = "山湖公路", theme = "lake", accent = {78, 185, 179}, width = 15.0, shoulder = 3.2,
+    {id = "lake", aiLevel = 0.74, laps = 3, reward = 34, price = 1200, requires = "circuit", name = "山湖公路", theme = "lake", accent = {78, 185, 179}, width = 15.0, shoulder = 3.2,
         description = "原版环湖云岭公路 · 河谷高架桥 · 草甸与驿站", treeBudget = 202, water = true, traffic = true,
         goalNames = {"翡翠湖观景湾", "白水河大桥", "冷杉林入口", "高山草甸垭口", "云岭山路入口", "牧场驿站"},
         points = {{0,14,-140},{0,16,56},{-115,19,252},{-338,25,427},{-580,40,535},{-695,58,778},
             {-526,79,1008},{-176,95,1034},{122,105,886},{284,91,684},{486,72,602},{634,53,319},
             {526,35,69},{338,23,-52},{176,17,-201},{27,14,-302}}},
-    {id = "alpine", aiLevel = 0.86, laps = 2, reward = 42, price = 2600, requires = "lake", name = "高山发卡", theme = "alpine", accent = {162, 192, 223}, width = 13.0, shoulder = 2.8,
+    {id = "alpine", aiLevel = 0.82, laps = 2, reward = 42, price = 2600, requires = "lake", name = "高山发卡", theme = "alpine", accent = {162, 192, 223}, width = 13.0, shoulder = 2.8,
         description = "六段折返攀升 · 云上横贯 · 岩壁与救援站", treeBudget = 68, water = false, traffic = true,
         goalNames = {"山脚连续弯", "西壁折返", "云上横贯", "山顶救援站", "山脊下降", "山脚回程"},
         points = {{0,38,-150},{0,40,80},{-210,53,215},{-570,69,255},{-785,80,340},
@@ -54,7 +54,7 @@ local definitions = {
             {20,198,1130},{230,208,1340},{505,204,1370},{740,184,1200},{820,161,930},
             {695,141,720},{890,116,510},{950,92,245},{835,70,-5},{930,55,-280},
             {700,44,-500},{405,38,-525},{150,38,-400},{0,38,-320}}},
-    {id = "coast", aiLevel = 0.86, laps = 2, reward = 38, price = 2200, requires = "lake", name = "海岸巡航", theme = "coast", accent = {77, 173, 217}, width = 16.0, shoulder = 3.4,
+    {id = "coast", aiLevel = 0.82, laps = 2, reward = 38, price = 2200, requires = "lake", name = "海岸巡航", theme = "coast", accent = {77, 173, 217}, width = 16.0, shoulder = 3.4,
         description = "连续海湾长弯 · 双岬观景 · 内陆葡萄园与村落", treeBudget = 76, water = true, traffic = true,
         goalNames = {"滨海入口", "潮汐湾", "海岬观景台", "北湾灯塔", "内陆缓和弯", "村落冲刺"},
         points = {{0,16,-160},{0,17,75},{-175,19,245},{-350,23,420},{-382,28,665},
@@ -80,7 +80,7 @@ local definitions = {
             {670,55,1085},{860,50,1200},{1020,46,1020},{1010,42,780},{810,40,640},
             {635,39,460},{770,37,260},{835,34,35},{670,30,-145},{405,28,-140},
             {300,27,-335},{110,27,-505},{-80,27,-400}}},
-    {id = "circuit", aiLevel = 0.80, laps = 2, reward = 30, price = 0, requires = "default", name = "封闭赛车场", theme = "circuit", accent = {232, 100, 94}, width = 18.0, shoulder = 4.0,
+    {id = "circuit", aiLevel = 0.62, laps = 2, reward = 30, price = 0, requires = "default", name = "封闭赛车场", theme = "circuit", accent = {232, 100, 94}, width = 18.0, shoulder = 4.0,
         description = "加长主直道 · 双看台 · 复合技术弯与高速后场", treeBudget = 28, water = false, traffic = false,
         goalNames = {"主看台直道", "北侧复合弯", "内场技术弯", "后场高速段", "南侧回头弯", "维修区入口"},
         points = {{0,18,-200},{0,18,140},{0,18,490},{-80,19,825},{-305,20,1000},

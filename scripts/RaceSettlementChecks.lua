@@ -115,7 +115,7 @@ function Checks.Run()
         -- main未启动：其余依赖只读占位，访问未知方法仍会报错，不以自动noop掩盖业务越界。
         for _, name in ipairs({"urhox-libs/UI", "urhox-libs.Camera.ThirdPersonCamera", "World", "Landscape", "VehicleAssets",
             "Bike", "Rider", "HUD", "RideAudio", "RideLoader", "Catalog", "Race", "RaceVisuals", "RaceAudio", "Career.Session",
-            "Career.AdaptiveQuality"}) do
+            "Career.AdaptiveQuality", "RaceFrameProfile"}) do
             modules[name] = {}
         end
         local env = setmetatable({require = function(name)
