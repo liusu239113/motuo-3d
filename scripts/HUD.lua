@@ -314,11 +314,12 @@ function HUD:BuildRide()
         borderRadius = 3, children = {self.featureTitle, self.featureHint}}
     self.skillButton = button("E · 专属技能",a.skill,true,154)
     self.skillButton:SetStyle({position="absolute",right=76,top=70,height=48,fontSize=12})
+    self.messagePanel = UI.Panel {position = "absolute", top = 72, left = "25%", width = "50%",
+        padding = 0, pointerEvents = "none", children = {self.message}}
     self.game = UI.Panel(fill({visible = false, pointerEvents = "box-none", children = {
         self.skillButton,
         self.featureRush, self.rankPanel, self.trackMap, self.navPanel, self.instrumentPanel, self.rightTop, self.recoverPanel,
-        self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel,
-        UI.Panel {position = "absolute", top = "56%", left = "25%", width = "50%", padding = 0, pointerEvents = "none", children = {self.message}},
+        self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel, self.messagePanel,
         self.controlLayer}}))
     self.cockpit = RaceInstruments.Dial {position = "absolute", left = 0, top = 0, width = 154, height = 76,
         small = true, visible = false}
@@ -785,6 +786,7 @@ function HUD:LayoutResponsive()
     self.rankPanel:SetWidth(compact and 126 or 152)
     self.navPanel:SetStyle({left = compact and 146 or 178, width = compact and 112 or 126})
     self.dangerPanel:SetStyle({top = compact and 85 or 8, width = compact and 208 or 244, marginLeft = compact and -104 or -122})
+    self.messagePanel:SetStyle({top = compact and 142 or 72})
     self.instrumentPanel:SetStyle({width = compact and 198 or 228, height = compact and 98 or 112, marginLeft = compact and -99 or -114})
     self.nitroPanel:SetStyle({bottom = compact and 118 or 132, width = compact and 178 or 196, marginLeft = compact and -89 or -98})
     self:LayoutTracks(w, h)

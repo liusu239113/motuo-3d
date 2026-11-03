@@ -13,6 +13,7 @@ local MixedRace = require("MixedRace")
 ---@field z number
 
 ---@class RaceMap
+---@field activeId string?
 ---@field RouteLength number
 ---@field RoadPoint fun(s:number):ScenicRacePoint,number
 ---@field NearestRoad fun(x:number,z:number):number,number
@@ -178,6 +179,8 @@ local MixedRace = require("MixedRace")
 ---@field gateSpacing number
 ---@field gateCount number
 ---@field corridor number
+---@field gateCorridor number Finite course boundary, shared by gates and player/AI validation.
+---@field projectionPadding number Complete spatial-index search radius.
 ---@field roadHalfWidth number
 ---@field lastPlayerSpeed number
 ---@field stepOpen boolean
@@ -260,9 +263,13 @@ function Race:Init(map, sim, options)
     self.laps = clamp(math.floor(tonumber(options.laps) or 2), 1, 9)
     self.roadHalfWidth = map.Roads and map.Roads[1] and (map.Roads[1].width or 4.8) or 4.8
     self.corridor = self.roadHalfWidth + 0.8
-    -- 可行驶路肩比检查点原判定宽；开宽一点就永久漏站，会把里程和复位锚点一起卡死。
-    self.gateCorridor = math.max(self.corridor,
-        (map.Roads and map.Roads[1] and map.Roads[1].shoulder) or self.corridor)
+    -- Match Simulation.Barrier's finite drivable boundary. Circuit has 4m of
+    -- runoff beyond the shoulder; ebike centres can legally reach 16.47m there,
+    -- but the old shoulder-only gate rejected everything outside 13m.
+    local shoulder = (map.Roads and map.Roads[1] and map.Roads[1].shoulder) or self.roadHalfWidth
+    self.gateCorridor = max(self.corridor, max(self.roadHalfWidth, shoulder)
+        + (map.activeId == "circuit" and 4 or 1.1))
+    self.projectionPadding = max(12, self.gateCorridor + 1)
     self.gateCount = max(8, math.ceil(self.length / 85))
     self.gateSpacing = self.length / self.gateCount
     self.samples, self.checkpoints, self.grid = {}, {}, {}
@@ -277,8 +284,8 @@ function Race:Init(map, sim, options)
     assert(sqrt((first.x - last.x)^2 + (first.z - last.z)^2) < 5, "Race main road must close")
     for i = 1, #self.samples - 1 do
         local a, b = self.samples[i], self.samples[i + 1]
-        for gx = math.floor((min(a.x, b.x) - 12) / 32), math.floor((max(a.x, b.x) + 12) / 32) do
-            for gz = math.floor((min(a.z, b.z) - 12) / 32), math.floor((max(a.z, b.z) + 12) / 32) do
+        for gx = math.floor((min(a.x, b.x) - self.projectionPadding) / 32), math.floor((max(a.x, b.x) + self.projectionPadding) / 32) do
+            for gz = math.floor((min(a.z, b.z) - self.projectionPadding) / 32), math.floor((max(a.z, b.z) + self.projectionPadding) / 32) do
                 local key = gx .. ":" .. gz
                 if not self.grid[key] then self.grid[key] = {} end
                 table.insert(self.grid[key], i)
@@ -457,8 +464,17 @@ function Race:Project(x, z)
             bestLane = (ox * dz - oz * dx) / sqrt(len2)
         end
     end
-    if list then for _, i in ipairs(list) do test(i) end
-    else for i = 1, #self.samples - 1 do test(i) end end
+    if list then
+        for _, i in ipairs(list) do test(i) end
+        -- The index is a complete superset for the finite course boundary. Keep
+        -- a correctness fallback for a seam/cell edge or a future map with a
+        -- larger legal ribbon; projection must never become cell-dependent.
+        if bestD > self.projectionPadding * self.projectionPadding then
+            for i = 1, #self.samples - 1 do test(i) end
+        end
+    else
+        for i = 1, #self.samples - 1 do test(i) end
+    end
     return bestS % self.length, bestLane, sqrt(bestD)
 end
 
@@ -494,13 +510,14 @@ end
 ---@param newS number
 ---@param dt number
 function Race:AdvanceGates(r, oldS, newS, dt)
-    if newS <= oldS or r.finished or r.eliminated then return end
+    if r.finished or r.eliminated or not finite(dt) or dt <= 0 then return end
     -- Always test the ACTUAL physical segment. Never invent on-road intermediate poses
     -- for a long host frame: that would award gates while a stunt/shortcut missed them.
-    -- Lane offsets and interpolated ribbon normals may meet a gate plane a fraction
-    -- before/after its centre-line s, especially at a hairpin. The swept plane is the
-    -- authority; a small route window selects the ordered gate, not an s>=gate test.
-    local window = min(8, self.gateSpacing * 0.2)
+    -- Offset ribbon normals can cross well before the centre-line station at tight
+    -- bends. The window only selects the ordered absolute gate; the finite plane
+    -- remains authoritative even if the nearest projection pauses at a sample seam.
+    local window = min(self.gateSpacing * .45, max(8, self.gateCorridor * 2 + 1))
+    local lastCrossing = -1
     ---@param t number
     local function completeLap(t)
         r.completedLaps = r.completedLaps + 1
@@ -519,19 +536,22 @@ function Race:AdvanceGates(r, oldS, newS, dt)
             and abs(gateS / self.length - math.floor(gateS / self.length + 0.5)) < 1e-6
     end
     -- No catch-up: even an ordinary missed gate requires a real forward recrossing.
-    while r.nextGate <= newS + window and r.nextGate >= oldS - window do
+    while r.nextGate <= max(oldS, newS) + window and r.nextGate >= min(oldS, newS) - window do
         local gateS = r.nextGate
         local p, yaw = self.map.RoadPoint(gateS)
         local fx, fz = math.sin((yaw or 0) * RAD), math.cos((yaw or 0) * RAD)
         local side0 = (r.lastX - p.x) * fx + (r.lastZ - p.z) * fz
         local side1 = (r.x - p.x) * fx + (r.z - p.z) * fz
-        if side0 > 0.02 or side1 <= 0 or side1 <= side0 then break end
+        if side0 > 1e-6 or side1 <= 0 or side1 <= side0 then break end
         local t = clamp(-side0 / max(1e-8, side1 - side0), 0, 1)
+        -- A single high-speed segment can cross several gates, but never in the
+        -- reverse temporal order (e.g. a chord through two arms of a hairpin).
+        if t <= lastCrossing + 1e-8 then break end
         local cx, cz = r.lastX + (r.x - r.lastX) * t, r.lastZ + (r.z - r.lastZ) * t
         local lateral = (cx - p.x) * fz - (cz - p.z) * fx
         local cy = r.lastY + (r.y - r.lastY) * t
         local altitude = cy - p.y
-        if abs(lateral) > self.gateCorridor or altitude < -Race.Rules.gateBelow
+        if abs(lateral) > self:GateCorridorFor(r) or altitude < -Race.Rules.gateBelow
             or altitude > Race.Rules.gateAbove then
             self:MissGate(r, "穿门超出有限走廊")
             break
@@ -541,8 +561,55 @@ function Race:AdvanceGates(r, oldS, newS, dt)
         elseif isFinishGate(gateS) then completeLap(t)
         end
         r.nextGate = gateS + self.gateSpacing
+        lastCrossing = t
         if r.finished then break end
     end
+end
+
+---@param r RaceRacer?
+---@return number
+function Race:GateCorridorFor(r)
+    local corridor = self.gateCorridor
+    if self.options.mixed and r then
+        local spec = require("MixedVehicles").Get(r.vehicleId)
+        if spec then corridor = corridor - spec.size[1] * .5 end
+    end
+    return corridor
+end
+
+-- Shared player/AI contract: position continuity authorises a swept gate test;
+-- projection/path distance alone never awards a gate or a lap.
+---@param r RaceRacer
+---@param oldS number
+---@param newS number
+---@param dt number
+---@param previousSpeed number
+---@param recovered boolean?
+---@param roadDistance number?
+function Race:ValidateProgress(r, oldS, newS, dt, previousSpeed, recovered, roadDistance)
+    if r.finished or r.eliminated or not finite(dt) or dt <= 0 then return end
+    local traveled = sqrt((r.x - r.lastX)^2 + (r.z - r.lastZ)^2)
+    local drive = r.isPlayer and self.sim or r.driveSim or self.sim
+    local maximum = max(drive.vehicle.maxSpeed * 1.28, max(r.speed, previousSpeed) * 1.35 + 1) * dt + .5
+    local physical = not recovered and finite(traveled) and traveled <= maximum
+    local altitude = r.y - self.map.Height(r.x, r.z)
+    local delta = newS - oldS
+    local courseDistance = roadDistance or abs(r.lane)
+    local onCourse = courseDistance <= (self.gateCorridor or self.corridor)
+        and altitude >= -Race.Rules.gateBelow and altitude <= Race.Rules.gateAbove
+    r.wrongWay, r.offCourse = delta < -.03, not onCourse
+    if physical then
+        self:AdvanceGates(r, oldS, newS, dt)
+        if not r.finished then r.progress = min(newS, r.nextGate - .001) end
+        if onCourse and abs(delta) <= traveled * 2 + 1 then r.safeS = min(newS, r.nextGate - .5) end
+    else
+        if not recovered then r.invalidMoves = r.invalidMoves + 1 end
+        r.progress = min(r.progress, newS, r.nextGate - .001)
+    end
+    if not r.finished and newS > r.nextGate + min(8, self.gateSpacing * .2) then
+        self:MissGate(r, physical and "待门落后" or "非连续移动越门")
+    end
+    r.offCourseLast = not onCourse or not physical
 end
 
 ---@param dt number
@@ -561,36 +628,9 @@ function Race:TrackPlayer(dt)
     local recovered = sim.recoverySerial ~= self.lastRecovery
     self.lastRecovery = sim.recoverySerial
     local delta = (projected - r.s % self.length + self.length * 0.5) % self.length - self.length * 0.5
-    local traveled = sqrt((r.x - r.lastX)^2 + (r.z - r.lastZ)^2)
-    local maximumTravel = max(sim.vehicle.maxSpeed * 1.28, max(r.speed, self.lastPlayerSpeed) * 1.35 + 1) * dt + 0.5
-    local physical = not recovered and traveled <= maximumTravel
-    -- Projection can change quickly on the inside of a hairpin / distant terrain. It is
-    -- NOT a speedometer and MUST NOT reset a driver. Always rebase physical road position.
     local oldS = r.s
     r.s = r.s + delta
-    local altitude = r.y - self.map.Height(r.x, r.z)
-    local onCourse = roadDistance <= self.corridor and altitude >= -Race.Rules.gateBelow
-        and altitude <= Race.Rules.gateAbove
-    r.wrongWay, r.offCourse = delta < -0.03, not onCourse
-    if physical then
-        -- Only actual ordered plane crossings count. Going wide BETWEEN gates is allowed;
-        -- missing one caps ranking at that gate until the rider turns back and crosses it.
-        self:AdvanceGates(r, oldS, r.s, dt)
-        if not r.finished then r.progress = min(r.s, r.nextGate - 0.001) end
-        if onCourse and abs(delta) <= traveled * 2 + 1 then
-            r.safeS = min(r.s, r.nextGate - 0.5)
-        end
-    else
-        -- Manual/world recovery or suspicious jumps never award gates, but also never
-        -- trigger another teleport. Last legal progress remains the manual reset anchor.
-        if not recovered then r.invalidMoves = r.invalidMoves + 1 end
-        r.progress = min(r.progress, r.s, r.nextGate - 0.001)
-    end
-    -- A missed start/ordinary/finish gate must never silently strand the lap counter.
-    -- A rejected teleport also needs guidance, but receives no gate or trusted progress.
-    if not r.finished and r.s > r.nextGate + min(8, self.gateSpacing * .2) then
-        self:MissGate(r, physical and "待门落后" or "非连续移动越门")
-    end
+    self:ValidateProgress(r, oldS, r.s, dt, self.lastPlayerSpeed, recovered, roadDistance)
     if r.missedGate then
         sim.message = string.format("漏过检查点%d · 请返回检查点正向通过，或使用脱困回到待门前",
             math.floor(r.nextGate / self.gateSpacing + .5) % self.gateCount + 1)
@@ -598,7 +638,6 @@ function Race:TrackPlayer(dt)
     elseif sim.message:find("漏过检查点", 1, true) == 1 then
         sim.message, sim.messageTimer = "检查点已通过 · 继续比赛", 2
     end
-    r.offCourseLast = not onCourse or not physical
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
     self.lastPlayerSpeed = r.speed
 end

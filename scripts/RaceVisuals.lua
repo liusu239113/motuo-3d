@@ -15,6 +15,7 @@ local COURSE_RESOURCES = {COURSE_ARROW, COURSE_ARROW_MATERIAL, COURSE_CONE, COUR
 local COURSE_TYPES = {[COURSE_ARROW] = "Model", [COURSE_ARROW_MATERIAL] = "Material",
     [COURSE_CONE] = "Model", [COURSE_CONE_MATERIAL] = "Material"}
 local Bike = require("Bike") -- 只取Cockpits配置，不调用Bike.New。
+local MixedVisuals = require("MixedVisuals")
 local Landscape = require("Landscape")
 local P = require("Parts")
 local V = Vector3
@@ -139,17 +140,22 @@ function RaceVisuals:CreateRunner(data)
     local id, vehicleId = data.id, data.vehicleId
     assert(Assets.Vehicles[vehicleId], "Race rival asset unavailable: " .. tostring(vehicleId))
     local odd = require("MixedVehicles").Get(vehicleId) ~= nil
-    local cockpit = odd and {grip=V(.3,1,.4),seatHeight=1} or Bike.GetCockpit(vehicleId)
+    local isRiderBoundMixed = vehicleId == "ebike"
+    local cockpit = isRiderBoundMixed and MixedVisuals.Cockpits.ebike
+        or (odd and {grip=V(.3,1,.4),seatHeight=1} or Bike.GetCockpit(vehicleId))
     local node = self.rosterRoot:CreateChild("RaceRival_" .. id, LOCAL)
     local visual = node:CreateChild("RivalLean", LOCAL)
     local body = Assets.Add(visual, vehicleId, nil, "distant")
-    -- 混合车使用正式独立车体；封闭座舱不套摩托骨骼，也不创建几何小人。
-    local rider = odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
+    -- 电动车使用正式整车与同一套41骨Rider；其它混合车保持轻量无驾驶员表现。
+    local rider = isRiderBoundMixed and assert(MixedVisuals.CreateRider(visual, vehicleId),
+        "AI ebike formal rider creation failed")
+        or (odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
         drawDistance=260,shadowDistance=65,inView=true}, SetColor=function() end,
-        Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip)
+        Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip))
     local colorId = data.colorId or "red"
     rider:SetColor(colorId)
-    if odd then require("MixedVisuals").SetRiderColor(body,colorId) end
+    -- Formal Rider is the only rider-bound mixed visual; it inherits RivalLean lean/pitch.
+    if odd and not isRiderBoundMixed then MixedVisuals.SetRiderColor(body,colorId) end
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
     -- inView是上一渲染帧结果，不能作为首次提交/重新启用的前置条件。
     rider.model.updateInvisible = true
@@ -176,7 +182,7 @@ end
 ---@param data table
 ---@param verify boolean
 function RaceVisuals:RefreshPose(runner, data, verify)
-    if require("MixedVehicles").Get(runner.vehicleId) then return end
+    if require("MixedVehicles").Get(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
     if runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0

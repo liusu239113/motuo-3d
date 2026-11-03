@@ -1,7 +1,54 @@
 -- 正式MDL表现适配器；源模型、贴图和原始三角面共用于玩家、AI和车库。
 local Assets = require("MixedAssets")
+local Rider = require("Rider")
 local V = Vector3
 local M = {}
+
+-- 正式MDL全部LOD0顶点在yaw=226.1/长2.1m归一化后的接触点。
+-- 握把非对称：原模型左把低约5cm且后退6cm，不能镜像右把；车把仍属于静态Body。
+M.RiderBindings = {
+    ebike = {left=V(-.47,1.23,.322),right=V(.47,1.29,.385),origin=V(0,1.26,.444)},
+}
+M.Cockpits = {
+    ebike = {localOffset=V(0,1.64,-.15),pitch=8,fov=72,seatHeight=.996,
+        grip=M.RiderBindings.ebike.right,dash=V(0,1.33,.35)},
+}
+
+---@param parent Node 归一化车辆本地米坐标；不得传SourceTransform
+---@param id string
+---@return Rider?
+function M.CreateRider(parent,id)
+    local binding=M.RiderBindings[id]
+    if not binding then return nil end
+    return Rider.New(parent,id,binding.right,binding)
+end
+
+-- 源车把不独立转向，手腕始终贴在原网格握把；车架lean/pitch通过父节点继承。
+---@param rig Rider?
+---@param lean? number
+function M.UpdateRiderBinding(rig,lean)
+    if rig and not rig.disposed then rig:Update(0,false,lean or 0) end
+end
+
+---@param rig Rider?
+function M.DisposeRider(rig)
+    if rig then rig:Dispose() end
+end
+
+---@param color string|number[]
+---@return string?
+function M.RiderColorId(color)
+    if type(color)=="string" then return Rider.Palettes[color] and color or nil end
+    if type(color)~="table" then return nil end
+    local best,bestDistance="red",math.huge
+    for _,id in ipairs(Rider.ColorIds) do
+        local rgb=Rider.Palettes[id].color
+        local distance=0
+        for i=1,3 do distance=distance+((color[i] or 0)-rgb[i])^2 end
+        if distance<bestDistance then best,bestDistance=id,distance end
+    end
+    return best
+end
 local materials = {}
 local measuredBounds = {}
 
@@ -43,8 +90,20 @@ local function material(c)
     return mat
 end
 
--- 没有驾驶员的封闭座舱不伪造几何小人；保留调用兼容，后续接正式驾驶员骨骼。
-function M.SetRiderColor(_, _) return false end
+-- 兼容车库Node入口；只改正式骑手的独立材质，绝不染整车图集。
+---@param root Node
+---@param color string|number[]
+---@return boolean
+function M.SetRiderColor(root,color)
+    local id=M.RiderColorId(color)
+    local rider=root:GetChild("ThirdPersonRider",true)
+    if not id or not rider then return false end
+    local model=rider:GetComponent("AnimatedModel",true)
+    local texture=cache:GetResource("Texture2D",Rider.Palettes[id].diffuse)
+    if not model or not texture then return false end
+    model:GetMaterial():SetTexture(TU_DIFFUSE,texture)
+    return true
+end
 
 ---@param bounds BoundingBox?
 local function helicopterPart(x,y,z,bounds)
@@ -171,31 +230,45 @@ end
 function Adapter:Init(scene,id)
     self.vehicleId=id; self.node=scene:CreateChild("Bike_"..id)
     self.visual=self.node:CreateChild("VehicleMotion"); self.body=M.Build(self.visual,id)
+    assert(id=="ebike", "MixedVisuals.NewBike only supports rider-bound ebike")
+    local cockpit=M.Cockpits[id]
     self.cockpit=self.visual:CreateChild("Cockpit"); self.steering=self.cockpit:CreateChild("Steering")
-    self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=V(0,1,.4)
-    self.Cockpit={localOffset=V(0,2.6,-.3),pitch=8,fov=72,seatHeight=1,grip=V(.3,1,.4)}
+    self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=cockpit.dash
+    self.Cockpit=cockpit
     self.firstPerson,self.disposed,self.leanSign=false,false,1
-    self.riderRig={visible=true,SetColor=function() return false end,Update=function() end,Dispose=function() end}
+    self.riderRig=assert(M.CreateRider(self.visual,id),"ebike formal rider creation failed")
+    self.riderRig:SetColor("red")
     self.mirrors={SetQuality=function() end,Update=function() end,Dispose=function() end}
     self.effects={pitch=0,bob=0,Dispose=function() end}
 end
-function Adapter:SetRiderColor(color) return M.SetRiderColor(self.body,color) end
-function Adapter:SetFirstPerson(_) self.firstPerson=false; self.cockpit.enabled=false end
+function Adapter:SetRiderColor(color)
+    local id=M.RiderColorId(color)
+    return id and self.riderRig:SetColor(id) or false
+end
+function Adapter:SetFirstPerson(firstPerson)
+    self.firstPerson=firstPerson==true
+    self.riderRig:SetVisible(not self.firstPerson)
+    self.body:SetEnabledRecursive(true)
+    self.cockpit.enabled=false
+end
 function Adapter:SetQuality(_) end
 function Adapter:UpdateMirrors(_,_) end
 function Adapter:GetDashboardWorldPosition() return self.dashboardMarker.worldPosition end
 function Adapter:GetCameraWorldPosition() return self.visual:LocalToWorld(self.Cockpit.localOffset) end
-function Adapter:UpdateState(_,sim,_,clock)
+function Adapter:UpdateState(_,sim,firstPerson,clock)
     if self.disposed then return end
-    self.node.position=V(sim.x,sim.y,sim.z)
-    self.node.rotation=Quaternion(0,sim.heading or sim.yaw,0)
+    self.node.position=V(sim.x or 0,sim.y or 0,sim.z or 0)
+    self.node.rotation=Quaternion(0,sim.heading or sim.yaw or 0,0)
     self.visual.position=V(0,sim.oddAltitude or 0,0)
     self.visual.rotation=Quaternion((sim.pitch or 0)*.5,0,(sim.lean or 0)*.25)
     M.Animate(self.body,self.vehicleId,sim.elapsed or clock,sim)
-    self:SetFirstPerson(false)
+    self.riderRig:Update(0,false,(sim.lean or 0)*.25)
+    if firstPerson ~= self.firstPerson then self:SetFirstPerson(firstPerson) end
 end
 function Adapter:Dispose()
     if self.disposed then return end
-    self.disposed=true; self.node:Dispose()
+    self.disposed=true
+    M.DisposeRider(self.riderRig)
+    self.node:Dispose()
 end
 return M

@@ -16,8 +16,6 @@ local definitions = {
     house = {model = "uuid://D6f5ARUOv2X7EEmXLSrx1AM9", materials = {
         "uuid://Bu1-aXStY3WMbN0SDgV_0J8L", "uuid://HntT6UQGaB9sTTQOuRq_XVBm",
         "uuid://HhdXudJoS_1n5psy_52upCCB", "uuid://BYUaAXeDcr7-GOyrJkX2dGoW"}, distance = 650},
-    -- search: Br_YoSXhOaEhODVz4e6GInjs，宽X/高Y/薄Z的完整道路护栏。
-    rail = {model = "uuid://FV7oke6s9852a30jMsdkkcC3", materials = {"uuid://EuEAqVcEvrhrHsZmdxoee6N6"}, distance = 230},
     -- search: BrMPQVbouuJ6tP9-opAx9Z5U，完整锥标（不是圆锥+盒底拼装）。
     cone = {model = "uuid://CGp6ca4NUVz_7_-kG06v5Ayb", materials = {"uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF"}, distance = 170},
     -- search: FrQg4QaANHut5x8w5j9xtpVA，Y-up完整木质路标。
@@ -31,7 +29,7 @@ local function register(path, kind)
     Props.ResourceTypes[path] = kind
 end
 -- 稳定清单顺序，RideLoader递归下载材质完整依赖，并逐项校验Model/Material。
-for _, id in ipairs({"fern", "fernSmall", "rockA", "rockB", "house", "rail", "cone", "sign"}) do
+for _, id in ipairs({"fern", "fernSmall", "rockA", "rockB", "house", "cone", "sign"}) do
     local def = assert(definitions[id])
     register(def.model, "Model")
     for _, path in ipairs(def.materials) do register(path, "Material") end
@@ -62,7 +60,6 @@ local materials = {}
 local compatibility = {
     ["uuid://Eqy3wSag5eJmQEQBqWnLcKwL"] = "diffuseAlpha",
     ["uuid://FjoMmROgqb4dDyqNZCf6eElx"] = "packedNormalAlpha",
-    ["uuid://EuEAqVcEvrhrHsZmdxoee6N6"] = "packedNormal",
     ["uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF"] = "packedNormal",
     ["uuid://BbhFaY-oq5NxPUutxC9s5YOQ"] = "packedNormal",
 }
@@ -196,9 +193,18 @@ end
 ---@param margin? number
 ---@param maxRise? number
 ---@param sink? number
+---@param footprint? Vector3 程序化设施的精确占地，提供时不加载外部模型。
 ---@return Vector3?, number
-function Props.GroundSite(L, id, x, z, height, yaw, margin, maxRise, sink)
-    local size, radius = Props.Measure(id, height)
+function Props.GroundSite(L, id, x, z, height, yaw, margin, maxRise, sink, footprint)
+    ---@type Vector3
+    local size=footprint or Vector3.ZERO
+    local radius=0
+    if footprint then
+        size=footprint
+        radius=.5*math.sqrt(size.x*size.x+size.z*size.z)
+    else
+        size,radius=Props.Measure(id,height)
+    end
     local angle = math.rad(yaw)
     local right = Vector3(math.cos(angle), 0, -math.sin(angle))
     local forward = Vector3(math.sin(angle), 0, math.cos(angle))

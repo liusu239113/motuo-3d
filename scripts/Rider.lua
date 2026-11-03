@@ -39,7 +39,10 @@ local STEM = "rig-1-c09759e5-dd10-4064-900b-8c28233ef213"
 ---@field bind table<string, RiderBindPose>
 ---@field arms RiderChain[]
 ---@field legs RiderChain[]
----@field grip Vector3
+---@field grip Vector3 右握把
+---@field leftGrip Vector3 左握把；允许与右握把有真实车型偏移
+---@field rightGrip Vector3 右握把
+---@field gripOrigin Vector3 两握把之间的转向中心
 ---@field lastSteer number
 ---@field visible boolean
 ---@field heightScale number
@@ -136,6 +139,17 @@ Rider.Poses.rally_3 = {hip = V(0, 1.39, -0.26), foot = V(0.29, 0.63, -0.16),
     waist = 30, spine = 40, chest = 46, head = 5,
     kneeHint = V(0.25, 0, 1), elbowHint = V(1, -0.4, -0.4)}
 
+-- 正式电动车是平踏板坐姿；接触点位于MixedVisuals归一化后的本地米坐标。
+-- 座面z=-.22处约.996m，Hip骨盆中心高于接触面9cm；靴底高于踝点约8cm。
+Rider.Poses.ebike = {hip = V(0, 1.086, -0.22), foot = V(0.19, 0.44, -0.08),
+    waist = 30, spine = 40, chest = 46, head = 5,
+    kneeHint = V(0.3, 0.2, 1), elbowHint = V(1, -0.4, -0.4)}
+
+---@class RiderGripBinding
+---@field right Vector3
+---@field left Vector3
+---@field origin? Vector3
+
 ---@param model AnimatedModel
 ---@param name string
 ---@return Node
@@ -214,23 +228,30 @@ end
 
 ---@param parent Node 车辆visual，所有目标均为此节点的本地米坐标
 ---@param vehicleId string
----@param grip Vector3
+---@param grip Vector3 右握把（兼容旧调用）
+---@param gripBinding? RiderGripBinding 左右握把及转向中心；省略时按X镜像
 ---@return Rider
-function Rider.New(parent, vehicleId, grip)
+function Rider.New(parent, vehicleId, grip, gripBinding)
     local self = setmetatable({}, Rider)
-    self:Init(parent, vehicleId, grip)
+    self:Init(parent, vehicleId, grip, gripBinding)
     return self
 end
 
 ---@param parent Node
 ---@param vehicleId string
----@param grip Vector3
-function Rider:Init(parent, vehicleId, grip)
+---@param grip Vector3 右握把（兼容旧调用）
+---@param gripBinding? RiderGripBinding
+function Rider:Init(parent, vehicleId, grip, gripBinding)
     self.parent, self.vehicleId = parent, vehicleId
     self.classId = Rider.ClassFor(vehicleId)
     self.colorId, self.disposed = "red", false
     self.config = assert(Rider.Poses[vehicleId] or Rider.Poses[self.classId], "Unsupported rider pose: " .. vehicleId)
     self.grip = grip
+    self.rightGrip = gripBinding and gripBinding.right or grip
+    self.leftGrip = gripBinding and gripBinding.left or V(-grip.x, grip.y, grip.z)
+    self.gripOrigin = gripBinding and gripBinding.origin
+        or V(0, grip.y, grip.z + 0.09)
+    assert(self.rightGrip and self.leftGrip and self.gripOrigin, "Rider grip binding incomplete")
     self.node = parent:CreateChild("ThirdPersonRider")
     self.mesh = self.node:CreateChild("RiggedLeatherRider")
     self.model = self.mesh:CreateComponent("AnimatedModel")
@@ -407,7 +428,7 @@ function Rider:ApplyPose(steerAngle)
     self:SetBodyRotation("NeckTwist01", c.head + 5, torsoYaw * 0.3, bodyRoll * 0.5)
     self:SetBodyRotation("NeckTwist02", c.head + 2, torsoYaw * 0.3, bodyRoll * 0.4)
     self:SetBodyRotation("Head", c.head, torsoYaw * 0.3, bodyRoll * 0.3)
-    local origin = V(0, self.grip.y, self.grip.z + 0.09)
+    local origin = self.gripOrigin
     local steering = Quaternion(0, steerAngle, 0)
     for _, chain in ipairs(self.arms) do
         -- 宽把极舵时远侧肩胛前伸，旋转真实锁骨，不挪髋也不拉长上臂。
@@ -422,8 +443,8 @@ function Rider:ApplyPose(steerAngle)
             self:PointJoint(prefix .. "Clavicle", chain.upper, shoulder + V(0, 0, protraction))
         end
         -- 手腕在手掌后方约5cm；模型手掌自然延伸到真实握把。
-        local grip = V(chain.side * self.grip.x, self.grip.y, self.grip.z)
-        local wrist = origin + steering * (grip - origin + V(0, 0.012, -0.045))
+        local boundGrip = chain.side == 1 and self.rightGrip or self.leftGrip
+        local wrist = origin + steering * (boundGrip - origin + V(0, 0.012, -0.045))
         local hint = self.config.elbowHint
         -- 宽把巡航的肩胛随握把方向外展；只旋转真实锁骨，保持骨长和座垫髋点。
         -- 非对称整车中心偏移会使外侧握把更远，不能简单平移/拉长手臂补偿。
@@ -482,10 +503,10 @@ function Rider:ReadPose()
         rightFoot = self:GetBonePosition("R_Foot")}
     local chest = self:GetBonePosition("NeckTwist01") - self:GetBonePosition("Spine02")
     result.chestTilt = math.deg(math.atan(chest.z, chest.y))
-    local origin = V(0, self.grip.y, self.grip.z + 0.09)
+    local origin = self.gripOrigin
     local steering = Quaternion(0, self.lastSteer, 0)
-    result.leftGripError = (result.leftHand - (origin + steering * (V(-self.grip.x, self.grip.y + 0.012, self.grip.z - 0.045) - origin))):Length()
-    result.rightGripError = (result.rightHand - (origin + steering * (V(self.grip.x, self.grip.y + 0.012, self.grip.z - 0.045) - origin))):Length()
+    result.leftGripError = (result.leftHand - (origin + steering * (self.leftGrip + V(0, 0.012, -0.045) - origin))):Length()
+    result.rightGripError = (result.rightHand - (origin + steering * (self.rightGrip + V(0, 0.012, -0.045) - origin))):Length()
     return result
 end
 

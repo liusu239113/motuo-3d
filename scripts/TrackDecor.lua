@@ -1,12 +1,83 @@
--- 赛道装饰使用正式库MDL；仅保留发车格、起终点棋盘线和赛道路缘等玩法曲面。
+-- 沿线护栏使用轻量程序化网格；保留发车格、棋盘线和路缘曲面。
 local Decor = {}
 local Details = require("TrackDetails")
 local Props = require("ScenicAssetProps")
+local P = require("Parts")
 local V = Vector3
-Decor.Resources, Decor.ResourceTypes = Props.Resources, Props.ResourceTypes
 
--- 正式护栏是完整小型模块，不沿车道拉成长梁；间隔摆放明确保留路外自由通行。
--- 全占地检查覆盖车道/支路/坡台与水线，坡差过大则不摆，绝不额外造底座。
+---@type Model?
+local lightRailModel = nil
+---@type Material?
+local lightRailMaterial = nil
+local railSize=V(.14,.95,3)
+---@param geometry CustomGeometry
+---@param a Vector3
+---@param b Vector3
+---@param c Vector3
+local function railTriangle(geometry,a,b,c)
+    local normal=(b-a):CrossProduct(c-a):Normalized()
+    for _,point in ipairs({a,b,c}) do
+        geometry:DefineVertex(point)
+        geometry:DefineNormal(normal)
+        geometry:DefineTexCoord(Vector2(point.x,point.z))
+    end
+end
+---@param root Node
+local function prepareLightRail(root)
+    if lightRailModel then return end
+    -- 一段护栏=两柱+两横梁，共48三角面，合成一个共享网格/一个材质槽。
+    local builder=root:CreateChild("护栏网格构建")
+    local geometry=builder:CreateComponent("CustomGeometry")
+    geometry:BeginGeometry(0,TRIANGLE_LIST)
+    local function quad(a,b,c,d)
+        railTriangle(geometry,a,b,c)
+        railTriangle(geometry,a,c,d)
+    end
+    local function box(x,y,z,w,h,d)
+        local a,b,c=w*.5,h*.5,d*.5
+        local v1=V(x-a,y-b,z-c)
+        local v2=V(x+a,y-b,z-c)
+        local v3=V(x+a,y+b,z-c)
+        local v4=V(x-a,y+b,z-c)
+        local v5=V(x-a,y-b,z+c)
+        local v6=V(x+a,y-b,z+c)
+        local v7=V(x+a,y+b,z+c)
+        local v8=V(x-a,y+b,z+c)
+        quad(v1,v4,v3,v2)
+        quad(v5,v6,v7,v8)
+        quad(v1,v2,v6,v5)
+        quad(v4,v8,v7,v3)
+        quad(v1,v5,v8,v4)
+        quad(v2,v3,v7,v6)
+    end
+    for _,z in ipairs({-1.2,1.2}) do box(0,.475,z,.10,.95,.10) end
+    for _,y in ipairs({.43,.83}) do box(0,y,0,.14,.16,3) end
+    geometry:Commit()
+    local model=Model:new()
+    assert(geometry:FillModel(model),"轻量护栏网格创建失败")
+    lightRailModel=model
+    lightRailMaterial=P.Material(.45,.50,.54,.72,.25)
+    builder:Dispose()
+end
+
+---@param root Node
+---@param position Vector3
+---@param yaw number
+local function addLightRail(root, position, yaw)
+    prepareLightRail(root)
+    local rail = P.Add(root, "轻量程序化护栏", assert(lightRailModel), assert(lightRailMaterial),
+        position, V.ONE, Quaternion(0,yaw,0), false)
+    rail:SetVar("LightweightRail",Variant(true))
+    local draw = assert(rail:GetComponent("StaticModel"))
+    draw.drawDistance = 230
+    draw.shadowDistance = 0
+    return rail
+end
+
+Decor.Resources = {"Techniques/PBR/PBRNoTexture.xml"}
+Decor.ResourceTypes = {["Techniques/PBR/PBRNoTexture.xml"] = "Technique"}
+
+-- 护栏沿道路间隔摆放，保留路外通行；全占地检查覆盖支路/坡台/水线。
 local function infrastructure(root, L, m, tick)
     local road, length = L.Roads[1], L.RouteLength
     local circuit, forest = L.activeId == "circuit", L.activeId == "forest"
@@ -23,9 +94,9 @@ local function infrastructure(root, L, m, tick)
                 local guarded = circuit or (not forest and (turn > 1.6 or L.activeId == "alpine" or (L.activeId == "coast" and side == -1)))
                 if guarded and rails < 420 then
                     local q = a + r * (side * (road.shoulder + (circuit and 4 or 2.1)))
-                    local p = Props.GroundSite(L, "rail", q.x, q.z, .95, yaw + 90, .2, .27, .03)
+                    local p = Props.GroundSite(L, "rail", q.x, q.z, .95, yaw, .2, .27, .03, railSize)
                     if p then
-                        Props.Add(root, "rail", p, .95, yaw + 90)
+                        addLightRail(root, p, yaw)
                         rails = rails + 1
                     end
                 end
@@ -43,6 +114,7 @@ local function infrastructure(root, L, m, tick)
         tick("赛事环境", chunk, chunks)
     end
     Decor.LastBuild = {rails = rails, markers = markers, railLimit = 420, markerLimit = 180}
+    print(string.format("[轻量护栏] %d段 / 共享网格1个 / 每段48三角面 / 贴图0 / 阴影0",rails))
 end
 
 local function startArea(root, L, m)

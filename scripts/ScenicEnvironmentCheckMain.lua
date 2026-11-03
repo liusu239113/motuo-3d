@@ -26,7 +26,7 @@ local function materialProbe()
     local paths = {
         fern = "uuid://HQorYSe7jArWJex9O-ITEOoJ",
         fernSmall = "uuid://Eqy3wSag5eJmQEQBqWnLcKwL",
-        rail = "uuid://EuEAqVcEvrhrHsZmdxoee6N6",
+        -- 护栏已改程序化，旧护栏材质探针不再适用。
         cone = "uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF",
         sign = "uuid://BbhFaY-oq5NxPUutxC9s5YOQ",
         arrow = "uuid://FjoMmROgqb4dDyqNZCf6eElx",
@@ -100,7 +100,6 @@ local function checkEnvironment()
     local fernSmall = assert(cache:GetResource("Model", "uuid://C_GzwbWfJNhFoj-_rEtT7HtV"))
     local rockA = assert(cache:GetResource("Model", "uuid://As2_acelV1DosNkDmeMasF4T"))
     local rockB = assert(cache:GetResource("Model", "uuid://DAxRITvZ1vC60um7M6gXY_Va"))
-    local rail = assert(cache:GetResource("Model", "uuid://FV7oke6s9852a30jMsdkkcC3"))
     local cone = assert(cache:GetResource("Model", "uuid://CGp6ca4NUVz_7_-kG06v5Ayb"))
     ---@type Material?
     local sharedTreeMaterial = nil
@@ -114,9 +113,15 @@ local function checkEnvironment()
             if sharedTreeMaterial then assert(mat == sharedTreeMaterial, "树实例必须共享材质") else sharedTreeMaterial = mat end
         elseif model == fern or model == fernSmall then plantCount = plantCount + 1
         elseif model == rockA or model == rockB then rockCount = rockCount + 1
-        elseif model == rail then railCount = railCount + 1
+        elseif draw.node:GetVar("LightweightRail"):GetBool() then
+            railCount = railCount + 1
+            assert(not draw.castShadows and model:GetGeometry(0,0).indexCount==144,
+                "轻量护栏必须48三角面且关闭阴影")
+            local material=assert(draw:GetMaterial(0))
+            assert(not material:GetTexture(TU_DIFFUSE) and not material:GetTexture(TU_NORMAL),
+                "轻量护栏不得加载外部贴图")
         elseif model == cone then coneCount = coneCount + 1 end
-        if model == treeModel or model == fern or model == fernSmall or model == rockA or model == rockB or model == rail or model == cone then
+        if model == treeModel or model == fern or model == fernSmall or model == rockA or model == rockB or model == cone then
             local scale = draw.node.scale
             assert(math.abs(scale.x - scale.y) < .00001 and math.abs(scale.y - scale.z) < .00001,
                 "环境正式模型必须等比缩放")
@@ -124,6 +129,12 @@ local function checkEnvironment()
         end
     end
     assert(treeCount == stats.high + stats.canopyInstances, "环境树数量与真实MDL实例失配")
+    local decor=require("TrackDecor").LastBuild
+    assert(decor and railCount==decor.rails and railCount<=decor.railLimit,"护栏实例必须匹配程序化布置预算")
+    for _,path in ipairs(World.Resources) do
+        assert(path~="uuid://FV7oke6s9852a30jMsdkkcC3" and path~="uuid://EuEAqVcEvrhrHsZmdxoee6N6",
+            "生产预载清单不得保留旧护栏模型或材质")
+    end
     assert(plantCount > 0 and rockCount > 0 and railCount > 0 and coneCount > 0, "草蕨/岩石/护栏/赛事标记不得缺失")
     assert(world.root:GetChild("随路线贴地发车标线", true), "起终点棋盘线与发车格必须保留")
     assert(world.mats.terrain:GetSurfaceTexture("grass_color") and world.mats.terrain:GetSurfaceTexture("rock_color"),
@@ -134,7 +145,15 @@ local function checkEnvironment()
         trackId_, treeCount, plantCount, rockCount, railCount, coneCount))
     local p, yaw = Landscape.RoadPoint(trackId_ == "lake" and Landscape.RouteLength * .36 or Landscape.RouteLength * .08)
     local camera = assert(cameraNode_)
-    if view_ == "course" then
+    if view_ == "rails" then
+        local rail=assert(world.root:GetChild("轻量程序化护栏",true),"必须显示生产场景的真实轻量护栏") --[[@as Node]]
+        p=rail.worldPosition
+        yaw=rail.worldRotation:YawAngle()
+        local angle=math.rad(yaw)
+        camera.position=p+Vector3(math.cos(angle)*5-math.sin(angle)*6,3.2,
+            -math.sin(angle)*5-math.cos(angle)*6)
+        camera:LookAt(p+Vector3(0,.55,0))
+    elseif view_ == "course" then
         local found = false
         for _, obstacle in ipairs(world.mixedObstacles) do
             if obstacle.kind == "pendulum" then
@@ -204,7 +223,7 @@ function Start()
         return
     end
     assert(trackId_ == "lake" or trackId_ == "circuit", "仅验收lake/circuit真实环境")
-    assert(view_ == "landscape" or view_ == "course", "仅支持真实环境全景/机关近景")
+    assert(view_ == "landscape" or view_ == "course" or view_ == "rails", "仅支持真实环境全景/机关/护栏近景")
     assert(shotPrefix_ == "" or shotPrefix_:match("^screenshots/environment%-official/[%w_-]+$"),
         "验收图片只写screenshots/environment-official下的显式前缀")
     assert(Landscape.SelectTrack(trackId_))

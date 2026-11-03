@@ -473,6 +473,7 @@ end
 function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
+    local previousSpeed = r.speed
     if race.options.mixed then
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
@@ -518,9 +519,7 @@ function AI.Update(race, r, dt)
         r.x,r.y,r.z=drive.x,drive.y,drive.z
         r.speed=drive.speed
     end
-    race:AdvanceGates(r, oldS, r.s, dt)
-    if not r.finished then r.progress = min(r.s, r.nextGate - 0.001) end
-    r.safeS = r.progress
+    race:ValidateProgress(r, oldS, r.s, dt, previousSpeed, false)
 end
 
 return AI

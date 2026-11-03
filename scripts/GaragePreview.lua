@@ -1,8 +1,9 @@
 -- Independent showroom, based on scaffold-3d-scene + scene-to-nanovg recipe.
--- No Bike, World, rider skeleton, physics, or global renderer viewport is created.
+-- Ebike reuses the formal Rider skeleton; no Bike, World, physics, or global viewport is created.
 -- Contract: New(props), Select(id, available), Update(dt), Dispose(); widget may reopen.
 local UI = require("urhox-libs/UI")
 local VehicleAssets = require("VehicleAssets")
+local MixedVisuals = require("MixedVisuals")
 
 ---@class GaragePreview : Widget
 local Preview = UI.Widget:Extend("GaragePreview")
@@ -26,6 +27,8 @@ function Preview:Init(props)
     self.previewScene = nil
     ---@type Node?
     self.turntable = nil
+    ---@type Rider?
+    self.riderRig = nil
     ---@type Node?
     self.cameraNode = nil
     ---@type Camera?
@@ -78,7 +81,8 @@ function Preview:Dispose()
     if self.previewSurface then self.previewSurface:SetNumViewports(0) end
     if self.previewTexture then self.previewTexture:Dispose() end
     self.previewSurface, self.previewViewport, self.previewTexture = nil, nil, nil
-    self.previewCamera, self.cameraNode, self.turntable = nil, nil, nil
+    if self.riderRig then MixedVisuals.DisposeRider(self.riderRig) end
+    self.previewCamera, self.cameraNode, self.turntable, self.riderRig = nil, nil, nil, nil
     if self.previewScene then self.previewScene:Dispose() end
     self.previewScene, self.loadedResources = nil, {}
     self.renderWidth, self.renderHeight, self.layoutAspect = 0, 0, 0.0
