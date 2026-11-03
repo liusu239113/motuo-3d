@@ -1,0 +1,330 @@
+[2026-11-03 20_13_45_889][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_45_889][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_45_889][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_45_889][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_45_547][0] INFO: DownloadManager initialized
+[2026-11-03 20_13_45_548][0] INFO: a couple of Subsystems registered finish.
+[2026-11-03 20_13_45_548][0] INFO: Engine construct finish.
+[2026-11-03 20_13_45_553][0] INFO: Engine initialize begin.
+[2026-11-03 20_13_45_553][0] INFO: Rendering pipeline: forward
+[2026-11-03 20_13_45_555][0] INFO: Engine resourcePrefixPath: /resources/runtime/cli/, resource: Res
+[2026-11-03 20_13_45_556][0] INFO: Added resource path /resources/runtime/cli/Res/
+[2026-11-03 20_13_45_556][0] INFO: Now resource dir: 
+[2026-11-03 20_13_45_556][0] INFO: 0 - /resources/runtime/cli/Res/
+[2026-11-03 20_13_45_557][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/CoreData.pak' to cache
+[2026-11-03 20_13_45_557][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/CoreData.pak, 0
+[2026-11-03 20_13_45_558][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/CoreData.pak, 127 entries (126 unique blocks), decompressed 66503 -> 153288 bytes, dict 8043 bytes
+[2026-11-03 20_13_45_558][0] INFO: Added resource package CoreData
+[2026-11-03 20_13_45_558][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Data.pak' to cache
+[2026-11-03 20_13_45_558][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Data.pak, 0
+[2026-11-03 20_13_45_667][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Data.pak, 1381 entries (1294 unique blocks), decompressed 16681130 -> 32316443 bytes, dict 22080 bytes
+[2026-11-03 20_13_45_667][0] INFO: Added resource package Data
+[2026-11-03 20_13_45_667][0] INFO: AddPackageFile '/resources/runtime/cli/Autoload/Res.pak' to cache
+[2026-11-03 20_13_45_667][0] INFO: PackageFile::Open, /resources/runtime/cli/Autoload/Res.pak, 0
+[2026-11-03 20_13_45_856][0] INFO: UZSD package opened: /resources/runtime/cli/Autoload/Res.pak, 664 entries (642 unique blocks), decompressed 28773920 -> 75977860 bytes, dict 58076 bytes
+[2026-11-03 20_13_45_856][0] INFO: Added resource package Res
+[2026-11-03 20_13_45_856][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-11-03 20_13_45_861][0] INFO: computeShaderSupport 1,caps->supported:4,aps->supported & BGFX_CAPS_INDEX32:4096
+[2026-11-03 20_13_45_861][0] INFO: Detected 0 GPUs
+[2026-11-03 20_13_45_861][0] INFO: Selected GPU name: 
+[2026-11-03 20_13_45_861][0] INFO: Renderer Type: Noop
+[2026-11-03 20_13_45_861][0] INFO: CheckFeatureSupport => CpuInstance=1, _R32I=1, _R32U=1, _R32F=1, _RGBA16F=1, _RGBA32F=1, MaxTextureSizeLimit=16384
+[2026-11-03 20_13_45_861][0] INFO: Graphics mode: 2040x1080 (logic=2040x1080, dpr=1) windowed monitor 0
+[2026-11-03 20_13_45_861][0] INFO: Initialized input
+[2026-11-03 20_13_45_861][0] INFO: Initialized user interface
+[2026-11-03 20_13_45_865][0] INFO: Initialized renderer
+[2026-11-03 20_13_45_869][0] INFO: Initialized graphics & audio output.
+[2026-11-03 20_13_45_869][0] INFO: Initialized engine
+[2026-11-03 20_13_45_869][0] INFO: LogUploader: auto-upload disabled (no SLS URL), UploadLogPack still available on demand
+[2026-11-03 20_13_45_870][0] INFO: Device Max Storage Block Binding Range: 16
+[2026-11-03 20_13_45_870][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-03 20_13_45_870][0] INFO: UrhoXRuntime: using local ProjectBuilder manifest: /workspace/dist/latest.json
+[2026-11-03 20_13_45_870][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-03 20_13_45_870][0] INFO: Custom Lua require system installed (module cache active)
+[2026-11-03 20_13_45_879][0] INFO: Lua 5.4: Generational GC enabled.
+[2026-11-03 20_13_45_879][0] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-11-03 20_13_45_879.log
+[2026-11-03 20_13_45_879][0] INFO: LobbyBridge Lua API registered
+[2026-11-03 20_13_45_879][0] INFO: [Validate] Mode enabled: frames=12, timeout=70s
+[2026-11-03 20_13_45_879][0] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-11-03 20_13_45_879][0] INFO: BootstrapManager: Localization initialized, language=en
+[2026-11-03 20_13_45_879][0] INFO: LoadingUI::Show()
+[2026-11-03 20_13_45_881][0] INFO: BootstrapPipeline: starting with 5 steps, total weight 1.00
+[2026-11-03 20_13_45_881][0] INFO: BootstrapPipeline: executing step [1/5] 'LoadVersion'
+[2026-11-03 20_13_45_881][0] INFO: [Bootstrap/LoadVersion] Starting...
+[2026-11-03 20_13_45_881][0] INFO: [Bootstrap/LoadVersion] Loading local version: /workspace/dist/latest.json
+[2026-11-03 20_13_45_882][0] INFO: [Bootstrap/LoadVersion] Version: 1.0.29, Manifest (client): 5e5dabd3
+[2026-11-03 20_13_45_882][0] INFO: [Bootstrap/LoadVersion] Completed successfully (1 ms)
+[2026-11-03 20_13_45_882][0] INFO: BootstrapPipeline: step 'LoadVersion' completed successfully
+[2026-11-03 20_13_45_882][1] INFO: BootstrapPipeline: executing step [2/5] 'LoadProjectManifest'
+[2026-11-03 20_13_45_882][1] INFO: [Bootstrap/LoadProjectManifest] Starting...
+[2026-11-03 20_13_45_882][1] INFO: Manifest Lua API registered successfully
+[2026-11-03 20_13_45_883][1] INFO: [Bootstrap/LoadProjectManifest] Loading local manifest: /workspace/dist/1.0.29/manifest-5e5dabd3.json
+[2026-11-03 20_13_45_885][1] INFO: ManifestData: loaded 717 files, 3 sources, 0 paks, entry=main.lua
+[2026-11-03 20_13_45_885][1] INFO: [Bootstrap/LoadProjectManifest] Added builtin source engine-startup: https://.../src/engine-startup/ (tag=stable, priority=1000000)
+[2026-11-03 20_13_45_885][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source engine-res: https://<engine-res>/ (tag=1.36, priority=1000001)
+[2026-11-03 20_13_45_885][1] INFO: [Bootstrap/LoadProjectManifest] Merged builtin source urhox-libs: https://<urhox-libs>/ (tag=1.0, priority=1000002)
+[2026-11-03 20_13_45_886][1] INFO: ManifestResolver: loaded game manifest with 717 files, 0 paks
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadProjectManifest] Loaded manifest with 717 files, entry: ScenicEnvironmentCheckMain.lua
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadProjectManifest] Completed successfully (4 ms)
+[2026-11-03 20_13_45_886][1] INFO: BootstrapPipeline: step 'LoadProjectManifest' completed successfully
+[2026-11-03 20_13_45_886][1] INFO: BootstrapPipeline: executing step [3/5] 'LoadSourceManifests'
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-startup (https://.../src/engine-startup/, stable)
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/1]: engine-startup
+[2026-11-03 20_13_45_886][1] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://.../src/engine-startup/stable.json
+[2026-11-03 20_13_45_886][1] INFO: HttpManager initialized (Native with libhv HttpClient)
+[2026-11-03 20_13_45_888][1] INFO: Shader::BeginLoad: /Shaders/BLGL/UI.glsl
+[2026-11-03 20_13_45_888][1] INFO: Shader::EndLoad
+[2026-11-03 20_13_46_283][25] INFO: ManifestData: loaded 6 files, 0 sources, 0 paks, entry=engine-startup/main.lua
+[2026-11-03 20_13_46_283][25] INFO: ManifestResolver: loaded source manifest 'engine-startup' with 6 files, 0 paks
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-startup manifest with 6 files
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (396 ms)
+[2026-11-03 20_13_46_283][25] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-11-03 20_13_46_283][25] INFO: BootstrapPipeline: executing step [4/5] 'InitializeResource'
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/InitializeResource] Starting...
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/InitializeResource] ManifestResolver registered to DownloadManager
+[2026-11-03 20_13_46_283][25] INFO: Added resource path /home/Maker/update/
+[2026-11-03 20_13_46_283][25] INFO: Now resource dir: 
+[2026-11-03 20_13_46_283][25] INFO: 0 - /home/Maker/update/
+[2026-11-03 20_13_46_283][25] INFO: 1 - /resources/runtime/cli/Res/
+[2026-11-03 20_13_46_283][25] INFO: Added resource path /workspace/dist/
+[2026-11-03 20_13_46_283][25] INFO: Now resource dir: 
+[2026-11-03 20_13_46_283][25] INFO: 0 - /workspace/dist/
+[2026-[2026-11-03 20_13_46_299][25] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_46_299][25] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-03 20_13_46_299][25] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+11-03 20_13_46_283][25] INFO: 1 - /home/Maker/update/
+[2026-11-03 20_13_46_283][25] INFO: 2 - /resources/runtime/cli/Res/
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/InitializeResource] Resource system initialized
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/InitializeResource] Completed successfully (0 ms)
+[2026-11-03 20_13_46_283][25] INFO: BootstrapPipeline: step 'InitializeResource' completed successfully
+[2026-11-03 20_13_46_283][25] INFO: BootstrapPipeline: executing step [5/5] 'Startup'
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/Startup] Starting...
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/Startup] Found engine-startup manifest with 6 files
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/Startup] Downloading 4 startup resources
+[2026-11-03 20_13_46_283][25] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 20_13_46_283][25] INFO: [Bootstrap/Startup] Entry script: engine-startup/main.lua -> .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 20_13_46_283][25] INFO: Custom Lua require system installed (module cache active)
+[2026-11-03 20_13_46_291][25] INFO: Lua 5.4: Generational GC enabled.
+[2026-11-03 20_13_46_291][25] INFO: Lua official log file initialized: /home/Maker/logs/lua/lua-2026-11-03 20_13_46_291.log
+[2026-11-03 20_13_46_291][25] INFO: Manifest Lua API registered successfully
+[2026-11-03 20_13_46_291][25] INFO: [BootstrapLuaAPI] Registered successfully
+[2026-11-03 20_13_46_291][25] INFO: [Bootstrap/Startup] Startup Lua VM created
+[2026-11-03 20_13_46_292][25] INFO: Loaded Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 20_13_46_292][25] INFO: Executed Lua script .../src/engine-startup/assets/AlK2YdWhzuyHYnv6NgG9x35x-a65229d0.lua
+[2026-11-03 20_13_46_292][25] INFO: Localization: auto-selected 'en' from [en, zh_CN]
+[2026-11-03 20_13_46_294][25] INFO: Loaded Lua script engine-startup/loading_ui.lua
+[2026-11-03 20_13_46_299][25] INFO: LoadingUI::Hide()
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/Startup] Pipeline reconfigured by Lua script
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/Startup] Completed successfully (16 ms)
+[2026-11-03 20_13_46_299][25] INFO: BootstrapPipeline: step 'Startup' completed successfully
+[2026-11-03 20_13_46_299][25] INFO: BootstrapPipeline: skipping step 'UpdateProjectInfo'
+[2026-11-03 20_13_46_299][25] INFO: BootstrapPipeline: executing step [7/16] 'LoadSourceManifests'
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Starting...
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Found source: engine-res (https://<engine-res>/, 1.36)
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Found source: urhox-libs (https://<urhox-libs>/, 1.0)
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Found source: official-res (https://<official-res>/, stable)
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Loading source [1/3]: official-res
+[2026-11-03 20_13_46_299][25] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<official-res>/stable.json
+[2026-11-03 20_13_46_299][25] INFO: Shader::BeginLoad: /Shaders/BLGL/NanoVGFill.glsl
+[2026-11-03 20_13_46_299][25] INFO: Shader::EndLoad
+[2026-11-03 20_13_47_315][79] INFO: ManifestData: loaded 38888 files, 1 sources, 3 paks, entry=
+[2026-11-03 20_13_47_466][79] INFO: ManifestResolver: loaded source manifest 'official-res' with 38888 files, 3 paks
+[2026-11-03 20_13_47_466][79] INFO: [Bootstrap/LoadSourceManifests] Loaded official-res manifest with 38888 files
+[2026-11-03 20_13_47_466][79] INFO: [Bootstrap/LoadSourceManifests] Loading source [2/3]: engine-res
+[2026-11-03 20_13_47_466][79] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<engine-res>/1.36.json
+[2026-11-03 20_13_47_583][86] INFO: ManifestData: loaded 1199 files, 0 sources, 0 paks, entry=
+[2026-11-03 20_13_47_587][86] INFO: ManifestResolver: loaded source manifest 'engine-res' with 1199 files, 0 paks
+[2026-11-03 20_13_47_587][86] INFO: [Bootstrap/LoadSourceManifests] Loaded engine-res manifest with 1199 files
+[2026-11-03 20_13_47_587][86] INFO: [Bootstrap/LoadSourceManifests] Loading source [3/3]: urhox-libs
+[2026-11-03 20_13_47_587][86] INFO: [Bootstrap/LoadSourceManifests] Downloading: https://<urhox-libs>/1.0.json
+[2026-11-03 20_13_47_699][93] INFO: ManifestData: loaded 160 files, 0 sources, 0 paks, entry=
+[2026-11-03 20_13_47_699][93] INFO: ManifestResolver: loaded source manifest 'urhox-libs' with 160 files, 0 paks
+[2026-11-03 20_13_47_699][93] INFO: [Bootstrap/LoadSourceManifests] Loaded urhox-libs manifest with 160 files
+[2026-11-03 20_13_47_699][93] INFO: [Bootstrap/LoadSourceManifests] Completed successfully (1401 ms)
+[2026-11-03 20_13_47_699][93] INFO: BootstrapPipeline: step 'LoadSourceManifests' completed successfully
+[2026-11-03 20_13_47_699][93] INFO: BootstrapPipeline: skipping step 'ClearShaderCache'
+[2026-11-03 20_13_47_699][93] INFO: BootstrapPipeline: skipping step 'DownloadInitialPackage'
+[2026-11-03 20_13_47_699][93] INFO: BootstrapPipeline: executing step [10/16] 'PreloadI18nStep'
+[2026-11-03 20_13_47_699][93] INFO: [Bootstrap/PreloadI18nStep] Starting...
+[2026-11-03 20_13_47_700][93]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-03 20_13_47_705][93]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-03 20_13_47_705][93]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-03 20_13_47_705][93] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-03 20_13_47_705][93] INFO: [Bootstrap/PreloadI18nStep] Completed successfully (6 ms)
+[2026-11-03 20_13_47_705][93] INFO: BootstrapPipeline: step 'PreloadI18nStep' completed successfully
+[2026-11-03 20_13_47_705][93] INFO: BootstrapPipeline: executing step [11/16] 'LoadPreloadResources'
+[2026-11-03 20_13_47_705][93] INFO: [Bootstrap/LoadPreloadResources] Starting...
+[2026-11-03 20_13_47_706][93] INFO: DownloadWhilePlayingManager: loaded 16 render blocking exts
+[2026-11-03 20_13_47_706][93] INFO: [Bootstrap/LoadPreloadResources] Loaded RenderBlockingTypes.json
+[2026-11-03 20_13_47_711][93] INFO: ManifestResolver: 预加载 1655 个文件 (manifest 总计 40704)
+[2026-11-03 20_13_47_711][93] INFO: [Bootstrap/LoadPreloadResources] Found 1655 preload files
+[2026-11-03 20_13_47_715][93] INFO: [Bootstrap/LoadPreloadResources] All resources already cached
+[2026-11-03 20_13_47_715][93] INFO: [Bootstrap/LoadPreloadResources] Completed successfully (10 ms)
+[2026-11-03 20_13_47_715][93] INFO: BootstrapPipeline: step 'LoadPreloadResources' completed successfully
+[2026-11-03 20_13_47_715][93] INFO: BootstrapPipeline: skipping step 'Cleanup'
+[2026-11-03 20_13_47_715][93] INFO: BootstrapPipeline: skipping step 'RecordProjectSize'
+[2026-11-03 20_13_47_715][93] INFO: BootstrapPipeline: skipping step 'CleanupOtherProjects'
+[2026-11-03 20_13_47_715][93] INFO: BootstrapPipeline: executing step [15/16] 'Ready'
+[2026-11-03 20_13_47_715][93] INFO: [Bootstrap/Ready] Starting...
+[2026-11-03 20_13_47_715][93] INFO: [Bootstrap/Ready] No project_id (-game=), project-scoped Lobby requests will be rejected
+[2026-11-03 20_13_47_716][93] INFO: [Bootstrap/Ready] Multiplayer mode: false, max_players: 4
+[2026-11-03 20_13_47_717][93] INFO: [Bootstrap/Ready] AdConfig: status=1, ad_spaces=2, top_on_placements=0, url=
+[2026-11-03 20_13_47_717][94] INFO: [Bootstrap/Ready] Completed successfully (1 ms)
+[2026-11-03 20_13_47_717][94] INFO: BootstrapPipeline: step 'Ready' completed successfully
+[2026-11-03 20_13_47_733][95] INFO: BootstrapPipeline: executing step [16/16] 'FadeOutLoading'
+[2026-11-03 20_13_47_734][95] INFO: [Bootstrap/FadeOutLoading] Starting...
+[2026-11-03 20_13_48_116][118] INFO: [Bootstrap/FadeOutLoading] Completed successfully (383 ms)
+[2026-11-03 20_13_48_116][118] INFO: BootstrapPipeline: step 'FadeOutLoading' completed successfully
+[2026-11-03 20_13_48_133][119] INFO: BootstrapPipeline: completed successfully
+[2026-11-03 20_13_48_133][119] INFO: BootstrapManager: pipeline completed successfully
+[2026-11-03 20_13_48_133][119] INFO: BootstrapManager: using provided scriptFileName: ScenicEnvironmentCheckMain.lua
+[2026-11-03 20_13_48_133][119] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-03 20_13_48_136][119] INFO: RuntimeRetargeterCache: Loaded 5 body types, 210 animation mappings
+[2026-11-03 20_13_48_137][119] INFO: Loaded Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-11-03 20_13_48_137][119][Script] IsNetworkMode:    false
+[2026-11-03 20_13_48_144][119] INFO: Loaded Lua script urhox-libs/Engine/init.lua
+[2026-11-03 20_13_48_145][119] INFO: Loaded Lua script urhox-libs/Engine/InputExtensions.lua
+[2026-11-03 20_13_48_145][119] INFO: Loaded Lua script urhox-libs/Engine/ResourceCacheExtensions.lua
+[2026-11-03 20_13_48_147][119] INFO: Loaded Lua script urhox-libs/Engine/i18n.lua
+[2026-11-03 20_13_48_148][119] INFO: [i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-03 20_13_48_148][119] INFO: [i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-03 20_13_48_148][119] INFO: [i18n] GetLanguage: resolved='zh_CN'
+[2026-11-03 20_13_48_148][119] INFO: [i18n] SetLanguage: actualLang='zh_CN' explicit=nil
+[2026-11-03 20_13_48_148][119] INFO: [i18n] SetVariantTag: priority=2000, tag=''
+[2026-11-03 20_13_48_148][119] INFO: SetVariantTag: priority=2000, tag=''
+[2026-11-03 20_13_48_153][119] INFO: [i18n] init: lang='zh_CN' translations=true hooks=true
+[2026-11-03 20_13_48_154][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/InputAdaptor.lua
+[2026-11-03 20_13_48_154][119][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-03 20_13_48_154][119][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-03 20_13_48_154][119][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-03 20_13_48_154][119][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-03 20_13_48_155][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/Scene.lua
+[2026-11-03 20_13_48_156][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/SceneGuard.lua
+[2026-11-03 20_13_48_156][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UIGuard.lua
+[2026-11-03 20_13_48_157][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/UserInfo.lua
+[2026-11-03 20_13_48_158][119] INFO: Loaded Lua script LuaScripts/Utilities/Previews/TextModeration.lua
+[2026-11-03 20_13_48_158][119][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-03 20_13_48_158][119] INFO: Executed Lua script LuaScripts/Utilities/EnginePreview.lua
+[2026-11-03 20_13_48_158][119] INFO: Loaded Lua script Validate/cloud_stub.lua
+[2026-11-03 20_13_48_158][119] INFO: Executed Lua script Validate/cloud_stub.lua
+[2026-11-03 20_13_48_159][119] INFO: Loaded Lua script Validate/servercloud_stub.lua
+[2026-11-03 20_13_48_159][119] INFO: Executed Lua script Validate/servercloud_stub.lua
+[2026-11-03 20_13_48_167][119] INFO: Loaded Lua script ScenicEnvironmentCheckMain.lua
+[2026-11-03 20_13_48_177][119] INFO: Loaded Lua script World.lua
+[2026-11-03 20_13_48_184][119] INFO: Loaded Lua script Parts.lua
+[2026-11-03 20_13_48_198][119] INFO: Loaded Lua script Landscape.lua
+[2026-11-03 20_13_48_206][119] INFO: Loaded Lua script ScenicTrees.lua
+[2026-11-03 20_13_48_214][119] INFO: Loaded Lua script ScenicMesh.lua
+[2026-11-03 20_13_48_215][119] INFO: Loaded Lua script Tracks.lua
+[2026-11-03 20_13_48_269][119] INFO: Loaded Lua script TrackFeatures.lua
+[2026-11-03 20_13_48_584][119][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-03 20_13_48_593][119] INFO: Loaded Lua script VehicleAssets.lua
+[2026-11-03 20_13_48_602][119] INFO: Loaded Lua script VehicleFinish.lua
+[2026-11-03 20_13_48_611][119] INFO: Loaded Lua script VehicleWheelRefinement.lua
+[2026-11-03 20_13_48_617][119] INFO: Loaded Lua script MixedAssets.lua
+[2026-11-03 20_13_48_624][119] INFO: Loaded Lua script TrackDecor.lua
+[2026-11-03 20_13_48_632][119] INFO: Loaded Lua script TrackDetails.lua
+[2026-11-03 20_13_48_641][119] INFO: Loaded Lua script ScenicAssetProps.lua
+[2026-11-03 20_13_48_647][119] INFO: Loaded Lua script CourseAssets.lua
+[2026-11-03 20_13_48_648][119] INFO: Executed Lua script ScenicEnvironmentCheckMain.lua
+[2026-11-03 20_13_48_657][119][Script] [环境材质诊断] uuid://HQorYSe7jArWJex9O-ITEOoJ D=uuid://GDeMOYTq3mVTonY5gTh7l49e N=uuid://BLbIyWN06IMuxSILdmal-BoY VSDEF= PSDEF= cull=0.0 A2C=false
+[2026-11-03 20_13_48_657][119][Script] [环境材质Technique] uuid://HQorYSe7jArWJex9O-ITEOoJ uuid://H1z0SU7Lbxj1MM8bbIHW5c2A
+[2026-11-03 20_13_48_657][119][Script] [环境材质Pass] uuid://HQorYSe7jArWJex9O-ITEOoJ base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO ALPHAMASK blend=0.0
+[2026-11-03 20_13_48_657][119][Script] [环境材质Pass] uuid://HQorYSe7jArWJex9O-ITEOoJ litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO ALPHAMASK blend=0.0
+[2026-11-03 20_13_48_657][119][Script] [环境材质Pass] uuid://HQorYSe7jArWJex9O-ITEOoJ light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO ALPHAMASK blend=1.0
+[2026-11-03 20_13_48_657][119][Script] [环境材质Pass] uuid://HQorYSe7jArWJex9O-ITEOoJ shadow VS=Shadow PS=Shadow VD= PD=METALLIC ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_658][119][Script] [环境材质Pass] uuid://HQorYSe7jArWJex9O-ITEOoJ deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO ALPHAMASK DEFERRED blend=0.0
+[2026-11-03 20_13_48_668][119][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://Eqy3wSag5eJmQEQBqWnLcKwL -> Techniques/Diff.xml / diffuseAlpha
+[2026-11-03 20_13_48_668][119][Script] [环境材质诊断] uuid://Eqy3wSag5eJmQEQBqWnLcKwL D=uuid://Eo2ZGQibKaQLurWq6ApEOth- N=nil VSDEF=AO PSDEF=DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A cull=1.0 A2C=false
+[2026-11-03 20_13_48_668][119][Script] [环境材质Technique] uuid://Eqy3wSag5eJmQEQBqWnLcKwL Techniques/Diff.xml
+[2026-11-03 20_13_48_668][119][Script] [环境材质Pass] uuid://Eqy3wSag5eJmQEQBqWnLcKwL base VS=LitSolid PS=LitSolid VD= AO  PD=DIFFMAP AMBIENT DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_668][119][Script] [环境材质Pass] uuid://Eqy3wSag5eJmQEQBqWnLcKwL litbase VS=LitSolid PS=LitSolid VD= AO  PD=DIFFMAP AMBIENT DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_669][119][Script] [环境材质Pass] uuid://Eqy3wSag5eJmQEQBqWnLcKwL light VS=LitSolid PS=LitSolid VD= AO  PD=DIFFMAP  DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=1.0
+[2026-11-03 20_13_48_669][119][Script] [环境材质Pass] uuid://Eqy3wSag5eJmQEQBqWnLcKwL shadow VS=Shadow PS=Shadow VD= AO  PD= DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_669][119][Script] [环境材质Pass] uuid://Eqy3wSag5eJmQEQBqWnLcKwL deferred VS=LitSolid PS=LitSolid VD= AO  PD=DIFFMAP AMBIENT DIFFMAP AO ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A DEFERRED blend=0.0
+[2026-11-03 20_13_48_678][119][Script] [环境材质诊断] uuid://ETwgwdlLT9yb0fm2NxmLlURS D=uuid://BT396fBrvUacm0o_qm9PN5vC N=uuid://EonWeUCUXBLqglWa_tJvKN3r VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_678][119][Script] [环境材质Technique] uuid://ETwgwdlLT9yb0fm2NxmLlURS uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_678][119][Script] [环境材质Pass] uuid://ETwgwdlLT9yb0fm2NxmLlURS base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_678][119][Script] [环境材质Pass] uuid://ETwgwdlLT9yb0fm2NxmLlURS litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_678][119][Script] [环境材质Pass] uuid://ETwgwdlLT9yb0fm2NxmLlURS light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_678][119][Script] [环境材质Pass] uuid://ETwgwdlLT9yb0fm2NxmLlURS shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_678][119][Script] [环境材质Pass] uuid://ETwgwdlLT9yb0fm2NxmLlURS deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_688][119][Script] [环境材质诊断] uuid://HDoGiRhCA1ZwjewmLbRqhTOq D=uuid://ETBHwWQm4eAunIdEKcAUcb01 N=uuid://G67t6SF18pPP15enSijM7aEX VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_688][119][Script] [环境材质Technique] uuid://HDoGiRhCA1ZwjewmLbRqhTOq uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_688][119][Script] [环境材质Pass] uuid://HDoGiRhCA1ZwjewmLbRqhTOq base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_688][119][Script] [环境材质Pass] uuid://HDoGiRhCA1ZwjewmLbRqhTOq litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_688][119][Script] [环境材质Pass] uuid://HDoGiRhCA1ZwjewmLbRqhTOq light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_688][119][Script] [环境材质Pass] uuid://HDoGiRhCA1ZwjewmLbRqhTOq shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_688][119][Script] [环境材质Pass] uuid://HDoGiRhCA1ZwjewmLbRqhTOq deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_694][119][Script] [环境材质诊断] uuid://Bu1-aXStY3WMbN0SDgV_0J8L D=uuid://DTx7CXVGx2OhI38HqeaMlwRW N=uuid://B2kxsX5_b7FOrnlE1QKwLCHq VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_694][119][Script] [环境材质Technique] uuid://Bu1-aXStY3WMbN0SDgV_0J8L uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_694][119][Script] [环境材质Pass] uuid://Bu1-aXStY3WMbN0SDgV_0J8L base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_694][119][Script] [环境材质Pass] uuid://Bu1-aXStY3WMbN0SDgV_0J8L litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_694][119][Script] [环境材质Pass] uuid://Bu1-aXStY3WMbN0SDgV_0J8L light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_694][119][Script] [环境材质Pass] uuid://Bu1-aXStY3WMbN0SDgV_0J8L shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_694][119][Script] [环境材质Pass] uuid://Bu1-aXStY3WMbN0SDgV_0J8L deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_700][119][Script] [环境材质诊断] uuid://HntT6UQGaB9sTTQOuRq_XVBm D=uuid://Bg7vUahwR2y6TqrrHOtFXf2v N=uuid://DINu8YE4n8hbaYjEC-NOL6ps VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_700][119][Script] [环境材质Technique] uuid://HntT6UQGaB9sTTQOuRq_XVBm uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_700][119][Script] [环境材质Pass] uuid://HntT6UQGaB9sTTQOuRq_XVBm base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_700][119][Script] [环境材质Pass] uuid://HntT6UQGaB9sTTQOuRq_XVBm litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_700][119][Script] [环境材质Pass] uuid://HntT6UQGaB9sTTQOuRq_XVBm light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_700][119][Script] [环境材质Pass] uuid://HntT6UQGaB9sTTQOuRq_XVBm shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_700][119][Script] [环境材质Pass] uuid://HntT6UQGaB9sTTQOuRq_XVBm deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_706][119][Script] [环境材质诊断] uuid://HhdXudJoS_1n5psy_52upCCB D=uuid://CvMVucedyYp588-lhcW8mHfV N=uuid://BBLusUtcYP65qA4zN8dq27-p VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_706][119][Script] [环境材质Technique] uuid://HhdXudJoS_1n5psy_52upCCB uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_706][119][Script] [环境材质Pass] uuid://HhdXudJoS_1n5psy_52upCCB base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_706][119][Script] [环境材质Pass] uuid://HhdXudJoS_1n5psy_52upCCB litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_706][119][Script] [环境材质Pass] uuid://HhdXudJoS_1n5psy_52upCCB light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_706][119][Script] [环境材质Pass] uuid://HhdXudJoS_1n5psy_52upCCB shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_706][119][Script] [环境材质Pass] uuid://HhdXudJoS_1n5psy_52upCCB deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_711][119][Script] [环境材质诊断] uuid://BYUaAXeDcr7-GOyrJkX2dGoW D=uuid://F_AeMbWJusq6fjKkKAVik2SP N=uuid://BQ436fbeGu2aNjcivAqG4oaI VSDEF= PSDEF= cull=1.0 A2C=false
+[2026-11-03 20_13_48_712][119][Script] [环境材质Technique] uuid://BYUaAXeDcr7-GOyrJkX2dGoW uuid://H9jkQaEx5e9Wg0N8H1P1hcUy
+[2026-11-03 20_13_48_712][119][Script] [环境材质Pass] uuid://BYUaAXeDcr7-GOyrJkX2dGoW base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_712][119][Script] [环境材质Pass] uuid://BYUaAXeDcr7-GOyrJkX2dGoW litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO blend=0.0
+[2026-11-03 20_13_48_712][119][Script] [环境材质Pass] uuid://BYUaAXeDcr7-GOyrJkX2dGoW light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AO blend=1.0
+[2026-11-03 20_13_48_712][119][Script] [环境材质Pass] uuid://BYUaAXeDcr7-GOyrJkX2dGoW shadow VS=Shadow PS=Shadow VD= PD= blend=0.0
+[2026-11-03 20_13_48_712][119][Script] [环境材质Pass] uuid://BYUaAXeDcr7-GOyrJkX2dGoW deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=NORMALMAP DIFFMAP METALLIC ROUGHNESS PBR IBL AMBIENT AO DEFERRED blend=0.0
+[2026-11-03 20_13_48_719][119][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://EuEAqVcEvrhrHsZmdxoee6N6 -> Techniques/PBR/PBRDiffNormal.xml / packedNormal
+[2026-11-03 20_13_48_719][119][Script] [环境材质诊断] uuid://EuEAqVcEvrhrHsZmdxoee6N6 D=uuid://GbbbgTgSwJZeq0rU2uC7AB5z N=uuid://G55U8ZIbS8ga-hqnXPLhnpox VSDEF= PSDEF=PACKEDNORMAL cull=1.0 A2C=false
+[2026-11-03 20_13_48_719][119][Script] [环境材质Technique] uuid://EuEAqVcEvrhrHsZmdxoee6N6 Techniques/PBR/PBRDiffNormal.xml
+[2026-11-03 20_13_48_719][119][Script] [环境材质Pass] uuid://EuEAqVcEvrhrHsZmdxoee6N6 base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL blend=0.0
+[2026-11-03 20_13_48_719][119][Script] [环境材质Pass] uuid://EuEAqVcEvrhrHsZmdxoee6N6 litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL NORMALMAP blend=0.0
+[2026-11-03 20_13_48_719][119][Script] [环境材质Pass] uuid://EuEAqVcEvrhrHsZmdxoee6N6 light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AO PACKEDNORMAL NORMALMAP blend=1.0
+[2026-11-03 20_13_48_719][119][Script] [环境材质Pass] uuid://EuEAqVcEvrhrHsZmdxoee6N6 shadow VS=Shadow PS=Shadow VD= PD= PACKEDNORMAL blend=0.0
+[2026-11-03 20_13_48_719][119][Script] [环境材质Pass] uuid://EuEAqVcEvrhrHsZmdxoee6N6 deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL NORMALMAP DEFERRED blend=0.0
+[2026-11-03 20_13_48_723][119][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF -> Techniques/PBR/PBRDiffNormal.xml / packedNormal
+[2026-11-03 20_13_48_723][119][Script] [环境材质诊断] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF D=uuid://DX6jaS38DuyueUthXYJU3EyU N=uuid://AVfHEeu4uIt3DtYAvbCki8Cg VSDEF= PSDEF=PACKEDNORMAL cull=1.0 A2C=false
+[2026-11-03 20_13_48_723][119][Script] [环境材质Technique] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF Techniques/PBR/PBRDiffNormal.xml
+[2026-11-03 20_13_48_723][119][Script] [环境材质Pass] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO   PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL  blend=0.0
+[2026-11-03 20_13_48_723][119][Script] [环境材质Pass] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL NORMALMAP blend=0.0
+[2026-11-03 20_13_48_723][119][Script] [环境材质Pass] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AO PACKEDNORMAL NORMALMAP blend=1.0
+[2026-11-03 20_13_48_723][119][Script] [环境材质Pass] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF shadow VS=Shadow PS=Shadow VD= PD= PACKEDNORMAL blend=0.0
+[2026-11-03 20_13_48_723][119][Script] [环境材质Pass] uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO  NORMALMAP PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL NORMALMAP DEFERRED blend=0.0
+[2026-11-03 20_13_48_730][119][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://BbhFaY-oq5NxPUutxC9s5YOQ -> Techniques/PBR/PBRDiffNormal.xml / packedNormal
+[2026-11-03 20_13_48_730][119][Script] [环境材质诊断] uuid://BbhFaY-oq5NxPUutxC9s5YOQ D=uuid://E9QBucD-TEiMCew5pxR5yN0m N=uuid://EsE0mRgjcihUKmc_wGYNjVfM VSDEF= PSDEF=PACKEDNORMAL cull=1.0 A2C=false
+[2026-11-03 20_13_48_730][119][Script] [环境材质Technique] uuid://BbhFaY-oq5NxPUutxC9s5YOQ Techniques/PBR/PBRDiffNormal.xml
+[2026-11-03 20_13_48_730][119][Script] [环境材质Pass] uuid://BbhFaY-oq5NxPUutxC9s5YOQ base VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO   PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL USE_ID0 USE_DETAILTEX blend=0.0
+[2026-11-03 20_13_48_730][119][Script] [环境材质Pass] uuid://BbhFaY-oq5NxPUutxC9s5YOQ litbase VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO   PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL USE_ID0 USE_DETAILTEX blend=0.0
+[2026-11-03 20_13_48_730][119][Script] [环境材质Pass] uuid://BbhFaY-oq5NxPUutxC9s5YOQ light VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO   PD=DIFFMAP NORMALMAP PBR IBL AO PACKEDNORMAL USE_ID0 USE_DETAILTEX blend=1.0
+[2026-11-03 20_13_48_730][119][Script] [环境材质Pass] uuid://BbhFaY-oq5NxPUutxC9s5YOQ shadow VS=Shadow PS=Shadow VD= PD= PACKEDNORMAL blend=0.0
+[2026-11-03 20_13_48_730][119][Script] [环境材质Pass] uuid://BbhFaY-oq5NxPUutxC9s5YOQ deferred VS=PBRLitSolid PS=PBRLitSolid VD=NORMALMAP AO   PD=DIFFMAP NORMALMAP PBR IBL AMBIENT AO PACKEDNORMAL USE_ID0 USE_DETAILTEX DEFERRED blend=0.0
+[2026-11-03 20_13_48_744][119][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://FjoMmROgqb4dDyqNZCf6eElx -> Techniques/DiffNormal.xml / packedNormalAlpha
+[2026-11-03 20_13_48_744][119][Script] [环境材质诊断] uuid://FjoMmROgqb4dDyqNZCf6eElx D=uuid://CZ5m2ZZu7NXIoVTqR1rzDH41 N=uuid://CwWtmXnyHN0l4oJqHqizpG03 VSDEF= PSDEF=PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A cull=1.0 A2C=false
+[2026-11-03 20_13_48_744][119][Script] [环境材质Technique] uuid://FjoMmROgqb4dDyqNZCf6eElx 
+[2026-11-03 20_13_48_744][119][Script] [环境材质Pass] uuid://FjoMmROgqb4dDyqNZCf6eElx base VS=LitSolid PS=LitSolid VD= NORMALMAP   PD=DIFFMAP AMBIENT NORMALMAP PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_744][119][Script] [环境材质Pass] uuid://FjoMmROgqb4dDyqNZCf6eElx litbase VS=LitSolid PS=LitSolid VD=NORMALMAP  NORMALMAP PD=DIFFMAP AMBIENT NORMALMAP PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A NORMALMAP ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_744][119][Script] [环境材质Pass] uuid://FjoMmROgqb4dDyqNZCf6eElx light VS=LitSolid PS=LitSolid VD=NORMALMAP  NORMALMAP PD=DIFFMAP NORMALMAP PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A NORMALMAP ALPHAMASK ALPHAMASK_DIFF_A blend=1.0
+[2026-11-03 20_13_48_744][119][Script] [环境材质Pass] uuid://FjoMmROgqb4dDyqNZCf6eElx shadow VS=Shadow PS=Shadow VD=   PD= PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A ALPHAMASK ALPHAMASK_DIFF_A blend=0.0
+[2026-11-03 20_13_48_744][119][Script] [环境材质Pass] uuid://FjoMmROgqb4dDyqNZCf6eElx deferred VS=LitSolid PS=LitSolid VD=NORMALMAP  NORMALMAP PD=DIFFMAP AMBIENT NORMALMAP PACKEDNORMAL ALPHAMASK ALPHAMASK_DIFF_A NORMALMAP ALPHAMASK ALPHAMASK_DIFF_A DEFERRED blend=0.0
+[2026-11-03 20_13_48_744][119][Script] [环境材质诊断] COMPLETE
+[2026-11-03 20_13_48_744][119] INFO: UrhoXRuntime: Game started successfully
+[2026-11-03 20_13_48_927][131]INFO__VALIDATE_UPDATE__:false
+[2026-11-03 20_13_48_993][131] INFO: DownloadManager: all tasks cancelled

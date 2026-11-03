@@ -164,7 +164,7 @@ function Checks.RunDrive(hud,storage,restore)
     end
     Catalog.SetGMFreeExperience(true)
     assert(Catalog.CanFreeExperience(vehicleId),"GM流程所选车型尚未正式开放："..vehicleId)
-    hud.actions.start(false);hud:SelectVehicle(vehicleId,true)
+    hud.actions.start(true);hud:SelectVehicle(vehicleId,true)
     hud.actions.confirmVehicle(vehicleId)
     local function verify()
         local writes,text=storage()
