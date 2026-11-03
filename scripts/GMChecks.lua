@@ -69,7 +69,7 @@ function Checks.Run(hud,storage)
     hud:SelectVehicle("helicopter",true)
     click(hud.garageGMButton)
     check(Catalog.IsGMFreeExperience(),"车库真实指针点击可开启GM")
-    check(hud.confirmButton:GetText()=="GM 免费体验 · 出发 →","发车文案准确")
+    check(hud.confirmButton.props.text=="GM 免费体验 · 出发 →","发车文案准确")
     check(not hud.buyButton:IsVisible() and not hud.trialButton:IsVisible(),"GM隐藏经济入口")
     local ready=0
     for _,v in ipairs(Catalog.List) do
@@ -90,7 +90,7 @@ function Checks.Run(hud,storage)
     hud.actions.menu()
     hud.actions.start(false)
     hud:SelectVehicle("tank",true)
-    check(hud.confirmButton:IsDisabled() and hud.vehicleBadges.tank:GetText()=="准备中 · 不可驾驶",
+    check(hud.confirmButton.props.disabled==true and hud.vehicleBadges.tank:GetText()=="准备中 · 不可驾驶",
         "GM下未交付车型仍明确禁用")
     hud.actions.confirmVehicle("tank")
     check(hud.screen=="garage","主入口也阻止未交付车")
