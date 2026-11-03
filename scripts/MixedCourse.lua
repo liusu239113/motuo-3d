@@ -8,7 +8,7 @@ local M={Resources=Assets.Resources,ResourceTypes=Assets.ResourceTypes}
 --     支柱 | 横梁 y=5.12..5.28 | 支柱       另一侧完整安全通路
 --          | 单根连杆 + 摆球 |
 -- 支柱中心x=±1.75，宽/深=.16；门洞不填整盒。
--- 摆球直径1.25，挂点y=5.2，球心距挂点4.2；连杆用1个随动窄盒。
+-- 摆球直径1.25，挂点y=5.2，球心距挂点4.2；单根可见连杆用8个短盒扫掠。
 -- 空障底面2.3，低车可下穿；两根可见悬杆有独立判定。
 -- 擦边、跨帧扫掠、上下分离继续由Rules处理；禁止保留旧实模的隐形支架/链段。
 local pivotHeight=5.2
@@ -90,8 +90,13 @@ function M.Build(world)
             ---@type table[]
             local parts={
                 {record=o,low=V(-.625,-4.825,-.625),high=V(.625,-3.575,.625)},
-                {record=extra(pending,o,swing,"swingchain1"),low=V(-.04,-3.575,-.04),high=V(.04,0,.04)},
             }
+            -- 可见杆不拆件；判定细分，避免斜杆整段包围盒覆盖门洞空白区。
+            for j=1,8 do
+                parts[#parts+1]={record=extra(pending,o,swing,"swingchain"..j),
+                    low=V(-.04,-3.575+(j-1)*3.575/8,-.04),
+                    high=V(.04,-3.575+j*3.575/8,.04)}
+            end
             for _,part in ipairs(parts) do
                 local cx,cy,cz=(part.low.x+part.high.x)*.5,(part.low.y+part.high.y)*.5,(part.low.z+part.high.z)*.5
                 local ex,ey,ez=(part.high.x-part.low.x)*.5,(part.high.y-part.low.y)*.5,(part.high.z-part.low.z)*.5

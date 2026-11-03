@@ -91,7 +91,7 @@ function M.RunInitialization()
         end
         local chainCount=0
         for _,swing in ipairs(fixture.mixedSwings) do
-            assert(#swing.parts==2,"[轻量机关初始化] 每锤必须保留摆球和单根可见连杆")
+            assert(#swing.parts==9,"[轻量机关初始化] 每锤必须保留摆球和8段连杆判定")
             for _,part in ipairs(swing.parts) do
                 local record=part.record
                 assert(record.previousX==record.x and record.previousY==record.y and record.previousZ==record.z,
@@ -102,7 +102,16 @@ function M.RunInitialization()
                 end
             end
         end
-        assert(chainCount==#fixture.mixedSwings,"[轻量机关初始化] 每锤必须恰有一根连杆判定")
+        assert(chainCount==#fixture.mixedSwings*8,"[轻量机关初始化] 每根可见连杆必须细分8段判定")
+        local swing=fixture.mixedSwings[1]
+        local origin=swing.origin --[[@as Vector3]]
+        Course.Update(fixture,(math.pi*.5-swing.phase)/1.7)
+        local clear=sweep(cloneRecords(fixture.mixedObstacles),"ebike",origin.x-.4,origin.z,2.3,0)
+        assert(clear.impactSerial==0,"[轻量机关初始化] 最大摆角时连杆左下空白区不得误撞")
+        local angle=math.rad(22)
+        local hit=sweep(cloneRecords(fixture.mixedObstacles),"ebike",origin.x+math.sin(angle)*1.8,
+            origin.z,5.2-math.cos(angle)*1.8,0)
+        assert(hit.impactSerial>0,"[轻量机关初始化] 最大摆角时可见连杆仍须能撞到")
     end)
     scene:Dispose()
     assert(ok,tostring(message))
