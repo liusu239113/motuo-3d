@@ -142,7 +142,9 @@ end
 -- 只复用玩家的动力入口，不跑第二套世界/碰撞/导航，更不会改动玩家的传动状态。
 function AI.Drive(race, r, target, dt)
     local drive = assert(r.driveSim)
-    drive.vehicle, drive.speed = vehicleFor(race,r), r.speed
+    -- 车型只查一次：预演里这个函数被调用25次，原来内部重复查了7次。
+    local spec = vehicleFor(race,r)
+    drive.vehicle, drive.speed = spec, r.speed
     local mistake = r.mistakeDuration > 0
     local recovery = r.recoveryTimer > 0 or (r.perception and r.perception.recovery > 0)
     local slowing = r.speed > target + 0.2
@@ -153,20 +155,24 @@ function AI.Drive(race, r, target, dt)
     local sample = race.aiProfile[index]
     local boosted = r.boostTimer > 0 and not slowing and not mistake and not recovery
         and sample.curvature <= 0.012 and abs(r.lane) <= race.roadHalfWidth - 0.65
-    local power = drive:Powertrain(dt, {throttle = throttle, boost = boosted and 1 or 0})*(drive.oddDriveScale or 1)
-    local efficiency = clamp(r.acceleration / vehicleFor(race,r).acceleration, 0, 1)
+    -- 复用每车控制表：预演25帧×8车，每帧新建表会产生大量GC。
+    local controls = r.driveControls
+    if not controls then controls = {}; r.driveControls = controls end
+    controls.throttle, controls.boost = throttle, boosted and 1 or 0
+    local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)
+    local efficiency = clamp(r.acceleration / spec.acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
-    local traction = onRoad and 1 or vehicleFor(race,r).offroad
+    local traction = onRoad and 1 or spec.offroad
     local drag = 0.20 + r.speed * r.speed * 0.00115
-        + (onRoad and 0 or 4.6 * (1 - vehicleFor(race,r).offroad * 0.55))
+        + (onRoad and 0 or 4.6 * (1 - spec.offroad * 0.55))
     local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
     local slope = sample.slope or 0
     local acceleration = power * efficiency * traction - drag - engineBrake
         - 9.81 * slope / sqrt(1 + slope * slope)
-    local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
+    local braking = spec.braking * (0.65 + r.skill * 0.12)
     if slowing then acceleration = min(acceleration, -min(braking, (r.speed - target) * 2 + 1)) end
-    local cap = vehicleFor(race,r).maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
-        * (onRoad and 1 or 0.44 + vehicleFor(race,r).offroad * 0.52)*(drive.oddSpeedScale or 1)
+    local cap = spec.maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
+        * (onRoad and 1 or 0.44 + spec.offroad * 0.52)*(drive.oddSpeedScale or 1)
     if r.speed > cap then acceleration = min(acceleration, -3.5 - (r.speed - cap) * 0.45) end
     r.speed = clamp(r.speed + acceleration * dt, 0, max(r.speed, min(target, cap)))
     r.driveAcceleration = acceleration
@@ -227,10 +233,23 @@ local function eachObstacle(race, r, visit, sensed)
     end
     for _, other in ipairs(race.racers) do
         if other ~= r and not other.finished and not other.eliminated then
-            local spec=require("MixedVehicles").Get(other.vehicleId)
-            local obstacle={source = other, s = other.s, lane = other.lane,
-                destination = other.wantedLane, speed = other.speed, halfWidth = spec and spec.size[1]*.5 or .30,
-                halfLength = spec and spec.size[3]*.5 or 1, y = other.y, bike = true}
+            local spec=MixedData.Get(other.vehicleId)
+            -- 复用每车缓存的表，避免每帧为8个对手分配新表造成GC压力。
+            local obstacle=r.nearCache and r.nearCache[other]
+            if not obstacle then
+                obstacle={}
+                r.nearCache=r.nearCache or {}
+                r.nearCache[other]=obstacle
+            end
+            obstacle.source=other
+            obstacle.s=other.s
+            obstacle.lane=other.lane
+            obstacle.destination=other.wantedLane
+            obstacle.speed=other.speed
+            obstacle.halfWidth=spec and spec.size[1]*.5 or .30
+            obstacle.halfLength=spec and spec.size[3]*.5 or 1
+            obstacle.y=other.y
+            obstacle.bike=true
             if overlapsHeight(race,r,obstacle) then visit(obstacle) end
         end
     end
@@ -292,18 +311,28 @@ function AI.NitroSafe(race, r)
     preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
     preview.boostTimer, preview.mistakeDuration, preview.recoveryTimer = duration, 0, 0
     local startSpeed, peakSpeed = r.speed, r.speed
+    -- 预演只需要"这一段能不能加速"，用局部弯道限速而不是每次重跑完整CurveSpeed
+    -- （曲线剖面遍历×25帧是热路径最大开销之一）。
+    local spec = vehicleFor(race,r)
+    local budget = (12 + (r.aiLevel or 0.72) * 6 + r.skill * 2)
+        * (race.options.mixed and spec.steering or 1)
+        * (r.driveSim and r.driveSim.oddGripScale or 1)
+    local brakingForCurve = spec.braking * (0.65 + r.skill * 0.12)
+    local previewCap = spec.maxSpeed * (r.speedFactor + 0.25)
     -- 至少1.2秒有效加速，之后允许提前收油/有限刹车；资源计时仍消耗完整2.5秒。
     -- 后半段不要求“永远满喷”，但任何弯点都必须有实际制动距离，不允许突然锁速。
     for frame = 1, 25 do
         local sample = race.aiProfile[math.floor((preview.s % race.length) / race.aiProfileStep) + 1]
-        local target = AI.CurveSpeed(race, preview, preview.boostTimer > 0)
-        local boostCap = vehicleFor(race,r).maxSpeed * (r.speedFactor + 0.25)
+        local safe = sqrt(budget / max(0.0001, sample.curvature))
+        local braking = spec.braking * 0.65
+        local brakingDistance = sqrt(safe * safe + 2 * braking * 0.1)
+        local target = min(previewCap, brakingDistance)
+        local boostCap = previewCap
         local restricted = sample.curvature > 0.012 or target < min(boostCap, preview.speed - 0.2) - 1e-6
         if restricted then
             if frame <= 12 then return false end
             -- 制动包络仍按当前可用喷射上限计算，不能把“收油”误当瞬间掉到普通限速。
-            local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
-            if preview.speed > target + braking * 0.1 + 1 then return false end
+            if preview.speed > target + brakingForCurve * 0.1 + 1 then return false end
             target = min(target, preview.speed - 0.25)
         end
         AI.Drive(race, preview, target, 0.1)
@@ -315,7 +344,7 @@ function AI.NitroSafe(race, r)
 end
 
 local function laneScore(race, r, candidate, horizon)
-    local own=require("MixedVehicles").Get(r.vehicleId)
+    local own=MixedData.Get(r.vehicleId)
     local ownWidth=own and own.size[1]*.5 or .30
     local score = abs(candidate - r.preferredLane) * 0.18 + abs(candidate - r.lane) * 0.22
     local laneTime = abs(candidate - r.lane) / (2.5 + r.skill) + 0.32
@@ -340,7 +369,7 @@ local function laneScore(race, r, candidate, horizon)
             score = score + 35 -- reservation, not mutual parking priority.
         end
     end, true)
-    local spec=require("MixedVehicles").Get(r.vehicleId)
+    local spec=MixedData.Get(r.vehicleId)
     if race.options.mixed and spec then
         local laneTerrain=Mixed.Terrain(race.map,r.s,candidate)
         if laneTerrain=="water" and spec.id=="jellyfish" then score=score-7
@@ -358,24 +387,34 @@ function AI.Plan(race, r, dt)
     r.laneHold = max(0, r.laneHold - dt)
     r.decisionTimer = r.decisionTimer - dt
     r.paceTimer = r.paceTimer - dt
-    -- 正常加油/找线按人的反应节奏采样；紧急避障与前方制动包络始终保留安全优先权。
-    local safeTarget = AI.CurveSpeed(race, r)
+    -- 昂贵计算按"人的反应节奏"重算，不再每帧重跑：
+    -- CurveSpeed遍历赛道剖面、hazard全量扫描障碍，8车×每帧是主要CPU热点。
+    r.scanTimer = (r.scanTimer or 0) - dt
+    local rescan = r.scanTimer <= 0
+    if rescan then
+        r.scanTimer = max(0.09, r.reactionTime * 0.5)
+        r.safeTargetCache = AI.CurveSpeed(race, r)
+        local hazard = false
+        local horizon = max(75, r.speed * 2.8)
+        eachObstacle(race, r, function(o)
+            local d = gap(o.s, r.s, race.length)
+            local margin = o.halfWidth + halfWidthFor(race,r) + (o.bike and 0.42 or 0.50)
+            if d > -o.halfLength - 1 and d < horizon and abs(o.lane - r.lane) < margin then
+                if r.speed > o.speed + 0.5 or d < 12 then hazard = true end
+            end
+        end, true)
+        r.hazardCache = hazard
+    end
+    local safeTarget = r.safeTargetCache or AI.CurveSpeed(race, r)
     if r.paceTimer <= 0 then
         r.paceTimer = r.reactionTime
         r.paceTarget = safeTarget
     end
     local target = min(r.paceTarget, safeTarget)
-    local hazard = false
-    local horizon = max(75, r.speed * 2.8)
-    eachObstacle(race, r, function(o)
-        local d = gap(o.s, r.s, race.length)
-        local margin = o.halfWidth + halfWidthFor(race,r) + (o.bike and 0.42 or 0.50)
-        if d > -o.halfLength - 1 and d < horizon and abs(o.lane - r.lane) < margin then
-            if r.speed > o.speed + 0.5 or d < 12 then hazard = true end
-        end
-    end, true)
+    local hazard = r.hazardCache == true
     if r.decisionTimer <= 0 then
         r.decisionTimer = r.reactionTime
+        local horizon = max(75, r.speed * 2.8)
         local bound = max(2, race.roadHalfWidth - (race.options.mixed and halfWidthFor(race,r)+.15 or .65))
         local shoulder = min(race.corridor - 0.35,
             race.map.Roads and race.map.Roads[1] and (race.map.Roads[1].shoulder or bound) - 0.5 or bound)
@@ -400,10 +439,11 @@ function AI.Plan(race, r, dt)
         end
     end
     -- Longitudinal control remains active while changing lanes, never accelerates THROUGH a car.
+    local followHorizon = max(75, r.speed * 2.8)
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
         local margin = o.halfWidth + halfWidthFor(race,r) + (o.bike and 0.32 or 0.40)
-        if d > 0 and d < horizon and abs(o.lane - r.lane) < margin then
+        if d > 0 and d < followHorizon and abs(o.lane - r.lane) < margin then
             local clear = max(0, d - o.halfLength - 2.5)
             local follow = max(0, o.speed) + clear / (o.bike and 0.65 or 1.0)
             if o.speed < 0 then follow = max(0, clear / 1.0 - abs(o.speed) * 0.4) end
@@ -481,7 +521,10 @@ function AI.Update(race, r, dt)
         drive.elapsed=race.elapsed;drive.groundSlope=(race.aiProfile[math.floor((r.s%race.length)/race.aiProfileStep)+1] or {}).slope or 0
         local useSkill=(drive.oddCooldown or 0)<=0 and (r.speed>10 or r.vehicleId=="cicada")
             and (math.floor(race.elapsed*2+r.index)%7==0)
-        Mixed.Before(drive,dt,{skill=useSkill,steer=r.steer or 0},race.map)
+        local skillControls=r.skillControls
+        if not skillControls then skillControls={}; r.skillControls=skillControls end
+        skillControls.skill, skillControls.steer = useSkill, r.steer or 0
+        Mixed.Before(drive,dt,skillControls,race.map)
         if drive.oddNitroGift then r.nitro=math.min(100,r.nitro+drive.oddNitroGift);drive.oddNitroGift=nil end
         r.speed=drive.speed
     end
@@ -492,7 +535,7 @@ function AI.Update(race, r, dt)
     if not race.options.mixed then
         r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
     else
-        local own=require("MixedVehicles").Get(r.vehicleId)
+        local own=MixedData.Get(r.vehicleId)
         local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)
         r.lane=approach(r.lane,r.wantedLane,min(r.speed*dt*.45,dt*(2.5+r.skill)*agility))
     end
@@ -513,7 +556,9 @@ function AI.Update(race, r, dt)
     if race.options.mixed then
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading,drive.speed=r.x,r.y,r.z,r.yaw,r.speed
-        Mixed.After(drive,dt,{},race.options.world,r.lastX,r.lastY,r.lastZ,false)
+        local afterControls=r.afterControls
+        if not afterControls then afterControls={}; r.afterControls=afterControls end
+        Mixed.After(drive,dt,afterControls,race.options.world,r.lastX,r.lastY,r.lastZ,false)
         local _,lane=race:Project(drive.x,drive.z)
         r.lane=clamp(lane,-race.corridor+1,race.corridor-1)
         r.x,r.y,r.z=drive.x,drive.y,drive.z

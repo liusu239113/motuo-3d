@@ -7,6 +7,9 @@
 local RaceAI = require("RaceAI")
 local MixedRace = require("MixedRace")
 
+-- 车型查询在热路径上每帧数百次；缓存到模块级，避免反复走require的package.loaded查找。
+local MixedVehicles = require("MixedVehicles")
+
 ---@class ScenicRacePoint
 ---@field x number
 ---@field y number
@@ -573,7 +576,7 @@ end
 function Race:GateCorridorFor(r)
     local corridor = self.gateCorridor or self.corridor
     if r then
-        local spec = require("MixedVehicles").Get(r.vehicleId)
+        local spec = MixedVehicles.Get(r.vehicleId)
         if spec then corridor = corridor - spec.size[1] * .5 end
     end
     return corridor
@@ -761,17 +764,21 @@ end
 function Race:Contacts(dt)
     for i = 1, #self.racers - 1 do
         local a = self.racers[i]
-        if not a.eliminated and not a.finished then
+        if not a.eliminated and not a.finished and a.immunity <= 0 then
             for j = i + 1, #self.racers do
                 local b = self.racers[j]
-                if not b.eliminated and not b.finished and a.immunity <= 0 and b.immunity <= 0 then
+                -- 先做一次距离粗筛：8车间毫无可能相撞的配对直接跳过，
+                -- 避免每帧对全部36对做完整扫掠+车型查询。
+                local gx, gz = b.x - a.x, b.z - a.z
+                if not b.eliminated and not b.finished and b.immunity <= 0
+                    and gx * gx + gz * gz < 144 then
                     local sx, sz = math.sin(a.yaw * RAD), math.cos(a.yaw * RAD)
                     local dx0, dz0 = b.contactX - a.contactX, b.contactZ - a.contactZ
                     local dx1, dz1 = b.x - a.x, b.z - a.z
                     local lx0, lx1 = dx0 * sz - dz0 * sx, dx1 * sz - dz1 * sx
                     local f0, f1 = dx0 * sx + dz0 * sz, dx1 * sx + dz1 * sz
-                    local va=require("MixedVehicles").Get(a.vehicleId)
-                    local vb=require("MixedVehicles").Get(b.vehicleId)
+                    local va=MixedVehicles.Get(a.vehicleId)
+                    local vb=MixedVehicles.Get(b.vehicleId)
                     local halfWidth=va and va.size[1]*.5 or .3
                     local halfLength=va and va.size[3]*.5 or 1
                     local delta=(b.yaw-a.yaw)*RAD
@@ -806,7 +813,7 @@ function Race:Contacts(dt)
                                 local scale,disrupt,offset=MixedRace.ContactResponse(r.vehicleId,retained,forward,sideDistance)
                                 r.speed=r.speed*scale
                                 if offset~=0 then
-                                    local spec=require("MixedVehicles").Get(r.vehicleId)
+                                    local spec=MixedVehicles.Get(r.vehicleId)
                                     local margin=(spec and spec.size[1]*.5 or .3)+.15
                                     r.wantedLane=clamp(r.lane+offset,-self.roadHalfWidth+margin,self.roadHalfWidth-margin)
                                 end
