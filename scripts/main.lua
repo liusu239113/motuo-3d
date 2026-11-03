@@ -1236,7 +1236,9 @@ function HandleUpdate(eventType, eventData)
             throttle, brake = math.abs(delta) > 35 and 0.25 or 0.8, math.abs(delta) > 60 and sim_.speed > 20
         end
         -- 结算实拍专用参数只加速固定步数量，追捕规则和判定阈值不变。
+        -- dt已在上面钳到0.1秒，最多5步；不会出现一帧跑几十步的死循环。
         accumulator_ = accumulator_ + dt * (testMode_ == "race-result" and 20 or 1)
+        accumulator_ = math.min(accumulator_, 0.1)
         while accumulator_ >= 0.02 do
             rideInput_.steer, rideInput_.throttle, rideInput_.brake = steer, throttle, brake
             rideInput_.wheelie = touch_.wheelie or input:GetKeyDown(KEY_Q) or testTrick_ == "wheelie"

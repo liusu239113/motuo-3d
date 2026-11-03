@@ -1070,17 +1070,25 @@ function Race:AfterStep(dt)
         self:Emit("contact", "player")
     end
     -- World has updated its LIVE traffic before sim:Step; snapshot once, then plan all AI.
+    local prof = require("RaceFrameProfile")
+    prof.Begin("snapshot")
     RaceAI.Snapshot(self)
+    prof.End()
     -- Internal AI/pursuit steps are<=.02s even if host dt is long; no speed/attack spikes.
-    local count = max(1, math.ceil(dt / 0.02))
+    -- 上限4步(80ms)：否则帧越卡→步数越多→更卡，形成正反馈死循环。
+    local count = max(1, min(4, math.ceil(dt / 0.02)))
+    local step = min(dt, 0.08) / count
     for index = 1, count do
-        local step = dt / count
         self.elapsed = frameStart + index * step
+        prof.Begin("aiUpdate")
         for _, r in ipairs(self.racers) do self:UpdateAI(r, step) end
+        prof.End()
+        prof.Begin("rank")
         self:Rank()
+        prof.End()
+        prof.Begin("pursuit")
         self:UpdatePursuit(step)
-        for _, r in ipairs(self.racers) do
-        end
+        prof.End()
         if self.player.eliminated then break end
     end
     for _, r in ipairs(self.racers) do
@@ -1090,8 +1098,12 @@ function Race:AfterStep(dt)
         if r.boostTimer < 1e-8 then r.boostTimer = 0 end
     end
     if self.player.boostTimer <= 0 then self.sim.raceBoost = 0 end
+    prof.Begin("contacts")
     self:Contacts(dt)
+    prof.End()
+    prof.Begin("raceStep")
     MixedRace.RaceStep(self,dt)
+    prof.End()
     self:Rank()
     self:Mirror()
     if self.player.eliminated then self:Settle("保持末位且近距离追逐连续6秒，已被公平截停")
