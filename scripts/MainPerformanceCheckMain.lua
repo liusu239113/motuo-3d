@@ -2,7 +2,7 @@
 local restore_=function() end
 local ready_=false
 local frames_=0
-local wallStart_=0
+local cpuStart_=0
 local bridge_={inspect=function() return {screen="",phase="",elapsed=0} end}
 local function source()
     local file=assert(cache:GetFile("main.lua"))
@@ -33,10 +33,11 @@ function Start()
         local state=bridge_.inspect()
         if state.screen~="ride" or state.phase~="racing" then return end
         frames_=frames_+1
-        if frames_==1 then wallStart_=time:GetTimeSinceEpochMs() end
+        if frames_==1 then cpuStart_=os.clock() end
         if frames_%15==0 then
-            print(string.format("[实赛渲染] frames=%d wall=%.0fms elapsed=%.2f batches=%d primitives=%d",
-                frames_,time:GetTimeSinceEpochMs()-wallStart_,state.elapsed,renderer.numBatches,renderer.numPrimitives))
+            -- 墙钟帧率从日志时间戳取；os.clock只报告本地进程CPU区间。
+            print(string.format("[实赛渲染] frames=%d processCPU=%.0fms elapsed=%.2f batches=%d primitives=%d",
+                frames_,(os.clock()-cpuStart_)*1000,state.elapsed,renderer.numBatches,renderer.numPrimitives))
         end
         if frames_==60 then
             ready_=true

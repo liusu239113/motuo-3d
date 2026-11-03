@@ -336,7 +336,7 @@ function VehicleAssets.PrepareDetails(ids,progress)
         local c=assert(VehicleAssets.Vehicles[id])
         if c.class=="sport" or c.class=="rally" or c.class=="cruiser" then
             local source=assert(cache:GetResource("Model",c.model),c.model)
-            assert(VehicleFinish.Get(id,c,source,loadMaterial(c)),"正式车型细节预热失败："..id)
+            VehicleFinish.Get(id,c,source,loadMaterial(c))
         end
         if progress then progress(id,i,#ids) end
     end
