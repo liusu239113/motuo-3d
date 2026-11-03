@@ -97,7 +97,8 @@ local function loadMaterial(path)
     material:SetTechnique(0,technique)
     -- 此清单仅含实测不透明的木箱/金属/金币/警示牌，不是通用alpha-mask材质迁移。
     -- 老官方Technique均指定PACKEDNORMAL；保留RG重建Z，不能按普通RGB法线解码。
-    material:SetVertexShaderDefines("")
+    -- 实渲染单/双实例probe确认VS/PS必须成对，否则bgfx varying链接失败。
+    material:SetVertexShaderDefines("PACKEDNORMAL")
     material:SetPixelShaderDefines("PACKEDNORMAL")
     material:SetTexture(TU_DIFFUSE,diffuse)
     material:SetTexture(TU_NORMAL,normal)

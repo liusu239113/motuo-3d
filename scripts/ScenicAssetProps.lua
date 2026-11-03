@@ -99,7 +99,8 @@ function Props.MaterialFor(path)
     else
         local normal = assert(original:GetTexture(TU_NORMAL), "正式环境原packed法线未就绪：" .. path)
         material:SetTexture(TU_NORMAL, normal)
-        material:SetVertexShaderDefines("")
+        -- 真实cone单/双实例对照：仅PS packed链接失败；VS/PS成对则0Error且可见。
+        material:SetVertexShaderDefines("PACKEDNORMAL")
         -- 引擎DecodeNormal的PACKEDNORMAL以RG重建Z；不是普通RGB法线。
         -- 箭头保留diffuse-alpha的LitSolid路径，不把镂空面改成不透明矩形。
         material:SetPixelShaderDefines(mode == "packedNormalAlpha"

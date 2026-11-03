@@ -1,0 +1,109 @@
+{
+    "version": 2,
+    "script": "ScenicEnvironmentCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 14837,
+    "frames_completed": 240,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1316.6ms (threshold: 500ms)",
+                    "frame": 78
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1861.76ms (threshold: 500ms)",
+                    "frame": 79
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1204.91ms (threshold: 500ms)",
+                    "frame": 97
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 661.092ms (threshold: 500ms)",
+                    "frame": 99
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 3659,
+            "component_count": 1927,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 4,
+            "components": 4,
+            "hash": 3950485079,
+            "frame_time_ms": 858.5679931640625
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 19,
+            "components": 18,
+            "hash": 671807512,
+            "frame_time_ms": 24.7549991607666
+        },
+        {
+            "frame": 120,
+            "phase": "run",
+            "nodes": 25,
+            "components": 24,
+            "hash": 1888000100,
+            "frame_time_ms": 16.631000518798829
+        },
+        {
+            "frame": 240,
+            "phase": "run",
+            "nodes": 25,
+            "components": 24,
+            "hash": 1888000100,
+            "frame_time_ms": 16.697999954223634
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 1861.7550048828126,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 1,
+        "Camera": 1,
+        "StaticModel": 1718,
+        "CustomGeometry": 205
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 4,
+        "total_errors": 4
+    }
+}
