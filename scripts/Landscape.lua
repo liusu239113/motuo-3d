@@ -722,12 +722,12 @@ function Landscape.CreateMaterials()
     assert(terrain:SetSurfaceTexture("ground_normal", m[terrainBase]:GetTexture(TU_NORMAL)))
     assert(terrain:SetSurfaceTexture("rock_normal", m.rock:GetTexture(TU_NORMAL)))
     local palettes={
-        lake={Vector3(.67,.79,.51),Vector3(.72,.63,.48),Vector3(.75,.77,.72),Vector4(0,0,0,0)},
-        alpine={Vector3(.65,.70,.45),Vector3(.71,.66,.53),Vector3(.76,.78,.78),Vector4(0,0,1,0)},
-        coast={Vector3(.73,.76,.46),Vector3(.96,.88,.69),Vector3(.78,.75,.66),Vector4(0,0,0,1)},
-        canyon={Vector3(.96,.75,.49),Vector3(.91,.62,.38),Vector3(.87,.59,.38),Vector4(1,0,0,0)},
-        forest={Vector3(.49,.65,.37),Vector3(.63,.49,.32),Vector3(.66,.70,.60),Vector4(0,1,0,0)},
-        circuit={Vector3(.69,.75,.47),Vector3(.75,.68,.51),Vector3(.75,.75,.70),Vector4(0,0,0,0)},
+        lake={Vector3(.92,.96,.90),Vector3(.96,.94,.90),Vector3(.96,.97,.95),Vector4(0,0,0,0)},
+        alpine={Vector3(.91,.94,.88),Vector3(.96,.95,.92),Vector3(.98,.98,.98),Vector4(0,0,1,0)},
+        coast={Vector3(.95,.97,.91),Vector3(1.0,.98,.94),Vector3(.97,.96,.93),Vector4(0,0,0,1)},
+        canyon={Vector3(1.0,.97,.93),Vector3(1.0,.96,.91),Vector3(1.0,.95,.90),Vector4(1,0,0,0)},
+        forest={Vector3(.89,.94,.87),Vector3(.95,.93,.89),Vector3(.94,.96,.92),Vector4(0,1,0,0)},
+        circuit={Vector3(.94,.97,.92),Vector3(.98,.97,.94),Vector3(.97,.97,.95),Vector4(0,0,0,0)},
     }
     local palette=assert(palettes[activeTrack.id])
     terrain:SetShaderParameter("grass_tint",Variant(palette[1]))
@@ -929,14 +929,14 @@ end
 local function buildForest(scene, root, tick)
     Trees.Begin()
     local id = activeTrack.id
-    -- 每个全程1/40区间独立配额，不把202棵高模耗在起点附近。
-    -- 低模总上限：forest 40*(16*46+22*22)=48,800，其他生态更低。
+    -- 每个全程1/40区间独立配额：近路既有树预算不变，中远景480棵完整MDL上限。
+    -- 不再按46/22三角冠层估算性能；保留分布覆盖并收紧实例视距/LOD。
     local ecology = {
-        lake = {middle = 12, far = 24, width = 155},
-        forest = {middle = 16, far = 22, width = 145},
-        alpine = {middle = 10, far = 20, width = 170},
-        coast = {middle = 8, far = 14, width = 125},
-        circuit = {middle = 2, far = 4, width = 140},
+        lake = {middle = 5, far = 6, width = 155},
+        forest = {middle = 6, far = 6, width = 145},
+        alpine = {middle = 4, far = 5, width = 170},
+        coast = {middle = 3, far = 4, width = 125},
+        circuit = {middle = 2, far = 3, width = 140},
         canyon = {middle = 0, far = 0, width = 0},
     }
     local config = assert(ecology[id])
@@ -952,8 +952,8 @@ local function buildForest(scene, root, tick)
         local evergreen = id == "alpine" or (id == "forest" and noise(seed,53) < 0.68)
             or (id == "lake" and (y > 100 or noise(seed,53) < 0.35))
         if tier == 0 and id == "alpine" and y > 145 then return false end
-        -- 高模包围盒对角半径/高度=0.546，低模含最大冠幅与偏冠；先保守避让再缩高。
-        local radius = tier == 0 and height*0.55 or height*(evergreen and 0.35 or 0.50)
+        -- 全层级都是同一完整MDL，统一按原模型对角半径/高度0.546保守避让。
+        local radius = height * .55
         local clearance = math.max(12,mainRoad.shoulder + radius + 4)
         local meadow = id=="lake" and x > -160 and x < 140 and z > 740 and z < 1020
         local lake = id=="lake" and ((x+190)/(162+radius+3))^2 + ((z-190)/(182+radius+3))^2 < 1
@@ -1030,9 +1030,9 @@ local function buildForest(scene, root, tick)
         tick("写实森林",batch,40)
     end
     local stats = Trees.Stats()
-    print(string.format("[风景森林] %s high=%d/%d near=%d middle=%d far=%d lowTri=%d/%d chunks=%d lowCalls<=%d highTri<=%d",
-        id,planted,activeTrack.treeBudget,nearCount,stats.middle,stats.far,stats.lowTriangles,Trees.LowTriangleLimit,
-        stats.chunks,stats.lowDrawCalls,stats.highMaxTriangles))
+    print(string.format("[正式森林] %s near=%d/%d middle=%d far=%d instances=%d/%d canopyLOD0<=%d canopyLOD3=%d chunks=%d；逐实例剔除，共享MDL材质，0程序树冠",
+        id,nearCount,activeTrack.treeBudget,stats.middle,stats.far,stats.canopyInstances,stats.canopyLimit,
+        stats.lowTriangles,stats.lowMinTriangles,stats.chunks))
 end
 
 ---@param scene Scene

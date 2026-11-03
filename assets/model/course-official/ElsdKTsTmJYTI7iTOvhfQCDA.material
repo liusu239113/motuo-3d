@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<material>
+	<technique name="uuid://BDSMEU2nlOX308DPVjZOzkpt" quality="0" loddistance="0" />
+	<texture unit="diffuse" name="uuid://EVBOod6UAi-4RwLXbUYkoB0R" />
+	<texture unit="normal" name="uuid://E7pj2UOpAjEqbuP7p-TjNfCB" />
+	<texture unit="specular" name="uuid://D2BMWSxaTFgG6UsTz7L-OuOI" />
+	<passshader pass="base" psdefines="USE_ID0" />
+	<passshader pass="litbase" psdefines="USE_ID0" />
+	<passshader pass="light" psdefines="USE_ID0" />
+	<parameter name="UOffset" value="1 0 0 0" />
+	<parameter name="VOffset" value="0 1 0 0" />
+	<parameter name="MatDiffColor" value="1 1 1 1" />
+	<parameter name="MatEmissiveColor" value="0.00 0.00 0.00" />
+	<parameter name="MatEnvMapColor" value="1.00 1.00 1.00" />
+	<parameter name="MatSpecColor" value="0 0 0 1" />
+	<parameter name="Roughness" value="0.5" />
+	<parameter name="Metallic" value="0" />
+	<parameter name="HlafLambertIntensity" value="0" />
+	<parameter name="SprayStrength" value="0 0 0 0" />
+	<parameter name="RoughnessID0" value="1" />
+	<parameter name="TexUOffset" value="0" />
+	<parameter name="ColorID1" value="1 1 1 1" />
+	<parameter name="Illumination_range" value="1" />
+	<parameter name="Specular_Range" value="1" />
+	<parameter name="MetallicID3" value="0" />
+	<parameter name="HlafLambertColor" value="0 0 0 0" />
+	<parameter name="HlafLambertRang" value="1" />
+	<parameter name="PBRRoughness" value="0" />
+	<parameter name="GradientZPower" value="1" />
+	<parameter name="MetalMul0or1" value="1" />
+	<parameter name="PBRBaseColor" value="0 0 0 1" />
+	<parameter name="TexVTiling" value="1" />
+	<parameter name="DetailColor" value="0.5 0.5 0.5 1" />
+	<parameter name="TexUTiling" value="1" />
+	<parameter name="TexVOffset" value="0" />
+	<parameter name="PBREmissiveColor" value="0 0 0 1" />
+	<parameter name="MetallicID4" value="0" />
+	<parameter name="GrassScale" value="2" />
+	<parameter name="ColorID4" value="1 1 1 1" />
+	<parameter name="RoughnessID3" value="1" />
+	<parameter name="Specular" value="1" />
+	<parameter name="RoughnessID1" value="1" />
+	<parameter name="PBRMetallic" value="0" />
+	<parameter name="Color_B1" value="0 0 0 0" />
+	<parameter name="GradientFallOff" value="1" />
+	<parameter name="RoughnessID4" value="1" />
+	<parameter name="Color_A1" value="0 0 0 0" />
+	<parameter name="Roughness_A" value="0.6" />
+	<parameter name="Transparency_Power" value="1" />
+	<parameter name="DetailRoughness" value="0" />
+	<parameter name="RoughnessID2" value="1" />
+	<parameter name="MetallicID2" value="0" />
+	<parameter name="NormalStrength" value="1" />
+	<parameter name="Emissive_Mul" value="0" />
+	<parameter name="MetallicID0" value="1" />
+	<parameter name="ColorID0" value="1 1 1 1" />
+	<parameter name="ColorID2" value="1 1 1 1" />
+	<parameter name="ColorID3" value="1 1 1 1" />
+	<parameter name="Roughness_B" value="0.6" />
+	<parameter name="GradientColor" value="0.6 0.6 0.6 1" />
+	<parameter name="AOContrast" value="0" />
+	<parameter name="Gloss" value="0.5" />
+	<parameter name="AOColor" value="0.4 0.4 0.4 1" />
+	<parameter name="GradientShift" value="1" />
+	<parameter name="TexRotation" value="0" />
+	<parameter name="Specular_Color" value="1 1 1 0" />
+	<parameter name="Transparency_Mul" value="1" />
+	<parameter name="HlafLambertContrast" value="1" />
+	<parameter name="Color_B2" value="1 1 1 0" />
+	<parameter name="DetailMetallic" value="0" />
+	<parameter name="Color_A2" value="1 1 1 0" />
+	<parameter name="MetallicID1" value="0" />
+	<parameter name="WPO" value="0 0 0 0" />
+	<parameter name="TimeSpeed" value="0.1" />
+	<parameter name="Color_Emissive" value="1 1 1 0" />
+	<parameter name="ColorFactor" value="1 1 1 1" />
+	<parameter name="MetallicFactor" value="1" />
+	<parameter name="RoughnessFactor" value="1" />
+	<cull value="ccw" />
+	<shadowcull value="ccw" />
+	<fill value="solid" />
+	<depthbias constant="0" slopescaled="0" />
+	<alphatocoverage enable="false" />
+	<lineantialias enable="false" />
+	<renderorder value="128" />
+	<occlusion enable="true" />
+</material>

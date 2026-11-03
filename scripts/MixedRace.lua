@@ -11,6 +11,8 @@ function M.Reset(sim)
     sim.oddSkillHeld,sim.oddAttack=false,false
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1
     sim.oddSkillName="";sim.oddTerrain="asphalt";sim.oddPickups=0
+    sim.oddSkillResult,sim.oddSkillResultTimer="",0
+    sim.oddPreviousAltitude=0
     sim.oddContacts={};sim.oddCoinContacts={};sim.oddLastImpact=sim.impactSerial or 0
 end
 -- 同一赛道固定地形分段，生成和判定消费同一份s/lane数据。
@@ -34,16 +36,26 @@ function M.CreateCourse(map)
         local p,yaw=map.RoadPoint(s)
         local lane=((i%3)-1)*math.min(3.6,half*.48)
         local a=math.rad(yaw)
-        local kind=({"crate","oil","barrel","barrier","pendulum","cone"})[(i-1)%6+1]
+        local kind=({"crate","barrel","barrel","barrier","pendulum","cone"})[(i-1)%6+1]
         list[#list+1]={id=i,s=s,lane=lane,x=p.x+math.cos(a)*lane,y=p.y,z=p.z-math.sin(a)*lane,
-            yaw=yaw,kind=kind,halfWidth=kind=="oil" and 1.3 or .65,halfLength=kind=="oil" and 2 or .7,
-            height=kind=="pendulum" and 4.2 or (kind=="oil" and .12 or 1),phase=i*.83,
-            breakable=kind~="pendulum" and kind~="oil",active=true}
+            yaw=yaw,kind=kind,halfWidth=.65,halfLength=.7,
+            height=kind=="pendulum" and 4.2 or 1,phase=i*.83,
+            breakable=kind~="pendulum",active=true}
+        -- 侧视：地面车顶约1.5..2m；低空飞机占据2.5..4.6m。
+        -- 单侧悬挂实物挡板覆盖飞行层，另一侧留完整宽车通路，不以空气墙封路。
+        if i%6==0 then
+            local airLane=lane==0 and half*.4 or lane
+            list[#list+1]={id=10000+i,s=s,lane=airLane,x=p.x+math.cos(a)*airLane,
+                y=p.y+2.3,z=p.z-math.sin(a)*airLane,yaw=yaw,kind="airbarrier",
+                halfWidth=1.3,halfLength=.847163,height=1.684149,phase=0,breakable=false,active=true}
+        end
         end
     end
     return list
 end
 function M.Terrain(map,s,lane)
+    -- 未交付可见分区时禁用对应效果，不能留下不可辨识的泥地/冰面减速。
+    if map.mixedTerrainVisualsReady==false then return "asphalt" end
     local half=map.Roads and map.Roads[1] and map.Roads[1].width or 8
     -- 中央至少7米柏油通路，特殊地形沿两翼形成可选线路；物理与绘制共用采样。
     if math.abs(lane or 0)<half*.45 then return "asphalt" end
@@ -73,11 +85,14 @@ local function activate(sim,v,controls)
         sim.oddDashSide=math.abs(steer)>.1 and (steer>0 and 1 or -1) or ((sim.lateral or 0)>0 and -1 or 1)
     end
     sim.message,sim.messageTimer=v.skill.." · 已发动",2
+    sim.oddSkillResult,sim.oddSkillResultTimer="已发动 · "..v.active,2
     print("[载具技能] "..v.id.." / "..v.skill)
     return true
 end
 function M.Before(sim,dt,controls,map)
     local v=Data.Get(sim.vehicleId)
+    sim.oddPreviousAltitude=sim.oddAltitude or 0
+    sim.oddSkillResultTimer=math.max(0,(sim.oddSkillResultTimer or 0)-dt)
     sim.oddHitLock=math.max(0,(sim.oddHitLock or 0)-dt)
     if not v then
         if (map.RouteLength or 0)<300 then
@@ -108,10 +123,12 @@ function M.Before(sim,dt,controls,map)
     local id=v.id
     local float=id=="hovercraft" or id=="jellyfish" or id=="helicopter"
     if terrain=="gravel" then
-        if id=="tank" or id=="beetle" or id=="centipede" or id=="loader" or id=="buggy" or float then speed=1.035
+        if id=="helicopter" then speed=1
+        elseif id=="tank" or id=="beetle" or id=="centipede" or id=="loader" or id=="buggy" or float then speed=1.035
         else speed=.87;grip=.88 end
     elseif terrain=="water" or terrain=="mud" or terrain=="slime" then
-        if float or id=="bathtub" then speed=id=="jellyfish" and 1.16 or 1.07
+        if id=="helicopter" then speed=1
+        elseif float or id=="bathtub" then speed=id=="jellyfish" and 1.16 or 1.07
         elseif id=="sled" then speed=1.03
         else speed=.82;grip=.8 end
     elseif terrain=="ice" then
@@ -160,6 +177,9 @@ function M.Before(sim,dt,controls,map)
         elseif id=="cart" then drive=drive*1.35;speed=speed*1.1 end
         if id=="toilet" then altitude=math.max(altitude,1.8) end
     end
+    if id=="helicopter" and terrain=="wind" then
+        drive=drive*.85;grip=grip*.72
+    end
     if sim.oddDisrupt>0 then speed=speed*.84;grip=grip*.58 end
     if sim.oddHop>0 then grip=grip*.78 end
     if id=="frog" then speed=speed*(1+sim.oddCombo*.035) end
@@ -205,12 +225,28 @@ function M.Obstacles(sim,world,x0,y0,z0)
     local bodyHeight=v and v.size[2] or 1.5
     local contacts={}
     for _,o in ipairs(world.mixedObstacles) do
-        if o.active and math.abs(o.x-sim.x)<12 and math.abs(o.z-sim.z)<12 then
+        -- 整段运动包围盒作粗筛，不能仅看帧末12米，否则高速一步越过窄障碍会漏撞。
+        local radius=math.sqrt(o.halfWidth*o.halfWidth+o.halfLength*o.halfLength)
+            +math.sqrt(hw*hw+hl*hl)
+        local previousX,previousY,previousZ=o.previousX or o.x,o.previousY or o.y,o.previousZ or o.z
+        if o.active and math.min(previousX,o.x)<=math.max(x0,sim.x)+radius
+            and math.max(previousX,o.x)>=math.min(x0,sim.x)-radius
+            and math.min(previousZ,o.z)<=math.max(z0,sim.z)+radius
+            and math.max(previousZ,o.z)>=math.min(z0,sim.z)-radius then
             local a=math.rad(o.yaw);local fx,fz=math.sin(a),math.cos(a)
-            local ax,az=x0-o.x,z0-o.z;local bx,bz=sim.x-o.x,sim.z-o.z
-            local hit=swept(ax*fz-az*fx,ax*fx+az*fz,bx*fz-bz*fx,bx*fx+bz*fz,o.halfWidth+hw,o.halfLength+hl)
-            local height=sim.y+altitude-o.y
-            if hit and height<o.height and height>-bodyHeight then
+            local ax,az=x0-previousX,z0-previousZ;local bx,bz=sim.x-o.x,sim.z-o.z
+            local delta=math.rad((sim.heading or sim.yaw or 0)-o.yaw)
+            local ownW=math.abs(math.cos(delta))*hw+math.abs(math.sin(delta))*hl
+            local ownL=math.abs(math.cos(delta))*hl+math.abs(math.sin(delta))*hw
+            local hit,enter,leave=swept(ax*fz-az*fx,ax*fx+az*fz,bx*fz-bz*fx,bx*fx+bz*fz,
+                o.halfWidth+ownW,o.halfLength+ownL)
+            if hit then
+                local relativeY0=y0+(sim.oddPreviousAltitude or altitude)+bodyHeight*.5-previousY-o.height*.5
+                local currentY=sim.y+altitude+bodyHeight*.5-o.y-o.height*.5
+                local vertical,low,high=swept(relativeY0,0,currentY,0,(bodyHeight+o.height)*.5,1)
+                hit=vertical and math.max(enter,low)<=math.min(leave,high)
+            end
+            if hit then
                 contacts[o.id]=true
                 if not sim.oddContacts[o.id] and (sim.oddHitLock or 0)<=0 then
                     local id=sim.vehicleId
@@ -223,7 +259,8 @@ function M.Obstacles(sim,world,x0,y0,z0)
                     else
                         if o.kind=="oil" then sim.speed=sim.speed*.84;sim.oddDisrupt=1.5
                         else
-                            sim:Impact("撞上"..(o.kind=="pendulum" and "悬锤" or "赛道障碍"),7)
+                            local obstacleName=o.kind=="pendulum" and "悬锤" or o.kind=="airbarrier" and "空中挡板" or "赛道障碍"
+                            sim:Impact("撞上"..obstacleName,7)
                             sim.speed=sim.speed*(id=="tank" and .8 or .72)
                             sim.oddSteam=0
                         end
@@ -253,13 +290,19 @@ function M.After(sim,dt,controls,world,x0,y0,z0,wasAirborne)
         end
         local terrain=sim.oddTerrain
         local side=0
-        if terrain=="wind" then side=math.sin((sim.elapsed or 0)*1.2)*dt*(v.id=="hovercraft" and 2.7 or v.id=="jellyfish" and 2 or .65) end
+        if terrain=="wind" then side=math.sin((sim.elapsed or 0)*1.2)*dt*(v.id=="hovercraft" and 2.7 or v.id=="jellyfish" and 2 or v.id=="helicopter" and 2.4 or .65) end
         if v.id=="hovercraft" and terrain=="asphalt" then side=side+(sim.steer or 0)*dt*.7 end
         if v.id=="hovercraft" and sim.oddActive>0 then side=side+(sim.oddDashSide or 1)*dt*2.3 end
         local yaw=math.rad(sim.heading or 0)
         sim.x,sim.z=sim.x+math.cos(yaw)*side,sim.z-math.sin(yaw)*side
     end
     M.Obstacles(sim,world,x0,y0,z0)
+    if not sim.raceMode and sim.oddAttack and v
+        and (v.id=="helicopter" or v.id=="jellyfish" or v.id=="beetle" or v.id=="loader") then
+        sim.oddAttack=false;sim.oddActive,sim.oddCooldown,sim.oddSkillFlash=0,0,0
+        sim.oddSkillResult,sim.oddSkillResultTimer="练习中无竞速目标 · 未消耗技能",2
+        sim.message,sim.messageTimer=sim.oddSkillResult,2
+    end
 end
 -- 近战按真实车体高度相交；铁尾覆盖后方及两侧，转椅覆盖周围，同一次释放可命中多个对手。
 -- 空战弹体沿发射瞬间确定的三维方向直飞，不追踪；扫掠判定与画面使用同一坐标。
@@ -294,8 +337,17 @@ function M.Attack(race,source,sim)
             end
         end
     end
-    if area or not best then return end
+    if area then return end
+    if not best then
+        if not ranged and v.id~="beetle" and v.id~="loader" then return end
+        sim.oddActive,sim.oddCooldown,sim.oddSkillFlash=0,0,0
+        sim.oddSkillResult,sim.oddSkillResultTimer="前方无有效目标 · 未消耗技能",2
+        sim.message,sim.messageTimer=sim.oddSkillResult,2
+        return
+    end
     if ranged then
+        sim.oddSkillResult,sim.oddSkillResultTimer="已发射 · 直线弹道，可被躲避",2
+        sim.message,sim.messageTimer=sim.oddSkillResult,2
         local projectiles=race.mixedProjectiles or {};race.mixedProjectiles=projectiles
         local targetSim=best.isPlayer and race.sim or best.driveSim
         local targetSpec=Data.Get(best.vehicleId)
@@ -311,7 +363,15 @@ function M.Attack(race,source,sim)
 end
 function M.Hit(race,source,best,v)
     local targetSim=best.isPlayer and race.sim or best.driveSim
-    if targetSim and (targetSim.oddShield or 0)>0 then return false end
+    local sourceSim=source.isPlayer and race.sim or source.driveSim
+    if targetSim and (targetSim.oddShield or 0)>0 then
+        if sourceSim then sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="攻击被护盾挡住",2 end
+        return false
+    end
+    if sourceSim then
+        sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="技能命中 · 对手减速20%，失衡3秒",2.5
+        sourceSim.message,sourceSim.messageTimer=sourceSim.oddSkillResult,2.5
+    end
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
     best.boostTimer=0
     local side=best.lane>=source.lane and 1 or -1
@@ -356,6 +416,10 @@ function M.RaceStep(race,dt)
         end
         hit=hit and not target.finished and not target.eliminated
         if hit then M.Hit(race,p.source,target,Data.Get(p.kind)) end
+        if not hit and (p.ttl<=0 or target.finished or target.eliminated) then
+            local sourceSim=p.source.isPlayer and race.sim or p.source.driveSim
+            if sourceSim then sourceSim.oddSkillResult,sourceSim.oddSkillResultTimer="攻击未命中 · 目标已躲避",2 end
+        end
         if hit or p.ttl<=0 or target.finished or target.eliminated or p.source.eliminated then
             if p.node then p.node:Dispose() end
             table.remove(shots,i)

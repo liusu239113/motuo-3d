@@ -56,6 +56,57 @@ function Pages:RefreshPager()
     if self.pager then self.pager:SetVisible(self:IsVisible() and self:GetNumChildren()>0) end
 end
 
+-- Snapshot the actual Yoga values, including undefined/auto/percent. Reapplying
+-- props alone is NOT an undo: ApplyStyleToYoga ignores nil fields, leaving e.g.
+-- a temporary minHeight=0 / maxHeight=infinity or column direction behind.
+local DIMENSIONS={
+    {"Width",YGNodeStyleGetWidth,YGNodeStyleSetWidth,YGNodeStyleSetWidthPercent,YGNodeStyleSetWidthAuto},
+    {"Height",YGNodeStyleGetHeight,YGNodeStyleSetHeight,YGNodeStyleSetHeightPercent,YGNodeStyleSetHeightAuto},
+    {"MinWidth",YGNodeStyleGetMinWidth,YGNodeStyleSetMinWidth,YGNodeStyleSetMinWidthPercent},
+    {"MaxWidth",YGNodeStyleGetMaxWidth,YGNodeStyleSetMaxWidth,YGNodeStyleSetMaxWidthPercent},
+    {"MinHeight",YGNodeStyleGetMinHeight,YGNodeStyleSetMinHeight,YGNodeStyleSetMinHeightPercent},
+    {"MaxHeight",YGNodeStyleGetMaxHeight,YGNodeStyleSetMaxHeight,YGNodeStyleSetMaxHeightPercent},
+    {"FlexBasis",YGNodeStyleGetFlexBasis,YGNodeStyleSetFlexBasis,YGNodeStyleSetFlexBasisPercent,YGNodeStyleSetFlexBasisAuto},
+}
+local ENUM_STYLES={
+    {YGNodeStyleGetFlexDirection,YGNodeStyleSetFlexDirection},
+    {YGNodeStyleGetFlexWrap,YGNodeStyleSetFlexWrap},
+    {YGNodeStyleGetAlignItems,YGNodeStyleSetAlignItems},
+    {YGNodeStyleGetJustifyContent,YGNodeStyleSetJustifyContent},
+    {YGNodeStyleGetFlexGrow,YGNodeStyleSetFlexGrow},
+    {YGNodeStyleGetFlexShrink,YGNodeStyleSetFlexShrink},
+}
+---@param widget Widget
+function Pages:Constrain(widget)
+    for _,record in ipairs(self.constraints) do if record.widget==widget then return end end
+    local record={widget=widget,dimensions={},enums={},padding={}}
+    for i,spec in ipairs(DIMENSIONS) do record.dimensions[i]=spec[2](widget.node) end
+    for i,spec in ipairs(ENUM_STYLES) do record.enums[i]=spec[1](widget.node) end
+    for _,edge in ipairs({YGEdgeTop,YGEdgeBottom}) do record.padding[edge]=YGNodeStyleGetPadding(widget.node,edge) end
+    self.constraints[#self.constraints+1]=record
+end
+
+local function restoreConstraint(record)
+    local widget=record.widget
+    if not widget.node then return end
+    for i,spec in ipairs(DIMENSIONS) do
+        local value=record.dimensions[i]
+        if value.unit==YGUnitPercent then spec[4](widget.node,value.value)
+        elseif value.unit==YGUnitAuto and spec[5] then spec[5](widget.node)
+        elseif value.unit==YGUnitMaxContent then _G["YGNodeStyleSet"..spec[1].."MaxContent"](widget.node)
+        elseif value.unit==YGUnitFitContent then _G["YGNodeStyleSet"..spec[1].."FitContent"](widget.node)
+        elseif value.unit==YGUnitStretch then _G["YGNodeStyleSet"..spec[1].."Stretch"](widget.node)
+        else spec[3](widget.node,value.unit==YGUnitUndefined and YGGetUndefined() or value.value) end
+    end
+    for i,spec in ipairs(ENUM_STYLES) do spec[2](widget.node,record.enums[i]) end
+    for edge,value in pairs(record.padding) do
+        if value.unit==YGUnitPercent then YGNodeStyleSetPaddingPercent(widget.node,edge,value.value)
+        else YGNodeStyleSetPadding(widget.node,edge,value.unit==YGUnitUndefined and YGGetUndefined() or value.value) end
+    end
+    -- Honor live business style changes made since the snapshot as well.
+    widget:ApplyStyleToYoga(widget.props)
+end
+
 -- Page masking is NOT business visibility. Restore the exact IsVisible method
 -- and Yoga display before measuring or detaching, never overwrite props.visible.
 function Pages:RestoreSource()
@@ -71,10 +122,9 @@ function Pages:RestoreSource()
             YGNodeStyleSetDisplay(widget.node,widget:IsVisible() and YGDisplayFlex or YGDisplayNone)
         end
     end
-    for _,record in ipairs(constraints) do
-        if record.widget.node then record.widget:ApplyStyleToYoga(record.widget.props) end
-    end
+    for _,record in ipairs(constraints) do restoreConstraint(record) end
     for _,widget in ipairs(generated) do if widget.node then widget:Destroy() end end
+    UI.MarkLayoutDirty()
 end
 
 -- 通过稳定业务卡片id识别现有生活分区。View仍拥有全部业务动作与数据；
@@ -228,7 +278,11 @@ function Pages:SourceSignature()
         local p=widget.props
         parts[#parts+1]=table.concat({tostring(widget),tostring(p.visible),tostring(p.text),
             tostring(p.height),tostring(p.width),tostring(p.fontSize),tostring(p.fontWeight),
-            tostring(p.gap),tostring(p.minHeight)},"|")
+            tostring(p.gap),tostring(p.rowGap),tostring(p.columnGap),tostring(p.minHeight),tostring(p.maxHeight),
+            tostring(p.minWidth),tostring(p.maxWidth),tostring(p.flexDirection),tostring(p.flexWrap),
+            tostring(p.flexGrow),tostring(p.flexShrink),tostring(p.flexBasis),tostring(p.alignItems),
+            tostring(p.justifyContent),tostring(p.marginTop),tostring(p.marginBottom),
+            tostring(p.paddingTop),tostring(p.paddingBottom),tostring(p.paddingLeft),tostring(p.paddingRight)},"|")
         for _,child in ipairs(widget:GetChildren()) do visit(child) end
     end
     for _,child in ipairs(self:GetChildren()) do visit(child) end
@@ -299,6 +353,10 @@ function Pages:SplitText(widget,budget)
         for key,value in pairs(p) do if type(key)=="string" then rawset(props,key,value) end end
         props.id=p.id and p.id.."-continuation-"..(#result+1) or nil
         props.height=nil;props.minHeight=nil;props.maxHeight=nil
+        -- A flex-basis=0 label may itself be a row column. After masking the
+        -- source, its continuations must retain the measured column width, not
+        -- become width=100% beside the same avatar/action context.
+        props.width=widget:GetLayout().w
         props.flexGrow=0;props.flexShrink=0;props.flexBasis="auto"
         local text=source:sub(positions[first],positions[last+1]-1)
         local fragment=Kit.Text(text,p.fontSize,p.fontColor,props)
@@ -314,20 +372,46 @@ function Pages:SplitText(widget,budget)
     return result
 end
 
--- Recursively split ONLY if a whole card cannot fit. A horizontal row retains
--- its other columns on every continuation, so avatar/stat widths cannot shift.
+-- Include descendant overflow, not just a flex item's (possibly constrained)
+-- border box. Layout edges/margins are resolved Yoga values, not props guesses.
+---@param widget Widget
+local function naturalExtent(widget)
+    local bounds=widget:GetAbsoluteLayout()
+    local top,bottom=bounds.y,bounds.y+bounds.h
+    local function inspect(item)
+        if item.props.visible==false then return end
+        local r=item:GetAbsoluteLayout()
+        top=math.min(top,r.y);bottom=math.max(bottom,r.y+r.h)
+        for _,child in ipairs(item:GetChildren()) do inspect(child) end
+    end
+    inspect(widget)
+    return bottom-top
+end
+
+---@param widget Widget
+local function settleNatural(widget)
+    -- Reflow BEFORE classifying columns: removing a row's minimum/padding or
+    -- changing its direction can change every wrapped label's natural height.
+    for _=1,5 do UI.Layout();updateNatural(widget) end
+    UI.Layout()
+end
+
+-- Split only complete controls. A normal one-tall-column bubble retains its
+-- avatar; zero/multiple tall columns and wrapped rows become a vertical flow of
+-- independent units in the SAME tree (no cloned buttons/callbacks or gestures).
 ---@param widget Widget
 ---@param budget number
 ---@param context table<Widget, boolean>
 function Pages:Collect(widget,budget,context)
     if widget.props.visible==false then return end
-    local bounds=widget:GetLayout()
-    if bounds.h<=budget then
+    local margin=YGNodeLayoutGetMargin(widget.node,YGEdgeTop)+YGNodeLayoutGetMargin(widget.node,YGEdgeBottom)
+    local room=budget-math.max(0,margin)
+    if naturalExtent(widget)<=room then
         self.units[#self.units+1]=makeUnit(widget,widget,context)
         return
     end
     if widget._className=="Label" and widget.props.whiteSpace=="normal" then
-        for _,fragment in ipairs(self:SplitText(widget,budget)) do
+        for _,fragment in ipairs(self:SplitText(widget,room)) do
             self.units[#self.units+1]=makeUnit(fragment,widget,context)
         end
         return
@@ -336,39 +420,74 @@ function Pages:Collect(widget,budget,context)
     for _,child in ipairs(widget:GetChildren()) do
         if child.props.visible~=false and child.props.position~="absolute" then children[#children+1]=child end
     end
-    assert(#children>0,"手机控件高于整页且无法安全拆分："..tostring(widget.props.id or widget._className))
+    assert(#children>0,string.format("手机完整控件无法容纳 %s / 自然高 %.2f / 可用 %.2f / scale %.4f",
+        tostring(widget.props.id or widget._className),naturalExtent(widget),room,UI.GetScale()))
     local inherited={}
     for item,value in pairs(context) do inherited[item]=value end
     inherited[widget]=true
-    -- Fragmented cards keep horizontal wrapping/padding, but omit decorative
-    -- vertical padding on continuations. On a short landscape phone, nested
-    -- padding must not consume the last complete text line or touch target.
     local edgePadding=2/math.max(.1,UI.GetScale())
-    local available=budget-edgePadding-(widget.props.borderTopWidth or widget.props.borderWidth or 0)
-        -(widget.props.borderBottomWidth or widget.props.borderWidth or 0)
-    self.constraints[#self.constraints+1]={widget=widget}
+    self:Constrain(widget)
     YGNodeStyleSetHeightAuto(widget.node)
     YGNodeStyleSetMinHeight(widget.node,0)
-    YGNodeStyleSetMaxHeight(widget.node,math.huge)
+    YGNodeStyleSetMaxHeight(widget.node,YGGetUndefined())
     YGNodeStyleSetPadding(widget.node,YGEdgeTop,0)
-    -- Child and parent Yoga edges round independently at fractional UI scale.
-    -- Reserve real trailing pixels so the final full-height label stays inside
-    -- its fragmented card; this is layout space, not an audit tolerance.
     YGNodeStyleSetPadding(widget.node,YGEdgeBottom,edgePadding)
-    local row=widget.props.flexDirection=="row"
+    -- The row's horizontal flexBasis=0 is valid in a row parent only. Do not
+    -- clear it before deciding to stack: that would change wrapping widths of
+    -- ordinary one-tall-column headers while their ancestor stays horizontal.
+    local parentDirection=widget.parent and YGNodeStyleGetFlexDirection(widget.parent.node)
+    if parentDirection~=YGFlexDirectionRow and parentDirection~=YGFlexDirectionRowReverse then
+        YGNodeStyleSetFlexGrow(widget.node,0)
+        YGNodeStyleSetFlexShrink(widget.node,0)
+        YGNodeStyleSetFlexBasisAuto(widget.node)
+    end
+    settleNatural(widget)
+    -- Oversized padding/minHeight is decoration, not a tall child. Once removed,
+    -- the whole row may already fit; keep all its controls together in that case.
+    if naturalExtent(widget)<=room then
+        self.units[#self.units+1]=makeUnit(widget,widget,context)
+        return
+    end
+    local available=room-edgePadding-YGNodeLayoutGetBorder(widget.node,YGEdgeTop)
+        -YGNodeLayoutGetBorder(widget.node,YGEdgeBottom)
+    local direction=YGNodeStyleGetFlexDirection(widget.node)
+    local row=direction==YGFlexDirectionRow or direction==YGFlexDirectionRowReverse
     if row then
-        -- At most one tall column occurs in current phone rows (message bubble,
-        -- header label). Multiple tall columns need explicit app-level layout.
         local tall={}
         for _,child in ipairs(children) do
-            if child:GetLayout().h>available then tall[#tall+1]=child
-            else includeTree(child,inherited) end
+            local outer=naturalExtent(child)+math.max(0,YGNodeLayoutGetMargin(child.node,YGEdgeTop)
+                +YGNodeLayoutGetMargin(child.node,YGEdgeBottom))
+            if outer>available then tall[#tall+1]=child end
         end
-        assert(#tall==1,"手机超高横排需显式拆为纵向卡片："..tostring(widget.props.id))
-        self:Collect(tall[1],available,inherited)
-    else
-        for _,child in ipairs(children) do self:Collect(child,available,inherited) end
+        if #tall==1 and YGNodeStyleGetFlexWrap(widget.node)==YGWrapNoWrap then
+            for _,child in ipairs(children) do if child~=tall[1] then includeTree(child,inherited) end end
+            self:Collect(tall[1],available,inherited)
+            return
+        end
+        -- A row can overflow with ZERO tall columns (min/padding, flex-wrap,
+        -- independent pixel rounding), or with MANY (stats and responsive text).
+        -- Do not repeat unrelated columns on every continuation. Stack in source
+        -- order; clear horizontal flexBasis=0 so column children cannot collapse.
+        YGNodeStyleSetFlexDirection(widget.node,YGFlexDirectionColumn)
+        YGNodeStyleSetFlexWrap(widget.node,YGWrapNoWrap)
+        YGNodeStyleSetAlignItems(widget.node,YGAlignStretch)
+        YGNodeStyleSetJustifyContent(widget.node,YGJustifyFlexStart)
+        for _,child in ipairs(children) do
+            self:Constrain(child)
+            YGNodeStyleSetFlexGrow(child.node,0)
+            YGNodeStyleSetFlexShrink(child.node,0)
+            YGNodeStyleSetFlexBasisAuto(child.node)
+            -- Horizontal percent widths/basis describe columns, not vertical
+            -- cards. Auto-width flex columns need an explicit bounded width as
+            -- well, otherwise Yoga may measure their nowrap/intrinsic content.
+            if child.props.width==nil or child.props.width=="auto"
+                or (type(child.props.width)=="string" and child.props.width:match("%%$")) then
+                YGNodeStyleSetWidthPercent(child.node,100)
+            end
+        end
+        settleNatural(widget)
     end
+    for _,child in ipairs(children) do self:Collect(child,available,inherited) end
 end
 
 ---@param units CareerPhonePageUnit[]
@@ -474,7 +593,12 @@ function Pages:Paginate()
         print(string.format("[手机按钮分页] %d页 / %d组完整控件 / 自然布局 %.1fx%.1f / 无滚动手势",#self.pages,#self.units,bounds.w,bounds.h))
     end)
     self.measuring=false
-    if not ok then error(failure,0) end
+    if not ok then
+        -- A genuine unsplittable leaf still fails loudly, but never leave half
+        -- installed masks/temporary Yoga styles for the next frame or teardown.
+        self:RestoreSource();UI.Layout()
+        error(failure,0)
+    end
 end
 
 function Pages:Update()

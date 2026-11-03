@@ -74,7 +74,9 @@ function M.Build(parent, id)
     canonical:SetScale(scale)
     canonical.position = V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
     local mat = material(c)
-    if id == "helicopter" or id == "ebike" then
+    if id == "tank" or id == "beetle" then
+        require("MixedArticulation").Build(canonical,id,source,mat)
+    elseif id == "helicopter" or id == "ebike" then
         local offset=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)
         ---@param p Vector3
         ---@return Vector3
@@ -134,6 +136,10 @@ function M.Build(parent, id)
 end
 
 function M.Animate(root, id, time, state)
+    if id=="tank" or id=="beetle" then
+        require("MixedArticulation").Animate(root,id,time,state)
+        return
+    end
     if id=="ebike" then
         local distance=state and state.distance or 0
         local angle=distance/.264*180/math.pi%360

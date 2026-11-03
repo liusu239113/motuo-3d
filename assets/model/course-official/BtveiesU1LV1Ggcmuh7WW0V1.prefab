@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<node>
+	<node id="0">
+		<component type="StaticModel" id="0">
+			<attribute name="Model" value="Model;uuid://HbNZMUix9tNCcOnf8cw8DCxx" />
+			<attribute name="Material" value="Material;uuid://G5K1oVd2mzbIBfDC8nalwrwk" />
+			<attribute name="Cast Shadows" value="true" />
+		</component>
+	</node>
+</node>

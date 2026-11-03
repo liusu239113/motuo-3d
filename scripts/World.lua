@@ -3,6 +3,8 @@ local P = require("Parts")
 local Landscape = require("Landscape")
 local Assets = require("VehicleAssets")
 local Decor = require("TrackDecor")
+local Props = require("ScenicAssetProps")
+local CourseAssets = require("CourseAssets")
 local TrackFeatures = require("TrackFeatures")
 local V = Vector3
 
@@ -33,23 +35,18 @@ local V = Vector3
 local World = {}
 World.__index = World
 World.Resources, World.ResourceTypes = {}, {}
-for _, path in ipairs(Landscape.Resources) do
-    World.Resources[#World.Resources + 1] = path
-    World.ResourceTypes[path] = Landscape.ResourceTypes[path]
+local function mergeResources(resources, types)
+    for _, path in ipairs(resources) do
+        if not World.ResourceTypes[path] then World.Resources[#World.Resources + 1] = path end
+        World.ResourceTypes[path] = assert(types[path], "场景预载资源未声明类型：" .. path)
+    end
 end
-for _,path in ipairs(Decor.Resources) do
-    World.Resources[#World.Resources+1]=path
-    World.ResourceTypes[path]=Decor.ResourceTypes[path]
-end
-for _, path in ipairs(Assets.ResourcesFor(Assets.TrafficIds)) do
-    World.Resources[#World.Resources + 1] = path
-    World.ResourceTypes[path] = Assets.ResourceTypes[path]
-end
-for _, shape in ipairs({"Box", "Cylinder", "Sphere"}) do
-    local path = "Models/" .. shape .. ".mdl"
-    World.Resources[#World.Resources + 1] = path
-    World.ResourceTypes[path] = "Model"
-end
+mergeResources(Landscape.Resources, Landscape.ResourceTypes)
+mergeResources(Decor.Resources, Decor.ResourceTypes)
+mergeResources(Props.Resources, Props.ResourceTypes)
+-- CourseAssets由赛事资产模块提供；统一预载其模型/材质/贴图，禁止静默遗漏或回退拼模。
+mergeResources(CourseAssets.Resources, CourseAssets.ResourceTypes)
+mergeResources(Assets.ResourcesFor(Assets.TrafficIds), Assets.ResourceTypes)
 World.BuildStages = {}
 World.BuildTaskCount = 0
 for _, stage in ipairs(Landscape.BuildStages) do World.BuildStages[#World.BuildStages + 1] = stage end
@@ -129,7 +126,7 @@ function World:Init(scene, onProgress)
     self:BuildBoostBands(); tick("桥梁与驿站", 3, 6)
     self:BuildStations(); tick("桥梁与驿站", 4, 6)
     self:BuildRoadFurniture(); tick("桥梁与驿站", 5, 6)
-    self:BuildMeadow(); tick("桥梁与驿站", 6, 6)
+    self:BuildMeadow(function() tick("桥梁与驿站", 5, 6) end); tick("桥梁与驿站", 6, 6)
     Decor.Build(self.root,Landscape,m,tick)
     self:CreateTraffic(tick)
     require("MixedCourse").Build(self)
@@ -153,47 +150,19 @@ function World:RampAt(x, z) return Landscape.RampAt(x, z) end
 
 -- 桥梁顶面直接使用主路的曲面；桥面高程没有额外偏移，因此仿真和画面完全一致。
 function World:BuildBridge()
-    if Landscape.activeId~="lake" then return end
-    local m = self.mats
+    if Landscape.activeId ~= "lake" then return end
     local bridge = Landscape.Bridge
     local railOffset = Landscape.Roads[1].shoulder + 1.1
     local root = self.root:CreateChild("白水河谷曲线高架桥")
-    local rail = Landscape.Geometry(root, "连续桥梁栏杆", m.rail)
-    local deck = Landscape.Geometry(root, "桥梁侧腹梁", m.rock)
-    for s = bridge.startS, bridge.endS - 2, 2 do
-        local a, yawA = Landscape.RoadPoint(s)
-        local b, yawB = Landscape.RoadPoint(s + 2)
-        local ra, rb = math.rad(yawA), math.rad(yawB)
-        for side = -1, 1, 2 do
-            local pa = a + V(math.cos(ra), 0, -math.sin(ra)) * (side * railOffset)
-            local pb = b + V(math.cos(rb), 0, -math.sin(rb)) * (side * railOffset)
-            for _, y in ipairs({0.56, 1.02}) do
-                Landscape.Triangle(rail, pa + V(0, y, 0), pb + V(0, y, 0), pa + V(0, y + 0.13, 0))
-                Landscape.Triangle(rail, pa + V(0, y + 0.13, 0), pb + V(0, y, 0), pb + V(0, y + 0.13, 0))
-                Landscape.Triangle(rail, pa + V(0, y + 0.13, 0), pb + V(0, y, 0), pa + V(0, y, 0))
-                Landscape.Triangle(rail, pb + V(0, y + 0.13, 0), pb + V(0, y, 0), pa + V(0, y + 0.13, 0))
-            end
-            Landscape.Triangle(deck, pa, pa - V(0, 1.05, 0), pb)
-            Landscape.Triangle(deck, pb, pa - V(0, 1.05, 0), pb - V(0, 1.05, 0))
-            Landscape.Triangle(deck, pb, pa - V(0, 1.05, 0), pa)
-            Landscape.Triangle(deck, pb - V(0, 1.05, 0), pa - V(0, 1.05, 0), pb)
-        end
-    end
-    rail:Commit(); deck:GenerateTangents(); deck:Commit()
-    for s = bridge.startS + 5, bridge.endS - 4, 10 do
+    -- 桥面本身仍是公路可骑数学曲面；此处只放完整正式护栏，不再拼立柱/桥墩。
+    -- 宽X的正式栏段绕Y转90度沿桥纵向放置，等比缩放且不封死桥外通道。
+    for s = bridge.startS + 2, bridge.endS - 2, 2 do
         local p, yaw = Landscape.RoadPoint(s)
-        local a = math.rad(yaw)
+        local angle = math.rad(yaw)
+        local right = V(math.cos(angle), 0, -math.sin(angle))
         for side = -1, 1, 2 do
-            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * railOffset)
-            P.Add(root, "桥栏立柱", "Box", m.rail, q + V(0, 0.56, 0), V(0.12, 1.12, 0.16), Quaternion(0, yaw, 0), false)
+            Props.Add(root, "rail", p + right * (side * railOffset) - V(0, .03, 0), 1.05, yaw + 90)
         end
-    end
-    for s = bridge.startS + 18, bridge.endS - 12, 28 do
-        local p, yaw = Landscape.RoadPoint(s)
-        local ground = Landscape.TerrainHeight(p.x, p.z)
-        local height = math.max(2, p.y - ground - 0.3)
-        P.Add(root, "河谷桥墩", "Box", m.rock, V(p.x, p.y - height * 0.5 - 0.3, p.z), V(2.2, height, 3.2), Quaternion(0, yaw, 0), false)
-        P.Add(root, "桥墩盖梁", "Box", m.rock, p - V(0, 0.48, 0), V(railOffset * 2, 0.7, 2.2), Quaternion(0, yaw, 0), false)
     end
 end
 
@@ -216,23 +185,18 @@ function World:BuildRamp(index)
     Landscape.Triangle(g, V(w, 0, 0), V(w, h, length), V(w, 0, length))
     Landscape.Triangle(g, V(-w, h, length), V(-w, 0, length), V(w, h, length))
     Landscape.Triangle(g, V(w, h, length), V(-w, 0, length), V(w, 0, length))
-    g:GenerateTangents(); g:Commit()
+    local edgeMarks = Landscape.Geometry(root, "可骑坡台黄边标记", m.yellow)
     for side = -1, 1, 2 do
-        P.Bar(root, m.yellow, V(side * (w - 0.04), 0.03, 0), V(side * (w - 0.04), h + 0.03, length), 0.035)
+        local center = side * (w - .05)
+        local x0, x1 = center - .035, center + .035
+        Landscape.Triangle(edgeMarks, V(x0, .03, 0), V(x0, h + .03, length), V(x1, .03, 0))
+        Landscape.Triangle(edgeMarks, V(x1, .03, 0), V(x0, h + .03, length), V(x1, h + .03, length))
     end
+    g:GenerateTangents(); g:Commit(); edgeMarks:Commit()
+    -- 可骑楔形及黄边属于玩法表面，位置/高度保持；去除装饰性拼模运输车。
     if index ~= 1 then return end
-    P.Add(root, "运输车驾驶室", "Box", m.red, V(0, 1.4, length + 1.5), V(2.45, 2.45, 2.5))
-    P.Add(root, "挡风玻璃", "Box", m.glass, V(0, 1.95, length + 2.76), V(2.1, 0.79, 0.035), nil, false)
-    P.Add(root, "运输车底盘", "Box", m.dark, V(0, 0.55, length - 0.1), V(2.25, 0.32, 5.7))
-    local wheel = CylinderGeometry(0.47, 0.47, 0.27, 18):ToModel()
-    for _, z in ipairs({length - 2.5, length + 1.6}) do
-        for side = -1, 1, 2 do
-            P.Add(root, "运输车轮胎", wheel, m.dark, V(side * 1.1, 0.47, z), nil, Quaternion(0, 0, 90))
-        end
-    end
     for side = -1, 1, 2 do
-        P.Add(root, "运输车车灯", "Box", m.lamp, V(side * 0.81, 0.98, length + 2.78), V(0.36, 0.24, 0.03), nil, false)
-        P.Add(root, "路肩锥标", ConeGeometry(0.2, 0.75, 12):ToModel(), m.yellow, V(side * 2.15, 0.375, 3), nil, nil, false)
+        Props.Add(root, "cone", V(side * 2.15, 0, 3), .75, 0)
     end
 end
 
@@ -383,97 +347,75 @@ function World:BuildBoostBands()
 end
 
 function World:BuildStations()
-    if Landscape.activeId~="lake" then return end
-    local m = self.mats
-    for i, s in ipairs({25, Landscape.RouteLength * 0.865}) do
+    if Landscape.activeId ~= "lake" then return end
+    for i, s in ipairs({25, Landscape.RouteLength * .865}) do
         local p, yaw = Landscape.RoadPoint(s)
         local a = math.rad(yaw)
-        local right = V(math.cos(a), 0, -math.sin(a))
-        local pos = p + right * (i == 1 and -24 or 24)
-        local ground = Landscape.TerrainHeight(pos.x, pos.z)
-        local root = self.root:CreateChild(i == 1 and "湖岸出发驿站" or "山间牧场")
-        root.position = V(pos.x, ground, pos.z)
-        root.rotation = Quaternion(0, yaw, 0)
-        P.Add(root, "木屋主体", "Box", m.wood, V(0, 1.65, 0), V(9.2, 3.3, 6.6), nil, false)
-        local roof = ConvexGeometry({V(-5.2, 0, -3.9), V(5.2, 0, -3.9), V(0, 2.1, -3.9),
-            V(-5.2, 0, 3.9), V(5.2, 0, 3.9), V(0, 2.1, 3.9)}):ToModel()
-        P.Add(root, "斜屋顶", roof, m.red, V(0, 3.2, 0), nil, nil, false)
-        for _, x in ipairs({-2.8, 2.8}) do
-            P.Add(root, "驿站窗户", "Box", m.glass, V(x, 1.9, -3.33), V(1.8, 1.2, 0.04), nil, false)
-            P.Add(root, "窗沿", "Box", m.white, V(x, 1.25, -3.38), V(2, 0.12, 0.16), nil, false)
+        local _, radius = Props.Measure("house", 4.5)
+        local offset = (i == 1 and -1 or 1) * (Landscape.Roads[1].shoulder + radius + 12)
+        for _, extra in ipairs({0, 10, 24}) do
+            local lateral = offset + (offset < 0 and -extra or extra)
+            local x, z = p.x + math.cos(a) * lateral, p.z - math.sin(a) * lateral
+            local safe = Props.GroundSite(Landscape, "house", x, z, 4.5, yaw, 1, .65, .04)
+            if safe then
+                local house = Props.Add(self.root, "house", safe, 4.5, yaw)
+                house.name = i == 1 and "湖岸出发驿站" or "山间牧场"
+                break
+            end
         end
-        P.Add(root, "入口门", "Box", m.dark, V(0, 1.16, -3.34), V(1.3, 2.32, 0.05), nil, false)
-        for _, x in ipairs({-4.1, 4.1}) do
-            P.Add(root, "门廊立柱", "Cylinder", m.wood, V(x, 1.55, -5), V(0.18, 3.1, 0.18), nil, false)
-        end
-        P.Add(root, "门廊顶", "Box", m.red, V(0, 3.05, -4.2), V(9.4, 0.17, 2.5), nil, false)
     end
-    local signPoint, yaw = Landscape.RoadPoint(35)
+    local p, yaw = Landscape.RoadPoint(35)
     local a = math.rad(yaw)
-    local q = signPoint + V(math.cos(a), 0, -math.sin(a)) * 9
-    local base = Landscape.TerrainHeight(q.x, q.z)
-    P.Add(self.root, "出发路牌立柱", "Cylinder", m.rail, V(q.x, base + 1.3, q.z), V(0.12, 2.6, 0.12), nil, false)
-    P.Add(self.root, "风景线路牌", "Box", m.green, V(q.x, base + 2.6, q.z), V(3.1, 1.1, 0.13), Quaternion(0, yaw, 0), false)
-    for side = -1, 1, 2 do
-        P.Bar(self.root, m.white, V(q.x + side * 0.45, base + 2.6, q.z - 0.08), V(q.x + side * 0.9, base + 2.6, q.z - 0.08), 0.026)
+    local offset = Landscape.Roads[1].shoulder + 5
+    local x, z = p.x + math.cos(a) * offset, p.z - math.sin(a) * offset
+    local safe = Props.GroundSite(Landscape, "sign", x, z, 2.3, yaw, .3, .4, .03)
+    if safe then
+        local sign = Props.Add(self.root, "sign", safe, 2.3, yaw)
+        sign.name = "正式风景线路牌"
     end
 end
 
 function World:BuildRoadFurniture()
-    if Landscape.activeId~="lake" then return end
-    local m = self.mats
-    for s = 40, Landscape.RouteLength - 1, 36 do
-        local p, yaw = Landscape.RoadPoint(s)
-        local a = math.rad(yaw)
-        for side = -1, 1, 2 do
-            local q = p + V(math.cos(a), 0, -math.sin(a)) * (side * (Landscape.Roads[1].shoulder + 0.6))
-            local y = Landscape.TerrainHeight(q.x, q.z)
-            P.Add(self.root, "沿线里程桩", "Box", m.white, V(q.x, y + 0.47, q.z), V(0.12, 0.94, 0.18), Quaternion(0, yaw, 0), false)
-            P.Add(self.root, "桩顶反光面", "Box", m.dark, V(q.x, y + 0.77, q.z), V(0.13, 0.14, 0.19), Quaternion(0, yaw, 0), false)
-        end
-    end
-    -- 护栏只覆盖桥梁与少数外侧弯道，其他路肩均可自由驶入山坡。
+    if Landscape.activeId ~= "lake" then return end
+    -- 沿线反光锥标由TrackDecor统一建立，避免湖图重复铺两套。
     for _, s in ipairs({400, 960, 1560, 2160, 2640}) do
         local p, yaw = Landscape.RoadPoint(s)
         local a = math.rad(yaw)
-        local root = self.root:CreateChild("山路弯道预告")
-        local pos = p + V(math.cos(a), 0, -math.sin(a)) * -9
-        root.position = V(pos.x, Landscape.TerrainHeight(pos.x, pos.z), pos.z)
-        root.rotation = Quaternion(0, yaw, 0)
-        P.Add(root, "标牌杆", "Cylinder", m.rail, V(0, 1.1, 0), V(0.08, 2.2, 0.08), nil, false)
-        P.Add(root, "弯道预告牌", "Box", m.yellow, V(0, 2.15, 0), V(1.05, 1.05, 0.07), Quaternion(0, 0, 45), false)
-        P.Add(root, "转向图案", "Box", m.dark, V(0, 2.15, -0.045), V(0.14, 0.59, 0.02), Quaternion(0, 0, -24), false)
+        local offset = -Landscape.Roads[1].shoulder - 5
+        local x, z = p.x + math.cos(a) * offset, p.z - math.sin(a) * offset
+        local safe = Props.GroundSite(Landscape, "sign", x, z, 2.25, yaw, .4, .4, .03)
+        if safe then
+            local sign = Props.Add(self.root, "sign", safe, 2.25, yaw)
+            sign.name = "正式山路导向路标"
+        end
     end
 end
 
-function World:BuildMeadow()
-    if Landscape.activeId~="lake" then return end
-    local m = self.mats
-    local root = self.root:CreateChild("草甸花丛与湖岸岩石")
-    local rockModel = IcosahedronGeometry(1, 2):ToModel()
+---@param yieldPart? fun()
+function World:BuildMeadow(yieldPart)
+    if Landscape.activeId ~= "lake" then return end
+    local root = self.root:CreateChild("正式草蕨与湖岸岩石")
+    local rocks, plants = 0, 0
     for i = 1, 32 do
         local a = i * 2.39996
         local x, z = -190 + math.cos(a) * (170 + i % 4 * 5), 190 + math.sin(a) * (190 + i % 3 * 5)
-        local y, road = Landscape.Height(x, z)
-        if not road then
-            local scale = 0.6 + i % 4 * 0.35
-            P.Add(root, "湖岸圆石", rockModel, m.rock, V(x, y + scale * 0.15, z), V(scale * 1.6, scale, scale * 1.2), Quaternion(0, i * 37, 0), false)
-        end
+        local id = i % 2 == 0 and "rockA" or "rockB"
+        local height = .6 + i % 4 * .35
+        local safe = Props.GroundSite(Landscape, id, x, z, height, i * 37, .5, height * .45, height * .18)
+        if safe then Props.Add(root, id, safe, height, i * 37); rocks = rocks + 1 end
+        if yieldPart and i % 16 == 0 then yieldPart() end
     end
-    local gold = P.Material(0.58, 0.55, 0.24, 0.95)
-    local flowers = Landscape.Geometry(root, "高山草甸花叶合批", gold)
-    for i = 1, 360 do
+    -- 替换原360片手写花叶：正式草蕨成簇摆放，保持草甸覆盖而非删除全部植被。
+    for i = 1, 240 do
         local x = -165 + ((i * 73.71) % 340)
         local z = 760 + ((i * 39.27) % 240)
-        local y, road = Landscape.Height(x, z)
-        local _, lateral = Landscape.NearestRoad(x, z)
-        if not road and math.abs(lateral) > 9 then
-            local h = 0.18 + (i % 5) * 0.09
-            Landscape.Triangle(flowers, V(x - 0.1, y, z), V(x, y + h, z), V(x + 0.1, y, z))
-            Landscape.Triangle(flowers, V(x + 0.1, y, z), V(x, y + h, z), V(x - 0.1, y, z))
-        end
+        local id = i % 3 == 0 and "fernSmall" or "fern"
+        local height = .25 + i % 5 * .055
+        local safe = Props.GroundSite(Landscape, id, x, z, height, i * 137.5, .3, .32, .025)
+        if safe then Props.Add(root, id, safe, height, i * 137.5); plants = plants + 1 end
+        if yieldPart and i % 24 == 0 then yieldPart() end
     end
-    flowers:Commit()
+    print(string.format("[正式草甸] %d岩石/%d草蕨；共享MDL材质，0手写花叶/二十面体", rocks, plants))
 end
 
 ---@param tick fun(stage:string,current:integer,total:integer)

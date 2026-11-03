@@ -722,8 +722,8 @@ end
 
 -- 扫掠碰撞设计（米；不是渲染节点包围盒）：
 -- 俯视：         汽车局部 +Z               侧视：汽车 [y,y+height]
---            +----------------+           摩托/骑手 [bike.y,bike.y+1.45]
---            |  宽 width      |           上下分离 => 飞越不碰撞。
+--            +----------------+           载具 [y+altitude,y+altitude+ownH]
+--            |  宽 width      |           ownH来自正式车型规则；上下分离不碰撞。
 --            | 半长 halfLength|
 --            +----------------+
 -- 运动线段 p0 ---> p1；在汽车 yaw 局部坐标，用摩托半宽 .29、半长 .95
@@ -759,9 +759,10 @@ function Sim:Traffic(world, x0, y0, z0, alpha0, alpha1)
             local halfLength = (car.halfLength or 2.125) + math.abs(math.cos(delta)) * ownL + math.abs(math.sin(delta)) * ownW
             local hit, enter, leave = Sim.SweptHit(lx0, lx1, lz0, lz1, halfWidth, halfLength)
             local height = car.height or 1.8
+            local ownH=mixed and mixed.size[2] or 1.45
             if hit then
-                hit = interval(y0 + (self.oddAltitude or 0) + 0.725 - cy0 - height * 0.5,
-                    self.y + (self.oddAltitude or 0) + 0.725 - cy1 - height * 0.5, (height + 1.45) * 0.5, enter, leave)
+                hit = interval(y0 + (self.oddAltitude or 0) + ownH * .5 - cy0 - height * 0.5,
+                    self.y + (self.oddAltitude or 0) + ownH * .5 - cy1 - height * 0.5, (height + ownH) * 0.5, enter, leave)
             end
             if hit then
                 active[car] = true

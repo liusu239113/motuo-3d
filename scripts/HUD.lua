@@ -867,12 +867,62 @@ function HUD:RefreshActionFeedback()
     -- 翘头按钮本身由 Update 依据实际车速/抬轮角统一刷新状态。
 end
 
+function HUD:UpdateSkillFeedback(sim)
+    local odd = require("MixedVehicles").Get(sim.vehicleId)
+    self.skillButton:SetVisible(odd ~= nil and self.screen == "ride")
+    if not odd then return end
+    local active, cd = math.max(0, sim.oddActive or 0), math.max(0, sim.oddCooldown or 0)
+    local disrupted = (sim.oddDisrupt or 0) > 0
+    local status, tint, background = "就绪 · E", AMBER, {49, 38, 23, 240}
+    -- 专属技能只读取odd*；普通氮气/加速带绝不触发技能激活外观。
+    -- 使用期和冷却可以同时计时，按钮必须先显示持续时间。
+    if active > 0 then
+        status, tint, background = string.format("持续 %.1fs", active), C.cyan, {18, 58, 65, 245}
+    elseif disrupted then
+        status, tint, background = string.format("受干扰 %.1fs", sim.oddDisrupt), RED, {65, 28, 25, 245}
+    elseif cd > 0 then
+        status, tint, background = string.format("冷却 %.1fs", cd), MUTED, {28, 34, 40, 240}
+    end
+    local buttonText = odd.skill .. " · " .. status
+    if self.skillStatus ~= buttonText then self.skillButton:SetText(buttonText); self.skillStatus = buttonText end
+    self.skillButton:SetDisabled(active > 0 or cd > 0 or disrupted or sim.paused == true)
+    -- 禁用只阻止再次施放，不能把“正在生效”变成灰色不可读状态。
+    if self.skillStyle ~= (active > 0 and "active" or (disrupted and "blocked" or (cd > 0 and "cooldown" or "ready"))) then
+        self.skillStyle = active > 0 and "active" or (disrupted and "blocked" or (cd > 0 and "cooldown" or "ready"))
+        self.skillButton:SetStyle({textColor = tint, disabledTextColor = tint, borderColor = tint,
+            backgroundColor = background, disabledBackgroundColor = background,
+            backgroundGradient = false, disabledBackgroundGradient = false,
+            variantBackgroundGradient = {}, variantDisabledBackgroundGradient = {},
+            borderWidth = active > 0 and 2 or 1})
+    end
+end
+
 function HUD:UpdateFeatureFeedback(sim)
     local state = sim.featureState or {}
     local driving = self.screen == "ride"
     local power = driving and math.max(0, math.min(1, state.feedbackPower or 0)) or 0
     self.featureRush.power, self.featureRush.phase = (state.lastGain or 0) > 0 and power or 0, sim.elapsed or 0
     if not driving then self.featurePanel:SetVisible(false); return end
+    local result = sim.oddSkillResult or ""
+    if (sim.oddSkillResultTimer or 0) > 0 and result ~= "" then
+        -- 复用现有反馈框，结果来自权威仿真；不靠技能计时/boost猜测命中。
+        local odd = require("MixedVehicles").Get(sim.vehicleId)
+        local title = odd and odd.skill or "技能交锋"
+        local color = C.cyan
+        if result:find("盾", 1, true) then title, color = "攻击被护盾挡住", AMBER
+        elseif result:find("无", 1, true) then title, color = "前方无有效目标", RED
+        elseif result:find("未命中", 1, true) or result:find("落空", 1, true) then title, color = "攻击未命中", RED
+        elseif result:find("命中", 1, true) then title, color = "技能命中 · 对手失衡", GREEN
+        elseif result:find("发射", 1, true) then title = sim.vehicleId == "helicopter" and "导弹已发射" or "技能已发射"
+        elseif result:find("发动", 1, true) then title = title .. " · 已发动" end
+        self.featureTitle:SetText(title)
+        self.featureTitle:SetFontColor(color)
+        self.featureHint:SetText(result)
+        self.featurePanel:SetStyle({borderColor = color, backgroundColor = {12, 23, 30, 240}})
+        self.featurePanel:SetVisible(true)
+        return
+    end
+    self.featurePanel:SetStyle({borderColor = {83, 231, 196, 165}, backgroundColor = {7, 26, 27, 210}})
     if power > 0 and (state.lastGain or 0) > 0 then
         self.featureTitle:SetText("加速带 · 冲刺")
         self.featureTitle:SetFontColor({126, 255, 218, 255})
@@ -910,15 +960,7 @@ end
 -- including before the driving scene exists; leaving garage disposes all render targets immediately.
 function HUD:Update(dt, sim, firstPerson)
     self.firstPerson = firstPerson == true
-    local odd = require("MixedVehicles").Get(sim.vehicleId)
-    self.skillButton:SetVisible(odd~=nil)
-    if odd then
-        local cd=sim.oddCooldown or 0
-        local resource=sim.vehicleId=="beetle" and string.format(" 蒸汽%.0f%%",(sim.oddSteam or 0)*100)
-            or (sim.vehicleId=="cicada" and string.format(" 发条%.0fs",sim.oddSpring or 0) or "")
-        self.skillButton:SetText(odd.skill..(cd>0 and string.format(" %.1fs",cd) or " · E")..resource)
-        self.skillButton:SetDisabled(cd>0 or (sim.oddDisrupt or 0)>0)
-    end
+    self:UpdateSkillFeedback(sim)
     self:UpdateFeatureFeedback(sim)
     self.controls:UpdateFeedback(dt)
     self.redline = (sim.vehicle and sim.vehicle.redline) or 12500

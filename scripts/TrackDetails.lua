@@ -1,723 +1,247 @@
--- 沿线主题细节按里程分块、按材质合批；不增加车辆碰撞体或逐帧更新。
+-- 沿线细节仅摆放正式共享MDL/原材质；不再手写草叶、岩块、轮胎、屋顶或设施网格。
 local Details = {}
-local V=Vector3
+local Props = require("ScenicAssetProps")
+local V = Vector3
+Details.Resources, Details.ResourceTypes = Props.Resources, Props.ResourceTypes
 
----@class DetailContext
----@field root Node
----@field L table
----@field m table<string,Material>
----@field batches table<string,CustomGeometry>
----@field placed integer
----@field rejected integer
----@field boxes integer
----@field nodes integer
----@field occupied table[]
----@field triangles integer
----@field byMaterial table<string,integer>
----@field perChunk table<number,integer>
----@field budgetSkipped integer
----@field plants integer
----@field rocks integer
----@field logs integer
----@field shoreSites integer
-
--- 手写顶点仅用于多形状静态合批：不为每块石/每片草建立Model、Node或临时几何。
--- 192m一块，非索引顶点上限9600/块；全图最多90000三角形（含双面叶）。
-local TRI_LIMIT, CHUNK_LIMIT = 90000, 3200
-
-local function noise(a,b)
-    local n=math.sin(a*127.1+b*311.7)*43758.5453
-    return n-math.floor(n)
+local function noise(a, b)
+    local n = math.sin(a * 127.1 + b * 311.7) * 43758.5453
+    return n - math.floor(n)
 end
-
 local function basis(yaw)
-    local angle=math.rad(yaw)
-    return V(math.cos(angle),0,-math.sin(angle)),V(math.sin(angle),0,math.cos(angle))
-end
-
----@param ctx DetailContext
----@param material string
----@param s number
----@return CustomGeometry
-local function batch(ctx,material,s)
-    local key=math.floor(s/192)..":"..material
-    if not ctx.batches[key] then
-        local g=ctx.L.Geometry(ctx.root,"沿线合批_"..key,assert(ctx.m[material]))
-        g.drawDistance=material=="rock" and 480 or (material=="green" and 185 or 330)
-        g.castShadows=false
-        g.shadowDistance=0
-        ctx.batches[key]=g
-        ctx.nodes=ctx.nodes+1
-    end
-    return ctx.batches[key]
-end
-
----@param ctx DetailContext
----@param s number
----@param count integer
-local function room(ctx,s,count)
-    local chunk=math.floor(s/192)
-    if ctx.triangles+count>TRI_LIMIT or (ctx.perChunk[chunk] or 0)+count>CHUNK_LIMIT then
-        ctx.budgetSkipped=ctx.budgetSkipped+1
-        return false
-    end
-    return true
-end
-
--- 同一面共享切平面投影；不再用XZ投影竖壁（旧路径UV退化、法线贴图发黑）。
----@param ctx DetailContext
----@param material string
----@param s number
----@param a Vector3
----@param b Vector3
----@param c Vector3
----@param ua? Vector2
----@param ub? Vector2
----@param uc? Vector2
-local function triangle(ctx,material,s,a,b,c,ua,ub,uc)
-    local cross=(b-a):CrossProduct(c-a)
-    if cross:LengthSquared()<1e-12 then return end
-    local n=cross:Normalized()
-    local ax,ay,az=math.abs(n.x),math.abs(n.y),math.abs(n.z)
-    local function uv(p)
-        if ay>=ax and ay>=az then return Vector2(p.x/2,p.z/2) end
-        if ax>=az then return Vector2(p.z/2,p.y/2) end
-        return Vector2(p.x/2,p.y/2)
-    end
-    local g=batch(ctx,material,s)
-    ctx.L.Vertex(g,a,n,ua or uv(a));ctx.L.Vertex(g,b,n,ub or uv(b));ctx.L.Vertex(g,c,n,uc or uv(c))
-    local chunk=math.floor(s/192)
-    ctx.triangles=ctx.triangles+1
-    ctx.perChunk[chunk]=(ctx.perChunk[chunk] or 0)+1
-    ctx.byMaterial[material]=(ctx.byMaterial[material] or 0)+1
-end
-
----@param ctx DetailContext
----@param material string
----@param s number
----@param a Vector3
----@param b Vector3
----@param c Vector3
----@param d Vector3
-local function face(ctx,material,s,a,b,c,d)
-    -- 连续局部UV避免非共面薄片两半使用不同的主轴。
-    local u=(b-a):Length()/2
-    local v=(c-a):Length()/2
-    triangle(ctx,material,s,a,b,c,Vector2(0,0),Vector2(u,0),Vector2(0,v))
-    triangle(ctx,material,s,c,b,d,Vector2(0,v),Vector2(u,0),Vector2(u,v))
-end
-
----@param ctx DetailContext
----@param material string
----@param s number
----@param a Vector3
----@param b Vector3
----@param radius number
----@param topRadius? number
----@param segments? integer
-local function cylinder(ctx,material,s,a,b,radius,topRadius,segments)
-    local n=segments or 7
-    if not room(ctx,s,n*4) then return end
-    local axis=(b-a):Normalized()
-    local ref=math.abs(axis.y)>.9 and V(1,0,0) or V(0,1,0)
-    local r=axis:CrossProduct(ref):Normalized()
-    local f=r:CrossProduct(axis)
-    for i=0,n-1 do
-        local t0,t1=i/n*math.pi*2,(i+1)/n*math.pi*2
-        local u=r*math.cos(t0)+f*math.sin(t0)
-        local v=r*math.cos(t1)+f*math.sin(t1)
-        local p,q=a+u*radius,a+v*radius
-        local j,k=b+u*(topRadius or radius),b+v*(topRadius or radius)
-        -- 绕轴外向，树皮U沿圆周/V沿长轴，端面使用平面投影。
-        local len=(b-a):Length()/2
-        local u0,u1=i/n*radius*math.pi,(i+1)/n*radius*math.pi
-        triangle(ctx,material,s,p,j,q,Vector2(u0,0),Vector2(u0,len),Vector2(u1,0))
-        triangle(ctx,material,s,q,j,k,Vector2(u1,0),Vector2(u0,len),Vector2(u1,len))
-        triangle(ctx,material,s,a,p,q)
-        triangle(ctx,material,s,b,k,j)
-    end
-end
-
----@param ctx DetailContext
----@param material string
----@param s number
----@param p Vector3
----@param r Vector3
----@param width number
----@param height number
----@param depth number
-local function box(ctx,material,s,p,r,width,height,depth)
-    if not room(ctx,s,12) then return end
-    local f=V(-r.z,0,r.x)
-    local x,z=r*(width*.5),f*(depth*.5)
-    local y=V(0,height,0)
-    local a,b,c,d=p-x-z,p-x+z,p+x-z,p+x+z
-    face(ctx,material,s,a,c,b,d);face(ctx,material,s,a+y,b+y,c+y,d+y)
-    face(ctx,material,s,a,b,a+y,b+y);face(ctx,material,s,c,c+y,d,d+y)
-    face(ctx,material,s,a,a+y,c,c+y);face(ctx,material,s,b,d,b+y,d+y)
-    ctx.boxes=ctx.boxes+1
+    local angle = math.rad(yaw)
+    return V(math.cos(angle), 0, -math.sin(angle)), V(math.sin(angle), 0, math.cos(angle))
 end
 
 -- 占地示意：路肩外缘 | 至少3米净空 | 旋转后的完整矩形占地。
--- 目的：每个占地九点都必须在干地、路外；再检查包围圆，防止跨到另一段赛道。
--- 边界：海边低于海平面、折返夹缝、地形高差过大或与已有设施相叠均舍弃。
+-- 九点全干地、无车道/支路/坡台；再用包围圆补检，拒绝折返夹缝和大高差。
 ---@param L table
 ---@param s number
 ---@param offset number
 ---@param width number
 ---@param depth number
 ---@return Vector3?, Vector3?, Vector3?, number?, number?
-function Details.Site(L,s,offset,width,depth)
-    local p,yaw=L.RoadPoint(s)
-    local r,f=basis(yaw)
-    local center=p+r*offset
-    local radius=math.sqrt(width*width+depth*depth)*.5
-    local ns=L.NearestRoad(center.x,center.z)
-    local nearest=L.RoadPoint(ns)
-    local distance=math.sqrt((center.x-nearest.x)^2+(center.z-nearest.z)^2)
-    if distance<L.Roads[1].shoulder+radius+3 then return nil end
-    local low,high=math.huge,-math.huge
-    for ix=-1,1 do
-        for iz=-1,1 do
-            local q=center+r*(ix*width*.5)+f*(iz*depth*.5)
-            local _,onRoad=L.Height(q.x,q.z)
-            if onRoad or L.WaterDepth(q.x,q.z)>.01 then return nil end
-            -- Height的第二返回只表示沥青，不包括碎石路肩/支路肩。
-            if L.RoadHeight and L.RoadHeight(q.x,q.z)~=nil then return nil end
-            if L.RampAt and L.RampAt(q.x,q.z) then return nil end
-            local terrain=L.TerrainHeight(q.x,q.z)
-            if L.activeId=="coast" and terrain<(L.WaterLevel or 0)+.3 then return nil end
-            for _,bay in ipairs(L.Laybys or {}) do
-                if (q.x-bay.x)^2+(q.z-bay.z)^2<22^2 then return nil end
+function Details.Site(L, s, offset, width, depth)
+    local p, yaw = L.RoadPoint(s)
+    local r, f = basis(yaw)
+    local center = p + r * offset
+    local radius = math.sqrt(width * width + depth * depth) * .5
+    local ns = L.NearestRoad(center.x, center.z)
+    local nearest = L.RoadPoint(ns)
+    local distance = math.sqrt((center.x - nearest.x)^2 + (center.z - nearest.z)^2)
+    if distance < L.Roads[1].shoulder + radius + 3 then return nil end
+    local low, high = math.huge, -math.huge
+    for ix = -1, 1 do
+        for iz = -1, 1 do
+            local q = center + r * (ix * width * .5) + f * (iz * depth * .5)
+            local _, onRoad = L.Height(q.x, q.z)
+            if onRoad or L.WaterDepth(q.x, q.z) > .01 then return nil end
+            if L.RoadHeight and L.RoadHeight(q.x, q.z) ~= nil then return nil end
+            if L.RampAt and L.RampAt(q.x, q.z) then return nil end
+            local terrain = L.TerrainHeight(q.x, q.z)
+            if L.Track.water and terrain < (L.WaterLevel or 0) + .3 then return nil end
+            for _, bay in ipairs(L.Laybys or {}) do
+                if (q.x - bay.x)^2 + (q.z - bay.z)^2 < 22^2 then return nil end
             end
-            low,high=math.min(low,terrain),math.max(high,terrain)
+            low, high = math.min(low, terrain), math.max(high, terrain)
         end
     end
-    if high-low>math.max(2.8,math.min(width,depth)*.27) then return nil end
-    return V(center.x,high+.1,center.z),r,f,low,high
+    if high - low > math.max(2.8, math.min(width, depth) * .27) then return nil end
+    return V(center.x, high + .1, center.z), r, f, low, high
 end
 
--- 预留由Decor已放置的设施/既有模型，构建结束清空，不跨图残留。
-local reservations={}
-function Details.BeginReservations() reservations={} end
+local reservations = {}
+function Details.BeginReservations() reservations = {} end
 ---@param p Vector3
 ---@param radius number
-function Details.Reserve(p,radius)
-    reservations[#reservations+1]={x=p.x,z=p.z,radius=radius}
+function Details.Reserve(p, radius)
+    reservations[#reservations + 1] = {x = p.x, z = p.z, radius = radius}
 end
 
+---@class DetailContext
+---@field root Node
+---@field L table
+---@field occupied table[]
+---@field perChunk table<number, integer>
+---@field instances integer
+---@field placed integer
+---@field rejected integer
+---@field plants integer
+---@field rocks integer
+---@field markers integer
+---@field budgetSkipped integer
+
+-- 资产实例而非假草三角预算；全图及每192m站位块同时约束。
+local INSTANCE_LIMIT, CHUNK_LIMIT = 900, 40
 ---@param ctx DetailContext
 ---@param p Vector3
 ---@param radius number
-local function clearOfFacilities(ctx,p,radius)
-    for _,other in ipairs(ctx.occupied) do
-        if (p.x-other.x)^2+(p.z-other.z)^2<(radius+other.radius+1.5)^2 then return false end
+local function clear(ctx, p, radius)
+    for _, other in ipairs(ctx.occupied) do
+        if (p.x - other.x)^2 + (p.z - other.z)^2 < (radius + other.radius + 1.5)^2 then return false end
     end
     return true
 end
 
 ---@param ctx DetailContext
+---@param id string
 ---@param s number
----@param side number
----@param width number
----@param depth number
-local function site(ctx,s,side,width,depth)
-    for _,extra in ipairs({0,8,18}) do
-        local p,r,f,low=Details.Site(ctx.L,s,side*(ctx.L.Roads[1].shoulder+math.sqrt(width*width+depth*depth)*.5+6+extra),width,depth)
-        if p and r and f and low then
-            local radius=math.sqrt(width*width+depth*depth)*.5
-            local clear=true
-            for _,other in ipairs(ctx.occupied) do
-                if (p.x-other.x)^2+(p.z-other.z)^2<(radius+other.radius+4)^2 then clear=false;break end
-            end
-            if clear then
-                ctx.occupied[#ctx.occupied+1]={x=p.x,z=p.z,radius=radius}
-                ctx.placed=ctx.placed+1
-                return p,r,f,low
-            end
-        end
-    end
-    ctx.rejected=ctx.rejected+1
-    return nil
-end
-
--- 岩层：地表下埋裙边 -> 不规则宽肩 -> 偏移窄顶。每块42tri，没有方盒假石。
--- 每个底环点独立采TerrainHeight，坡面不悬空；层理UV沿真实面投影。
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param width number
+---@param x number
+---@param z number
 ---@param height number
----@param depth number
----@param seed number
----@param material? string
-local function stone(ctx,s,p,r,width,height,depth,seed,material)
-    if not room(ctx,s,42) then return end
-    local f=V(-r.z,0,r.x)
-    local rings={}
-    for tier=1,3 do
-        local ring={}
-        for i=1,7 do
-            local angle=(i-1)/7*math.pi*2
-            local jitter=.72+noise(seed+i,3)*.28
-            local taper=tier==1 and 1 or (tier==2 and .89 or .52)
-            local shift=tier==3 and .16 or 0
-            local q=p+r*((math.cos(angle)*jitter*taper+shift)*width*.5)
-                +f*(math.sin(angle)*jitter*taper*depth*.5)
-            local ground=ctx.L.TerrainHeight(q.x,q.z)
-            local surface=p.y+height*(tier==2 and .38 or (.84+noise(seed+i,5)*.16))
-            local y=tier==1 and ground-.2 or math.max(ground+.08,surface)
-            ring[i]=V(q.x,y,q.z)
-        end
-        rings[tier]=ring
+---@param yaw number
+---@param rock? boolean
+---@return Node?, number
+local function place(ctx, id, s, x, z, height, yaw, rock)
+    local chunk = math.floor(s / 192)
+    if ctx.instances >= INSTANCE_LIMIT or (ctx.perChunk[chunk] or 0) >= CHUNK_LIMIT then
+        ctx.budgetSkipped = ctx.budgetSkipped + 1
+        return nil, 0
     end
-    local mat=material or "rock"
-    for tier=1,2 do
-        for i=1,7 do
-            local j=i%7+1
-            face(ctx,mat,s,rings[tier][i],rings[tier+1][i],rings[tier][j],rings[tier+1][j])
-        end
-    end
-    local top=p+r*(width*.07)+V(0,height*.94,0)
-    local bottom=V(p.x,ctx.L.TerrainHeight(p.x,p.z)-.22,p.z)
-    for i=1,7 do
-        local j=i%7+1
-        triangle(ctx,mat,s,top,rings[3][j],rings[3][i])
-        triangle(ctx,mat,s,bottom,rings[1][i],rings[1][j])
-    end
-    ctx.rocks=ctx.rocks+1
+    local p, radius = Props.GroundSite(ctx.L, id, x, z, height, yaw, .5,
+        rock and height * .45 or (id == "house" and .65 or .4), rock and height * .19 or .03)
+    if not p or not clear(ctx, p, radius) then return nil, radius end
+    local node = Props.Add(ctx.root, id, p, height, yaw)
+    ctx.instances = ctx.instances + 1
+    ctx.perChunk[chunk] = (ctx.perChunk[chunk] or 0) + 1
+    return node, radius
 end
 
--- 有限顶点的弯曲尖叶，双面显式反法线，不改共享材质cullMode。
----@param ctx DetailContext
----@param s number
----@param base Vector3
----@param direction Vector3
----@param height number
----@param width number
-local function blade(ctx,s,base,direction,height,width)
-    local right=V(-direction.z,0,direction.x)*width
-    local bend=base+direction*(height*.27)+V(0,height*.58,0)
-    local tip=base+direction*(height*.7)+V(0,height,0)
-    local a,b=base-right,base+right
-    local c,d=bend-right*.62,bend+right*.62
-    face(ctx,"green",s,a,c,b,d);face(ctx,"green",s,b,d,a,c)
-    triangle(ctx,"green",s,c,tip,d);triangle(ctx,"green",s,d,tip,c)
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param seed number
----@param fern boolean
----@param shrub? boolean
-local function plant(ctx,s,p,seed,fern,shrub)
-    -- 蕨5枚弓形羽叶×3对小羽片；草5片折叶；灌丛两级宽叶＋短木茎。
-    local cost=shrub and 84 or (fern and 90 or 30)
-    if not room(ctx,s,cost) then return end
-    if shrub then cylinder(ctx,"wood",s,p,p+V(0,.68,0),.035,.018,6) end
-    for k=1,5 do
-        local angle=k*2.39996+noise(seed,7)*math.pi*2
-        local dir=V(math.cos(angle),0,math.sin(angle))
-        local height=(fern and .55 or .28)+noise(seed+k,9)*(fern and .35 or .45)
-        if shrub then
-            blade(ctx,s,p+V(0,.25,0),dir,.55+noise(seed+k,3)*.35,.13)
-            blade(ctx,s,p+V(0,.55,0),dir,.35+noise(seed+k,4)*.2,.105)
-        elseif not fern then
-            blade(ctx,s,p,dir,height,.045+noise(seed+k,8)*.035)
-        else
-            local across=V(-dir.z,0,dir.x)
-            for segment=1,3 do
-                local t=segment/4
-                local center=p+dir*(t*.85)+V(0,math.sin(t*math.pi*.85)*height,0)
-                local reach=(1-t)*.33
-                for side=-1,1,2 do
-                    local tip=center+across*(side*reach)+dir*.16+V(0,-.025,0)
-                    local a,b=center-dir*.055,center+dir*.075
-                    triangle(ctx,"green",s,a,tip,b);triangle(ctx,"green",s,b,tip,a)
-                end
-            end
-            blade(ctx,s,p,dir,height,.018)
-        end
-    end
-    ctx.plants=ctx.plants+1
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param width number
----@param depth number
----@param rise number
----@param material string
-local function roof(ctx,s,p,r,f,width,depth,rise,material)
-    if not room(ctx,s,106) then return end
-    local a,b=p-r*(width*.5)-f*(depth*.5),p+r*(width*.5)-f*(depth*.5)
-    local c,d=a+f*depth,b+f*depth
-    local front,back=p-f*(depth*.5)+V(0,rise,0),p+f*(depth*.5)+V(0,rise,0)
-    face(ctx,material,s,a,c,front,back);face(ctx,material,s,front,back,b,d)
-    face(ctx,"wood",s,front,back,a,c);face(ctx,"wood",s,b,d,front,back)
-    triangle(ctx,"wood",s,a,front,b);triangle(ctx,"wood",s,c,d,back)
-    cylinder(ctx,"wood",s,a,b,.09,.09,6);cylinder(ctx,"wood",s,c,d,.09,.09,6)
-    cylinder(ctx,"wood",s,a,c,.08,.08,6);cylinder(ctx,"wood",s,b,d,.08,.08,6)
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param width number
----@param depth number
----@param low number
-local function foundation(ctx,s,p,r,width,depth,low)
-    box(ctx,"rock",s,V(p.x,low-.25,p.z),r,width,p.y-low+.25,depth)
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param low number
----@param kind string
-local function shelter(ctx,s,p,r,f,low,kind)
-    foundation(ctx,s,p,r,9,12,low)
-    box(ctx,"wood",s,p+f*1.5,r,7,3.1,7)
-    roof(ctx,s,p+V(0,3.1,0)+f*1.2,r,f,8.4,9.5,1.45,kind=="rescue" and "red" or "dark")
-    for side=-1,1,2 do
-        box(ctx,"glass",s,p+r*(side*2)+f*(-2.03)+V(0,1.3,0),r,1.7,1.2,.05)
-        cylinder(ctx,"wood",s,p+r*(side*3.35)-f*4.3,p+r*(side*3.35)-f*4.3+V(0,3.1,0),.1,.085,7)
-    end
-    box(ctx,"dark",s,p-f*2.04,r,1.15,2.3,.06)
-    box(ctx,"white",s,p+f*4.4+V(0,1.6,0),r,5,.55,.08)
-    if kind=="rescue" then
-        box(ctx,"red",s,p-f*2.1+V(0,2.1,0),r,1.2,.25,.05)
-        box(ctx,"red",s,p-f*2.12+V(0,1.63,0),r,.25,1.2,.05)
-    end
-    for side=-1,1,2 do
-        local seat=p+r*(side*2.6)-f*4.2
-        box(ctx,"wood",s,seat+V(0,.45,0),r,2.1,.13,.65)
-        for leg=-1,1,2 do box(ctx,"wood",s,seat+r*(leg*.8),r,.13,.45,.45) end
-    end
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param low number
-local function viewpoint(ctx,s,p,r,f,low)
-    foundation(ctx,s,p,r,11,17,low)
-    for _,side in ipairs({-1,1}) do
-        for z=-7,7,3.5 do box(ctx,"wood",s,p+r*(side*5.1)+f*z,r,.14,1.1,.14) end
-        box(ctx,"wood",s,p+r*(side*5.1)+V(0,.95,0),r,.14,.15,15)
-        local seat=p+r*(side*3.2)
-        box(ctx,"wood",s,seat+V(0,.5,0),r,.7,.16,3.5)
-        for leg=-1,1,2 do box(ctx,"wood",s,seat+f*(leg*1.25),r,.55,.5,.15) end
-    end
-    for x=-4,4,4 do box(ctx,"wood",s,p+r*x+f*7.5,r,.14,1.1,.14) end
-    box(ctx,"wood",s,p+f*7.5+V(0,.95,0),r,10.4,.15,.14)
-    box(ctx,"green",s,p-f*5+V(0,1.05,0),r,2,.7,.12)
-    box(ctx,"wood",s,p-f*5,r,.13,1.4,.14)
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param low number
-local function stand(ctx,s,p,r,f,low)
-    foundation(ctx,s,p,r,14,38,low)
-    for row=0,4 do
-        local q=p+r*(row*2-4)
-        box(ctx,"rock",s,q,r,2,row*.75+.4,34)
-        box(ctx,row%2==0 and "red" or "white",s,q+V(0,row*.75+.45,0),r,1.2,.28,32)
-    end
-    for _,z in ipairs({-16,0,16}) do box(ctx,"rail",s,p+r*5.5+f*z,r,.18,6,.18) end
-    box(ctx,"rail",s,p+V(0,6,0),r,14.5,.2,38)
-    box(ctx,"white",s,p-r*6.9+V(0,1.6,0),r,.12,.9,30)
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param low number
-local function paddock(ctx,s,p,r,f,low)
-    foundation(ctx,s,p,r,13,25,low)
-    box(ctx,"white",s,p+r*2,r,7,4,21)
-    roof(ctx,s,p+r*2+V(0,4,0),r,f,8,22,1.2,"red")
-    for z=-7,7,7 do
-        box(ctx,"dark",s,p-r*1.52+f*z,r,.06,3.1,5.3)
-        box(ctx,"yellow",s,p-r*1.56+f*z+V(0,3.35,0),r,.05,.4,2.1)
-    end
-    for z=-9,9,6 do box(ctx,"yellow",s,p-r*4.5+f*z,r,.35,.7,.35) end
-end
-
----@param ctx DetailContext
----@param s number
----@param p Vector3
----@param r Vector3
----@param f Vector3
----@param low number
-local function forestYard(ctx,s,p,r,f,low)
-    shelter(ctx,s,p,r,f,low,"forest")
-    for row=0,2 do
-        for col=0,3 do
-            local q=p+r*(5.5+row*.5)+f*(col*1.25-3)
-            local ground=ctx.L.TerrainHeight(q.x,q.z)
-            local a=V(q.x,ground+.23,q.z)-f*.53
-            cylinder(ctx,"wood",s,a,a+f*1.06,.24,.20,8)
-            ctx.logs=ctx.logs+1
-        end
-    end
-end
-
-local function landmark(ctx,s,side,kind)
-    local w,d=11,17
-    if kind=="stand" then w,d=15,39
-    elseif kind=="paddock" then w,d=13,25
-    elseif kind=="forest" then w,d=16,14
-    elseif kind=="rescue" or kind=="shelter" then w,d=9,12 end
-    local p,r,f,low=site(ctx,s,side,w,d)
-    if not p or not r or not f or not low then return end
-    if kind=="stand" then stand(ctx,s,p,r,f,low)
-    elseif kind=="paddock" then paddock(ctx,s,p,r,f,low)
-    elseif kind=="view" then viewpoint(ctx,s,p,r,f,low)
-    elseif kind=="forest" then forestYard(ctx,s,p,r,f,low)
-    else shelter(ctx,s,p,r,f,low,kind) end
-end
-
--- 成簇而非均匀撒点：近路带与后排交错，保留护栏/标牌净空。
-local function roadside(ctx,s,index)
-    local theme=ctx.L.activeId
-    local sides=theme=="forest" and {-1,1} or {index%2==0 and 1 or -1}
-    for _,side in ipairs(sides) do
-        local offset=side*(ctx.L.Roads[1].shoulder+11+(index%3)*3)
-        local p,r,f=Details.Site(ctx.L,s,offset,8,10)
-        if p and r and f and clearOfFacilities(ctx,p,6.5) then
-            local count=theme=="forest" and 5 or (theme=="circuit" and 2 or 4)
-            for k=1,count do
-                local q=p+r*((noise(index*7+k,2)-.5)*5.5)+f*((noise(index*7+k,4)-.5)*7)
-                local y=ctx.L.TerrainHeight(q.x,q.z)
-                local _,onRoad=ctx.L.Height(q.x,q.z)
-                local base=V(q.x,y-.025,q.z)
-                local fern=theme=="forest" and k==1
-                if not onRoad and ctx.L.WaterDepth(q.x,q.z)<=.01 then
-                    plant(ctx,s,base,index*13+k,fern,theme=="forest" and k==2 and index%2==0)
-                end
-            end
-            if (theme=="alpine" or theme=="canyon") or index%3==0 then
-                for k=1,3 do
-                    local q=p+f*(k-2)*2+r*(noise(index+k,6)-.5)*2
-                    local y=ctx.L.TerrainHeight(q.x,q.z)
-                    local w=.7+noise(index+k,8)*1.5
-                    local earth=k==3 and (theme=="forest" or theme=="lake")
-                    stone(ctx,s,V(q.x,y,q.z),r,earth and w*1.5 or w,
-                        earth and .22 or (.3+noise(index+k,1)*.9),w*.8,index*7+k,earth and "soil" or "rock")
-                end
-            end
-            if (theme=="forest" or theme=="lake") and index%9==0 then
-                local a=p-f*2
-                local b=p+f*2+r*.7
-                local ya,yb=ctx.L.TerrainHeight(a.x,a.z),ctx.L.TerrainHeight(b.x,b.z)
-                cylinder(ctx,"wood",s,V(a.x,ya+.20,a.z),V(b.x,yb+.24,b.z),.24,.16,8)
-                ctx.logs=ctx.logs+1
-            end
-        end
-    end
-end
-
--- 真正中空轮胎，8段×4边截面=64tri；整个轮胎堆仍进入同一dark材质块。
-local function tyre(ctx,s,p,r,f)
-    if not room(ctx,s,64) then return end
-    local rings={}
-    for j=1,4 do
-        local radius=(j==1 or j==4) and .48 or .23
-        local y=(j<=2) and .28 or 0
-        local ring={}
-        for i=1,8 do
-            local angle=(i-1)/8*math.pi*2
-            ring[i]=p+r*(math.cos(angle)*radius)+f*(math.sin(angle)*radius)+V(0,y,0)
-        end
-        rings[j]=ring
-    end
-    for j=1,4 do
-        local nextRing=j%4+1
-        for i=1,8 do
-            local k=i%8+1
-            face(ctx,"dark",s,rings[j][i],rings[nextRing][i],rings[j][k],rings[nextRing][k])
-        end
-    end
-end
-
-local function maintenance(ctx,s,index)
-    local p,r,f,low=site(ctx,s,index%2==0 and 1 or -1,6,11)
-    if not p or not r or not f or not low then return end
-    for row=0,2 do
-        for col=0,3 do
-            local q=p+r*(row*1.05-1.1)+f*(col*1.03-1.5)
-            local y=ctx.L.TerrainHeight(q.x,q.z)
-            for tier=0,1 do tyre(ctx,s,V(q.x,y-.03+tier*.29,q.z),r,f) end
-        end
-    end
-    -- 保养作业的锥标/工具架，逐点采地；不用悬浮的“污渍”覆盖地表。
-    for k=-1,1,2 do
-        local q=p+f*(k*4.1)
-        local y=ctx.L.TerrainHeight(q.x,q.z)
-        box(ctx,"dark",s,V(q.x,y,q.z),r,.52,.07,.52)
-        cylinder(ctx,"yellow",s,V(q.x,y+.07,q.z),V(q.x,y+.75,q.z),.22,.035,6)
-        cylinder(ctx,"white",s,V(q.x,y+.39,q.z),V(q.x,y+.51,q.z),.13,.10,6)
-    end
-end
-
--- 海滩设施从公路向真实水边搜索，而非硬编码海岸X坐标。
--- 只选地面>=水位0.3m、9点全干、邻近有水且道路可见(≤85m)的后滩。
-local function shore(ctx)
-    if ctx.L.activeId~="coast" and ctx.L.activeId~="lake" then return end
-    local L=ctx.L
-    local quota=L.activeId=="coast" and 6 or 3
-    local samples=quota*14
-    for k=1,samples do
-        if ctx.shoreSites>=quota then break end
-        local s=L.RouteLength*(k-.4)/samples
-        local placed=false
-        for _,distance in ipairs({22,34,48,64,80}) do
-            if placed then break end
-            for side=-1,1,2 do
-                local p,r,f=Details.Site(L,s,side*(L.Roads[1].shoulder+distance),5,9)
-                if p and r and f and clearOfFacilities(ctx,p,6) then
-                    local nearWater=false
-                    for j=1,8 do
-                        local a=j*math.pi/4
-                        local q=p+V(math.cos(a)*11,0,math.sin(a)*11)
-                        if L.WaterDepth(q.x,q.z)>.05 then nearWater=true;break end
-                    end
-                    local y=L.TerrainHeight(p.x,p.z)
-                    if nearWater and y<(L.WaterLevel or 0)+4 then
-                        ctx.occupied[#ctx.occupied+1]={x=p.x,z=p.z,radius=6}
-                        -- 独立贴地木栈道，通向浪边但不进入水体。
-                        for z=-3,3,.75 do
-                            local q=p+f*z
-                            local ground=L.TerrainHeight(q.x,q.z)
-                            box(ctx,"wood",s,V(q.x,ground+.03,q.z),r,2,.10,.65)
-                        end
-                        for edge=-1,1,2 do
-                            local q=p+r*(edge*1.8)
-                            local ground=L.TerrainHeight(q.x,q.z)
-                            cylinder(ctx,"wood",s,V(q.x,ground-.14,q.z),V(q.x,ground+2.45,q.z),.09,.075,7)
-                        end
-                        roof(ctx,s,V(p.x,y+2.3,p.z),r,f,4.8,3.2,.65,"wood")
-                        box(ctx,"wood",s,V(p.x,y+.55,p.z)+f*1.9,r,3,.14,.5)
-                        for leg=-1,1,2 do
-                            local q=p+r*leg+f*1.9
-                            local ground=L.TerrainHeight(q.x,q.z)
-                            cylinder(ctx,"wood",s,V(q.x,ground-.05,q.z),V(q.x,y+.55,q.z),.09,.09,6)
-                        end
-                        ctx.shoreSites=ctx.shoreSites+1
-                        placed=true
-                        break
-                    end
-                end
-            end
-        end
-    end
-end
-
-local function marker(ctx,s,side,sector)
-    local p,r,f=Details.Site(ctx.L,s,side*(ctx.L.Roads[1].shoulder+8),3,2)
-    if not p or not r or not f or not clearOfFacilities(ctx,p,2) then return end
-    ctx.occupied[#ctx.occupied+1]={x=p.x,z=p.z,radius=2}
-    for leg=-1,1,2 do
-        local q=p+r*(leg*.9)
-        local y=ctx.L.TerrainHeight(q.x,q.z)
-        box(ctx,"rail",s,V(q.x,y-.12,q.z),r,.1,p.y-y+2.6,.1)
-    end
-    box(ctx,"dark",s,p+V(0,1.5,0),r,2.7,1,.16)
-    for stripe=1,sector do
-        box(ctx,"white",s,p+r*((stripe-(sector+1)*.5)*.48)-f*.09+V(0,1.72,0),r,.22,.55,.03)
-    end
-end
-
-local function walls(ctx)
-    local theme=ctx.L.activeId
-    if theme~="alpine" and theme~="canyon" then return end
-    local count=theme=="alpine" and 16 or 24
-    for k=1,count do
-        local s=ctx.L.RouteLength*(k-.35)/count
-        local side=k%2==0 and 1 or -1
-        local width,depth=theme=="canyon" and 11 or 6,theme=="canyon" and 24 or 17
-        local p,r,f,low=site(ctx,s,side,width,depth)
-        if p and r and f and low then
-            local h=theme=="canyon" and (5+k%4*1.7) or (2.8+k%3*.9)
-            -- 错开的薄层岩脊，每层有独立不规则外轮廓，不堆叠长方体。
-            for tier=0,2 do
-                local q=V(p.x,low-.1+tier*h*.26,p.z)+r*(side*tier*.45)+f*((tier%2-.5)*1.3)
-                stone(ctx,s,q,r,width*(1-tier*.20),h*(1-tier*.24),depth*(1-tier*.12),k*17+tier)
-            end
-        end
-    end
-end
-
-local plans={
-    lake={{.18,1,"view"},{.36,-1,"shelter"},{.62,1,"view"},{.81,-1,"shelter"}},
-    alpine={{.11,-1,"shelter"},{.27,1,"view"},{.43,-1,"view"},{.52,1,"rescue"},{.68,1,"view"},{.88,-1,"shelter"}},
-    coast={{.12,1,"shelter"},{.26,-1,"view"},{.38,-1,"shelter"},{.49,1,"view"},{.67,1,"shelter"},{.84,1,"shelter"}},
-    canyon={{.09,1,"shelter"},{.25,-1,"view"},{.43,1,"shelter"},{.58,-1,"view"},{.76,1,"shelter"},{.9,-1,"view"}},
-    forest={{.12,-1,"forest"},{.29,1,"shelter"},{.44,-1,"forest"},{.6,1,"view"},{.75,1,"forest"},{.9,-1,"shelter"}},
-    circuit={{.04,-1,"stand"},{.12,1,"paddock"},{.28,-1,"stand"},{.45,1,"paddock"},{.64,-1,"stand"},{.83,1,"paddock"}},
+local plans = {
+    lake = {{.18,1,"view"},{.36,-1,"shelter"},{.62,1,"view"},{.81,-1,"shelter"}},
+    alpine = {{.11,-1,"shelter"},{.27,1,"view"},{.43,-1,"view"},{.52,1,"rescue"},{.68,1,"view"},{.88,-1,"shelter"}},
+    coast = {{.12,1,"shelter"},{.26,-1,"view"},{.38,-1,"shelter"},{.49,1,"view"},{.67,1,"shelter"},{.84,1,"shelter"}},
+    canyon = {{.09,1,"shelter"},{.25,-1,"view"},{.43,1,"shelter"},{.58,-1,"view"},{.76,1,"shelter"},{.9,-1,"view"}},
+    forest = {{.12,-1,"forest"},{.29,1,"shelter"},{.44,-1,"forest"},{.6,1,"view"},{.75,1,"forest"},{.9,-1,"shelter"}},
+    circuit = {{.04,-1,"stand"},{.12,1,"paddock"},{.28,-1,"stand"},{.45,1,"paddock"},{.64,-1,"stand"},{.83,1,"paddock"}},
 }
+
+---@param ctx DetailContext
+local function landmark(ctx, s, side, kind)
+    -- 不把乡村屋拉成长看台/车库；无对应正式模型的装饰看台、栈台、木料堆直接移除。
+    -- 原位置仍保留服务屋或野外路标，玩法目标/控制区由原模块负责。
+    local id = (kind == "view" or kind == "stand") and "sign" or "house"
+    local height = id == "house" and 4.5 or 2.2
+    local size, radius = Props.Measure(id, height)
+    local _, yaw = ctx.L.RoadPoint(s)
+    for _, extra in ipairs({8, 18, 32}) do
+        local p = Details.Site(ctx.L, s, side * (ctx.L.Roads[1].shoulder + radius + extra), size.x + 1, size.z + 1)
+        if p then
+            local node, placedRadius = place(ctx, id, s, p.x, p.z, height, yaw)
+            if node then
+                node.name = id == "house" and "正式沿线服务屋" or "正式观景路标"
+                ctx.occupied[#ctx.occupied + 1] = {x = p.x, z = p.z, radius = placedRadius}
+                ctx.placed = ctx.placed + 1
+                return
+            end
+        end
+    end
+    ctx.rejected = ctx.rejected + 1
+end
+
+---@param ctx DetailContext
+local function roadside(ctx, s, index)
+    local theme = ctx.L.activeId
+    local sides = theme == "forest" and {-1, 1} or {index % 2 == 0 and 1 or -1}
+    for _, side in ipairs(sides) do
+        local offset = side * (ctx.L.Roads[1].shoulder + 11 + index % 3 * 3)
+        local p, r, f = Details.Site(ctx.L, s, offset, 8, 10)
+        if p and r and f and clear(ctx, p, 6.5) then
+            local count = theme == "forest" and 4 or (theme == "circuit" and 1 or 3)
+            for k = 1, count do
+                local q = p + r * ((noise(index * 7 + k, 2) - .5) * 5.5)
+                    + f * ((noise(index * 7 + k, 4) - .5) * 7)
+                local id = k % 3 == 0 and "fernSmall" or "fern"
+                local height = (id == "fernSmall" and .25 or .38) + noise(index + k, 9) * .24
+                if place(ctx, id, s, q.x, q.z, height, noise(index + k, 1) * 360) then ctx.plants = ctx.plants + 1 end
+            end
+            if theme == "alpine" or theme == "canyon" or index % 3 == 0 then
+                for k = 1, 2 do
+                    local q = p + f * (k - 1.5) * 2.4
+                    local id = k % 2 == 0 and "rockA" or "rockB"
+                    local height = .45 + noise(index + k, 8) * .85
+                    if place(ctx, id, s, q.x, q.z, height, noise(index + k, 6) * 360, true) then ctx.rocks = ctx.rocks + 1 end
+                end
+            end
+        end
+    end
+end
+
+---@param ctx DetailContext
+local function marker(ctx, s, side, sector)
+    local p, r = Details.Site(ctx.L, s, side * (ctx.L.Roads[1].shoulder + 8), 4, 3)
+    if not p or not r or not clear(ctx, p, 3) then return end
+    -- 1/2/3只完整官方锥标仍编码原分段提示，不以空白路牌替掉赛事提示。
+    local success = false
+    for stripe = 1, sector do
+        local q = p + r * ((stripe - (sector + 1) * .5) * .8)
+        local node = place(ctx, "cone", s, q.x, q.z, .75, 0)
+        if node then
+            node.name = "赛道分段提示_" .. sector
+            ctx.markers = ctx.markers + 1
+            success = true
+        end
+    end
+    if success then ctx.occupied[#ctx.occupied + 1] = {x = p.x, z = p.z, radius = 3} end
+end
+
+---@param ctx DetailContext
+local function rocks(ctx)
+    local theme = ctx.L.activeId
+    if theme ~= "alpine" and theme ~= "canyon" then return end
+    local count = theme == "alpine" and 12 or 20
+    for k = 1, count do
+        local s = ctx.L.RouteLength * (k - .35) / count
+        local p, yaw = ctx.L.RoadPoint(s)
+        local r = basis(yaw)
+        local side = k % 2 == 0 and 1 or -1
+        local height = theme == "canyon" and (4 + k % 3 * 1.2) or (2 + k % 3 * .6)
+        local id = k % 2 == 0 and "rockA" or "rockB"
+        local _, radius = Props.Measure(id, height)
+        local q = p + r * (side * (ctx.L.Roads[1].shoulder + radius + 14))
+        if place(ctx, id, s, q.x, q.z, height, k * 137.5, true) then ctx.rocks = ctx.rocks + 1 end
+    end
+end
 
 ---@param root Node
 ---@param L table
----@param m table<string,Material>
+---@param m table<string, Material>
 ---@param tick fun(stage:string,current:integer,total:integer)
-function Details.Build(root,L,m,tick)
+function Details.Build(root, L, m, tick)
     ---@type DetailContext
-    local ctx={root=root,L=L,m=m,batches={},placed=0,rejected=0,boxes=0,nodes=0,occupied={},
-        triangles=0,byMaterial={},perChunk={},budgetSkipped=0,plants=0,rocks=0,logs=0,shoreSites=0}
-    for _,entry in ipairs(reservations) do ctx.occupied[#ctx.occupied+1]=entry end
-    -- World先创建的湖图原设施同样避让；不触碰其节点/碰撞，也不遍历每棵树。
-    for _,child in ipairs(root:GetChildren(false)) do
-        if child.name=="湖岸出发驿站" or child.name=="山间牧场" then
-            local p=child.worldPosition
-            ctx.occupied[#ctx.occupied+1]={x=p.x,z=p.z,radius=10}
+    local ctx = {root = root, L = L, occupied = {}, perChunk = {}, instances = 0, placed = 0,
+        rejected = 0, plants = 0, rocks = 0, markers = 0, budgetSkipped = 0}
+    for _, entry in ipairs(reservations) do ctx.occupied[#ctx.occupied + 1] = entry end
+    for _, child in ipairs(root:GetChildren(false)) do
+        if child.name == "湖岸出发驿站" or child.name == "山间牧场" then
+            local p = child.worldPosition
+            ctx.occupied[#ctx.occupied + 1] = {x = p.x, z = p.z, radius = 10}
         end
     end
-    local chunks=math.ceil(L.RouteLength/144)
-    for _,plan in ipairs(plans[L.activeId] or {}) do landmark(ctx,L.RouteLength*plan[1],plan[2],plan[3]) end
-    for k=1,12 do marker(ctx,L.RouteLength*(k-.25)/12,k%2==0 and 1 or -1,(k-1)%3+1) end
-    walls(ctx)
-    shore(ctx)
-    if L.activeId=="circuit" then
-        for k=1,12 do maintenance(ctx,L.RouteLength*(k-.5)/12,k) end
+    local chunks = math.ceil(L.RouteLength / 144)
+    for _, plan in ipairs(plans[L.activeId] or {}) do
+        landmark(ctx, L.RouteLength * plan[1], plan[2], plan[3])
+        tick("赛事环境", 0, chunks)
     end
-    local step=L.activeId=="circuit" and 96 or (L.activeId=="forest" and 48 or 32)
-    for k=1,math.floor(L.RouteLength/step) do
-        roadside(ctx,k*step,k)
-        if k%8==0 then tick("赛事环境",math.min(chunks,math.floor(k*step/144)),chunks) end
+    for k = 1, 12 do marker(ctx, L.RouteLength * (k - .25) / 12, k % 2 == 0 and 1 or -1, (k - 1) % 3 + 1) end
+    rocks(ctx)
+    local step = L.activeId == "circuit" and 96 or (L.activeId == "forest" and 48 or 40)
+    for k = 1, math.floor(L.RouteLength / step) do
+        roadside(ctx, k * step, k)
+        if k % 8 == 0 then tick("赛事环境", math.min(chunks, math.floor(k * step / 144)), chunks) end
     end
-    local measured,maxChunk=0,0
-    for _,g in pairs(ctx.batches) do
-        assert(g:GenerateTangents(),"沿线UV/切线生成失败")
-        g:Commit()
-        measured=measured+g:GetNumVertices(0)//3
-    end
-    for _,count in pairs(ctx.perChunk) do maxChunk=math.max(maxChunk,count) end
-    assert(measured==ctx.triangles and measured<=TRI_LIMIT and maxChunk<=CHUNK_LIMIT,"沿线静态网格预算失配")
-    print(string.format("[沿线细节] %s %d设施 / %d避让 / %d合批 / %dtri / %d草蕨 / %d岩块 / %d木料 / %d岸边设施；0新增阴影，0逐帧",
-        L.activeId,ctx.placed,ctx.rejected,ctx.nodes,ctx.triangles,ctx.plants,ctx.rocks,ctx.logs,ctx.shoreSites))
-    Details.LastBuild={id=L.activeId,placed=ctx.placed,rejected=ctx.rejected,nodes=ctx.nodes,boxes=ctx.boxes,
-        triangles=ctx.triangles,vertices=ctx.triangles*3,byMaterial=ctx.byMaterial,maxChunkTriangles=maxChunk,
-        plants=ctx.plants,rocks=ctx.rocks,logs=ctx.logs,shoreSites=ctx.shoreSites,budgetSkipped=ctx.budgetSkipped,
-        triangleLimit=TRI_LIMIT,chunkLimit=CHUNK_LIMIT,shadowTriangles=0}
-    reservations={}
+    local maxChunk = 0
+    for _, count in pairs(ctx.perChunk) do maxChunk = math.max(maxChunk, count) end
+    assert(ctx.instances <= INSTANCE_LIMIT and maxChunk <= CHUNK_LIMIT, "正式沿线实例预算失配")
+    print(string.format("[正式沿线] %s %d设施/%d避让/%d实例/%d草蕨/%d岩石/%d赛事锥标；0程序装饰网格，0新增阴影，0逐帧",
+        L.activeId, ctx.placed, ctx.rejected, ctx.instances, ctx.plants, ctx.rocks, ctx.markers))
+    -- triangles/vertices仅指本模块生成的顶点，不冒充导入MDL的真实三角数。
+    Details.LastBuild = {id = L.activeId, placed = ctx.placed, rejected = ctx.rejected, nodes = ctx.instances,
+        boxes = 0, triangles = 0, vertices = 0, byMaterial = {}, maxChunkTriangles = 0,
+        plants = ctx.plants, rocks = ctx.rocks, logs = 0, shoreSites = 0, markers = ctx.markers,
+        budgetSkipped = ctx.budgetSkipped, instances = ctx.instances, instanceLimit = INSTANCE_LIMIT,
+        maxChunkInstances = maxChunk, chunkInstanceLimit = CHUNK_LIMIT, proceduralTriangles = 0, shadowTriangles = 0}
+    reservations = {}
 end
 
 return Details

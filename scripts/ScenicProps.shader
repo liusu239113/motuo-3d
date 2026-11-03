@@ -16,10 +16,8 @@ void fragment() {
     vec3 texel = texture(surface_color, ux).rgb * w.x + texture(surface_color, uy).rgb * w.y
         + texture(surface_color, uz).rgb * w.z;
     float luma = dot(texel, vec3(0.2126, 0.7152, 0.0722));
-    float weather = sin(VERTEX.x * 0.21 + sin(VERTEX.z * 0.17) + VERTEX.y * 0.31) * 0.5 + 0.5;
-    float woodgrain = sin(VERTEX.y * 45.0 + sin(VERTEX.x * 9.0 + VERTEX.z * 11.0) * 2.0);
-    ALBEDO = mix(vec3(luma), texel, 0.35) * tint * mix(0.82, 1.12, weather);
-    ALBEDO *= 1.0 + woodgrain * finish.w * 0.055;
+    // 使用已有颜色贴图自身细节，不用正弦天气斑块/伪木纹覆盖真实材质。
+    ALBEDO = texel * tint;
     vec3 nx = texture(surface_normal, ux).rgb * 2.0 - 1.0;
     vec3 ny = texture(surface_normal, uy).rgb * 2.0 - 1.0;
     vec3 nz = texture(surface_normal, uz).rgb * 2.0 - 1.0;

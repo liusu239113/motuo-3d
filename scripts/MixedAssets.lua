@@ -14,7 +14,7 @@ M.Vehicles = {
         material="model/919dbe654dcc4020ba6bf82ee24f7d1c/Materials/919dbe654dcc4020ba6bf82ee24f7d1c_00_tripo_material_e8185d8b-7e34-478c-a253-6e935f784562.xml",
         diffuse="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_D.jpg",
         normal="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_N.png",
-        rotation=0, targetLength=3.2, targetSize=Vector3(3.2,2.028,3.2),
+        rotation=-90, targetLength=3.2, targetSize=Vector3(3.2,2.028,3.2),
         measuredSize=Vector3(.999512,.633301,.999512), label="蒸汽锹甲", class="mixed", resources={}, articulated=true, delivered=false,
     },
     helicopter = {
@@ -42,6 +42,10 @@ end
 -- 正式混合车型与现有独立摩托组成对手池；未交付车型不再悄悄出现拼装替代物。
 ---@return string[]
 function M.RaceIds()
-    return {"ebike","helicopter","sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}
+    local ids={"ebike","helicopter","sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}
+    for _,id in ipairs({"tank","beetle"}) do
+        if M.IsReady(id) then ids[#ids+1]=id end
+    end
+    return ids
 end
 return M

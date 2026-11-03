@@ -247,13 +247,13 @@ function AI.Observe(race,r,dt)
     local horizon=28+r.speed*(0.55+r.skill*0.45)
     for _,o in ipairs(race.aiObstacles) do
         local d=gap(o.s,r.s,race.length)
-        if d>-8 and d<horizon and abs(o.y-r.y)<3 then
+        if d>-8 and d<horizon and overlapsHeight(race,r,o) then
             -- 视野内也可能短暂漏判；急近车辆仍留有反应但不会凭空瞬移躲开。
             if race:Random()<p.missChance and d>6 then p.misses=p.misses+1
             else
                 local bias=(race:Random()-.5)*(1-r.skill)*12
                 p.observations[#p.observations+1]={source=o.source,s=o.s+bias,lane=o.lane,
-                    speed=o.speed,halfWidth=o.halfWidth,halfLength=o.halfLength,y=o.y,bike=false}
+                    speed=o.speed,halfWidth=o.halfWidth,halfLength=o.halfLength,y=o.y,bike=false,mixed=o.mixed}
             end
         end
     end

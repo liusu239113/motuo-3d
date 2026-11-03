@@ -693,6 +693,7 @@ local function BeginDownload()
     for _, path in ipairs(World.Resources) do resources[#resources + 1] = path end
     for path, kind in pairs(World.ResourceTypes or {}) do types[path] = kind end
     for _, path in ipairs(VehicleAssets.GetResources(selectedVehicle_)) do resources[#resources + 1] = path end
+    for _, path in ipairs(RaceVisuals.GetResources()) do resources[#resources + 1] = path end
     for path, kind in pairs(VehicleAssets.ResourceTypes or {}) do types[path] = kind end
     for _, path in ipairs(Rider.Resources) do resources[#resources + 1] = path end
     for path, kind in pairs(Rider.ResourceTypes) do types[path] = kind end

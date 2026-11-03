@@ -1,6 +1,8 @@
 -- 真实main业务接线短验收，不是完整实赛/UI/渲染验收。
 -- main源码原样执行于局部_ENV，仅追加局部状态访问桥；不复制奖励/广告结算算法。
 -- Profile文件与Career.Store均局部内存隔离，SDK仅局部桩；Start/比赛驾驶/Scene均不执行。
+---@class RaceSettlementCheckSuite
+---@field RunGates fun():table
 local Checks = {}
 
 local function source(name)
@@ -277,4 +279,241 @@ function Checks.Run()
     print(string.format("[RaceSettlementChecks] PASS %d项；真实main业务接线/局部Profile与Store/局部SDK %d次；未启动实赛或真实UI", assertions, sdkCalls))
     return {passed = true, assertions = assertions}
 end
+-- Gate-only suite: NO main/Profile/Store/SDK or player saves. This entry is also
+-- called by Race.RunChecks; synthetic plane boundaries are labelled separately
+-- from the full laps driven exclusively with throttle/brake/steer via Sim.Step.
+function Checks.RunGates()
+    local Race, Sim, F = require("Race"), require("Simulation"), require("TrackFeatures")
+    local report = {passed = false, assertions = 0, laps = {}, flights = {}, boundaries = 0}
+    local function check(ok, name)
+        assert(ok, "[Race.RunChecks] " .. name)
+        report.assertions = report.assertions + 1
+    end
+    local function circle(radius)
+        local length = radius * math.pi * 2
+        local map = {RouteLength = length, Goals = {}, SpawnLaneOffset = 0,
+            Roads = {{width = 8, shoulder = 10}}, Ramps = {}, Features = {}}
+        function map.RoadPoint(s)
+            local a = s / radius
+            return {x = radius * (1 - math.cos(a)), y = 0, z = radius * math.sin(a)}, math.deg(a)
+        end
+        function map.NearestRoad(x, z)
+            return math.atan(z, radius - x) * radius % length, radius - math.sqrt((x - radius)^2 + z*z)
+        end
+        function map.RoadHeight() return 0, true end
+        function map.RampAt(x, z)
+            for _, ramp in ipairs(map.Ramps) do if F.RampHeight(ramp, x, z) then return ramp end end
+        end
+        function map.Height(x, z)
+            local ramp = map.RampAt(x, z)
+            return ramp and F.RampHeight(ramp, x, z) or 0, true
+        end
+        return map
+    end
+    local function fixture(id, map, laps)
+        local sim = Sim.New(map)
+        check(sim:SetVehicle(id), "真实车型 " .. id)
+        local race = Race.New(map, sim, {quiet = true, professional = true, laps = laps or 1})
+        race:Start()
+        race:BeforeStep(3, {}); race:AfterStep(3)
+        -- Remove opponents only to isolate gates from contacts/pursuit. No rule override.
+        race.racers = {race.player}
+        return race, sim
+    end
+    local function steerTo(sim, map, s, lane)
+        local look = math.max(10, sim.speed * .65)
+        local p, yaw = map.RoadPoint(s + look)
+        local a = math.rad(yaw)
+        local x, z = p.x + math.cos(a) * lane, p.z - math.sin(a) * lane
+        local desired = math.deg(math.atan(x - sim.x, z - sim.z))
+        local needed = math.max(-100, math.min(100, ((desired - sim.heading + 180) % 360 - 180) * 2.5))
+        local lo, hi = 0, 1
+        for _ = 1, 12 do
+            local mid = (lo + hi) * .5
+            if math.abs(sim:TurnRate(mid)) < math.abs(needed) then lo = mid else hi = mid end
+        end
+        return (lo + hi) * .5 * (needed < 0 and -1 or 1)
+    end
+    local function step(race, sim, target, lane)
+        local drive = race:BeforeStep(.02, {throttle = sim.speed < target and .8 or 0,
+            brake = sim.speed > target + .4, steer = steerTo(sim, race.map, race.player.s, lane or 0)})
+        sim:Step(.02, drive)
+        race:AfterStep(.02)
+    end
+    for _, id in ipairs({"helicopter", "ebike", "sport"}) do
+        local map = circle(120)
+        local race, sim = fixture(id, map)
+        local player = race.player
+        for _ = 1, 4000 do
+            if race.phase == "finished" then break end
+            step(race, sim, 30)
+        end
+        check(player.finished and player.started and player.completedLaps == 1
+            and race.phase == "finished" and race.result and race.result.success,
+            id .. " 油刹舵真实完整圈及终点结算")
+        check(player.invalidMoves == 0 and not player.missedGate and player.missedGates == 0,
+            id .. " 不靠瞬移/补门/里程计")
+        if id == "helicopter" then check(sim.oddAltitude == 2.5, "直升机视觉悬浮未写入sim.y") end
+        local result, time, seq = race.result, race.elapsed, race.eventSeq
+        race:BeforeStep(.02, {}); race:AfterStep(.02)
+        check(result == race.result and time == race.elapsed and seq == race.eventSeq, "终点结算幂等 " .. id)
+        report.laps[#report.laps + 1] = {id = id, time = player.finishTime, s = player.s,
+            nextGate = player.nextGate, completedLaps = player.completedLaps, invalidMoves = player.invalidMoves}
+        print(string.format("[Race.RunChecks] real-lap %s %.2fs laps=%d invalid=%d", id, player.finishTime,
+            player.completedLaps, player.invalidMoves))
+    end
+    -- Swept-plane boundary fixtures, not fabricated claims of Sim.Step driving.
+    for _, id in ipairs({"helicopter", "ebike", "sport"}) do
+        local race, sim = fixture(id, circle(120), 3)
+        local runner = race.player
+        local function seed(s, gate, height, lane, completed)
+            local p, yaw = race:Pose(s, lane or 0)
+            runner.s, runner.progress, runner.safeS = s, s, s
+            runner.nextGate, runner.started, runner.completedLaps = gate, gate > 0, completed or 0
+            runner.finished, runner.missedGate = false, false
+            runner.x, runner.y, runner.z = p.x, p.y + height, p.z
+            runner.lastX, runner.lastY, runner.lastZ = runner.x, runner.y, runner.z
+            sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = runner.x, runner.y, runner.z, yaw, yaw, 30
+            race.lastPlayerSpeed = 30
+        end
+        local function track(s, height, lane)
+            local p, yaw = race:Pose(s, lane or 0)
+            sim.x, sim.y, sim.z, sim.heading, sim.yaw = p.x, p.y + height, p.z, yaw, yaw
+            race.elapsed = race.elapsed + .02
+            race:TrackPlayer(.02)
+        end
+        for _, height in ipairs({3, 3.01, 10, 10.01, -3, -3.01}) do
+            local gate = race.gateSpacing
+            seed(gate - .3, gate, height)
+            track(gate + .3, height)
+            local allowed = height >= -Race.Rules.gateBelow and height <= Race.Rules.gateAbove
+            check((runner.nextGate > gate) == allowed and runner.completedLaps == 0,
+                id .. " 有限高度边界 " .. height)
+            check(runner.missedGate == not allowed and runner.offCourse == not allowed,
+                id .. " 判门/在轨使用统一飞行高度 " .. height)
+            report.boundaries = report.boundaries + 1
+        end
+        -- Miss an ordinary gate laterally, then finish a whole ground loop. It must
+        -- stay blocked AND explain recovery, not silently auto-collect any gate.
+        local gate, outside = race.gateSpacing, race.gateCorridor + .2
+        seed(gate - .3, gate, 0, outside)
+        track(gate + .3, 0, outside)
+        check(runner.missedGate and runner.nextGate == gate and sim.message:find("脱困", 1, true),
+            id .. " 横向漏门立即提示返回/脱困")
+        local cursor, mergeLane = gate + .3, outside
+        while mergeLane > 0 do
+            cursor, mergeLane = cursor + .3, math.max(0, mergeLane - .2)
+            track(cursor, 0, mergeLane)
+        end
+        for _ = 1, math.ceil(race.length / .6) do cursor = cursor + .6; track(cursor, 0, 0) end
+        check(not runner.offCourse and runner.completedLaps == 0 and runner.nextGate == gate and runner.missedGate,
+            id .. " 驶完一圈不能自动补门")
+        local lapsBefore, gateBefore, serial = runner.completedLaps, runner.nextGate, sim.recoverySerial
+        check(race:RecoverPlayer(false), id .. " 漏门脱困可用")
+        local centre, yaw = race.map.RoadPoint(gateBefore)
+        local forward = (sim.x - centre.x) * math.sin(math.rad(yaw))
+            + (sim.z - centre.z) * math.cos(math.rad(yaw))
+        check(forward < -1 and runner.s < gateBefore and runner.nextGate == gateBefore
+            and runner.completedLaps == lapsBefore and sim.recoverySerial == serial + 1 and runner.missedGate,
+            id .. " 脱困安全落在同一待门前，尚未奖励")
+        for _ = 1, 300 do
+            step(race, sim, 15)
+            if not runner.missedGate then break end
+        end
+        check(not runner.missedGate and runner.nextGate > gateBefore and runner.completedLaps == lapsBefore,
+            id .. " 脱困后真实Sim.Step正向穿过待门解除阻断")
+        -- Missing START and each absolute FINISH also use recovery, never auto-award.
+        for lap = 0, 3 do
+            local finish = lap * race.length
+            seed(finish - .3, finish, 10.01, 0, math.max(0, lap - 1))
+            track(finish + .3, 10.01)
+            check(runner.missedGate and runner.nextGate == finish and not runner.finished,
+                id .. " 起终点越高拒绝 " .. lap)
+            race:RecoverPlayer(false)
+            check(runner.nextGate == finish and runner.s < finish and runner.missedGate,
+                id .. " 起终点脱困不自动结算 " .. lap)
+            for _ = 1, 300 do
+                step(race, sim, 15)
+                if not runner.missedGate then break end
+            end
+            check(not runner.missedGate and runner.nextGate > finish
+                and runner.completedLaps == lap and runner.finished == (lap == 3),
+                id .. " 真实恢复过起终点 " .. lap)
+        end
+    end
+    -- Production F.Make/Sim.TakeOff/gravity/Land, at certified 105m/s; the
+    -- plane is near the ballistic apex (>3m), not a manually assigned air pose.
+    for _, id in ipairs({"helicopter", "ebike", "sport"}) do
+        local map = circle(3000) -- gentle enough that a 105m/s ballistic tangent stays in the finite XZ ribbon
+        local race, sim = fixture(id, map)
+        local ramp = F.Make(map, race.gateSpacing - 55, 0, "ramp", "race_flight")
+        map.Ramps = {ramp}
+        local start = ramp.s - 1
+        local p, yaw = race:Pose(start, 0)
+        local runner = race.player
+        runner.s, runner.progress, runner.safeS = start, start, start
+        runner.nextGate, runner.started = race.gateSpacing, true
+        runner.x, runner.y, runner.z, runner.lastX, runner.lastY, runner.lastZ = p.x, p.y, p.z, p.x, p.y, p.z
+        sim.x, sim.y, sim.z, sim.heading, sim.yaw, sim.speed = p.x, p.y, p.z, yaw, yaw, 105
+        race.lastPlayerSpeed = 105
+        local peak, flew, crossed = 0, false, false
+        for _ = 1, 250 do
+            -- No position/speed writes after seeding the approach. Coasting conserves
+            -- real launch momentum; flight steering is intentionally unavailable.
+            local drive = race:BeforeStep(.02, {throttle = 0})
+            sim:Step(.02, drive); race:AfterStep(.02)
+            peak = math.max(peak, sim.y)
+            flew = flew or sim.airborne
+            if runner.nextGate > race.gateSpacing then crossed = true end
+            if flew and not sim.airborne then break end
+        end
+        print(string.format("[Race.RunChecks] ramp-state %s flew=%s crossed=%s missed=%s invalid=%d peak=%.3f s=%.3f gate=%.3f",
+            id, tostring(flew), tostring(crossed), tostring(runner.missedGate), runner.invalidMoves, peak, runner.s, runner.nextGate))
+        check(flew and crossed and not runner.missedGate and runner.invalidMoves == 0,
+            id .. " 真坡道弹道穿门不漏站")
+        check(peak > 3.01 and peak < Race.Rules.gateAbove and not sim.airborne,
+            id .. " 真实峰高大于旧3m上限且在有限10m走廊内并落地")
+        report.flights[#report.flights + 1] = {id = id, peak = peak, crossed = crossed,
+            nextGate = runner.nextGate, exitGrade = ramp.exitGrade}
+        print(string.format("[Race.RunChecks] ramp %s peak=%.3fm grade=%.5f crossed=%s", id, peak,
+            ramp.exitGrade, tostring(crossed)))
+    end
+    -- Audit the REAL six-map downhill ramps at all certified entry speeds.
+    -- Reuses production map/triangle surface + Sim gravity, not a flat-road estimate.
+    local landscape = require("Landscape")
+    local previousTrack = landscape.activeId
+    report.realRampCases, report.maxRealRampAltitude = 0, 0
+    for _, trackId in ipairs({"circuit", "lake", "alpine", "coast", "canyon", "forest"}) do
+        assert(landscape.SelectTrack(trackId))
+        for _, ramp in ipairs(landscape.OptionalRamps) do
+            for _, speed in ipairs({12, 30, 55, 80, 105}) do
+                local sim = Sim.New(landscape)
+                local x, z = F.Point(ramp, 0, -1)
+                sim.x, sim.z, sim.y, sim.heading, sim.yaw, sim.speed = x, z,
+                    landscape.Height(x, z), ramp.yaw, ramp.yaw, speed
+                local peak, flew = 0, false
+                for _ = 1, 450 do
+                    sim:Step(.02, {throttle = 1})
+                    local roadS = landscape.NearestRoad(sim.x, sim.z)
+                    local road = landscape.RoadPoint(roadS)
+                    peak = math.max(peak, sim.y - road.y)
+                    flew = flew or sim.airborne
+                    if flew and not sim.airborne then break end
+                end
+                check(flew and not sim.airborne and peak <= Race.Rules.gateAbove,
+                    trackId .. " 实坡下坡弹道在10m走廊内 " .. speed)
+                report.realRampCases = report.realRampCases + 1
+                report.maxRealRampAltitude = math.max(report.maxRealRampAltitude, peak)
+            end
+        end
+    end
+    assert(landscape.SelectTrack(previousTrack))
+    print(string.format("[Race.RunChecks] actual-map ramp audit %d cases maximum road-relative altitude %.3fm",
+        report.realRampCases, report.maxRealRampAltitude))
+    report.passed = true
+    print(string.format("[Race.RunChecks] PASS %d assertions / %d real laps / %d boundary cases / %d real ramp flights",
+        report.assertions, #report.laps, report.boundaries, #report.flights))
+    return report
+end
+
 return Checks

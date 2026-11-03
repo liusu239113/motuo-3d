@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<material>
+	<technique name="uuid://Exmi6cg2MT1My-DlX-WrqIks" quality="0" loddistance="0" />
+	<texture unit="diffuse" name="uuid://Fmhd6fx_TS3yGCsWCxlHEJrH" />
+	<texture unit="normal" name="uuid://EriCsffMirBGZfqhneJ6ue_g" />
+	<texture unit="aomap" name="uuid://Cz1IEXQTrH8Q83RlSFv156_n" />
+	<passshader pass="base" vsdefines="" psdefines="EMISSIVECOLOR" />
+	<passshader pass="litbase" vsdefines="NORMALMAP" psdefines="NORMALMAP EMISSIVECOLOR" />
+	<passshader pass="light" vsdefines="NORMALMAP" psdefines="NORMALMAP" />
+	<parameter name="UOffset" value="1 0 0 0" />
+	<parameter name="VOffset" value="0 1 0 0" />
+	<parameter name="MatDiffColor" value="1 1 1 1" />
+	<parameter name="MatEmissiveColor" value="0.00 0.00 0.00" />
+	<parameter name="MatEnvMapColor" value="1.00 1.00 1.00" />
+	<parameter name="MatSpecColor" value="0 0 0 1" />
+	<parameter name="Roughness" value="0.5" />
+	<parameter name="Metallic" value="0" />
+	<parameter name="Specular_Range" value="1" />
+	<parameter name="Specular" value="1" />
+	<parameter name="Gloss" value="0.5" />
+	<parameter name="Color_B1" value="0 0 0 0" />
+	<parameter name="Color_B2" value="1 1 1 0" />
+	<parameter name="Transparency_Mul" value="1" />
+	<parameter name="SprayStrength" value="0 0 0 0" />
+	<parameter name="PBRMetallic" value="0" />
+	<parameter name="Color_Emissive" value="1 1 1 0" />
+	<parameter name="HlafLambertContrast" value="1" />
+	<parameter name="PBRRoughness" value="0" />
+	<parameter name="PBREmissiveColor" value="0 0 0 1" />
+	<parameter name="Illumination_range" value="1" />
+	<parameter name="GradientZPower" value="1" />
+	<parameter name="PBRBaseColor" value="0 0 0 1" />
+	<parameter name="Specular_Color" value="1 1 1 0" />
+	<parameter name="Emissive_Mul" value="2" />
+	<parameter name="Transparency_Power" value="1" />
+	<parameter name="WPO" value="0 0 0 0" />
+	<parameter name="GrassScale" value="2" />
+	<parameter name="Color_A1" value="1 1 1 0" />
+	<parameter name="Color_A2" value="1 1 1 0" />
+	<parameter name="HlafLambertIntensity" value="0" />
+	<parameter name="HlafLambertRang" value="1" />
+	<parameter name="TimeSpeed" value="0.1" />
+	<parameter name="HlafLambertColor" value="0 0 0 0" />
+	<parameter name="ColorFactor" value="1 1 1 1" />
+	<parameter name="MetallicFactor" value="1" />
+	<parameter name="RoughnessFactor" value="1" />
+	<parameter name="MetalMul0or1" value="1" />
+	<cull value="ccw" />
+	<shadowcull value="ccw" />
+	<fill value="solid" />
+	<depthbias constant="0" slopescaled="0" />
+	<alphatocoverage enable="false" />
+	<lineantialias enable="false" />
+	<renderorder value="128" />
+	<occlusion enable="true" />
+</material>

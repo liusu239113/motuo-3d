@@ -83,6 +83,8 @@ local MixedRace = require("MixedRace")
 ---@field mistakes number
 ---@field mistakeBias number
 ---@field missedGates number
+---@field missedGate boolean 未过待门；只能返回正向穿越或脱困，不能追补。
+---@field missedGateLogAt number
 ---@field hitShake number
 ---@field hitYaw number
 ---@field hitTimer number
@@ -219,7 +221,13 @@ local RAD, DEG = math.pi / 180, 180 / math.pi
 --   passive regeneration5/s, same-direction5..22m slipstream adds12/s. Finite coast-down.
 Race.Rules = {countdown = 3, initialProtection = 25, lastWarning = 8, collisionGrace = 6,
     successorProtection = 10, policeStartGap = 160, captureDistance = 12, captureSeconds = 6,
-    hitImmunity = 2, nitroCost = 45, nitroDuration = 2.5}
+    hitImmunity = 2, nitroCost = 45, nitroDuration = 2.5,
+    gateBelow = 3, gateAbove = 10} -- sim.y (wheel/base contact), NOT visual oddAltitude.
+-- Stock TrackFeatures ramps: rise<=2.15m, 20m long, half-grade lip (~.056).
+-- At the certified 105m/s, vY~5.9m/s adds ~1.8m above the lip on flat road.
+-- Real six-map downhill clearance audit peaks at 3.875m across 60 certified cases;
+-- 10m leaves a finite flight corridor without accepting arbitrarily high crossings
+-- or relaxing XZ/order/speed.
 
 local function clamp(v, lo, hi) return max(lo, min(hi, v)) end
 local function approach(v, goal, amount) return v + clamp(goal - v, -amount, amount) end
@@ -376,6 +384,7 @@ function Race:Start(laps)
             speed = 0, lane = lane, wantedLane = lane, s = s, roadS = s % self.length,
             progress = s, safeS = s, lastX = 0, lastY = 0, lastZ = 0, contactX = 0, contactY = 0, contactZ = 0,
             nextGate = 0, started = false, completedLaps = 0, lap = 1, rank = i,
+            missedGate = false, missedGateLogAt = -math.huge, missedGates = 0,
             finished = false, eliminated = false, finishTime = 0, eliminationTime = 0, eliminationRank = 0,
             status = "racing", nitro = 100, boostTimer = 0, boostLock = false,
             immunity = 0, slipstream = 0, collisionGraceUntil = 0,
@@ -459,15 +468,32 @@ end
 --     -corridor -----+----- +corridor    gate is a finite CROSSING PLANE, not a circle
 --           p0 o ---/---> o p1
 -- Requires dot(p0-gate,f)<=0 AND dot(p1-gate,f)>0, inside lateral +/-corridor,
--- |height-road| <=3m. Reverse/tangent/edge outside the line cannot collect a gate.
+-- -3m <= height-road <=10m: finite flight corridor shared by ALL vehicle classes.
+-- Reverse/tangent/edge outside the line cannot collect a gate. Visual oddAltitude
+-- does not move sim.y, and must not be counted twice for helicopter/hopping vehicles.
 -- Ordered absolute gate indices prevent U-turn farming and shortcut lap-wrap exploits.
 -- Excursions between gates are allowed; missing a gate caps progress, never teleports.
+---@param r RaceRacer
+---@param reason string
+function Race:MissGate(r, reason)
+    if r.finished or r.eliminated then return end
+    local first = not r.missedGate
+    r.missedGate = true
+    if not r.isPlayer then return end
+    if not self.options.quiet and (first or self.elapsed >= r.missedGateLogAt + 5) then
+        r.missedGateLogAt = self.elapsed
+        local road = self.map.RoadPoint(r.nextGate)
+        print(string.format("[竞速漏门] %s s=%.3f nextGate=%.3f started=%s completedLaps=%d altitude=%.3f oddAltitude=%.3f invalidMoves=%d",
+            reason, r.s, r.nextGate, tostring(r.started), r.completedLaps,
+            r.y - road.y, self.sim.oddAltitude or 0, r.invalidMoves))
+    end
+end
+
 ---@param r RaceRacer
 ---@param oldS number
 ---@param newS number
 ---@param dt number
----@param allowCatchUp? boolean 仅在真实、且在赛道上行驶时为true；抄近路不得补站
-function Race:AdvanceGates(r, oldS, newS, dt, allowCatchUp)
+function Race:AdvanceGates(r, oldS, newS, dt)
     if newS <= oldS or r.finished or r.eliminated then return end
     -- Always test the ACTUAL physical segment. Never invent on-road intermediate poses
     -- for a long host frame: that would award gates while a stunt/shortcut missed them.
@@ -492,12 +518,7 @@ function Race:AdvanceGates(r, oldS, newS, dt, allowCatchUp)
         return gateS >= self.length - 0.01
             and abs(gateS / self.length - math.floor(gateS / self.length + 0.5)) < 1e-6
     end
-    -- 只补相邻的一扇普通门；起点/终点必须真实穿越，不能在回到路面后补出整圈。
-    if allowCatchUp and r.started and r.nextGate > 0 and not isFinishGate(r.nextGate)
-        and oldS - r.nextGate > window and oldS - r.nextGate <= self.gateSpacing * .25 then
-        r.missedGates = (r.missedGates or 0) + 1
-        r.nextGate = r.nextGate + self.gateSpacing
-    end
+    -- No catch-up: even an ordinary missed gate requires a real forward recrossing.
     while r.nextGate <= newS + window and r.nextGate >= oldS - window do
         local gateS = r.nextGate
         local p, yaw = self.map.RoadPoint(gateS)
@@ -509,7 +530,13 @@ function Race:AdvanceGates(r, oldS, newS, dt, allowCatchUp)
         local cx, cz = r.lastX + (r.x - r.lastX) * t, r.lastZ + (r.z - r.lastZ) * t
         local lateral = (cx - p.x) * fz - (cz - p.z) * fx
         local cy = r.lastY + (r.y - r.lastY) * t
-        if abs(lateral) > self.gateCorridor or abs(cy - p.y) > 3 then break end
+        local altitude = cy - p.y
+        if abs(lateral) > self.gateCorridor or altitude < -Race.Rules.gateBelow
+            or altitude > Race.Rules.gateAbove then
+            self:MissGate(r, "穿门超出有限走廊")
+            break
+        end
+        r.missedGate = false
         if not r.started then r.started = true
         elseif isFinishGate(gateS) then completeLap(t)
         end
@@ -541,14 +568,14 @@ function Race:TrackPlayer(dt)
     -- NOT a speedometer and MUST NOT reset a driver. Always rebase physical road position.
     local oldS = r.s
     r.s = r.s + delta
-    local onCourse = roadDistance <= self.corridor and abs(r.y - self.map.Height(r.x, r.z)) <= 3
+    local altitude = r.y - self.map.Height(r.x, r.z)
+    local onCourse = roadDistance <= self.corridor and altitude >= -Race.Rules.gateBelow
+        and altitude <= Race.Rules.gateAbove
     r.wrongWay, r.offCourse = delta < -0.03, not onCourse
     if physical then
         -- Only actual ordered plane crossings count. Going wide BETWEEN gates is allowed;
         -- missing one caps ranking at that gate until the rider turns back and crosses it.
-        -- 真实驾驶回到路面时补回漏掉的站；抄近路/瞬移的physical=false分支不补。
-        self:AdvanceGates(r, oldS, r.s, dt, onCourse and not r.offCourseLast
-            and abs(delta) <= traveled * 1.5 + .1)
+        self:AdvanceGates(r, oldS, r.s, dt)
         if not r.finished then r.progress = min(r.s, r.nextGate - 0.001) end
         if onCourse and abs(delta) <= traveled * 2 + 1 then
             r.safeS = min(r.s, r.nextGate - 0.5)
@@ -558,6 +585,18 @@ function Race:TrackPlayer(dt)
         -- trigger another teleport. Last legal progress remains the manual reset anchor.
         if not recovered then r.invalidMoves = r.invalidMoves + 1 end
         r.progress = min(r.progress, r.s, r.nextGate - 0.001)
+    end
+    -- A missed start/ordinary/finish gate must never silently strand the lap counter.
+    -- A rejected teleport also needs guidance, but receives no gate or trusted progress.
+    if not r.finished and r.s > r.nextGate + min(8, self.gateSpacing * .2) then
+        self:MissGate(r, physical and "待门落后" or "非连续移动越门")
+    end
+    if r.missedGate then
+        sim.message = string.format("漏过检查点%d · 请返回检查点正向通过，或使用脱困回到待门前",
+            math.floor(r.nextGate / self.gateSpacing + .5) % self.gateCount + 1)
+        sim.messageTimer = 2
+    elseif sim.message:find("漏过检查点", 1, true) == 1 then
+        sim.message, sim.messageTimer = "检查点已通过 · 继续比赛", 2
     end
     r.offCourseLast = not onCourse or not physical
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
@@ -575,15 +614,20 @@ function Race:RecoverPlayer(grantGrace)
     local unwrapped = r.s + (projected - r.s % self.length + self.length * .5) % self.length - self.length * .5
     -- 模长坐标必须先解到当前圈域；起跑的负s不能被当作首圈末尾。
     -- 脱困回到最后可信门前，漏门不会因复位而自动获得进度。
-    local anchor = min(max(r.safeS, unwrapped), r.nextGate - .5)
-    local p, yaw = self:Pose(anchor, 1.55)
+    local anchor = r.missedGate and (r.nextGate - min(6, self.gateSpacing * .1))
+        or min(max(r.safeS, unwrapped), r.nextGate - .5)
+    local recoveryLane = r.missedGate and 0 or 1.55
+    local p, yaw = self:Pose(anchor, recoveryLane)
     sim.x, sim.y, sim.z, sim.heading, sim.yaw = p.x, p.y, p.z, yaw, yaw
     sim.previousX, sim.previousY, sim.previousZ = p.x, p.y, p.z
     sim:UpdateNavigation(p.x, p.z, nil, false)
-    r.s, r.progress, r.x, r.y, r.z = anchor, min(before, r.safeS), p.x, p.y, p.z
+    r.s, r.progress, r.x, r.y, r.z = anchor, min(before, r.safeS, anchor), p.x, p.y, p.z
     r.lastX, r.lastY, r.lastZ = p.x, p.y, p.z
     r.contactX, r.contactY, r.contactZ = p.x, p.y, p.z
-    r.speed, r.yaw, r.lane, r.roadS = 0, yaw, 1.55, r.s % self.length
+    r.speed, r.yaw, r.lane, r.roadS = 0, yaw, recoveryLane, r.s % self.length
+    r.offCourse, r.offCourseLast = false, false
+    sim.groundY = p.y
+    sim.message, sim.messageTimer = "已回到待检查点前 · 请沿赛道正向通过", 3
     -- Recovery preserves closeHold AND danger: repeated recover cannot buy six fresh seconds.
     self.lastRecovery = sim.recoverySerial
     if grantGrace then self:Collision(r) end
@@ -1202,8 +1246,8 @@ function Race.Test()
 
     -- Ordered-gate counterexamples are isolated from the long pursuit scenario above.
     -- Fixture only seeds the precondition; every verdict calls production AdvanceGates.
-    -- Gate plane: old/new are both AFTER the missed plane, so only the bounded ordinary
-    -- catch-up branch can accept it. Never disguise a synthetic pose as real driving.
+    -- Fixture: both poses are AFTER the missed plane. No kind of gate may be
+    -- invented by continuous ground driving; only a real recrossing can release it.
     local gateSim = Sim.New(map)
     local gates = Race.New(map, gateSim, {seed = 31, quiet = true, professional = true})
     local function green(laps)
@@ -1215,7 +1259,7 @@ function Race.Test()
     green(3)
     local spacing = gates.gateSpacing
     local window = min(8, spacing * .2)
-    local function missedGate(gateS, oldS, allow, started, laps)
+    local function missedGate(gateS, oldS, started, laps)
         local runner = gates.player
         runner.nextGate, runner.started = gateS, started
         runner.completedLaps, runner.finished, runner.missedGates = laps or 0, false, 0
@@ -1223,29 +1267,20 @@ function Race.Test()
         local afterPose = gates:Pose(oldS + .6, 1.55)
         runner.lastX, runner.lastY, runner.lastZ = beforePose.x, beforePose.y, beforePose.z
         runner.x, runner.y, runner.z = afterPose.x, afterPose.y, afterPose.z
-        gates:AdvanceGates(runner, oldS, oldS + .6, .02, allow)
+        gates:AdvanceGates(runner, oldS, oldS + .6, .02)
         return runner
     end
-    local ordinary = missedGate(spacing, spacing + window + 2, true, true)
-    check(ordinary.nextGate == spacing * 2 and ordinary.missedGates == 1
-        and ordinary.completedLaps == 0, "相邻普通门在窗口外且四分之一站距内只追补一门")
-    for _,case in ipairs({
-        {gap = window - 1, allow = true, started = true, name = "窗口内尚未穿门"},
-        {gap = spacing * .25 + 2, allow = true, started = true, name = "超四分之一站距"},
-        {gap = spacing + window + 2, allow = true, started = true, name = "跨过相邻一整站"},
-        {gap = window + 2, allow = false, started = true, name = "非合法连续路面步骤"},
-        {gap = window + 2, allow = true, started = false, name = "尚未真实过起点"},
-    }) do
-        local rejected = missedGate(spacing, spacing + case.gap, case.allow, case.started)
+    for _, gap in ipairs({window - 1, window + 2, spacing * .25 + 2, spacing + window + 2}) do
+        local rejected = missedGate(spacing, spacing + gap, true)
         check(rejected.nextGate == spacing and rejected.missedGates == 0
-            and rejected.completedLaps == 0, "普通门追补反证：" .. case.name)
+            and rejected.completedLaps == 0, "普通门不得追补，落后距离=" .. gap)
     end
-    local startMiss = missedGate(0, window + 2, true, false)
+    local startMiss = missedGate(0, window + 2, false)
     check(startMiss.nextGate == 0 and not startMiss.started and startMiss.missedGates == 0,
-        "起点不得通过普通门追补启动")
+        "起点不得追补启动")
     for lapIndex = 1, 3 do
         local finishS = lapIndex * length
-        local finishMiss = missedGate(finishS, finishS + window + 2, true, true, lapIndex - 1)
+        local finishMiss = missedGate(finishS, finishS + window + 2, true, lapIndex - 1)
         check(finishMiss.nextGate == finishS and finishMiss.completedLaps == lapIndex - 1
             and finishMiss.missedGates == 0 and not finishMiss.finished,
             "绝对圈域终点不得追补：" .. lapIndex)
@@ -1344,6 +1379,14 @@ function Race.Test()
         "多圈连续脱困及反向过线后仍须逐门完成第三圈")
     print(string.format("[Race.Test] %d项纯Lua竞速断言通过", checks))
     return true
+end
+
+-- Full regression entry; pure rules plus real Simulation.Step laps/flight matrix.
+-- Kept in an existing Race test module to keep the gameplay module below 1500 lines.
+function Race.RunChecks()
+    assert(Race.Test())
+    local checks = require("RaceSettlementChecks") --[[@as RaceSettlementCheckSuite]]
+    return checks.RunGates()
 end
 
 return Race

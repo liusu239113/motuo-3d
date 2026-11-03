@@ -1,0 +1,59 @@
+{
+  "maxRealRampAltitude": 3.875264665464016,
+  "passed": true,
+  "realRampCases": 60,
+  "assertions": 172,
+  "boundaries": 18,
+  "laps": [
+    {
+      "id": "helicopter",
+      "invalidMoves": 0,
+      "s": 754.2153994015889,
+      "time": 27.31217727023985,
+      "completedLaps": 1,
+      "nextGate": 837.7580409572782
+    },
+    {
+      "id": "ebike",
+      "invalidMoves": 0,
+      "s": 754.0253373356891,
+      "time": 27.298526956799105,
+      "completedLaps": 1,
+      "nextGate": 837.7580409572782
+    },
+    {
+      "id": "sport",
+      "invalidMoves": 0,
+      "s": 754.2062338072365,
+      "time": 27.332490159804006,
+      "completedLaps": 1,
+      "nextGate": 837.7580409572782
+    }
+  ],
+  "flights": [
+    {
+      "peak": 3.786283255570386,
+      "id": "helicopter",
+      "crossed": true,
+      "nextGate": 254.72372866944266,
+      "exitGrade": 0.05643750000000036
+    },
+    {
+      "peak": 3.7590615684152593,
+      "id": "ebike",
+      "crossed": true,
+      "nextGate": 254.72372866944266,
+      "exitGrade": 0.05643750000000036
+    },
+    {
+      "peak": 3.817854006484121,
+      "id": "sport",
+      "crossed": true,
+      "nextGate": 254.72372866944266,
+      "exitGrade": 0.05643750000000036
+    }
+  ],
+  "luaVersion": "5.4",
+  "existingRaceTestAssertions": 68,
+  "engineVectorAdapter": "Vector3 values only; no physics/race rule replacement"
+}

@@ -3,6 +3,16 @@
 local Assets = require("VehicleAssets")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
+local SkillPresentation = require("SkillPresentation")
+-- 官方资源库DLl_iWrIXFGnWp6MXMWm5rlt：连续直向金色箭头；BrMPQVbouuJ6tP9-opAx9Z5U：完整交通锥。
+-- 不使用搜索描述中实际为掉头/转弯的箭头，不用Box拼装路标或门架。
+local COURSE_ARROW = "uuid://D_WEUc5wpVo9pjy4U8VhVjVV"
+local COURSE_ARROW_MATERIAL = "uuid://FjoMmROgqb4dDyqNZCf6eElx"
+local COURSE_CONE = "uuid://CGp6ca4NUVz_7_-kG06v5Ayb"
+local COURSE_CONE_MATERIAL = "uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF"
+local COURSE_RESOURCES = {COURSE_ARROW, COURSE_ARROW_MATERIAL, COURSE_CONE, COURSE_CONE_MATERIAL}
+local COURSE_TYPES = {[COURSE_ARROW] = "Model", [COURSE_ARROW_MATERIAL] = "Material",
+    [COURSE_CONE] = "Model", [COURSE_CONE_MATERIAL] = "Material"}
 local Bike = require("Bike") -- 只取Cockpits配置，不调用Bike.New。
 local Landscape = require("Landscape")
 local P = require("Parts")
@@ -54,11 +64,6 @@ local V = Vector3
 ---@field leanSign number
 ---@field redMaterial Material
 ---@field blueMaterial Material
----@field whiteMaterial Material
----@field blackMaterial Material
----@field steelMaterial Material
----@field yellowMaterial Material
----@field greenMaterial Material
 local RaceVisuals = {}
 RaceVisuals.__index = RaceVisuals
 
@@ -68,8 +73,20 @@ function RaceVisuals.GetResources()
     local ids = require("MixedAssets").RaceIds()
     if Assets.Vehicles.police then ids[#ids + 1] = "police" end
     local paths = Assets.ResourcesFor(ids)
-    for _, path in ipairs(Rider.Resources) do paths[#paths + 1] = path end
-    -- 尾喷仅程序化几何；两条Technique均为合法纯色PBR，Loader按明确类型校验。
+    for _, path in ipairs(Rider.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = Rider.ResourceTypes[path]
+    end
+    -- 每项按明确类型预载；真实图片是Texture2D，纹理xml导入设置不登记运行时根。
+    for _, path in ipairs(SkillPresentation.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(SkillPresentation.ResourceTypes[path])
+    end
+    for _, path in ipairs(COURSE_RESOURCES) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(COURSE_TYPES[path])
+    end
+    -- 保留普通氮气已有表现，与载具专属技能没有关系。
     for _, path in ipairs(RideEffects.Resources) do
         paths[#paths + 1] = path
         Assets.ResourceTypes[path] = "Technique"
@@ -108,11 +125,6 @@ function RaceVisuals:Init(scene, world, race, highQuality)
         self.materials[#self.materials + 1] = mat
         return mat
     end
-    self.steelMaterial = material(0.26, 0.31, 0.36, 0.42, 0.65)
-    self.blackMaterial = material(0.018, 0.025, 0.035, 0.88, 0)
-    self.whiteMaterial = material(0.91, 0.94, 0.96, 0.82, 0)
-    self.yellowMaterial = material(1, 0.68, 0.04, 0.60, 0.02, 0.22)
-    self.greenMaterial = material(0.08, 0.90, 0.52, 0.48, 0.02, 1.25)
     self.redMaterial = material(0.96, 0.025, 0.015, 0.30, 0.05, 2.3)
     self.blueMaterial = material(0.025, 0.20, 1, 0.30, 0.05, 2.3)
     self:BuildCourse()
@@ -206,7 +218,7 @@ function RaceVisuals:EnsurePolice()
         V(0.30, roof, 0), V(0.26, 0.055, 0.12), nil, false)
 end
 
--- 环境结构为PBR基础几何，并非车辆资产。没有碰撞体，碰撞/检查点通过Race统一判定。
+-- 表现节点不带碰撞；检查点判定仍由Race维护，路标与检测共用同一s。
 ---@param s number
 ---@param name string
 ---@return Node
@@ -218,86 +230,78 @@ function RaceVisuals:CourseAnchor(s, name)
     return node
 end
 
+-- 资源库完整网格，按包围盒等比缩放；无基础几何、无网格生成或截取。
 ---@param parent Node
 ---@param name string
----@param mat Material
----@param pos Vector3
----@param scale Vector3
----@param rotation? Quaternion
-function RaceVisuals:CoursePart(parent, name, mat, pos, scale, rotation)
-    local node = P.Add(parent, name, "Box", mat, pos, scale, rotation, false)
-    local model = node:GetComponent("StaticModel")
-    model.drawDistance = 300
-    return node
+---@param modelPath string
+---@param materialPath string
+---@param position Vector3
+---@param heightOrLength number
+---@param arrow boolean
+---@return Node
+function RaceVisuals:CourseAsset(parent, name, modelPath, materialPath, position, heightOrLength, arrow)
+    local model = assert(cache:GetResource("Model", modelPath), "赛事指引模型未预载：" .. modelPath)
+    local material = assert(cache:GetResource("Material", materialPath), "赛事指引材质未预载：" .. materialPath)
+    local bounds = model.boundingBox
+    local dimension = arrow and math.max(bounds.size.x, bounds.size.z) or bounds.size.y
+    assert(dimension > .0001, "赛事指引包围盒无效")
+    local scale = heightOrLength / dimension
+    local anchor = parent:CreateChild(name, LOCAL)
+    anchor.position = position
+    -- 官方TopView核对：连续箭头原始朝+X；yaw -90后朝赛道局部+Z。
+    local rotation = arrow and Quaternion(0, -90, 0) or Quaternion.IDENTITY
+    local mesh = anchor:CreateChild("正式共享网格", LOCAL)
+    mesh.rotation = rotation
+    mesh:SetScale(scale)
+    mesh.position = rotation * V(-bounds.center.x, -bounds.min.y, -bounds.center.z) * scale
+    local drawable = mesh:CreateComponent("StaticModel")
+    drawable:SetModel(model); drawable:SetMaterial(material)
+    drawable.drawDistance, drawable.castShadows = 320, false
+    return anchor
 end
 
 function RaceVisuals:BuildCourse()
-    local startS = self.race.startS or 0
-    local halfWidth = self.race.roadHalfWidth or ((Landscape.Roads and Landscape.Roads[1]) and Landscape.Roads[1].width) or 4.8
-    local towerX = halfWidth + 1.5
-    local gantry = self:CourseAnchor(startS, "RaceStartFinishGantry")
-    -- 门架最内缘在真实沥青边缘1m以外；高度净空5.2m，不参与碰撞。
-    for _, side in ipairs({-1, 1}) do
-        self:CoursePart(gantry, "GantryFoot", self.blackMaterial, V(side * towerX, 0.16, 0), V(1.0, 0.32, 1.5))
-        for _, z in ipairs({-0.45, 0.45}) do
-            self:CoursePart(gantry, "GantryTower", self.steelMaterial, V(side * towerX, 2.8, z), V(0.23, 5.6, 0.23))
-        end
-        for height = 1, 5 do
-            self:CoursePart(gantry, "GantryTowerBrace", self.whiteMaterial,
-                V(side * towerX, height, 0), V(0.16, 0.12, 1.05), Quaternion(32, 0, 0))
-        end
-    end
-    for _, z in ipairs({-0.45, 0.45}) do
-        self:CoursePart(gantry, "GantryCrossbeam", self.steelMaterial, V(0, 5.5, z), V(towerX * 2 + 0.30, 0.30, 0.25))
-    end
-    local boardWidth = math.min(towerX * 2 - 0.8, halfWidth * 2 + 0.4)
-    local boardCell = boardWidth / 20
-    self:CoursePart(gantry, "FinishBoard", self.blackMaterial, V(0, 5.15, 0), V(boardWidth, 0.65, 0.19))
-    for i = 1, 20 do
-        self:CoursePart(gantry, "FinishBoardChecker", i % 2 == 0 and self.whiteMaterial or self.blackMaterial,
-            V((i - 10.5) * boardCell, 5.15, -0.11), V(boardCell, 0.52, 0.03))
-    end
-    -- 棋盘在实际沥青内，两侧各留0.15m，窄森林路也不越界。
-    local gridWidth = halfWidth * 2 - 0.30
-    local columns = math.max(2, math.floor(gridWidth / 0.50))
-    local cell = gridWidth / columns
-    for row = 1, 2 do
-        for column = 1, columns do
-            local s = startS + (row - 1.5) * 0.50
-            local lane = (column - (columns + 1) * 0.5) * cell
-            local point, yaw, pitch = Landscape.TrafficPose(s, lane)
-            self:CoursePart(self.routeRoot, "RaceGridChecker", (row + column) % 2 == 0
-                and self.whiteMaterial or self.blackMaterial, point + V(0, 0.025, 0),
-                V(cell * 0.98, 0.018, 0.49), Quaternion(pitch, yaw, 0))
-        end
-    end
+    -- 仅复用World真正存在的门架；即使环境代理移除它/留下空节点，起终指引仍独立保留。
+    local existing = self.world.root and self.world.root:GetChild("起终点龙门与发车格", true)
+    local hasGantry = existing and #existing:GetComponents("StaticModel", true) > 0
+    print(hasGantry and "[竞速指引] 复用World起终点门架；正式检查点箭头与锥标"
+        or "[竞速指引] World无门架；以正式锥标和箭头标识起终点，不创建占位门架")
+    -- 不依赖门架节点存在与否：起终点恒有两枚1.4米正式锥标和两组顺行金箭头。
+    self:BuildCheckpoint(self.race.startS or 0, 0)
     local checkpoints = self.race.checkpoints or {}
     if #checkpoints > 0 then
-        -- 每约180m一对检查点灯，保留比赛真实检查点而不为每个检测点堆模型。
         for index, checkpoint in ipairs(checkpoints) do
-            if index > 1 and index % 2 == 0 then self:BuildCheckpoint(checkpoint.s, index) end
+            -- 起终点已标记，避免同一点重叠；所有其余玩法检查点均可见，不隔点删指引。
+            local distance = math.abs((checkpoint.s - (self.race.startS or 0) + Landscape.RouteLength * .5)
+                % Landscape.RouteLength - Landscape.RouteLength * .5)
+            if distance > 3 then self:BuildCheckpoint(checkpoint.s, index) end
         end
     else
-        for index = 1, 16 do self:BuildCheckpoint(startS + Landscape.RouteLength * index / 17, index) end
+        for index = 1, 16 do self:BuildCheckpoint((self.race.startS or 0) + Landscape.RouteLength * index / 17, index) end
     end
 end
 
 ---@param s number
 ---@param index integer
 function RaceVisuals:BuildCheckpoint(s, index)
-    local node = self:CourseAnchor(s, "RaceRouteMarker_" .. index)
+    local node = self:CourseAnchor(s, index == 0 and "RaceStartFinishGuide" or "RaceCheckpoint_" .. index)
     local halfWidth = self.race.roadHalfWidth or ((Landscape.Roads and Landscape.Roads[1]) and Landscape.Roads[1].width) or 4.8
-    local postX = halfWidth + 1.0
+    -- 锥标在沥青外；脚点单独采样地形，不把两侧坡度当中心路面高程。
+    local road = Landscape.Roads and Landscape.Roads[1]
+    local postX = math.max(halfWidth, road and road.shoulder or halfWidth) + .8
     for _, side in ipairs({-1, 1}) do
-        self:CoursePart(node, "CheckpointBase", self.blackMaterial, V(side * postX, 0.10, 0), V(0.5, 0.20, 0.65))
-        self:CoursePart(node, "CheckpointPost", self.steelMaterial, V(side * postX, 0.95, 0), V(0.15, 1.70, 0.15))
-        self:CoursePart(node, "CheckpointLamp", self.greenMaterial, V(side * postX, 1.65, 0), V(0.19, 0.48, 0.19))
+        local point = Landscape.TrafficPose(s, side * postX)
+        local y = Landscape.Height(point.x, point.z)
+        local foot = V(point.x, y, point.z)
+        self:CourseAsset(node, "CheckpointOfficialCone", COURSE_CONE, COURSE_CONE_MATERIAL,
+            node:WorldToLocal(foot), index == 0 and 1.4 or 1.1, false)
     end
-    -- 路面箭头始终沿路线+Z；由TrafficPose同时给出弯道朝向和坡度。
-    self:CoursePart(node, "DirectionArrowStem", self.yellowMaterial, V(0, 0.028, -0.35), V(0.20, 0.018, 1.40))
-    for _, side in ipairs({-1, 1}) do
-        self:CoursePart(node, "DirectionArrowHead", self.yellowMaterial, V(side * 0.32, 0.028, 0.22),
-            V(0.20, 0.018, 0.98), Quaternion(0, side * -43, 0))
+    -- 双箭头沿路线+Z；两处连续指引增强高速识别，局部采样坡度防止长平面跨坡悬空。
+    for _, offset in ipairs({-2.5, .5}) do
+        local point, yaw, pitch = Landscape.TrafficPose(s + offset, 0)
+        local arrow = self:CourseAsset(node, "CheckpointOfficialForwardArrow", COURSE_ARROW, COURSE_ARROW_MATERIAL,
+            node:WorldToLocal(point + V(0, .035, 0)), 2.4, true)
+        arrow.worldRotation = Quaternion(pitch, yaw, 0)
     end
 end
 
@@ -463,15 +467,11 @@ function RaceVisuals:Update(dt, sim)
         end
     end
     self:EnsurePolice()
-    for _,shot in ipairs(self.race.mixedProjectiles or {}) do
-        if not shot.node then
-            shot.node=P.Add(self.root,"SkillProjectile","Sphere",
-                shot.kind=="jellyfish" and self.blueMaterial or self.greenMaterial,V.ZERO,
-                shot.kind=="jellyfish" and V(.65,.65,.65) or V(.2,.2,1),nil,false)
+    -- 暂停时不创建/移动弹体；位置和朝向只来自MixedRace，同样适用于玩家和AI。
+    if self.root and not (sim and sim.paused) then
+        for _, shot in ipairs(self.race.mixedProjectiles or {}) do
+            SkillPresentation.UpdateShot(self.root, shot)
         end
-        shot.node.position=V(shot.x,shot.y,shot.z)
-        local pitch=-math.deg(math.atan(shot.vy,math.sqrt(shot.vx*shot.vx+shot.vz*shot.vz)))
-        shot.node.rotation=Quaternion(pitch,math.deg(math.atan(shot.vx,shot.vz)),0)
     end
     local police = self.race.pursuit or self.race.police
     if self.policeNode then
@@ -517,6 +517,7 @@ function RaceVisuals:Destroy()
         runner.rider:Dispose()
     end
     self.runners = {}
+    SkillPresentation.Clear(self.race.mixedProjectiles or {})
     if self.root then self.root:Dispose() end
     for _, material in ipairs(self.materials) do material:Dispose() end
     self.materials, self.markers = {}, {}
