@@ -64,6 +64,46 @@ local function checkBounds(world)
     end
     print(string.format("[竞速CPU] bounds/投影/previous PASS %d",count))
 end
+local function checkSpatial(world)
+    local Spatial=require("CourseSpatial")
+    local a,b={mixedObstacles={},mixedCoins={}},{mixedObstacles={},mixedCoins={}}
+    for _,o in ipairs(world.mixedObstacles) do
+        local first,second={},{}
+        for key,value in pairs(o) do if key~="node" then first[key]=value;second[key]=value end end
+        a.mixedObstacles[#a.mixedObstacles+1]=first;b.mixedObstacles[#b.mixedObstacles+1]=second
+    end
+    for _,coin in ipairs(world.mixedCoins) do
+        a.mixedCoins[#a.mixedCoins+1]={x=coin.x,y=coin.y,z=coin.z,active=true}
+        b.mixedCoins[#b.mixedCoins+1]={x=coin.x,y=coin.y,z=coin.z,active=true}
+    end
+    Spatial.Build(b)
+    local function drive(id,o,indexed,span)
+        local sim={vehicleId=id,x=o.x+span,y=o.y,z=o.z+span,heading=37,speed=30,health=100,impactSerial=0}
+        function sim:Impact() self.impactSerial=self.impactSerial+1;self.health=self.health-7 end
+        Mixed.Reset(sim)
+        sim.oddAltitude=id=="helicopter" and 2.5 or 0;sim.oddPreviousAltitude=sim.oddAltitude
+        Mixed.Obstacles(sim,indexed,o.x-span,o.y,o.z-span)
+        return sim
+    end
+    local count=0
+    for i,o in ipairs(world.mixedObstacles) do
+        for _,id in ipairs({"beetle","helicopter"}) do
+            for _,w in ipairs({a,b}) do
+                for _,r in ipairs(w.mixedObstacles) do r.active=true end
+                for _,c in ipairs(w.mixedCoins) do c.active=true end
+            end
+            local span=i%7==0 and 70 or 8
+            local first,second=drive(id,o,a,span),drive(id,o,b,span)
+            assert(first.speed==second.speed and first.health==second.health
+                and first.impactSerial==second.impactSerial and first.oddPickups==second.oddPickups,
+                "空间索引改变碰撞结果："..tostring(o.id).."/"..id)
+            for key in pairs(first.oddContacts) do assert(second.oddContacts[key],"空间索引漏碰撞") end
+            for key in pairs(second.oddContacts) do assert(first.oddContacts[key],"空间索引多碰撞") end
+            count=count+1
+        end
+    end
+    print(string.format("[竞速CPU] 空间索引/全扫描等价 PASS %d / 所有真实障碍、地面/飞行、高速跨格",count))
+end
 function Start()
     assert(Landscape.SelectTrack("circuit"))
     scene_=Scene()
@@ -100,6 +140,14 @@ function Start()
         race:AfterStep(.02)
     end)
     print("[竞速CPU] COMPLETE / CPU对照，不是手机FPS或GPU计时")
+    checkSpatial(world)
+    require("CourseWorldChecks").RunInitialization()
+    local Assets=require("VehicleAssets")
+    local ids=require("Catalog").AvailableIds()
+    local stages=0
+    Assets.PrepareDetails(ids,function() stages=stages+1 end)
+    assert(stages==#ids,"预热进度必须覆盖全部正式车型")
+    print("[竞速CPU] 正式车型预热 PASS "..stages)
 end
 function Stop()
     if scene_ then scene_:Dispose();scene_=nil end
