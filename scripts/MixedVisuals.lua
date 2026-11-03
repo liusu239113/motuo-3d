@@ -230,8 +230,11 @@ end
 function Adapter:Init(scene,id)
     self.vehicleId=id; self.node=scene:CreateChild("Bike_"..id)
     self.visual=self.node:CreateChild("VehicleMotion"); self.body=M.Build(self.visual,id)
-    local cockpit=M.Cockpits[id] or {localOffset=V(0,2.6,-.3),pitch=8,fov=72,
-        seatHeight=1,grip=V(.3,1,.4),dash=V(0,1,.4)}
+    -- 未单独标定的载具按真实模型高度推导眼位：高出车顶约12cm，避免相机嵌进车体。
+    local size=self.body:GetVar("VehicleSize"):GetVector3()
+    local fallback={localOffset=V(0,math.max(1.0,size.y+0.12),-size.z*0.10),pitch=6,fov=72,
+        seatHeight=math.max(0.8,size.y*0.55),grip=V(.3,1,.4),dash=V(0,size.y*0.85,size.z*0.10)}
+    local cockpit=M.Cockpits[id] or fallback
     self.cockpit=self.visual:CreateChild("Cockpit"); self.steering=self.cockpit:CreateChild("Steering")
     self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=cockpit.dash
     self.Cockpit=cockpit
@@ -263,9 +266,14 @@ function Adapter:UpdateState(_,sim,firstPerson,clock)
     self.node.position=V(sim.x or 0,sim.y or 0,sim.z or 0)
     self.node.rotation=Quaternion(0,sim.heading or sim.yaw or 0,0)
     self.visual.position=V(0,sim.oddAltitude or 0,0)
-    self.visual.rotation=Quaternion((sim.pitch or 0)*.5,0,(sim.lean or 0)*.25)
+    -- 空中旋转(spin180/spin360)必须真正体现在模型上，否则按键像"跳跃"。
+    -- 翘头/烧胎对混合载具没有物理意义，只有真实旋转与倾斜才表现。
+    local spin=sim.airSpin or 0
+    local pitch=(sim.pitch or 0)*.5
+    local lean=(sim.lean or 0)*.25
+    self.visual.rotation=Quaternion(pitch,spin,lean)
     M.Animate(self.body,self.vehicleId,sim.elapsed or clock,sim)
-    self.riderRig:Update(0,false,(sim.lean or 0)*.25)
+    self.riderRig:Update(0,false,lean)
     if firstPerson ~= self.firstPerson then self:SetFirstPerson(firstPerson) end
 end
 function Adapter:Dispose()

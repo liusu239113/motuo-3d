@@ -355,7 +355,8 @@ local function ConfirmVehicle(id)
     local entry = Catalog.Get(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
-    if require("MixedVehicles").Get(id) then firstPerson_=false end
+    -- 不再禁用混合载具第一视角：它们有正式模型与座舱相机偏移，可正常第一视角驾驶。
+    -- 是否显示驾驶员由视觉层按视角切换。
     if not careerRace_ and not autoTest_ and testShot_=="" and not Catalog.CanDrive(id) then
         hud_:ShowNotice("载具尚未解锁","使用金币永久购买，或完整观看一次广告获得该载具三局体验。")
         return

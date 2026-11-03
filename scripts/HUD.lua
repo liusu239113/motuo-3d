@@ -314,7 +314,8 @@ function HUD:BuildRide()
         borderRadius = 3, children = {self.featureTitle, self.featureHint}}
     self.skillButton = button("E · 专属技能",a.skill,true,154)
     self.skillButton:SetStyle({position="absolute",right=76,top=70,height=48,fontSize=12})
-    self.messagePanel = UI.Panel {position = "absolute", top = 72, left = "25%", width = "50%",
+    -- 通用提示：无边框、紧贴保护/危险条上方，避免挡住前方视野中心。
+    self.messagePanel = UI.Panel {position = "absolute", top = 46, left = "18%", width = "64%",
         padding = 0, pointerEvents = "none", children = {self.message}}
     self.game = UI.Panel(fill({visible = false, pointerEvents = "box-none", children = {
         self.skillButton,
@@ -786,7 +787,7 @@ function HUD:LayoutResponsive()
     self.rankPanel:SetWidth(compact and 126 or 152)
     self.navPanel:SetStyle({left = compact and 146 or 178, width = compact and 112 or 126})
     self.dangerPanel:SetStyle({top = compact and 85 or 8, width = compact and 208 or 244, marginLeft = compact and -104 or -122})
-    self.messagePanel:SetStyle({top = compact and 142 or 72})
+    self.messagePanel:SetStyle({top = compact and 126 or 46})
     self.instrumentPanel:SetStyle({width = compact and 198 or 228, height = compact and 98 or 112, marginLeft = compact and -99 or -114})
     self.nitroPanel:SetStyle({bottom = compact and 118 or 132, width = compact and 178 or 196, marginLeft = compact and -89 or -98})
     self:LayoutTracks(w, h)
@@ -985,6 +986,22 @@ function HUD:Update(dt, sim, firstPerson)
     self.rpmNumber:SetText(string.format("%.0f rpm", sim.rpm or 1200))
     self.region:SetText(sim.regionName or "环湖公路"); self.target:SetText(sim.goalName or "")
     self:RefreshRace()
+    -- 特技按钮按真实能力显示：混合载具没有翘头/烧胎仿真（会按了没反应），
+    -- 但空中旋转是真实起跳+旋转，保留按钮。
+    local mixedSpec = require("MixedVehicles").Get(sim.vehicleId or "")
+    local groundStunts = mixedSpec == nil
+    for _, key in ipairs({"wheelie", "burnout"}) do
+        local widget = self.controlWidgets[key]
+        if widget then widget:SetVisible(groundStunts) end
+    end
+    for _, key in ipairs({"spin180", "spin360"}) do
+        local widget = self.controlWidgets[key]
+        if widget then widget:SetVisible(true) end
+    end
+    if not groundStunts then
+        self.controls:SetActionState("wheelie", {state = "ready", detail = ""})
+        self.controls:SetActionState("burnout", {state = "ready", detail = ""})
+    end
     self.controls:SetActionState("wheelie", {state = (sim.wheelieAngle or 0) > 8 and "active"
         or ((sim.speed or 0) >= 31 and "blocked" or "ready"),
         detail = (sim.wheelieAngle or 0) > 8 and "前轮抬起 · 松手放下"

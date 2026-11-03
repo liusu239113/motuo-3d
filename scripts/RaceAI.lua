@@ -37,13 +37,15 @@ local function gap(a, b, length) return (a - b + length * 0.5) % length - length
 function AI.Configure(race, r, index)
     local setting = race.options.difficulty or "normal"
     local difficulty = setting == "easy" and -1 or (setting == "hard" and 1 or 0)
-    local level = clamp(tonumber(race.options.aiLevel) or 0.60, 0.4, 0.94)
+    -- 上限从0.94放开到1.0：否则再高的赛道强度也被截断，AI永远追不上玩家。
+    local level = clamp(tonumber(race.options.aiLevel) or 0.60, 0.4, 1.0)
     r.aiLevel = level
     r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48
-        + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.95)
+        + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.98)
     -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
-    r.speedFactor = clamp(0.48 + level * 0.20 + r.skill * 0.25 + difficulty * 0.02, 0.6, 0.93)
-    local efficiency = clamp(0.36 + level * 0.24 + r.skill * 0.38 + difficulty * 0.025, 0.58, 0.96)
+    -- speedFactor上限提到1.0：高强度局AI应该能跑到与玩家同级的极速。
+    r.speedFactor = clamp(0.48 + level * 0.20 + r.skill * 0.25 + difficulty * 0.02, 0.6, 1.0)
+    local efficiency = clamp(0.36 + level * 0.24 + r.skill * 0.38 + difficulty * 0.025, 0.58, 0.98)
     r.acceleration = vehicleFor(race,r).acceleration * efficiency
     -- 高级图仍有真实断油、走宽和恢复窗口，不能用满级技术消除失误。
     r.mistakeTimer = 6 + race:Random() * 10
@@ -124,10 +126,11 @@ function AI.Mistake(race, r, dt)
     else r.recoveryTimer = max(0, r.recoveryTimer - dt) end
     r.mistakeTimer = r.mistakeTimer - dt
     if r.mistakeTimer <= 0 and r.mistakeDuration <= 0 and r.recoveryTimer <= 0 then
-        r.mistakeSeverity = 0.18 + (1 - r.skill) * 0.14
+        -- 高水平AI的失误幅度和持续时间同步收窄，避免强度提升后仍被频繁断油拖慢。
+        r.mistakeSeverity = 0.10 + (1 - r.skill) * 0.16
         r.mistakeSpeed = r.speed * (1 - r.mistakeSeverity)
-        r.mistakeDuration = 1.35 + (1 - r.skill) * 1.2
-        r.mistakeTimer = r.mistakeDuration + r.mistakeGrace + race:Random() * 7
+        r.mistakeDuration = 0.8 + (1 - r.skill) * 1.5
+        r.mistakeTimer = r.mistakeDuration + r.mistakeGrace + race:Random() * 10
         r.mistakes = (r.mistakes or 0) + 1
         local index = math.floor((r.s % race.length) / race.aiProfileStep) + 1
         local turn = race.aiProfile[index].turn or 0
