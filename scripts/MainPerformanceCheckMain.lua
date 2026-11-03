@@ -21,7 +21,12 @@ return {
         raceAutodrive_,autoTest_=true,true
         StartRide(true);ConfirmVehicle("beetle")
     end,
-    inspect=function() return {screen=screen_,phase=race_ and race_.phase or "",elapsed=race_ and race_.elapsed or 0} end,
+    finish=MainMenu,
+    inspect=function()
+        -- 采样夹具缩短静止倒计时，驾驶固定步与AI保持产品原逻辑。
+        if race_ and race_.phase=="countdown" then race_.countdown=math.min(race_.countdown,.06) end
+        return {screen=screen_,phase=race_ and race_.phase or "",elapsed=race_ and race_.elapsed or 0}
+    end,
 }
 ]]
 function Start()
@@ -42,7 +47,10 @@ function Start()
         if frames_==60 then
             ready_=true
             print("[实赛渲染] COMPLETE / 正式九车比赛60帧，本地软件渲染不代表手机FPS")
-            restore_();engine:Exit()
+            bridge_.finish();restore_()
+            -- 由validate帧预算收尾，保留包含加载/驾驶spike的原始JSON报告。
+            for _,arg in ipairs(GetArguments()) do if arg=="-validate" then return end end
+            engine:Exit()
         end
     end)
 end
