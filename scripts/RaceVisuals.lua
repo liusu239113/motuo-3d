@@ -70,6 +70,7 @@ local V = Vector3
 ---@field leanSign number
 ---@field redMaterial Material
 ---@field blueMaterial Material
+---@field activeExplosions Explosion[]
 local RaceVisuals = {}
 RaceVisuals.__index = RaceVisuals
 
@@ -341,6 +342,7 @@ end
 ---@param race? table
 function RaceVisuals:Reset(race)
     if self.disposed then return end
+    self:ClearExplosions()
     if race then self.race = race end
     local present = {}
     for _, data in ipairs(self.race.runners or self.race.racers or {}) do
@@ -369,6 +371,11 @@ function RaceVisuals:Reset(race)
             runner.visual.rotation = Quaternion(data.pitch or 0, 0, 0)
             runner.visual.position = V.ZERO
             runner.data = data
+            -- 重赛时先恢复真实fullRider再验收；远景stub没有ReadPose契约。
+            if runner.fullRider and runner.rider ~= runner.fullRider then
+                runner.rider = runner.fullRider
+                runner.fullRider:SetVisible(true)
+            end
             self:RefreshPose(runner, data, true)
         end
     end
@@ -420,11 +427,22 @@ function RaceVisuals:ReportBudget()
         rivals, riders, draws, triangles, shadows))
 end
 
+-- 一次性命中反馈在暂停/隐藏/重赛/切场景时主动释放，避免恢复后重播旧爆炸。
+function RaceVisuals:ClearExplosions()
+    self.activeExplosions = self.activeExplosions or {}
+    ExplosionEffects.Clear(self.activeExplosions)
+    local pending = self.race and self.race.mixedExplosions
+    if pending then
+        for index = #pending, 1, -1 do table.remove(pending, index) end
+    end
+end
+
 -- 入口菜单/练习隐藏整套比赛表现；Update不得越过这个总开关重新启用对手。
 ---@param visible boolean
 function RaceVisuals:SetVisible(visible)
     if self.disposed then return end
     self.visible = visible == true
+    if not self.visible then self:ClearExplosions() end
     if self.root then self.root:SetEnabledRecursive(self.visible) end
     for _, runner in pairs(self.runners) do
         runner.node:SetEnabledRecursive(false)
@@ -499,9 +517,12 @@ end
 
 ---@param dt number
 ---@param sim table?
-function RaceVisuals:Update(dt, sim)
+---@param camera Camera?
+function RaceVisuals:Update(dt, sim, camera)
     if self.disposed or not self.visible then return end
     local frameTime = sim and sim.paused == true and 0 or math.max(0, dt)
+    -- 入口暂停传dt=0；只清理瞬时爆炸，不推动仿真或弹体。
+    if frameTime <= 0 then self:ClearExplosions() end
     self.clock, self.visibilityClock = self.clock + frameTime, self.visibilityClock + frameTime
     local px, pz = sim and sim.x or 0, sim and sim.z or 0
     if self.visibilityClock >= 0.25 then self:UpdateVehicleDetail(px, pz) end
@@ -585,9 +606,8 @@ function RaceVisuals:Update(dt, sim)
                 self.activeExplosions[#self.activeExplosions + 1] = ExplosionEffects.Spawn(self.root, entry)
                 table.remove(explosions, index)
             end
-            local cameraPosition = sim and V(sim.x, sim.y + 2, sim.z) or V.ZERO
             for i = #self.activeExplosions, 1, -1 do
-                if not ExplosionEffects.Update(self.activeExplosions[i], frameTime, cameraPosition) then
+                if not ExplosionEffects.Update(self.activeExplosions[i], frameTime, camera) then
                     table.remove(self.activeExplosions, i)
                 end
             end
@@ -639,8 +659,9 @@ function RaceVisuals:Destroy()
         runner.rider:Dispose()
     end
     self.runners = {}
-    -- 爆炸节点挂在root下，root销毁时会一并释放；只需清空活动列表。
-    self.activeExplosions = {}
+    -- 主动释放每个爆炸的material和node；不能只依赖root销毁，避免重赛/切场景残留引用。
+    self.activeExplosions = self.activeExplosions or {}
+    ExplosionEffects.Clear(self.activeExplosions)
     SkillPresentation.Clear(self.race.mixedProjectiles or {})
     if self.root then self.root:Dispose() end
     for _, material in ipairs(self.materials) do material:Dispose() end

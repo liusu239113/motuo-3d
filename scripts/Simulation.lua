@@ -14,6 +14,17 @@
 ---@field oddDriveScale number
 ---@field oddSpeedScale number
 ---@field oddGripScale number
+---@field motorcycleActive number
+---@field motorcycleCooldown number
+---@field motorcycleSpeedScale number
+---@field motorcycleDriveScale number
+---@field motorcycleGripScale number
+---@field motorcycleOffroadScale number
+---@field motorcycleDamageScale number
+---@field motorcycleRetained number
+---@field motorcycleSkillName string
+---@field motorcycleSkillResult string
+---@field motorcycleSkillResultTimer number
 ---@field speed number 以米每秒计，不能由Reset的0推断为integer。
 ---@field raceMode boolean 比赛仅接管规则，不改自由驾驶输入和转向。
 ---@field impactSerial number 每次有效碰撞递增，Race用于一次性宽限。
@@ -256,10 +267,13 @@ function Sim:Impact(reason, damage)
     local severity = damage or math.max(16, self.speed * 0.62)
     -- 耐久高的车更抗撞：同一次撞击掉的车况更少，撞后保留的动量也更多。
     local durability = (self.vehicle and self.vehicle.durability) or 64
-    severity = severity * (1.28 - durability / 160)
+    local motorcycleDamageScale = self.motorcycleDamageScale or 1
+    local motorcycleRetained = self.motorcycleRetained or 1
+    severity = severity * (1.28 - durability / 160) * motorcycleDamageScale
+    -- 护航减少损失的动量，默认倍率1完整保留既有碰撞响应；仍有扣血/掉速/接触记录。
+    local baseRetained = self.raceMode and clamp(0.75 - severity * 0.004, 0.55, 0.72) or 0.27
+    local retained = 1 - (1 - baseRetained) * motorcycleRetained
     self.health = math.max(self.raceMode and 15 or 0, self.health - severity)
-    -- Race contacts retain 55..72% momentum; no instant wreck/challenge settlement.
-    local retained = self.raceMode and clamp(0.75 - severity * 0.004, 0.55, 0.72) or 0.27
     self.speed, self.wheelieAngle = self.speed * retained, 0
     self.impactSerial = self.impactSerial + 1
     self.crashCooldown = self.raceMode and 2 or 2.2
@@ -629,7 +643,7 @@ function Sim:Move(dt, controls, world, drive, steering)
         self.vY, self.airTime = self.vY - GRAVITY * dt, self.airTime + dt
     else
         -- 出公路必须明显掉速：仿赛/巡航在草地上严重打滑，拉力车保留大部分通过性。
-        local traction = road and 1 or self.vehicle.offroad
+        local traction = road and 1 or (self.vehicle.offroad * (self.motorcycleOffroadScale or 1))
         local drag = 0.20 + self.speed * self.speed * 0.00115
             + (road and 0 or (4.6 * (1 - self.vehicle.offroad * 0.55)))
         local engineBrake = self.throttle < 0.05 and self.clutchEngagement * math.min(1.8, self.speed * 0.12) or 0
@@ -644,7 +658,8 @@ function Sim:Move(dt, controls, world, drive, steering)
         end
         if self.burnout then acceleration = math.min(acceleration, -6) end
         if self.wrecked then acceleration = -self.vehicle.braking end
-        local maximum = self.vehicle.maxSpeed * (1 + self.raceBoost * 0.25)*(self.oddSpeedScale or 1)
+        local maximum = self.vehicle.maxSpeed * (1 + self.raceBoost * 0.25)
+            * (self.oddSpeedScale or 1) * (self.motorcycleSpeedScale or 1)
             * (road and 1 or (0.44 + self.vehicle.offroad * 0.52))
         -- Nitro ending / touching gravel must not instantly clamp away20km/h. Excess
         -- momentum coasts down with finite drag; this never increases the speed cap.
@@ -915,8 +930,10 @@ function Sim:Step(dt, controls, world)
         self.stuntCooldown = math.max(0, self.stuntCooldown - step)
         if self.stuntTimer == 0 and not self.airborne then self.stuntLabel, self.stuntAngle = "", 0 end
         MixedRace.Before(self,step,input,self:Map(world))
-        local steering = self:Steering(step, input.steer)*(self.oddGripScale or 1)
-        local drive = self:Powertrain(step, input)*(self.oddDriveScale or 1)
+        local steering = self:Steering(step, input.steer)
+            * (self.oddGripScale or 1) * (self.motorcycleGripScale or 1)
+        local drive = self:Powertrain(step, input)
+            * (self.oddDriveScale or 1) * (self.motorcycleDriveScale or 1)
         self:GroundTricks(step, input, drive)
         local wasAirborne=self.airborne
         local x0, y0, z0 = self:Move(step, input, world, drive, steering)

@@ -5,6 +5,7 @@ local RacingTheme = require("RacingTheme")
 -- PhonePages/PhoneKit 只有 Widget 分页与文字测量，不加载生涯会话、档案或业务。
 local PageText = require("Career.PhoneKit").Text
 local Catalog = require("Catalog")
+local MixedRace = require("MixedRace")
 local Profile = require("Profile")
 local ControlSettings = require("ControlSettings")
 local GaragePreview = require("GaragePreview")
@@ -35,6 +36,9 @@ local AMBER, WHITE = C.amber, C.white
 local MUTED, STEEL = C.muted, C.steel
 local DARK, BORDER = C.dark, C.border
 local RED, GREEN = C.red, C.green
+local function isWeaponFeedback(text)
+    return type(text) == "string" and (text:find("锁定", 1, true) ~= nil or text:find("发射", 1, true) ~= nil)
+end
 require("RouteSelect").Install(HUD)
 require("RacingDialogs").Install(HUD)
 local KEYART = "image/pursuit_loading_keyart_20261027183804.png"
@@ -105,7 +109,48 @@ local function iconButton(symbol, action)
             symbol = symbol, pointerEvents = "none"}}}
 end
 
--- 加速带的屏幕速度线只画在视野边缘，不覆盖路面中心或接管输入。
+local WeaponReticle = UI.Widget:Extend("WeaponReticle")
+function WeaponReticle:Render(vg)
+    local l = self:GetAbsoluteLayout()
+    local cx, cy = l.x + l.w * 0.5, l.y + l.h * 0.5
+    local radius = math.min(l.w, l.h) * 0.34
+    local progress = math.max(0, math.min(1, self.props.progress or 0))
+    local edge = self.props.edge == true
+    local color = self.props.locked and nvgRGBA(255, 74, 54, 245) or nvgRGBA(255, 196, 74, 245)
+    nvgSave(vg)
+    nvgBeginPath(vg)
+    nvgCircle(vg, cx, cy, radius)
+    nvgStrokeColor(vg, nvgRGBA(22, 30, 36, 180)); nvgStrokeWidth(vg, 1.5); nvgStroke(vg)
+    if progress > 0 then
+        nvgBeginPath(vg)
+        nvgArc(vg, cx, cy, radius + 4, -math.pi * 0.5, -math.pi * 0.5 + math.pi * 2 * progress, NVG_CW)
+        nvgStrokeColor(vg, color); nvgStrokeWidth(vg, 2.5); nvgStroke(vg)
+    end
+    nvgBeginPath(vg)
+    local arm = radius + 8
+    local gap = 7
+    local length = 10
+    -- 四角括号准星：每个角只画两条线，避免旧十字叠画造成中心重复。
+    for _, s in ipairs({-1, 1}) do
+        for _, t in ipairs({-1, 1}) do
+            local x = cx + s * gap
+            local y = cy + t * gap
+            nvgMoveTo(vg, x, cy + t * arm)
+            nvgLineTo(vg, x, cy + t * (arm - length))
+            nvgMoveTo(vg, cx + s * arm, y)
+            nvgLineTo(vg, cx + s * (arm - length), y)
+        end
+    end
+    nvgStrokeColor(vg, color); nvgStrokeWidth(vg, 2); nvgStroke(vg)
+    if edge then
+        nvgBeginPath(vg)
+        nvgMoveTo(vg, cx, cy - arm - 8); nvgLineTo(vg, cx - 5, cy - arm + 1); nvgLineTo(vg, cx + 5, cy - arm + 1)
+        nvgClosePath(vg); nvgFillColor(vg, color); nvgFill(vg)
+    end
+    nvgRestore(vg)
+end
+
+-- 加速带的屏幕速度线只画在视野边缘。
 local RoadRush = UI.Widget:Extend("RoadRushFeedback")
 function RoadRush:Init(props)
     UI.Widget.Init(self, props)
@@ -312,12 +357,8 @@ function HUD:BuildRide()
         width = 250, padding = 6, gap = 1, visible = false, pointerEvents = "none",
         backgroundColor = {7, 26, 27, 210}, borderWidth = 1, borderColor = {83, 231, 196, 165},
         borderRadius = 3, children = {self.featureTitle, self.featureHint}}
-    self.weaponTarget = UI.Panel {position = "absolute", width = 156, height = 44, visible = false,
-        pointerEvents = "none", padding = 5, borderWidth = 1, borderRadius = 4,
-        backgroundColor = {35, 12, 12, 225}, borderColor = RED,
-        children = {UI.Label {text = "", id = "weapon-target-label", width = "100%", height = 32,
-            textAlign = "center", fontSize = 11, fontWeight = "bold", fontColor = RED}}}
-    self.weaponTargetLabel = self.weaponTarget:FindById("weapon-target-label")
+    self.weaponTarget = WeaponReticle {position = "absolute", width = 84, height = 84,
+        visible = false, pointerEvents = "none", padding = 0, progress = 0, locked = false}
     self.skillButton = button("E · 专属技能",a.skill,true,154)
     self.skillButton:SetStyle({position="absolute",right=76,top=70,height=48,fontSize=12})
     -- 通用提示：无边框、紧贴保护/危险条上方，避免挡住前方视野中心。
@@ -655,7 +696,11 @@ function HUD:SelectVehicle(id, notify)
         self.vehicleBadges[v.id]:SetFontColor(not owned and (selected and AMBER or MUTED) or (selected and AMBER or MUTED))
     end
     self.vehicleName:SetText(item.name or id)
-    self.vehicleDescription:SetText(item.odd and ("被动："..item.passiveDescription.."\n主动："..item.skillName.." · "..item.skillDescription.."\n短板："..item.weakness) or item.description or item.tag or "")
+    local skill = MixedRace.GetSkill(id)
+    local skillText = skill and string.format("\n主动：%s · %s\n持续 %.1fs / 冷却 %.0fs", skill.name,
+        skill.description, skill.duration, skill.cooldown) or ""
+    self.vehicleDescription:SetText(item.odd and ("被动："..(item.passiveDescription or "")..skillText.."\n短板："..(item.weakness or ""))
+        or ((item.description or item.tag or "")..skillText))
     self.vehicleSpecs:SetText(string.format("极速 %s km/h  /  加速 %d  /  操控 %d  /  耐久 %d",
         tostring(item.speedStat or item.speed or "—"), math.floor(item.acceleration or 0),
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
@@ -893,27 +938,32 @@ function HUD:RefreshActionFeedback()
 end
 
 function HUD:UpdateSkillFeedback(sim)
-    local odd = require("MixedVehicles").Get(sim.vehicleId)
-    self.skillButton:SetVisible(odd ~= nil and self.screen == "ride")
-    if not odd then return end
-    local active, cd = math.max(0, sim.oddActive or 0), math.max(0, sim.oddCooldown or 0)
+    local skill = MixedRace.GetSkill(sim.vehicleId)
+    self.skillButton:SetVisible(skill ~= nil and self.screen == "ride")
+    if not skill then return end
+    local active = math.max(0, skill.odd and (sim.oddActive or 0) or (sim.motorcycleActive or 0))
+    local cd = math.max(0, skill.odd and (sim.oddCooldown or 0) or (sim.motorcycleCooldown or 0))
     local disrupted = (sim.oddDisrupt or 0) > 0
+    local blocked = sim.paused == true or sim.finished == true or sim.wrecked == true
+        or (not skill.odd and (sim.airborne == true or sim.braking == true or sim.burnout == true))
     local status, tint, background = "就绪 · E", AMBER, {49, 38, 23, 240}
-    -- 专属技能只读取odd*；普通氮气/加速带绝不触发技能激活外观。
-    -- 使用期和冷却可以同时计时，按钮必须先显示持续时间。
+    -- 普通技能与混合odd*分别读取自身计时，氮气/加速带不触发技能外观。
     if active > 0 then
         status, tint, background = string.format("持续 %.1fs", active), C.cyan, {18, 58, 65, 245}
     elseif disrupted then
         status, tint, background = string.format("受干扰 %.1fs", sim.oddDisrupt), RED, {65, 28, 25, 245}
     elseif cd > 0 then
         status, tint, background = string.format("冷却 %.1fs", cd), MUTED, {28, 34, 40, 240}
+    elseif blocked then
+        status, tint, background = "暂不可用", RED, {65, 28, 25, 245}
     end
-    local buttonText = odd.skill .. " · " .. status
+    local buttonText = skill.name .. " · " .. status
     if self.skillStatus ~= buttonText then self.skillButton:SetText(buttonText); self.skillStatus = buttonText end
-    self.skillButton:SetDisabled(active > 0 or cd > 0 or disrupted or sim.paused == true)
+    self.skillButton:SetDisabled(active > 0 or cd > 0 or disrupted or blocked)
     -- 禁用只阻止再次施放，不能把“正在生效”变成灰色不可读状态。
-    if self.skillStyle ~= (active > 0 and "active" or (disrupted and "blocked" or (cd > 0 and "cooldown" or "ready"))) then
-        self.skillStyle = active > 0 and "active" or (disrupted and "blocked" or (cd > 0 and "cooldown" or "ready"))
+    local style = active > 0 and "active" or ((disrupted or blocked) and "blocked" or (cd > 0 and "cooldown" or "ready"))
+    if self.skillStyle ~= style then
+        self.skillStyle = style
         self.skillButton:SetStyle({textColor = tint, disabledTextColor = tint, borderColor = tint,
             backgroundColor = background, disabledBackgroundColor = background,
             backgroundGradient = false, disabledBackgroundGradient = false,
@@ -923,22 +973,26 @@ function HUD:UpdateSkillFeedback(sim)
 end
 
 function HUD:UpdateWeaponTarget(sim, camera)
-    if not self.weaponTarget or not self.weaponTargetLabel then return end
+    if not self.weaponTarget then return end
     local id = sim and sim.vehicleId or ""
     local homing = id == "tank" or id == "helicopter"
     local target = sim and sim.oddLockTarget
-    local show = homing and target ~= nil and (sim.oddLockPending or (sim.oddLockTimer or 0) > 0)
+    local show = homing and target ~= nil and sim.oddLockPending == true
         and self.screen == "ride" and camera ~= nil
     if not show then self.weaponTarget:SetVisible(false); return end
     local screen = camera:WorldToScreenPoint(Vector3(target.x, target.y + (target.driveSim and target.driveSim.oddAltitude or 0) + 1.2, target.z))
     local scale = UI.GetScale()
     local width, height = graphics:GetWidth() / scale, graphics:GetHeight() / scale
-    if screen.x <= 0 or screen.x >= 1 or screen.y <= 0 or screen.y >= 1 then
-        self.weaponTarget:SetVisible(false); return
-    end
-    local distance = sim.oddLockDistance or math.sqrt((target.x - sim.x)^2 + (target.z - sim.z)^2)
-    self.weaponTargetLabel:SetText(string.format("锁定 %s\n%.0f m", target.name or "目标", distance))
-    self.weaponTarget:SetStyle({left = screen.x * width - 78, top = screen.y * height - 22})
+    local margin = 48
+    local edge = screen.x <= 0 or screen.x >= 1 or screen.y <= 0 or screen.y >= 1
+    local x = math.max(margin, math.min(width - margin, screen.x * width))
+    local y = math.max(margin, math.min(height - margin, screen.y * height))
+    local duration = math.max(.01, sim.oddLockDuration or .55)
+    local progress = math.max(0, math.min(1, 1 - (sim.oddLockTimer or duration) / duration))
+    self.weaponTarget.props.progress = progress
+    self.weaponTarget.props.locked = progress >= .999
+    self.weaponTarget.props.edge = edge
+    self.weaponTarget:SetStyle({left = x - 42, top = y - 42})
     self.weaponTarget:SetVisible(true)
 end
 
@@ -949,10 +1003,10 @@ function HUD:UpdateFeatureFeedback(sim)
     self.featureRush.power, self.featureRush.phase = (state.lastGain or 0) > 0 and power or 0, sim.elapsed or 0
     if not driving then self.featurePanel:SetVisible(false); return end
     local result = sim.oddSkillResult or ""
-    if (sim.oddSkillResultTimer or 0) > 0 and result ~= "" then
+    if (sim.oddSkillResultTimer or 0) > 0 and result ~= "" and not isWeaponFeedback(result) then
         -- 复用现有反馈框，结果来自权威仿真；不靠技能计时/boost猜测命中。
-        local odd = require("MixedVehicles").Get(sim.vehicleId)
-        local title = odd and odd.skill or "技能交锋"
+        local skill = MixedRace.GetSkill(sim.vehicleId)
+        local title = skill and skill.name or "技能交锋"
         local color = C.cyan
         if result:find("盾", 1, true) then title, color = "攻击被护盾挡住", AMBER
         elseif result:find("无", 1, true) then title, color = "前方无有效目标", RED
@@ -1022,7 +1076,7 @@ function HUD:Update(dt, sim, firstPerson)
     self.score:SetText(string.format("得分 %06d", math.floor(sim.score or 0)))
     self.overtakes:SetText(tostring(sim.overtakes or 0)); self.health:SetText(string.format("车况 %.0f%%", sim.health or 100))
     self.health:SetFontColor((sim.health or 100) < 35 and RED or WHITE)
-    self.message:SetText((sim.messageTimer or 0) > 0 and (sim.message or "") or "")
+    self.message:SetText((sim.messageTimer or 0) > 0 and (not isWeaponFeedback(sim.message)) and (sim.message or "") or "")
     self.camera:SetText(firstPerson and "头盔视角" or "追尾视角")
     self.rpm:SetValue(math.min(1, (sim.rpm or 1200) / ((sim.vehicle and sim.vehicle.redline) or 11000)))
     self.rpmNumber:SetText(string.format("%.0f rpm", sim.rpm or 1200))

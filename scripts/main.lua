@@ -259,7 +259,7 @@ local function ResetRideState()
             raceVisuals_:Reset(race_)
         else raceVisuals_ = RaceVisuals.New(scene_, world_, race_, highQuality_) end
         raceVisuals_:SetVisible(true)
-        raceVisuals_:Update(0, sim_)
+        raceVisuals_:Update(0, sim_, CurrentCamera())
         hud_:SetRace(race_)
         print(string.format("[比赛] %d圈 / %.3fkm每圈 / 8名AI / 车手%s", selectedLaps_, Landscape.RouteLength / 1000, selectedRider_))
         if raceTest_ then
@@ -1350,7 +1350,7 @@ function HandleUpdate(eventType, eventData)
     end
     if pendingChallenge_ and raceVisuals_ then
         Profile_.Begin("raceVisuals")
-        raceVisuals_:Update(screen_ == "ride" and dt or 0, sim_)
+        raceVisuals_:Update(screen_ == "ride" and dt or 0, sim_, CurrentCamera())
         Profile_.End()
     end
     if raceAudio_ then

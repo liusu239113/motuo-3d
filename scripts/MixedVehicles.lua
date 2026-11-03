@@ -1,13 +1,66 @@
 -- 混合竞速目录：器械、生物与轻型载具共用米/秒制仿真，各有地形赢法。
 local M = {}
--- top 为无技能平路极速；最终速度还受风阻、弯道和地形影响。
+
+-- 普通摩托的专属技能规则由竞速 AI 和玩家共用同一份定义。
+-- 技能只改变有限的动力/抓地包络，不能修改位置、检查点或碰撞判定。
+---@class MotorcycleSkill
+---@field id string
+---@field name string
+---@field description string
+---@field cooldown number
+---@field duration number
+---@field triggerDistance number
+---@field speedScale number
+---@field driveScale number
+---@field gripScale number
+---@field offroadScale number
+M.MotorcycleSkills = {
+    sport = {id="sport", name="超车脉冲", description="锁定前方慢车或长直出弯，短时提高加速与极速。",
+        cooldown=14, duration=2.4, triggerDistance=42, speedScale=1.08, driveScale=1.22,
+        gripScale=1.06, offroadScale=1},
+    cruiser = {id="cruiser", name="稳压护航", description="前方拥挤或突发障碍时稳定车身，保留有限出弯动力。",
+        cooldown=16, duration=2.8, triggerDistance=24, speedScale=1.04, driveScale=1.14,
+        gripScale=1.28, offroadScale=1.05},
+    rally = {id="rally", name="地形冲线", description="弯道、路肩和障碍路段中保持抓地并快速脱离危险。",
+        cooldown=13, duration=3.2, triggerDistance=30, speedScale=1.07, driveScale=1.12,
+        gripScale=1.18, offroadScale=1.16},
+}
+
+---@param id string
+---@return MotorcycleSkill?
+function M.GetMotorcycleSkill(id)
+    local class = type(id) == "string" and (id:match("^(sport)") or id:match("^(cruiser)") or id:match("^(rally)")) or nil
+    return class and M.MotorcycleSkills[class] or nil
+end
+
+-- 纯规则入口：供无场景验收检查定义完整性和公平边界。
+function M.RunSkillRules()
+    local count = 0
+    local function check(ok, message)
+        assert(ok, "[MixedVehicles.SkillRules] " .. message)
+        count = count + 1
+    end
+    for _, class in ipairs({"sport", "cruiser", "rally"}) do
+        local skill = assert(M.MotorcycleSkills[class])
+        check(skill.cooldown > skill.duration, class .. "技能冷却必须覆盖技能持续时间")
+        check(skill.triggerDistance >= 20 and skill.triggerDistance <= 50, class .. "技能触发距离必须有限")
+        check(skill.speedScale <= 1.10 and skill.driveScale <= 1.25, class .. "技能倍率不得造成超速")
+        check(skill.gripScale <= 1.30 and skill.offroadScale <= 1.20, class .. "技能抓地倍率必须有限")
+        check(M.GetMotorcycleSkill(class .. "_2") == skill, class .. "变体必须复用同类技能")
+    end
+    local ebike, helicopter = assert(M.Get("ebike")), assert(M.Get("helicopter"))
+    check(ebike.top <= 225 and helicopter.top <= 215, "电动车与直升机基础极速必须低于混合竞速上限")
+    check(helicopter.armor < 55, "直升机不能用高护甲伪造无敌")
+    return {passed = true, assertions = count}
+end
+
 M.List = {
-    {id="ebike", name="疾风电动车", class="rally", price=0, top=248, accel=1.08, grip=1.12, armor=48, rough=.84,
-        skill="电驱超频", passive="轻巧易控，出弯加速快", active="电驱爆发4秒，同时补充15点氮气", weakness="车轻，受到侧撞更容易偏航", cooldown=12, duration=4, size={1.060,1.601,2.1}},
+    {id="ebike", name="疾风电动车", class="rally", price=0, top=218, accel=1.08, grip=1.12, armor=48, rough=.84,
+        skill="电驱超频", passive="轻巧易控，出弯加速快", active="电驱爆发4秒，极速上限仅提升8%，同时补充15点氮气", weakness="车轻，受到侧撞更容易偏航", cooldown=12, duration=4, size={1.060,1.601,2.1}},
     {id="tank", name="轻型突击坦克", class="cruiser", price=16000, top=214, accel=.91, grip=.72, armor=94, rough=1,
         skill="助推喷射", passive="碎石烂路不掉速，正面碾碎杂物；直道蓄势提速", active="助推喷射4秒，正面压制对手", weakness="急弯转向笨重，侧面受击更易失衡", cooldown=15, duration=4, size={2.181,1.736,3.4}},
     {id="beetle", name="蒸汽锹甲", class="rally", price=16000, top=238, accel=.82, grip=.94, armor=76, rough=.95,
-        skill="巨颚猛夹", passive="持续奔跑积蓄蒸汽，满层极速提升18%；撞碎小障碍", active="夹击前方14米内的对手，迫使其偏航", weakness="起步略慢，撞墙或重击会清空蒸汽", cooldown=11, duration=1.5, size={3.2,2.028,3.2}},
+        skill="巨颚猛夹", passive="持续奔跑积蓄蒸汽，满层极速提升18%；撞碎小障碍", active="双钳口贴近对手表面0.3米内夹击，迫使其偏航", weakness="起步略慢，撞墙或重击会清空蒸汽", cooldown=11, duration=1.5, size={3.2,2.028,3.2}},
     {id="hovercraft", name="旱地气垫艇", class="rally", price=7200, top=229, accel=.97, grip=.9, armor=70, rough=1,
         skill="侧向喷气", passive="泥潭、水面、粘液不减速，地面陷阱无效", active="沿当前转向侧移；未转向时向空旷侧闪避", weakness="硬地有轻微侧滑，强风区更易偏移", cooldown=10, duration=2.5, size={2.2,1.6,3.1}},
     {id="centipede", name="齿轮蜈蚣", class="cruiser", price=8800, top=232, accel=.98, grip=.76, armor=85, rough=1,
@@ -28,7 +81,7 @@ M.List = {
         skill="腾空豚跳", passive="轻巧转向，过弯损速少", active="跳过低障碍，落地获得短时冲刺", weakness="怕重型碰撞与连续碎石", cooldown=8, duration=2, size={.85,1.85,1.6}},
     -- 直升机是最贵载具但不该超标：极速与护甲都低于同价位赛车，
     -- 靠"避开地面障碍"换来容错，而不是速度碾压。
-    {id="helicopter", name="武装直升机", class="sport", price=20000, top=232, accel=.88, grip=.84, armor=46, rough=1,
+    {id="helicopter", name="武装直升机", class="sport", price=20000, top=210, accel=.88, grip=.84, armor=46, rough=1,
         skill="空战脉冲", passive="沿赛道低空飞行，避开低矮路障和油污", active="攻击前方32米内一个对手，使其短时减速偏航", weakness="强风与高空悬锤仍有威胁，过弯半径较大、极速偏低", cooldown=18, duration=2, size={3.226,2.062,3.5}},
     {id="sled", name="极地雪橇", class="rally", price=7800, top=241, accel=1.0, grip=1.07, armor=62, rough=.86,
         skill="冰刃冲刺", passive="冰面和湿滑地带不掉速，冰面速度提升", active="冰刃稳向并冲刺4秒", weakness="干燥碎石地带加速稍弱", cooldown=12, duration=4, size={1.4,1.3,2.7}},

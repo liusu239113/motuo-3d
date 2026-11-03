@@ -1,5 +1,6 @@
 -- 车型目录与实车资产分离；available 只在真实 MDL 交付并登记后开放。
 local Catalog = {}
+local MotorcycleSkillRules = require("MixedRace")
 -- GM仅在本次运行有效，不混入金币、永久所有权或广告试驾账本。
 local gmFreeExperience = false
 function Catalog.IsGMFreeExperience() return gmFreeExperience end
@@ -39,6 +40,8 @@ end
 ---@field weakness? string
 ---@field skillCooldown? number
 ---@field skillDuration? number
+---@field skill? string
+---@field skillActive? string
 ---@field id string
 ---@field class string
 ---@field name string
@@ -67,6 +70,17 @@ Catalog.List = {
     {id="rally_2", class="rally", name="雪脊 Trail", tag="拉力 / 轻越野", description="独立灰白轻越野车体，细长高挡泥板与粗纹轮胎。", speed=234, acceleration=86, handling=94, available=true, price=8800, speedStat=240, accelStat=0.95, durability=78, offroadStat=0.95, handlingStat=1.14},
     {id="rally_3", class="rally", name="沙隼 Dakar", tag="拉力 / 沙漠竞技", description="独立沙黄深蓝拉力车体，直立头罩与高位短排气。", speed=234, acceleration=86, handling=94, available=true, price=11000, speedStat=247, accelStat=0.97, durability=82, offroadStat=0.97, handlingStat=1.15, preview="image/vehicle_reviews/rally_3_left.png"},
 }
+for _, entry in ipairs(Catalog.List) do
+    local skill = MotorcycleSkillRules.GetSkill(entry.id)
+    if skill and not skill.odd then
+        entry.skillName = skill.name
+        entry.skillDescription = skill.description
+        entry.skillCooldown = skill.cooldown
+        entry.skillDuration = skill.duration
+        entry.skill = skill.name
+        entry.skillActive = skill.active
+    end
+end
 for _, entry in ipairs(require("MixedVehicles").CatalogEntries()) do Catalog.List[#Catalog.List+1]=entry end
 ---@param id string
 ---@return MotorcycleEntry?

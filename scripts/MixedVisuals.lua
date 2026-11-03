@@ -4,21 +4,93 @@ local Rider = require("Rider")
 local V = Vector3
 local M = {}
 
--- 正式MDL全部LOD0顶点在yaw=226.1/长2.1m归一化后的接触点。
--- 握把非对称：原模型左把低约5cm且后退6cm，不能镜像右把；车把仍属于静态Body。
+-- 混合车的首视角只在这里配置；source模型本身保持一整套正式三角面。
+-- 电动车的前后轮心、轮半径和左右握把来自正式MDL/上传图复核后的归一化测量。
 M.RiderBindings = {
     ebike = {left=V(-.47,1.23,.322),right=V(.47,1.29,.385),origin=V(0,1.26,.444)},
 }
 M.Cockpits = {
     ebike = {localOffset=V(0,1.64,-.15),pitch=8,fov=72,seatHeight=.996,
-        grip=M.RiderBindings.ebike.right,dash=V(0,1.33,.35),cameraCalibrated=true},
+        grip=M.RiderBindings.ebike.right,leftGrip=M.RiderBindings.ebike.left,
+        dash=V(0,1.33,.35),dashSize=Vector2(.30,.15),dashboardAngle=-22,
+        accent=Color(.10,.34,.85),cameraCalibrated=true,
+        rearCenter=V(0,.262,-.704),rearRadius=.262},
     tank = {localOffset=V(0,1.43,-.78),pitch=0,fov=72,seatHeight=1.20,
-        grip=V(0,1.18,.30),dash=V(0,1.22,.16),cameraCalibrated=true},
+        grip=V(0,1.18,.30),dash=V(0,1.22,.16),dashSize=Vector2(.78,.25),
+        dashboardAngle=-12,accent=Color(.22,.25,.28),cameraCalibrated=true},
     beetle = {localOffset=V(0,1.52,-.74),pitch=0,fov=72,seatHeight=1.28,
-        grip=V(0,1.24,.36),dash=V(0,1.30,.20),cameraCalibrated=true},
+        grip=V(0,1.24,.36),dash=V(0,1.30,.20),dashSize=Vector2(.72,.24),
+        dashboardAngle=-10,accent=Color(.42,.16,.04),cameraCalibrated=true},
     helicopter = {localOffset=V(0,1.52,-.72),pitch=0,fov=74,seatHeight=1.30,
-        grip=V(0,1.28,.28),dash=V(0,1.25,.18),cameraCalibrated=true},
+        grip=V(0,1.28,.28),dash=V(0,1.25,.18),dashSize=Vector2(.86,.28),
+        dashboardAngle=-8,accent=Color(.16,.22,.27),cameraCalibrated=true},
 }
+
+local function configureCockpitMaterials()
+    local P = require("Parts")
+    local m = {
+        black=P.Material(.022,.028,.034,.86,0), rubber=P.Material(.018,.022,.025,.92,0),
+        screen=P.Material(.008,.016,.021,.94,0), chrome=P.Material(.40,.43,.45,.42,.55),
+        gold=P.Material(.42,.31,.13,.46,.45), control=P.Material(.11,.15,.18,.62,.32),
+        accent=P.Material(.10,.34,.85,.48,.15,1.3), warning=P.Material(.85,.08,.025,.40,.12,1.8),
+        paint=P.Material(.10,.34,.85,.58,.04), jacket=P.Material(.034,.042,.052,.95,0),
+        glove=P.Material(.024,.027,.031,.92,0), armor=P.Material(.047,.052,.058,.72,0),
+        stitch=P.Material(.24,.27,.28,.96,0), green=P.Material(.12,.63,.36,.5,0,.35),
+        amber=P.Material(.92,.45,.06,.5,0,.4), white=P.Material(.77,.80,.79,.54,0),
+        visor=P.Material(.035,.085,.12,.18,.5),
+    }
+    for _,key in ipairs({"black","rubber","screen","control"}) do
+        m[key]:SetShaderParameter("MatSpecColor",Variant(Color(.025,.025,.025,16)))
+    end
+    m.chrome:SetShaderParameter("MatSpecColor",Variant(Color(.20,.20,.20,32)))
+    return P,m
+end
+
+local function addInstrumentPanel(parent, config, materials, label)
+    local P= require("Parts")
+    local panel=parent:CreateChild(label.."InstrumentPanel")
+    panel.position=config.dash
+    panel.rotation=Quaternion(config.dashboardAngle or 0,0,0)
+    local s=config.dashSize
+    P.Add(panel,"Bezel",RoundedBoxGeometry(s.x+.05,s.y+.05,.055,3,.025):ToModel(),materials.black,V(0,0,0),V.ONE)
+    P.Add(panel,"ReadableFace",RoundedBoxGeometry(s.x,s.y,.012,3,.012):ToModel(),materials.screen,V(0,0,-.035),V.ONE)
+    P.Add(panel,"StatusBar","Box",materials.accent,V(0,s.y*.30,-.044),V(s.x*.72,.012,.004),nil,false)
+    P.Add(panel,"WarningLamp","Sphere",materials.warning,V(s.x*.34,-s.y*.22,-.046),V(.025,.025,.025),nil,false)
+    local anchor=panel:CreateChild("DashboardProjectionAnchor")
+    anchor.position=V(0,-.01,-.05)
+    return panel,anchor
+end
+
+local function buildGenericControls(self,id)
+    local P=self.parts
+    local c=self.Cockpit
+    self.cockpit=self.visual:CreateChild("Cockpit")
+    self.steering=self.cockpit:CreateChild("DrivingControls")
+    self.steering.position=V(0,c.grip.y,c.grip.z)
+    self.dashboard,self.dashboardMarker=addInstrumentPanel(self.cockpit,c,self.materials,id)
+    local knob=self.steering:CreateChild("PrimaryControl")
+    if id=="tank" then
+        P.Add(knob,"TankSteeringYoke",RoundedBoxGeometry(.52,.06,.12,3,.02):ToModel(),self.materials.chrome,V(0,.02,.05),V.ONE)
+        P.Add(knob,"GearLever","Cylinder",self.materials.gold,V(.22,.14,.10),V(.035,.16,.035),Quaternion(0,0,0))
+        P.Add(knob,"TriggerGuard","Box",self.materials.warning,V(0,.05,.14),V(.12,.05,.025),nil,false)
+    elseif id=="beetle" then
+        P.Add(knob,"MandibleGrip","Cylinder",self.materials.chrome,V(0,.02,.05),V(.045,.30,.045),Quaternion(0,0,90))
+        P.Add(knob,"SteamValve","Sphere",self.materials.gold,V(.20,.12,.10),V(.09,.09,.09))
+        P.Add(knob,"ClampButton","Box",self.materials.warning,V(-.20,.10,.12),V(.08,.035,.025),nil,false)
+    else
+        P.Add(knob,"CyclicStick","Cylinder",self.materials.chrome,V(0,-.03,.06),V(.035,.28,.035))
+        P.Add(knob,"CyclicGrip","Sphere",self.materials.rubber,V(0,.13,.06),V(.10,.08,.10))
+        P.Add(knob,"CollectiveLever","Box",self.materials.control,V(.23,.03,.08),V(.08,.25,.06))
+    end
+    self.firstPersonMeshes={}
+    local hidden={Turret=true,Rotor=true}
+    for _,draw in ipairs(self.body:GetComponents("StaticModel",true)) do
+        local parent=draw.node.parent
+        if hidden[draw.node.name] or (parent and hidden[parent.name]) then
+            self.firstPersonMeshes[#self.firstPersonMeshes+1]=draw
+        end
+    end
+end
 
 ---@param parent Node 归一化车辆本地米坐标；不得传SourceTransform
 ---@param id string
@@ -236,33 +308,70 @@ end
 function Adapter:Init(scene,id)
     self.vehicleId=id; self.node=scene:CreateChild("Bike_"..id)
     self.visual=self.node:CreateChild("VehicleMotion"); self.body=M.Build(self.visual,id)
-    -- 未单独标定的载具按真实模型高度推导眼位：略高于车顶并前移，
-    -- 保证第一视角能看清路面而不是被自身车体挡住。
     local size=self.body:GetVar("VehicleSize"):GetVector3()
     local fallback={localOffset=V(0,math.max(1.1,size.y+0.25),size.z*0.06),pitch=4,fov=74,
-        seatHeight=math.max(0.8,size.y*0.55),grip=V(.3,1,.4),dash=V(0,size.y*0.85,size.z*0.10)}
-    local cockpit=M.Cockpits[id] or fallback
-    self.cockpit=self.visual:CreateChild("Cockpit"); self.steering=self.cockpit:CreateChild("Steering")
-    self.dashboardMarker=self.visual:CreateChild("Dashboard"); self.dashboardMarker.position=cockpit.dash
-    self.Cockpit=cockpit
+        seatHeight=math.max(0.8,size.y*0.55),grip=V(.3,1,.4),dash=V(0,size.y*.85,size.z*.10),
+        dashSize=Vector2(.72,.24),dashboardAngle=-10,accent=Color(.16,.22,.27)}
+    self.Cockpit=M.Cockpits[id] or fallback
     self.firstPerson,self.disposed,self.leanSign=false,false,1
-    ---@type StaticModel[]
-    self.firstPersonMeshes={}
-    -- 首视角去掉封闭驾驶舱/炮塔和头顶旋翼；前方独立巨颚、炮管、车轮
-    -- 及武器挂架继续显示，保留操作时的空间感和真实关节动作。
-    local hidden={Body=true,Turret=true,Rotor=true,DetailedBody=true}
-    for _,draw in ipairs(self.body:GetComponents("StaticModel",true)) do
-        if hidden[draw.node.name] or hidden[draw.node.parent.name]
-            or (id=="ebike" and draw.node.parent.name=="Body") then
-            self.firstPersonMeshes[#self.firstPersonMeshes+1]=draw
+    self.parts,self.materials=configureCockpitMaterials()
+    if id=="ebike" then
+        -- 普通摩托的构建函数在这里延迟require，避免 Bike -> MixedVisuals 循环require。
+        local Bike=require("Bike")
+        self.cockpit=self.visual:CreateChild("Cockpit")
+        self.steering=self.cockpit:CreateChild("Steering")
+        self.steering.position=V(0,self.Cockpit.grip.y,self.Cockpit.grip.z+.09)
+        self.classId="ebike"
+        self.hands,self.rpmBars={},{}
+        self.spin,self.visualClock,self.rearSpin=0,0,0
+        self.mirrors=require("RearMirrors").New(scene,self.node,self.Cockpit.localOffset.y)
+        self.dashboard=self.cockpit:CreateChild("DashboardAnchor")
+        self.dashboard.position=self.Cockpit.dash
+        self.dashboard.rotation=Quaternion(self.Cockpit.dashboardAngle,0,0)
+        Bike.BuildCockpit(self --[[@as Bike]])
+        -- BuildCockpit按右握把镜像生成；左侧整体补偿原模型实测的-6cm高/-6.3cm后移。
+        local delta=M.RiderBindings.ebike.left-V(-self.Cockpit.grip.x,self.Cockpit.grip.y,self.Cockpit.grip.z)
+        for _,name in ipairs({"LeftMirror","LeftGlove","ClutchLever"}) do
+            local part=self.steering:GetChild(name)
+            if part then part.position=part.position+delta end
         end
+        for _,hand in ipairs(self.hands) do
+            if hand.side==-1 then
+                hand.grip=hand.grip+delta
+                hand.elbow=hand.elbow+delta
+                for _,part in ipairs({hand.forearm,hand.cuff,hand.stripe}) do
+                    if part then part.position=part.position+delta end
+                end
+            end
+        end
+        -- 原始车把保持可见。附加座舱只有手/仪表/镜，绝不旋转原握把。
+        ---@diagnostic disable-next-line: param-type-mismatch
+        Bike.BuildSmoke(self --[[@as Bike]])
+        self.effects={pitch=0,bob=0,Dispose=function() end}
+    else
+        buildGenericControls(self,id)
+        self.mirrors=require("RearMirrors").New(scene,self.node,self.Cockpit.localOffset.y)
+        self.effects={pitch=0,bob=0,Dispose=function() end}
     end
-    self.riderRig=M.CreateRider(self.visual,id)
+    local riderRig=M.CreateRider(self.visual,id)
+    self.riderRig=riderRig
         or {visible=false,disposed=false,SetColor=function() return false end,SetVisible=function() end,
             Update=function() end,Dispose=function(rig) rig.disposed=true end}
     self.riderRig:SetColor("red")
-    self.mirrors={SetQuality=function() end,Update=function() end,Dispose=function() end}
-    self.effects={pitch=0,bob=0,Dispose=function() end}
+    ---@type StaticModel[]
+    self.firstPersonMeshes=self.firstPersonMeshes or {}
+    self.visualClock=self.visualClock or 0
+    self.spin=self.spin or 0
+    -- 后视相机不穿过宽体车尾；跟随高度但不跟随驾驶控制旋转。
+    self.rearCameraHeight=self.Cockpit.localOffset.y
+    self.rearCameraZ=-size.z*.5-.20
+    self.mirrors.cameraNode.position=V(0,self.rearCameraHeight,self.rearCameraZ)
+    local RearMirrors=require("RearMirrors")
+    for _,draw in ipairs(self.cockpit:GetComponents("StaticModel",true)) do
+        draw.viewMask=RearMirrors.COCKPIT_MASK
+        draw.castShadows=false
+    end
+    self:SetFirstPerson(false)
 end
 function Adapter:SetRiderColor(color)
     local id=M.RiderColorId(color)
@@ -277,41 +386,86 @@ function Adapter:SetFirstPerson(firstPerson)
         -- 这样首视角和追尾视角之间切换不会丢失车轮/巨颚/旋翼状态。
         draw.enabled=not self.firstPerson
     end
-    self.cockpit.enabled=false
+    self.cockpit:SetEnabledRecursive(self.firstPerson)
 end
-function Adapter:SetQuality(_) end
-function Adapter:UpdateMirrors(_,_) end
+function Adapter:SetQuality(high)
+    if self.disposed then return end
+    self.mirrors:SetQuality(high==true)
+    for _,draw in ipairs(self.body:GetComponents("StaticModel",true)) do draw.lodBias=high and 2 or 1 end
+end
+function Adapter:UpdateMirrors(dt,active)
+    if self.disposed then return end
+    self.mirrors:Update(dt,active and self.firstPerson)
+end
 function Adapter:GetDashboardWorldPosition() return self.dashboardMarker.worldPosition end
 function Adapter:GetCameraWorldPosition() return self.visual:LocalToWorld(self.Cockpit.localOffset) end
 function Adapter:GetGrabWorldPosition()
     if self.vehicleId~="beetle" then return nil end
     return require("MixedArticulation").GetGrabWorldPosition(self.body)
 end
-function Adapter:UpdateState(_,sim,firstPerson,clock)
+function Adapter:UpdateState(dt,sim,firstPerson,clock)
     if self.disposed then return end
+    local step=sim.paused==true and 0 or math.max(0,dt)
+    self.visualClock=self.visualClock+step
     self.node.position=V(sim.x or 0,sim.y or 0,sim.z or 0)
     self.node.rotation=Quaternion(0,sim.heading or sim.yaw or 0,0)
-    self.visual.position=V(0,sim.oddAltitude or 0,0)
-    -- 空中旋转(spin180/spin360)必须真正体现在模型上，否则按键像"跳跃"。
-    -- 被击中时叠加翻滚(tumble)，让碰撞有可见后果。
     local spin=sim.airSpin or 0
-    local pitch=(sim.pitch or 0)*.5
+    -- Simulation正pitch为抬头，UrhoX正X旋转朝下；保留完整角度。
+    local pitch=-(sim.pitch or sim.wheelieAngle or 0)
     local lean=(sim.lean or 0)*.25
     local tumble=self.tumble or 0
     if tumble>0 then
-        self.tumble=math.max(0,tumble-math.max(0.016,self.lastDt or 0.016))
+        self.tumble=math.max(0,tumble-step)
         pitch=pitch+math.sin(tumble*22)*34*math.min(1,tumble)
         lean=lean+math.cos(tumble*19)*30*math.min(1,tumble)
     end
     self.visual.rotation=Quaternion(pitch,spin,lean)
-    M.Animate(self.body,self.vehicleId,sim.elapsed or clock,sim)
+    local lift=0
+    if self.vehicleId=="ebike" and (sim.wheelieAngle or 0)>0 and not sim.airborne then
+        -- 侧视：后轮圆心 Q*C 的高度 + lift = radius，轮胎下缘严格贴地。
+        -- 不用.72近似臂长，不把前轮再压入路面；空中仍由Simulation.y控制。
+        local c=self.Cockpit
+        local rotation=self.visual.rotation
+        local rearCenter=rotation*c.rearCenter
+        local rearRadius=c.rearRadius
+        lift=rearRadius-rearCenter.y
+    end
+    self.visual.position=V(0,(sim.oddAltitude or 0)+lift,0)
+    M.Animate(self.body,self.vehicleId,sim.elapsed or clock or self.visualClock,sim)
+    if self.vehicleId=="ebike" then
+        -- 里程只驱动滚动；烧胎只额外驱动后轮，刹住的前轮保持原角。
+        self.rearSpin=((self.rearSpin or 0)+(sim.burnout and 1900 or 0)*step)%360
+        self.spin=self.rearSpin
+        local rear=self.body:GetChild("RearWheel",true)
+        if rear then
+            local axis=Quaternion(0,Assets.Vehicles.ebike.rotation,0):Inverse()*V.RIGHT
+            rear.rotation=Quaternion(((sim.distance or 0)/.264*180/math.pi+self.rearSpin)%360,axis)
+        end
+        for _,hand in ipairs(self.hands) do
+            local pull=hand.side==1 and (sim.braking==true or sim.brake==true)
+                or (hand.side==-1 and sim.clutch==true)
+            hand.lever.rotation=Quaternion(0,pull and -hand.side*12 or 0,0)
+        end
+        if step>0 then require("Bike").UpdateSmoke(self --[[@as Bike]],step,math.max(sim.tireSmoke or 0,sim.burnout and 1 or 0)) end
+    else
+        self.steering.rotation=Quaternion(0,(sim.steer or 0)*8,0)
+    end
+    self.mirrors.cameraNode.position=V(0,self.rearCameraHeight+(sim.oddAltitude or 0),self.rearCameraZ)
     self.riderRig:Update(0,false,lean)
     if firstPerson ~= self.firstPerson then self:SetFirstPerson(firstPerson) end
+    for i,bar in ipairs(self.rpmBars or {}) do
+        local redline=sim.vehicle and sim.vehicle.redline or 11000
+        bar.enabled=self.firstPerson and i<=math.ceil(math.max(0,math.min(1,(sim.rpm or 0)/redline))*8)
+    end
 end
 function Adapter:Dispose()
     if self.disposed then return end
     self.disposed=true
+    self.mirrors:Dispose()
+    self.effects:Dispose()
     self.riderRig:Dispose()
+    for _,particle in ipairs(self.smoke or {}) do particle.node:Dispose();particle.mat:Dispose() end
     self.node:Dispose()
+    for _,mat in pairs(self.materials) do mat:Dispose() end
 end
 return M

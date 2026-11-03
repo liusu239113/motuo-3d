@@ -3,6 +3,27 @@ local Data=require("MixedVehicles")
 local M={}
 local function clamp(x,a,b) return math.max(a,math.min(b,x)) end
 local function gap(a,b,length) return (a-b+length*.5)%length-length*.5 end
+local function skillFor(id)
+    local mixed=Data.Get(id)
+    if mixed then
+        return {id=mixed.id,name=mixed.skill,skill=mixed.skill,description=mixed.active,active=mixed.active,
+            cooldown=mixed.cooldown,duration=mixed.duration,triggerDistance=0,
+            speedScale=1,driveScale=1,gripScale=1,offroadScale=1,odd=true}
+    end
+    local motorcycle=Data.GetMotorcycleSkill(id)
+    if motorcycle then
+        return {id=motorcycle.id,name=motorcycle.name,skill=motorcycle.name,
+            description=motorcycle.description,active=motorcycle.description,
+            cooldown=motorcycle.cooldown,duration=motorcycle.duration,
+            triggerDistance=motorcycle.triggerDistance,speedScale=motorcycle.speedScale,
+            driveScale=motorcycle.driveScale,gripScale=motorcycle.gripScale,
+            offroadScale=motorcycle.offroadScale,odd=false}
+    end
+    return nil
+end
+---@param id string
+---@return table?
+function M.GetSkill(id) return skillFor(id) end
 function M.Reset(sim)
     sim.oddActive,sim.oddCooldown,sim.oddAltitude,sim.oddSkillFlash=0,0,0,0
     sim.oddLaunch,sim.oddHopDuration=0,.85
@@ -10,6 +31,15 @@ function M.Reset(sim)
     sim.oddHop,sim.oddHitLock,sim.oddDisrupt,sim.oddShield=0,0,0,0
     sim.oddSkillHeld,sim.oddAttack=false,false
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1
+    sim.motorcycleActive,sim.motorcycleCooldown,sim.motorcycleSkillHeld=0,0,false
+    sim.motorcycleSpeedScale,sim.motorcycleDriveScale,sim.motorcycleGripScale,sim.motorcycleOffroadScale=1,1,1,1
+    sim.motorcycleSkillName,sim.motorcycleSkillResult,sim.motorcycleSkillResultTimer="","",0
+    sim.motorcycleDamageScale,sim.motorcycleRetained=1,1
+    sim.skillHitLock=0
+    -- Canonical vehicle frame: +Z forward, +X right, y is wheel/base contact.
+    -- These are the stable closed-jaw mouth coordinates; presentation may replace
+    -- them with measured oddGrabLocalX/Y/Z without changing the pure race rule.
+    sim.oddGrabLocalX,sim.oddGrabLocalY,sim.oddGrabLocalZ=0,.78,1.72
     sim.oddSkillName="";sim.oddTerrain="asphalt";sim.oddPickups=0
     sim.oddSkillResult,sim.oddSkillResultTimer="",0
     sim.oddLockTarget,sim.oddLockTimer=nil,0
@@ -105,16 +135,35 @@ function M.Before(sim,dt,controls,map)
     local v=Data.Get(sim.vehicleId)
     sim.oddPreviousAltitude=sim.oddAltitude or 0
     sim.oddSkillResultTimer=math.max(0,(sim.oddSkillResultTimer or 0)-dt)
+    sim.skillHitLock=math.max(0,(sim.skillHitLock or 0)-dt)
     sim.oddHitLock=math.max(0,(sim.oddHitLock or 0)-dt)
     if not v then
-        if (map.RouteLength or 0)<300 then
-            sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1;return
+        local skill=Data.GetMotorcycleSkill(sim.vehicleId)
+        sim.motorcycleActive=math.max(0,(sim.motorcycleActive or 0)-dt)
+        sim.motorcycleCooldown=math.max(0,(sim.motorcycleCooldown or 0)-dt)
+        sim.motorcycleSkillResultTimer=math.max(0,(sim.motorcycleSkillResultTimer or 0)-dt)
+        local held=controls.skill==true
+        if skill and held and not sim.motorcycleSkillHeld and sim.motorcycleCooldown<=0
+            and sim.motorcycleActive<=0 and (sim.oddDisrupt or 0)<=0 and not sim.airborne
+            and not controls.brake and not controls.burnout and not sim.wrecked then
+            sim.motorcycleActive,sim.motorcycleCooldown=skill.duration,skill.cooldown
+            sim.motorcycleSkillResult,sim.motorcycleSkillResultTimer=skill.name.." · 已发动",2
         end
+        sim.motorcycleSkillHeld=held
+        sim.motorcycleSkillName=skill and skill.name or ""
+        local active=skill and sim.motorcycleActive>0
+        sim.motorcycleSpeedScale=active and skill.speedScale or 1
+        sim.motorcycleDriveScale=active and skill.driveScale or 1
+        sim.motorcycleGripScale=active and skill.gripScale or 1
+        sim.motorcycleOffroadScale=active and skill.offroadScale or 1
+        sim.motorcycleDamageScale=active and skill.id=="cruiser" and .72 or 1
+        sim.motorcycleRetained=active and skill.id=="cruiser" and .90 or 1
         sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
         sim.oddAltitude=sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0
         sim.oddDisrupt=math.max(0,(sim.oddDisrupt or 0)-dt)
-        sim.oddTerrain=M.Terrain(map,sim.roadS or 0,sim.lateral or 0)
-        sim.oddSpeedScale=sim.oddTerrain=="asphalt" and 1 or .88
+        sim.oddTerrain=(map.RouteLength or 0)>=300 and M.Terrain(map,sim.roadS or 0,sim.lateral or 0) or "asphalt"
+        local rough=sim.oddTerrain~="asphalt" and sim.oddTerrain~="wind"
+        sim.oddSpeedScale=rough and math.min(1,.88*sim.motorcycleOffroadScale) or 1
         sim.oddDriveScale=1
         sim.oddGripScale=sim.oddDisrupt>0 and .58 or 1
         if sim.oddDisrupt>0 then sim.oddSpeedScale=sim.oddSpeedScale*.84 end
@@ -335,6 +384,64 @@ local function feedback(sim,text,time)
     sim.oddSkillResult,sim.oddSkillResultTimer=text,time or 2
     sim.message,sim.messageTimer=text,time or 2
 end
+local function grabMouthWorld(race,source,sim)
+    local yaw=math.rad(source.yaw or 0)
+    local x=sim.oddGrabLocalX or 0
+    local y=sim.oddGrabLocalY or .78
+    local z=sim.oddGrabLocalZ or 1.72
+    local altitude=sim.oddAltitude or 0
+    return source.x+math.cos(yaw)*x+math.sin(yaw)*z,
+        source.y+altitude+y,
+        source.z-math.sin(yaw)*x+math.cos(yaw)*z
+end
+local function grabSurfaceGap(race,source,sim,target)
+    local mx,my,mz=grabMouthWorld(race,source,sim)
+    local spec=Data.Get(target.vehicleId)
+    local drive=driveFor(race,target)
+    local halfWidth=(spec and spec.size[1] or .6)*.5
+    local halfLength=(spec and spec.size[3] or 2)*.5
+    local height=spec and spec.size[2] or 1.5
+    local yaw=math.rad(target.yaw or 0)
+    local dx,dz=mx-target.x,mz-target.z
+    local localX=dx*math.cos(yaw)-dz*math.sin(yaw)
+    local localZ=dx*math.sin(yaw)+dz*math.cos(yaw)
+    local bottom=target.y+(drive and drive.oddAltitude or 0)
+    local closestX=clamp(localX,-halfWidth,halfWidth)
+    local closestZ=clamp(localZ,-halfLength,halfLength)
+    local closestY=clamp(my,bottom,bottom+height)
+    local worldX=target.x+math.cos(yaw)*closestX+math.sin(yaw)*closestZ
+    local worldZ=target.z-math.sin(yaw)*closestX+math.cos(yaw)*closestZ
+    local distance=math.sqrt((mx-worldX)^2+(my-closestY)^2+(mz-worldZ)^2)
+    return distance,localX,localZ,my-bottom,halfWidth,halfLength,height
+end
+local function selectGrabTarget(race,source,sim,range)
+    local best,bestDistance=nil,range+.001
+    local yaw=math.rad(source.yaw or 0)
+    local ownX,ownY,ownZ=grabMouthWorld(race,source,sim)
+    for _,target in ipairs(race.racers) do
+        if target~=source and not target.finished and not target.eliminated then
+            local spec=Data.Get(target.vehicleId)
+            local drive=driveFor(race,target)
+            local halfWidth=(spec and spec.size[1] or .6)*.5
+            local halfLength=(spec and spec.size[3] or 2)*.5
+            local dx,dz=target.x-ownX,target.z-ownZ
+            local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
+            local side=dx*math.cos(yaw)-dz*math.sin(yaw)
+            local distance,localX,localZ,localY,_,_,height=grabSurfaceGap(race,source,sim,target)
+            -- Mouth must face the target's rear/front surface: side or rear catches
+            -- are rejected before the 0.30m surface-distance test.
+            local targetBottom=target.y+(drive and drive.oddAltitude or 0)
+            local targetCenterForward=localZ
+            local vertical=localY>=-.30 and localY<=height+.30
+            if forward>=0 and forward<=range+halfLength and math.abs(side)<=halfWidth+.30
+                and targetCenterForward>=-halfLength-.30 and vertical and distance<=.30
+                and distance<bestDistance then
+                best,bestDistance=target,distance
+            end
+        end
+    end
+    return best,bestDistance
+end
 local function selectTarget(race,source,range,ranged)
     local best,bestD=nil,range*range+.001
     local yaw=math.rad(source.yaw or 0)
@@ -357,6 +464,65 @@ local function selectTarget(race,source,range,ranged)
         end
     end
     return best,math.sqrt(bestD)
+end
+-- AI only requests a rising edge when an observed tactical opportunity exists.
+-- Target identity/rank never changes its cooldown, range or hit test.
+function M.ShouldUseSkill(race,source)
+    local sim=driveFor(race,source)
+    if not sim or source.finished or source.eliminated or race.phase~="racing"
+        or (source.mistakeDuration or 0)>0 or (source.recoveryTimer or 0)>0
+        or (sim.oddDisrupt or 0)>0 or (sim.skillHitLock or 0)>0 then return false end
+    local v=Data.Get(source.vehicleId)
+    local cooldown=v and sim.oddCooldown or sim.motorcycleCooldown
+    local active=v and sim.oddActive or sim.motorcycleActive
+    if (cooldown or 0)>0 or (active or 0)>0 or sim.oddLockPending or (sim.oddGrabTimer or 0)>0 then return false end
+    if v and RANGES[v.id] then
+        if v.id=="beetle" then return selectGrabTarget(race,source,sim,.30)~=nil end
+        if v.id=="centipede" or v.id=="office" then
+            for _,target in ipairs(race.racers) do
+                if target~=source and not target.finished and not target.eliminated then
+                    local dx,dz=target.x-source.x,target.z-source.z
+                    local yaw=math.rad(source.yaw or 0)
+                    local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
+                    if dx*dx+dz*dz<=RANGES[v.id]^2 and (v.id=="office" or forward<=1.2)
+                        and math.abs(centerY(race,target)-centerY(race,source))<v.size[2] then return true end
+                end
+            end
+            return false
+        end
+        local target=selectTarget(race,source,RANGES[v.id],v.id=="tank" or v.id=="helicopter" or v.id=="jellyfish")
+        if not target then return false end
+        local targetSim=driveFor(race,target)
+        return not targetSim or ((targetSim.oddShield or 0)<=0 and (targetSim.skillHitLock or 0)<=0)
+    end
+    local skill=Data.GetMotorcycleSkill(source.vehicleId)
+    local distance=skill and skill.triggerDistance or 40
+    local front=false
+    local yaw=math.rad(source.yaw or 0)
+    for _,target in ipairs(race.racers) do
+        if target~=source and not target.finished and not target.eliminated then
+            local dx,dz=target.x-source.x,target.z-source.z
+            local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
+            local side=math.abs(dx*math.cos(yaw)-dz*math.sin(yaw))
+            if forward>0 and forward<distance and side<5 then front=true;break end
+        end
+    end
+    local obstacle=false
+    local observations=source.perception and source.perception.observations or race.aiObstacles or {}
+    for _,o in ipairs(observations) do
+        local d=gap(o.s,source.s,race.length)
+        if d>0 and d<distance and math.abs(o.lane-source.lane)<(o.halfWidth or 1)+1 then obstacle=true;break end
+    end
+    local sample=race.aiProfile and race.aiProfile[math.floor((source.s%race.length)/race.aiProfileStep)+1]
+    local curve=sample and sample.curvature or 0
+    if skill then
+        if skill.id=="sport" then return source.speed>8 and front and not obstacle and curve<.012 end
+        if skill.id=="cruiser" then return source.speed>4 and (front or obstacle) end
+        return source.speed>6 and (obstacle or curve>.008 or (sim.oddTerrain or "asphalt")~="asphalt")
+    end
+    if v and v.id=="cicada" then return (sim.oddSpring or 0)<5 and not obstacle end
+    if v and (v.id=="bathtub" or v.id=="hovercraft" or v.id=="frog" or v.id=="skateboard") then return obstacle end
+    return v~=nil and source.speed>8 and front and not obstacle and curve<.012
 end
 local function launch(race,source,sim,target,v)
     local y=centerY(race,source)
@@ -400,10 +566,11 @@ function M.Attack(race,source,sim)
     local ranged=v.id=="tank" or v.id=="helicopter" or v.id=="jellyfish"
     local best,distance=selectTarget(race,source,range,ranged)
     if v.id=="beetle" then
-        -- 无目标也完整空挥；命中推迟到闭钳关键帧，不能按键瞬间隔空造成伤害。
-        sim.oddGrabTarget,sim.oddGrabTimer,sim.oddGrabDuration=best,1.5,1.5
+        -- 无目标也完整空挥；命中推迟到闭钳关键帧，必须通过真实钳口表面判定。
+        local grabTarget=selectGrabTarget(race,source,sim,.30)
+        sim.oddGrabTarget,sim.oddGrabTimer,sim.oddGrabDuration=grabTarget,1.5,1.5
         sim.oddGrabHolding,sim.oddGrabResolved=false,false
-        feedback(sim,best and "双钳张开 · 前伸夹击" or "双钳空挥 · 靠近至5.5米再夹击",1.5)
+        feedback(sim,grabTarget and "双钳张开 · 前伸夹击" or "双钳空挥 · 靠近钳口0.3米再夹击",1.5)
         return
     end
     if not best then
@@ -426,6 +593,10 @@ end
 function M.Hit(race,source,best,v)
     local targetSim=driveFor(race,best)
     local sourceSim=driveFor(race,source)
+    if (sourceSim and (sourceSim.skillHitLock or 0)>0) or (targetSim and (targetSim.skillHitLock or 0)>0) then
+        feedback(sourceSim,"技能命中保护中")
+        return false
+    end
     if targetSim and (targetSim.oddShield or 0)>0 then
         feedback(sourceSim,"攻击被护盾挡住")
         return false
@@ -433,6 +604,8 @@ function M.Hit(race,source,best,v)
     feedback(sourceSim,"技能命中 · 对手减速20%，失衡3秒",2.5)
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
     best.boostTimer=0
+    if sourceSim then sourceSim.skillHitLock=.18 end
+    if targetSim then targetSim.skillHitLock=1.0 end
     local explosive=v.id=="tank" or v.id=="helicopter" or v.id=="jellyfish"
     if explosive then
         race.mixedExplosions=race.mixedExplosions or {}
@@ -495,13 +668,17 @@ local function updateGrab(race,source,sim,dt)
     if source.finished or source.eliminated or not target or target.finished or target.eliminated then
         sim.oddGrabHolding=false;return
     end
-    local dx,dz=target.x-source.x,target.z-source.z
     if elapsed>=.48 and not sim.oddGrabResolved then
+        local distance,_,_,localY,halfWidth,_,height=grabSurfaceGap(race,source,sim,target)
+        local yaw=math.rad(source.yaw or 0)
+        local dx,dz=target.x-source.x,target.z-source.z
+        local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
+        local side=dx*math.cos(yaw)-dz*math.sin(yaw)
         sim.oddGrabResolved=true
-        if dx*dx+dz*dz<=6.5^2 and math.abs(centerY(race,target)-centerY(race,source))<2 then
+        if distance<=.30 and forward>0 and math.abs(side)<=halfWidth+.30 and localY>=-.30 and localY<=height+.30 then
             sim.oddGrabHolding=M.Hit(race,source,target,Data.Get("beetle"))
             if sim.oddGrabHolding then feedback(sim,"双钳夹住对手 · 松钳后抛开",1.5) end
-        else feedback(sim,"夹击落空 · 需要贴近对手",1.5) end
+        else feedback(sim,"夹击落空 · 钳口未贴近目标",1.5) end
     end
     if sim.oddGrabHolding and elapsed<1.08 then
         -- 两车同向夹持：按真实钳口+目标半长留距，以有限速度拉近，不瞬移14米目标。

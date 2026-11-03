@@ -3,6 +3,9 @@
 local Simulation = require("Simulation")
 local Mixed = require("MixedRace")
 local MixedData = require("MixedVehicles")
+---@class MixedRaceSkillRules
+---@field ShouldUseSkill fun(race:table, source:table):boolean
+local MixedRaceRules = Mixed
 local function dimensions(r)
     local v=MixedData.Get(r.vehicleId)
     return v and v.size[1]*.5 or .30,v and v.size[3]*.5 or .95,v and v.size[2] or 1.5
@@ -22,7 +25,7 @@ local function overlapsHeight(race,r,o)
     return bottom<otherBottom+otherHeight+.15 and bottom+height>otherBottom-.15
 end
 local function vehicleFor(race,r)
-    return race.options.mixed and r.driveSim and r.driveSim.vehicle or race.sim.vehicle
+    return r.driveSim and r.driveSim.vehicle or race.sim.vehicle
 end
 local AI = {}
 local abs, min, max, sqrt = math.abs, math.min, math.max, math.sqrt
@@ -35,6 +38,7 @@ local function gap(a, b, length) return (a - b + length * 0.5) % length - length
 -- Skill is stratified, not eight lucky random rolls. Difficulty changes pace/anticipation,
 -- not collision immunity, checkpoint rules or teleportation. Selected bike sets the race class.
 function AI.Configure(race, r, index)
+    if not r.vehicleId then r.vehicleId=race.sim.vehicleId end
     local setting = race.options.difficulty or "normal"
     local difficulty = setting == "easy" and -1 or (setting == "hard" and 1 or 0)
     -- 上限从0.94放开到1.0：否则再高的赛道强度也被截断，AI永远追不上玩家。
@@ -43,9 +47,9 @@ function AI.Configure(race, r, index)
     r.skill = clamp(0.45 + ((index * 5) % 8) / 7 * 0.48
         + (level - 0.72) * 0.20 + difficulty * 0.06, 0.3, 0.98)
     -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
-    -- AI不跑到玩家同级极速：留出可超车空间，强车局仍有挑战但不至于无法取胜。
-    r.speedFactor = clamp(0.44 + level * 0.18 + r.skill * 0.22 + difficulty * 0.02, 0.55, 0.94)
-    local efficiency = clamp(0.34 + level * 0.22 + r.skill * 0.34 + difficulty * 0.025, 0.55, 0.94)
+    -- 以自身车型的正常极速参赛，保留驾驶水平和赛道难度差异。
+    r.speedFactor = clamp(0.83 + level * 0.10 + r.skill * 0.08 + difficulty * 0.02, 0.86, 1.0)
+    local efficiency = clamp(0.72 + level * 0.12 + r.skill * 0.14 + difficulty * 0.025, 0.78, 1.0)
     r.acceleration = vehicleFor(race,r).acceleration * efficiency
     -- AI保留真实失误窗口，不能变成无懈可击的机器。
     r.mistakeTimer = 5 + race:Random() * 9
@@ -54,15 +58,16 @@ function AI.Configure(race, r, index)
     r.mistakeDuration, r.recoveryTimer, r.mistakeSeverity, r.mistakes = 0, 0, 0, 0
     r.mistakeLane, r.mistakeBias = r.lane, 0
     r.paceTarget, r.paceTimer, r.nitroCooldown = 0, 0, 0
+    r.skillDecisionTimer, r.skillRequest, r.skillUses = 0, false, 0
     -- 每辆车只持有独立的传动状态；使用玩家选定车型，不按外观偷偷换更强引擎。
     if not r.isPlayer then
         local drive = Simulation.New(race.map)
-        drive.vehicle, drive.vehicleId, drive.raceMode = race.sim.vehicle, race.sim.vehicleId, true
-        drive.rpm = vehicleFor(race,r).idle
-        if race.options.mixed then
-            assert(drive:SetVehicle(r.vehicleId));drive:Reset(false)
-            r.acceleration=drive.vehicle.acceleration*efficiency
-        end
+        drive.vehicleId = r.vehicleId
+        assert(drive:SetVehicle(r.vehicleId))
+        drive:Reset(false)
+        drive.raceMode = true
+        drive.rpm = drive.vehicle.idle
+        r.acceleration=drive.vehicle.acceleration*efficiency
         r.driveSim = drive
         -- 预演使用独立变速箱，绝不推进实际挡位/RPM/换挡冷却。
         r.nitroPreview = {driveSim = Simulation.New(race.map)}
@@ -538,17 +543,27 @@ function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
     local previousSpeed = r.speed
-    if race.options.mixed then
+    do
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
         drive.roadS,drive.lateral,drive.speed,drive.steer=r.s,r.lane,r.speed,r.steer or 0
         drive.elapsed=race.elapsed;drive.groundSlope=(race.aiProfile[math.floor((r.s%race.length)/race.aiProfileStep)+1] or {}).slope or 0
-        local useSkill=(drive.oddCooldown or 0)<=0 and (r.speed>10 or r.vehicleId=="cicada")
-            and (math.floor(race.elapsed*2+r.index)%7==0)
+        r.skillDecisionTimer=max(0,(r.skillDecisionTimer or 0)-dt)
+        local useSkill=false
+        if r.skillDecisionTimer<=0 then
+            r.skillDecisionTimer=r.reactionTime
+            useSkill=MixedRaceRules.ShouldUseSkill(race,r)
+        end
         local skillControls=r.skillControls
         if not skillControls then skillControls={}; r.skillControls=skillControls end
         skillControls.skill, skillControls.steer = useSkill, r.steer or 0
+        local oldCooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
         Mixed.Before(drive,dt,skillControls,race.map)
+        local cooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
+        if useSkill and (cooldown or 0)>(oldCooldown or 0) then
+            r.skillUses=(r.skillUses or 0)+1
+            race:Emit("ai-skill",r.id)
+        end
         if drive.oddNitroGift then r.nitro=math.min(100,r.nitro+drive.oddNitroGift);drive.oddNitroGift=nil end
         r.speed=drive.speed
     end
