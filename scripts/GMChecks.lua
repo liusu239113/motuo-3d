@@ -134,4 +134,39 @@ function Checks.Run(hud,storage)
     print(string.format("[GMChecks] PASS %d项 / %d台正式车型 / 玩家档和真实SDK未访问",count,ready))
     return true
 end
+-- 不启用autotest/testShot豁免，沿正式加载、实际提交与缓存重赛走两次发车。
+function Checks.RunDrive(hud,storage,restore)
+    local Catalog=require("Catalog")
+    local Profile=require("Profile")
+    local originalWrites,originalText=storage()
+    local stage,frames=0,0
+    Catalog.SetGMFreeExperience(true)
+    hud.actions.start(false);hud:SelectVehicle("helicopter",true)
+    hud.actions.confirmVehicle("helicopter")
+    local function verify()
+        local writes,text=storage()
+        assert(writes==originalWrites and text==originalText,"GM实际发车不得写档或消费试驾")
+        assert(Profile.Trials("helicopter")==1 and not Profile.Owns("helicopter") and Profile.Coins()==2300)
+    end
+    SubscribeToEvent("Update",function()
+        frames=frames+1
+        if frames>1600 then restore();error("GM真实发车流程超时") end
+        if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter() end
+        if hud.screen=="ride" then
+            verify()
+            if stage==0 then
+                stage=1
+                hud.actions.restart()
+                assert(hud.screen=="loading","重赛必须重新准备并提交")
+            else
+                hud.actions.menu()
+                Catalog.SetGMFreeExperience(false)
+                hud:SelectVehicle("helicopter",true)
+                verify();restore();stage=2
+                print("[GMChecks] 实际加载→发车→缓存重赛两次均不扣币/次数/写档 PASS")
+                engine:Exit()
+            end
+        end
+    end)
+end
 return Checks

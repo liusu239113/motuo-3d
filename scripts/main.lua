@@ -970,9 +970,14 @@ function Start()
     hud_.root:SetVisible(true)
     UI.SetRoot(hud_.root)
     if restoreGM then
-        local ok,message=pcall(function() assert(require("GMChecks").Run(hud_,gmStorage)) end)
-        restoreGM()
-        if not ok then error(message) end
+        local ok,message=pcall(function()
+            local checks=require("GMChecks");assert(checks.Run(hud_,gmStorage))
+            for _,arg in ipairs(GetArguments()) do
+                if arg=="-gmdrivechecks" then checks.RunDrive(hud_,gmStorage,restoreGM);return end
+            end
+            restoreGM()
+        end)
+        if not ok then restoreGM();error(message) end
     end
     print("[公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留")
 end
