@@ -3,6 +3,7 @@ local restore_=function() end
 local ready_=false
 local frames_=0
 local cpuStart_=0
+local solo_=false
 local bridge_={inspect=function() return {screen="",phase="",elapsed=0} end}
 local function source()
     local file=assert(cache:GetFile("main.lua"))
@@ -16,13 +17,18 @@ return {
     start=Start,
     launch=function()
         Catalog.SetGMFreeExperience(true)
-        local vehicle="beetle"
-        for _,arg in ipairs(GetArguments()) do vehicle=arg:match("^%-performance%-vehicle=(.+)$") or vehicle end
+        local vehicle,raceMode="beetle",true
+        for _,arg in ipairs(GetArguments()) do
+            vehicle=arg:match("^%-performance%-vehicle=(.+)$") or vehicle
+            if arg=="-performance-solo" then raceMode=false end
+        end
         assert(VehicleAssets.Vehicles[vehicle],"验收车型必须已正式交付")
         selectedTrack_,selectedVehicle_="circuit",vehicle
         hud_:SelectTrack("circuit",false);hud_:SelectVehicle(vehicle,false)
         raceAutodrive_,autoTest_=true,true
-        StartRide(true);ConfirmVehicle(vehicle)
+        -- 对照夹具：同赛道同车型，只切换有无对手，用于分离对手渲染开销。
+        challenge=raceMode
+        StartRide(raceMode);ConfirmVehicle(vehicle)
     end,
     finish=MainMenu,
     inspect=function()
@@ -34,12 +40,14 @@ return {
 ]]
 function Start()
     restore_=select(1,require("GMChecks").Begin())
+    for _,arg in ipairs(GetArguments()) do if arg=="-performance-solo" then solo_=true end end
     bridge_=assert(load(source().."\n"..BRIDGE,"@main.lua（性能隔离）","t",_G))()
     bridge_.start();bridge_.launch()
     SubscribeToEvent("PostRenderUpdate",function()
         if ready_ then return end
         local state=bridge_.inspect()
-        if state.screen~="ride" or state.phase~="racing" then return end
+        if state.screen~="ride" then return end
+        if state.phase~="racing" and not solo_ then return end
         frames_=frames_+1
         if frames_==1 then cpuStart_=os.clock() end
         if frames_%15==0 then

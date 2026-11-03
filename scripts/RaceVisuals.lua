@@ -352,6 +352,42 @@ function RaceVisuals:Reset(race)
     self:EnsurePolice()
     self.clock, self.visibilityClock = 0, 1
     self:SetVisible(true)
+    self:ReportBudget()
+end
+
+-- 对手渲染预算只统计一次，便于真实设备日志定位掉帧来源；不进入逐帧路径。
+function RaceVisuals:ReportBudget()
+    if self.budgetReported then return end
+    self.budgetReported = true
+    local draws, triangles, riders, shadows = 0, 0, 0, 0
+    local rivals = 0
+    ---@param draw StaticModel
+    local function measure(draw)
+        if not draw.enabled then return end
+        draws = draws + 1
+        if draw.castShadows then shadows = shadows + 1 end
+        local model = draw:GetModel()
+        if not model then return end
+        for slot = 0, model.numGeometries - 1 do
+            local geometry = model:GetGeometry(slot, 0)
+            if geometry then
+                triangles = triangles + (geometry.indexCount > 0 and geometry.indexCount or geometry.vertexCount) // 3
+            end
+        end
+    end
+    for _, runner in pairs(self.runners) do
+        rivals = rivals + 1
+        if runner.rider and runner.rider.model then
+            riders = riders + 1
+            measure(runner.rider.model)
+        end
+        for _, draw in ipairs(runner.body:GetComponents("StaticModel", true)) do measure(draw) end
+        if runner.effects and runner.effects.root then
+            for _, draw in ipairs(runner.effects.root:GetComponents("StaticModel", true)) do measure(draw) end
+        end
+    end
+    print(string.format("[对手预算] %d名AI / %d骑手 / draws=%d triangles=%d 投影部件=%d",
+        rivals, riders, draws, triangles, shadows))
 end
 
 -- 入口菜单/练习隐藏整套比赛表现；Update不得越过这个总开关重新启用对手。
