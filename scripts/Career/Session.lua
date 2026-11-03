@@ -273,6 +273,7 @@ function Session:BuildWorld()
     light.shadowBias=BiasParameters(.0001,.25,0)
     self.zone,self.sun=zone,light
     require("Career.AdaptiveQuality").AttachSunlight(light)
+    require("Career.AdaptiveQuality").AttachScene(self.scene)
     -- 太阳落到地平线以下后不再照地面；独立冷色月光保证手游夜跑的基础可读性。
     local moonNode=self.scene:CreateChild("南城夜间月光")
     moonNode.direction=Vector3(.35,-.8,.25)
@@ -907,6 +908,8 @@ function Session:QualityDialog()
     local current=Quality.auto and "自动（按设备推荐）" or Quality.Current().name
     local function apply(level)
         Quality.Set(level)
+        if self.view.Notice then self.view:Notice("画质已切到："..Quality.Current().name) end
+        print("[画面设置] "..Quality.Current().name.."档：可见距离×"..Quality.Current().draw.." 阴影×"..Quality.Current().shadow)
         self:QualityDialog()
     end
     self.view:ShowDialog("画面与性能",

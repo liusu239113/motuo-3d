@@ -96,9 +96,10 @@ function Pedestrians:Update(dt,blockers)
     local outer=traffic and traffic.outer
     local groups={self.people,outer and outer.people or {}}
     local cars={traffic and traffic.cars or {},outer and outer.cars or {}}
+    -- 只有靠近玩家的行人做完整扫掠碰撞；远处的仍沿路线推进，省掉最贵的静态查询。
+    local nearRadius=require("Career.AdaptiveQuality").NearRadius()*.6
     for _,p in ipairs(self.people) do
-        -- 只有靠近玩家的行人做完整扫掠碰撞；远处的仍沿路线推进，省掉最贵的静态查询。
-        local near=not viewer or (p.x-viewer.x)^2+(p.z-viewer.z)^2<=40^2
+        local near=not viewer or (p.x-viewer.x)^2+(p.z-viewer.z)^2<=nearRadius^2
         local moved=Walk.Advance(self.city,p,dt,blockers,groups,cars,not near)
         if #p.localWalk.points==0 and (p.s<=.00001 or p.s>=p.length-.00001) then
             p.direction=p.s<=.00001 and 1 or -1

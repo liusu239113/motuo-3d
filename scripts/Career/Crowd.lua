@@ -61,9 +61,11 @@ local CrowdBindType={}
 ---@field enabled boolean
 local Crowd={}
 Crowd.__index=Crowd
-Crowd.BUDGET,Crowd.HARD_LIMIT=20,24
-Crowd.RANGE,Crowd.RECYCLE,Crowd.SPAWN_MIN=92,125,24
-Crowd.MAX_POSES,Crowd.MAX_CREATES,Crowd.MAX_MOVES=6,2,12
+-- 同屏活动行人压到个位数并收窄活动半径：出生点不再挤一堆人。
+Crowd.BUDGET,Crowd.HARD_LIMIT=6,8
+Crowd.RANGE,Crowd.RECYCLE,Crowd.SPAWN_MIN=50,70,20
+-- 同一视野内只保留个位数的活动行人：人数少但分布开，比堆一堆在出生点更真实也更省。
+Crowd.MAX_POSES,Crowd.MAX_CREATES,Crowd.MAX_MOVES=3,2,4
 Crowd.Resources,Crowd.ResourceTypes={},{}
 for _,path in ipairs(Motion.Resources) do
     Crowd.Resources[#Crowd.Resources+1]=path;Crowd.ResourceTypes[path]=Motion.ResourceTypes[path]
