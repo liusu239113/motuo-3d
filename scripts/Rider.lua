@@ -261,7 +261,9 @@ function Rider:Init(parent, vehicleId, grip, gripBinding)
     self.model:RemoveAllAnimationStates()
     self.model.updateInvisible = true
     self.model.animationLodBias = 0 -- 手动pose不按可见性/动画LOD延迟提交。几何LOD仍正常工作。
-    self.model.castShadows = true
+    -- 41骨蒙皮投影是最贵的一趟阴影pass，而车底阴影已给出接地感。
+    -- 骑手本身不投阴影，避免每帧多画一次整只人物。
+    self.model.castShadows = false
     self.material = assert(cache:GetResource("Material", Rider.MaterialPath), "Missing rider material"):Clone()
     self.material:SetTexture(TU_DIFFUSE, assert(cache:GetResource("Texture2D", Rider.DiffusePath)))
     self.material:SetTexture(TU_NORMAL, assert(cache:GetResource("Texture2D", Rider.NormalPath)))

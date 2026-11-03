@@ -115,11 +115,11 @@ local function ApplyQuality()
     renderer.dynamicInstancing = true
     renderer:SetShadowMapSize(highQuality_ and 2048 or 1024)
     renderer.textureFilterMode = FILTER_ANISOTROPIC
-    renderer.textureAnisotropy = highQuality_ and 8 or 4
+    renderer.textureAnisotropy = highQuality_ and 8 or 2
     if sunlight_ then
         -- 手机仅支持两级CSM，第二级须覆盖近路树和设施，而不是把预算写进被忽略的第三级。
         sunlight_.shadowCascade = highQuality_ and CascadeParameters(22, 120, 0, 0, 0.8)
-            or CascadeParameters(18, 72, 0, 0, 0.8)
+            or CascadeParameters(14, 48, 0, 0, 0.8)
         sunlight_.shadowBias = BiasParameters(0.0003, 0.6)
     end
     if world_ then world_:SetQuality(highQuality_) end

@@ -92,6 +92,12 @@ function Effects:Init(parent, size, seatHeight, lightweight)
             node:GetComponent("StaticModel").drawDistance = 100
             self.streaks[index] = node
         end
+    else
+        -- 对手只留两条喷焰；4条能量带在现场几乎看不清，却要多8次draw。
+        for _, node in ipairs({self.padTrails[3], self.padTrails[4]}) do
+            if node then node:Dispose() end
+        end
+        self.padTrails = {self.padTrails[1], self.padTrails[2]}
     end
     self.root:SetEnabledRecursive(false)
 end

@@ -29,6 +29,9 @@ local V = Vector3
 ---@field body Node
 ---@field models StaticModel[]
 ---@field rider Rider|table
+---@field fullRider? Rider
+---@field stubRider table
+---@field data? table
 ---@field poseClock number
 ---@field lean number
 ---@field effects RideEffects
@@ -158,13 +161,18 @@ function RaceVisuals:CreateRunner(data)
     if odd and not isRiderBoundMixed then MixedVisuals.SetRiderColor(body,colorId) end
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
     -- inView是上一渲染帧结果，不能作为首次提交/重新启用的前置条件。
+    -- 骑手是8个41骨蒙皮模型；阴影pass会让它们各画两遍，远端几乎看不出差别。
+    -- 只有玩家自己的骑手保留投影，对手一律不投射阴影。
     rider.model.updateInvisible = true
     rider.model.animationLodBias = 0
-    rider.model.drawDistance = 260
-    rider.model.shadowDistance = 65
+    rider.model.castShadows = false
+    rider.model.drawDistance = 180
+    rider.model.shadowDistance = 0
     local models = body:GetComponents("StaticModel", true)
     for _, model in ipairs(models) do
-        model.drawDistance, model.shadowDistance = 320, 75
+        model.castShadows = false
+        model.shadowDistance = 0
+        model.drawDistance = 240
         model.lodBias = 0.75
     end
     Assets.SetDetail(body, "distant")
@@ -172,6 +180,17 @@ function RaceVisuals:CreateRunner(data)
     local runner = {id = id, vehicleId = vehicleId, colorId = colorId, node = node,
         visual = visual, body = body, rider = rider, models = models, poseClock = 0, lean = 0,
         effects = effects, active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
+    -- 完整骑手保留引用；远处时换成空壳，切回近处再恢复，绝不重复创建骨骼。
+    -- 封闭座舱车型本来就是空壳，没有可切换的完整骑手。
+    if rider ~= nil and rider.model ~= nil and rider.node ~= nil then
+        runner.fullRider = rider --[[@as Rider]]
+    end
+    runner.stubRider = {poseFailures = 0, disposed = false, colorId = colorId,
+        model = {updateInvisible = true, animationLodBias = 0, drawDistance = 260,
+            shadowDistance = 0, inView = false},
+        SetColor = function(self, color) self.colorId = color or self.colorId; return true end,
+        SetVisible = function() end, Update = function() end,
+        Dispose = function() end}
     self:RefreshPose(runner, data, true)
     return runner
 end
@@ -323,7 +342,8 @@ function RaceVisuals:Reset(race)
             present[data.id] = true
             local runner = self.runners[data.id]
             if runner and runner.vehicleId ~= data.vehicleId then
-                runner.effects:Dispose(); runner.rider:Dispose(); runner.node:Dispose()
+                if runner.fullRider then runner.fullRider:Dispose() end
+                runner.effects:Dispose(); runner.node:Dispose()
                 self.runners[data.id] = nil
                 runner = nil
             end
@@ -333,6 +353,8 @@ function RaceVisuals:Reset(race)
             end
             runner.poseClock, runner.lean, runner.active, runner.wasInView = 0, 0, false, false
             runner.colorId = data.colorId or "red"
+            -- 颜色只作用于当前生效的骑手，避免恢复远景时丢掉配色。
+            if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
             runner.rider:SetColor(runner.colorId)
             runner.node:SetEnabledRecursive(true)
             runner.effects:Reset()
@@ -340,12 +362,14 @@ function RaceVisuals:Reset(race)
             runner.node.rotation = Quaternion(0, data.heading or data.yaw or 0, 0)
             runner.visual.rotation = Quaternion(data.pitch or 0, 0, 0)
             runner.visual.position = V.ZERO
+            runner.data = data
             self:RefreshPose(runner, data, true)
         end
     end
     for id, runner in pairs(self.runners) do
         if not present[id] then
-            runner.effects:Dispose(); runner.rider:Dispose(); runner.node:Dispose()
+            if runner.fullRider then runner.fullRider:Dispose() end
+            runner.effects:Dispose(); runner.node:Dispose()
             self.runners[id] = nil
         end
     end
@@ -446,6 +470,25 @@ function RaceVisuals:UpdateVehicleDetail(px, pz)
             runner.detailTier = tier
         end
     end
+    -- 骑手是8个41骨蒙皮模型，是赛事模式最大的固定开销。
+    -- 只有近处少数对手重建骑手，远处只留车体；按0.25秒节拍切换，不逐帧增删。
+    local riderLimit = self.highQuality and 3 or 2
+    local riderSelected = {}
+    for index = 1, math.min(#candidates, riderLimit) do
+        riderSelected[candidates[index].runner.id] = true
+    end
+    for id, runner in pairs(self.runners) do
+        local needRider = riderSelected[id] == true
+        if not needRider and runner.rider == runner.fullRider then
+            -- 交出骑手：隐藏完整骨骼骑手，用同名空壳占位，避免逐帧判断nil。
+            runner.fullRider.node:SetEnabledRecursive(false)
+            runner.rider = runner.stubRider
+        elseif needRider and runner.fullRider and runner.rider ~= runner.fullRider then
+            runner.rider = runner.fullRider
+            runner.fullRider:SetVisible(true)
+            self:RefreshPose(runner, runner.data or {}, true)
+        end
+    end
 end
 
 ---@param dt number
@@ -490,18 +533,25 @@ function RaceVisuals:Update(dt, sim)
                     require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
-                    runner.rider:SetColor(data.colorId); runner.colorId = data.colorId
+                    runner.colorId = data.colorId
+                    if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
+                    runner.rider:SetColor(runner.colorId)
                 end
                 runner.poseClock = runner.poseClock + frameTime
-                local inView = runner.rider.model.inView
-                local enteredView = inView and not runner.wasInView
-                -- 近距30Hz/中距10Hz/远距4Hz只影响手动IK成本，不依赖inView启动。
-                -- 屏外继续提交pose，重启/重入无条件立即完整刷新，避免一帧站姿。
-                local interval = distance2 < 45 * 45 and 1 / 30 or (distance2 < 95 * 95 and 0.10 or 0.25)
-                if reactivated or enteredView or runner.poseClock >= interval then
-                    self:RefreshPose(runner, data, reactivated or enteredView)
+                -- 只有当前持完整骑手的对手才解算骨骼；远景车体仍照常移动。
+                if runner.rider == runner.fullRider then
+                    local inView = runner.rider.model.inView
+                    local enteredView = inView and not runner.wasInView
+                    -- 近距30Hz/中距10Hz/远距4Hz只影响手动IK成本，不依赖inView启动。
+                    -- 屏外继续提交pose，重启/重入无条件立即完整刷新，避免一帧站姿。
+                    local interval = distance2 < 45 * 45 and 1 / 30 or (distance2 < 95 * 95 and 0.10 or 0.25)
+                    if reactivated or enteredView or runner.poseClock >= interval then
+                        self:RefreshPose(runner, data, reactivated or enteredView)
+                    end
+                    runner.wasInView = inView
+                else
+                    runner.wasInView = false
                 end
-                runner.wasInView = inView
             else
                 runner.wasInView = false
                 runner.effects:Reset()
