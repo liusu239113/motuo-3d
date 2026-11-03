@@ -12,6 +12,7 @@ function M.Reset(sim)
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1
     sim.oddSkillName="";sim.oddTerrain="asphalt";sim.oddPickups=0
     sim.oddSkillResult,sim.oddSkillResultTimer="",0
+    sim.oddLockTarget,sim.oddLockTimer=nil,0
     sim.oddPreviousAltitude=0
     sim.oddContacts={};sim.oddCoinContacts={};sim.oddLastImpact=sim.impactSerial or 0
 end
@@ -319,7 +320,7 @@ function M.Attack(race,source,sim)
     if not sim.oddAttack then return end
     sim.oddAttack=false
     local v=Data.Get(source.vehicleId);if not v then return end
-    local range=({tank=24,beetle=14,centipede=6,loader=12,jellyfish=28,helicopter=32,office=6})[v.id]
+    local range=({tank=220,beetle=14,centipede=6,loader=12,jellyfish=220,helicopter=220,office=6})[v.id]
     if not range then return end
     local area=v.id=="centipede" or v.id=="office"
     -- 坦克改为远程炮弹：有真实飞行轨迹和爆炸，才符合"能开炮"的直觉。
@@ -340,7 +341,9 @@ function M.Attack(race,source,sim)
             local bottom=target.y+(targetSim and targetSim.oddAltitude or 0)
             local height=spec and spec.size[2] or 1.5
             local vertical=ranged or (bottom<sourceBottom+v.size[2] and bottom+height>sourceBottom)
-            local direction=area and (v.id=="office" or forward<=1.2) or (not area and forward>0 and side<3.1)
+            local direction=area and (v.id=="office" or forward<=1.2)
+                or (ranged and forward>-8 and side<24)
+                or (not area and forward>0 and side<3.1)
             if d<=range*range and vertical and direction then
                 if area then M.Hit(race,source,target,v)
                 elseif d<bestD then best,bestD=target,d end
@@ -458,6 +461,4 @@ function M.RaceStep(race,dt)
 end
 function M.ResetCourse(world)
     for _,o in ipairs(world.mixedObstacles or {}) do o.active=true;if o.node then o.node:SetEnabledRecursive(true) end end
-    for _,o in ipairs(world.mixedCoins or {}) do o.active=true;if o.node then o.node.enabled=true end end
-end
-return M
+    for _,o in ipairs(world.mixedCoins or {}) do

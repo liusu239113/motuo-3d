@@ -175,12 +175,30 @@ local function CockpitActive()
         or (screen_ == "settings" and hud_ and hud_.settingsReturn == "pause"))
 end
 
+-- 相机与车型共用同一份本地米制眼位；点击和PostUpdate都从这里同步，
+-- 不把驾驶相机误放回追尾位置，也支持视觉层按车型调整眼位。
+local function UpdateDrivingCamera()
+    if not bike_ or not helmetNode_ or not helmetCamera_ then return end
+    helmetNode_.position = bike_.Cockpit.localOffset
+    helmetNode_.rotation = Quaternion(bike_.Cockpit.pitch, 0, 0)
+    helmetCamera_.fov = bike_.Cockpit.fov + math.min(6, math.abs(sim_.speed) * 0.1) + boostFov_
+end
+
+---@return Camera?
+local function CurrentCamera()
+    if CockpitActive() or (screen_ == "loading" and firstPerson_) then return helmetCamera_ end
+    return chase_ and chase_:GetCamera() or nil
+end
+
 local function SetCamera()
     if not chase_ or not helmetCamera_ then return end
+    UpdateDrivingCamera()
+    local camera = CurrentCamera()
+    -- 仅切显隐，不用UpdateState(0)重复驱动车轮、炮塔或撞击倒计时。
+    if bike_ then bike_:SetFirstPerson(camera == helmetCamera_) end
     renderer:SetNumViewports(1)
     -- 加载遮罩仍可见时就渲染实际驾驶视角，把首次材质编译留在准备阶段。
-    local cockpit = CockpitActive() or (screen_ == "loading" and firstPerson_)
-    renderer:SetViewport(0, Viewport:new(scene_, cockpit and helmetCamera_ or chase_:GetCamera()))
+    renderer:SetViewport(0, Viewport:new(scene_, camera))
 end
 
 -- 换地图必须释放整套世界；不能把新道路投影接到旧Race采样或旧交通上。
@@ -488,12 +506,11 @@ end
 
 local function ToggleCamera()
     if not ready_ or screen_ ~= "ride" then return end
-    if require("MixedVehicles").Get(selectedVehicle_) then
-        sim_.message,sim_.messageTimer="混合载具使用第三人称视角",2;return
-    end
     firstPerson_ = not firstPerson_
-    bike_:UpdateState(0, sim_, CockpitActive(), clock_)
     SetCamera()
+    -- 触摸回调发生在UI更新阶段，也要当帧刷新状态提示。
+    hud_.camera:SetText(firstPerson_ and "头盔视角" or "追尾视角")
+    print("[相机] " .. selectedVehicle_ .. " / " .. (firstPerson_ and "第一视角" or "追尾视角"))
 end
 
 -- 三车型共用同一套实骨骼、相机与复用验收，防止新增车型漏测。
@@ -619,11 +636,10 @@ function SetupCameraAndViewport()
             }, initialMode = "normal", transitionSpeed = 5, farClip = 2600, nearClip = 0.07})
     end
     helmetNode_ = bike_.visual:CreateChild("骑手眼位")
-    helmetNode_.position = bike_.Cockpit.localOffset
-    helmetNode_.rotation = Quaternion(bike_.Cockpit.pitch, 0, 0)
     helmetCamera_ = helmetNode_:CreateComponent("Camera")
-    helmetCamera_.nearClip, helmetCamera_.farClip, helmetCamera_.fov = 0.025, 2600, bike_.Cockpit.fov
+    helmetCamera_.nearClip, helmetCamera_.farClip = 0.025, 2600
     bike_:UpdateState(0, sim_, firstPerson_, clock_)
+    UpdateDrivingCamera()
     chase_:Update(1, bike_.node, sim_.heading, 9)
     ApplyQuality()
     SetCamera()
@@ -1417,7 +1433,10 @@ function HandlePostUpdate(eventType, eventData)
         end
         local chaseCamera = chase_:GetCamera()
         chaseCamera.fov = chaseCamera.fov + boostFov_
-        helmetCamera_.fov = bike_.Cockpit.fov + math.min(6, sim_.speed * 0.1) + boostFov_
+        UpdateDrivingCamera()
+    end
+    if hud_ and hud_.UpdateWeaponTarget then
+        hud_:UpdateWeaponTarget(sim_, CurrentCamera())
     end
     bike_:UpdateMirrors(dt, screen_ == "ride" and firstPerson_ and not disableMirrors_)
     local position = helmetCamera_:WorldToScreenPoint(bike_:GetDashboardWorldPosition())
