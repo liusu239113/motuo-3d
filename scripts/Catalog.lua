@@ -1,5 +1,35 @@
 -- 车型目录与实车资产分离；available 只在真实 MDL 交付并登记后开放。
 local Catalog = {}
+-- GM仅在本次运行有效，不混入金币、永久所有权或广告试驾账本。
+local gmFreeExperience = false
+function Catalog.IsGMFreeExperience() return gmFreeExperience end
+---@param enabled boolean
+---@return boolean
+function Catalog.SetGMFreeExperience(enabled)
+    assert(type(enabled)=="boolean", "GM开关必须使用布尔值")
+    gmFreeExperience = enabled
+    return gmFreeExperience
+end
+---@param id string
+---@return boolean
+function Catalog.CanFreeExperience(id)
+    if not gmFreeExperience then return false end
+    local entry = Catalog.Get(id)
+    return entry~=nil and entry.available==true and require("VehicleAssets").Vehicles[id]~=nil
+end
+-- 确认和实际提交发车共用权限策略；Profile仍只代表真实权益。
+---@param id string
+---@return boolean
+function Catalog.CanDrive(id)
+    return Catalog.CanFreeExperience(id) or require("Profile").CanDrive(id)
+end
+---@param id string
+---@return boolean
+---@return string?
+function Catalog.ConsumeDriveTrial(id)
+    if Catalog.CanFreeExperience(id) then return true end
+    return require("Profile").ConsumeTrial(id)
+end
 ---@class MotorcycleEntry
 ---@field odd? boolean
 ---@field baseClass? string

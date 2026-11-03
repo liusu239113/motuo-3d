@@ -296,7 +296,7 @@ local function FinishRidePreparation()
         return
     end
     if not careerRace_ and not autoTest_ and testShot_=="" then
-        local allowed,trialMessage=Profile.ConsumeTrial(selectedVehicle_)
+        local allowed,trialMessage=Catalog.ConsumeDriveTrial(selectedVehicle_)
         if not allowed then
             if race_ then race_:Stop() end
             LoadingError(trialMessage or "车辆体验次数不足");return
@@ -352,7 +352,7 @@ local function ConfirmVehicle(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
     if require("MixedVehicles").Get(id) then firstPerson_=false end
-    if not careerRace_ and not autoTest_ and testShot_=="" and not Profile.CanDrive(id) then
+    if not careerRace_ and not autoTest_ and testShot_=="" and not Catalog.CanDrive(id) then
         hud_:ShowNotice("载具尚未解锁","使用金币永久购买，或完整观看一次广告获得该载具三局体验。")
         return
     end
@@ -726,7 +726,10 @@ function Start()
     input.mouseMode = MM_ABSOLUTE
     ---@type fun()?
     local restoreUnavailableProfile=nil
+    ---@type fun()?, fun():integer,string
+    local restoreGM,gmStorage=nil,nil
     for _,arg in ipairs(GetArguments()) do
+        if arg=="-gmchecks" then restoreGM,gmStorage=require("GMChecks").Begin() end
         if arg=="-profilebadchecks" then
             restoreUnavailableProfile=require("ProfileChecks").BeginUnavailableProfile()
         end
@@ -734,9 +737,16 @@ function Start()
     local hudCreated,hudOrError=pcall(function()
         return HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         watchResultAd = WatchResultAdBonus,
+        toggleGMFreeExperience = function()
+            RewardedAds.Cancel()
+            local enabled=Catalog.SetGMFreeExperience(not Catalog.IsGMFreeExperience())
+            hud_:SelectVehicle(hud_.selectedVehicle,false)
+            print("[GM免费体验] "..(enabled and "开启：正式车型免费，不扣金币或试驾，不改永久所有权" or "关闭：恢复原有购买与试驾权益"))
+            return enabled
+        end,
         skill = function() if screen_=="ride" then pendingActions_.skill=true end end,
         watchVehicleAd = function(id)
-            if screen_~="garage" or not RequireRaceProfile() or Profile.Owns(id) then return end
+            if screen_~="garage" or not RequireRaceProfile() or Catalog.CanFreeExperience(id) or Profile.Owns(id) then return end
             require("MixedGarage").WatchTrial(hud_,id,function()
                 return screen_=="garage" and selectedVehicle_==id
             end)
@@ -761,6 +771,7 @@ function Start()
             if not RequireRaceProfile() then return end
             local item = Catalog.Get(id)
             if not item or item.available==false then return end
+            if Catalog.CanFreeExperience(id) then hud_:SelectVehicle(id,false);return end
             local ok, message = Profile.Buy(id, item.price or 0)
             hud_:RefreshOwnership()
             hud_:SelectVehicle(id, false)
@@ -827,6 +838,7 @@ function Start()
         retry = RetryLoading}, touch_)
     end)
     if not hudCreated then
+        if restoreGM then restoreGM() end
         if restoreUnavailableProfile then restoreUnavailableProfile() end
         error(hudOrError)
     end
@@ -957,6 +969,11 @@ function Start()
     hud_:SetCareerRace(false)
     hud_.root:SetVisible(true)
     UI.SetRoot(hud_.root)
+    if restoreGM then
+        local ok,message=pcall(function() assert(require("GMChecks").Run(hud_,gmStorage)) end)
+        restoreGM()
+        if not ok then error(message) end
+    end
     print("[公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留")
 end
 

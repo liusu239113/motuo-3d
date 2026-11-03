@@ -38,6 +38,9 @@ function SettingsSlider:OnPanStart() return self.settingsPointer ~= nil and self
 function SettingsSlider:OnPanMove() end
 function SettingsSlider:OnPanEnd() end
 ---@class ControlEditor
+---@field ToggleGMExperience fun(self:ControlEditor)
+---@field RefreshGMButtons fun(self:ControlEditor)
+---@field gmFreeButton Button
 ---@field screen string
 ---@field controls MobileControls
 ---@field actions table
@@ -147,11 +150,12 @@ function Editor:BuildSettings()
             self.settingsTools:SetVisible(self.settingsToolsOpen)
             self.settingsToolbarButton:SetText(self.settingsToolsOpen and "收起面板" or "灵敏度 / 方案")
         end,112)
+        self.gmFreeButton = button("GM体验：关",function() self:ToggleGMExperience() end,90)
         self.settingsChrome = UI.Column {position="absolute", left="50%", marginLeft=-190,
             top=8, width=380, padding=0, gap=5, pointerEvents="box-none", children={
                 UI.Row {width="100%", padding=5, gap=5, justifyContent="center",
                     backgroundColor={9,17,24,225}, borderRadius=5, children={
-                        self.settingsToolbarButton,
+                        self.settingsToolbarButton, self.gmFreeButton,
                         button("保存", function() self:SaveSettings("全部设置已保存") end,72,true),
                         button("完成", function() self:CloseSettings() end,72)}},
                 self.settingsHint,self.settingsTools}}
@@ -190,6 +194,7 @@ function Editor:OpenSettings()
         self.settingsReturn=self.screen=="pause" and "pause" or "menu"
         self.settingsToolsOpen=false
         self.settingsTools:Hide();self.settingsToolbarButton:SetText("灵敏度 / 方案")
+        self:RefreshGMButtons()
         self.settingsHint:SetText("直接拖动实战按键 · 松手自动保存")
         self.controls:SetEditor({
             down=function(slot,event,widget) self:BeginDragSettingButton(slot,event,widget) end,

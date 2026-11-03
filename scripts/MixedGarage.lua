@@ -3,10 +3,12 @@ local M={}
 local Profile=require("Profile")
 local Ads=require("RewardedAds")
 function M.WatchTrial(hud,id,isValid)
-    local entry=require("Catalog").Get(id)
-    if not entry or entry.available==false or not isValid() or Profile.Owns(id) then return end
+    local Catalog=require("Catalog")
+    local entry=Catalog.Get(id)
+    local function valid() return isValid() and not Catalog.CanFreeExperience(id) end
+    if not entry or entry.available==false or not valid() or Profile.Owns(id) then return end
     Ads.Show{
-        isValid=isValid,
+        isValid=valid,
         setBusy=function(busy) hud.trialButton:SetDisabled(busy) end,
         onReward=function()
             local saved,message,applied=Profile.GrantTrials(id)
