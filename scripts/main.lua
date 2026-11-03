@@ -111,13 +111,6 @@ local testAudio_ = nil
 local testSources_ = {}
 local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
 
--- 剧情暂时关闭，保留未来恢复入口所需的生命周期钩子。
-local function ResetCareerPerf() end
-local function IsCareerPerfActive() return false end
-local function RecordCareerPerfUpdate() end
-local function RecordCareerPerfPost() end
-local diag_ = {seconds = 0.0, frames = 0, maxInterval = 0.0, careerSum = 0.0, careerMax = 0.0}
-
 local function ApplyQuality()
     renderer.dynamicInstancing = true
     renderer:SetShadowMapSize(highQuality_ and 2048 or 1024)
@@ -230,7 +223,7 @@ local function ResetRideState()
         race_.options.professional = careerRace_
         race_:Reset(sim_, selectedLaps_)
         race_:SetTraffic(careerRace_ and {} or world_.traffic)
-        sim_.message, sim_.messageTimer = "Shift 氮气 · Q 翘头 / Z 烧胎 / X 180° / V 360°", 6
+        sim_.message, sim_.messageTimer = "E 专属技能 · Shift 氮气 · W/S 油刹 · A/D 转向", 6
         race_.player.colorId = selectedRider_
         if raceVisuals_ then
             raceVisuals_:SetQuality(highQuality_)
@@ -451,7 +444,6 @@ local function ReturnToCareer()
     if loader_ then loader_:Cancel(); loader_=nil end
     hud_:CloseModal()
     DisposeRideWorld(); touch_:SetEnabled(false); hud_.root:SetVisible(false)
-    ResetCareerPerf()
     careerMode_,careerRace_=true,false
     hud_:SetCareerRace(false)
     career_:Home(message)
@@ -1059,9 +1051,6 @@ end
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
     local rawDt = eventData:GetFloat("TimeStep")
-    diag_.seconds = diag_.seconds + rawDt
-    diag_.frames = diag_.frames + 1
-    if rawDt > diag_.maxInterval then diag_.maxInterval = rawDt end
     if careerMode_ then CareerStore.UpdateCloud(rawDt) end
     local dt = math.min(rawDt, 0.1)
     -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
@@ -1082,18 +1071,9 @@ function HandleUpdate(eventType, eventData)
     else profileRetrySeconds_=0 end
     if careerMode_ and career_ then
         CareerQuality.Update(rawDt)
-        local sample = IsCareerPerfActive()
-        if not sample then ResetCareerPerf() end
-        local started = os.clock()
         career_:Update(dt)
-        local cpu = os.clock() - started
-        diag_.careerSum = diag_.careerSum + cpu
-        if cpu > diag_.careerMax then diag_.careerMax = cpu end
-        if sample and IsCareerPerfActive() then RecordCareerPerfUpdate(rawDt, cpu)
-        else ResetCareerPerf() end
         return
     end
-    ResetCareerPerf()
     -- 暂停/设置/模态会提前返回，但循环声和短音包络仍必须消费静音状态。
     if screen_~="ride" or hud_:IsModalOpen() then
         if sound_ then sound_:Update(dt,sim_ --[[@as RideAudioState]],"pause") end
@@ -1319,7 +1299,6 @@ end
 ---@param eventData InputFocusEventData
 function HandleInputFocus(eventType, eventData)
     if not eventData:GetBool("Focus") or eventData:GetBool("Minimized") then
-        ResetCareerPerf()
         if careerMode_ and career_ then
             career_.view:ResetInput()
             if career_.running and not career_.view:IsBlocking() then career_:Pause() end
@@ -1335,18 +1314,9 @@ end
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
     if careerMode_ and career_ then
-        if not IsCareerPerfActive() then ResetCareerPerf() end
-        local dt = math.min(eventData:GetFloat("TimeStep"), .1)
-        local started = os.clock()
-        career_:PostUpdate(dt)
-        local cpu = os.clock() - started
-        diag_.careerSum = diag_.careerSum + cpu
-        if cpu > diag_.careerMax then diag_.careerMax = cpu end
-        if IsCareerPerfActive() then RecordCareerPerfPost(cpu)
-        else ResetCareerPerf() end
+        career_:PostUpdate(math.min(eventData:GetFloat("TimeStep"),.1))
         return
     end
-    ResetCareerPerf()
     if screen_ == "settings" then return end
     if not ready_ or not bike_ or not chase_ or not helmetCamera_ then return end
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)

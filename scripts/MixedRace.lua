@@ -24,6 +24,13 @@ function M.CreateCourse(map)
     local half=map.Roads and map.Roads[1] and map.Roads[1].width or 8
     for i=1,math.floor((length-180)/72) do
         local s=120+i*72
+        -- 飞坡入口和落地走廊不叠随机路障，宽车不会被迫撞侧壁。
+        local blocked=false
+        for _,ramp in ipairs(map.Ramps or {}) do
+            local d=(s-ramp.s)%length
+            if d<(ramp.landingEndS and ramp.landingEndS-ramp.s or (ramp.length or 12)+25) or d>length-30 then blocked=true end
+        end
+        if not blocked then
         local p,yaw=map.RoadPoint(s)
         local lane=((i%3)-1)*math.min(3.6,half*.48)
         local a=math.rad(yaw)
@@ -32,6 +39,7 @@ function M.CreateCourse(map)
             yaw=yaw,kind=kind,halfWidth=kind=="oil" and 1.3 or .65,halfLength=kind=="oil" and 2 or .7,
             height=kind=="pendulum" and 4.2 or (kind=="oil" and .12 or 1),phase=i*.83,
             breakable=kind~="pendulum" and kind~="oil",active=true}
+        end
     end
     return list
 end

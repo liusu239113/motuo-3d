@@ -8,45 +8,41 @@
   "entry": "main.lua",
   "version": "1.0.29",
   "taptap_publish": {
-    "title": "公路狂飙：从外卖骑手到职业车手",
-    "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
-    "category": "simulation",
+    "title": "公路狂飙",
+    "category": "racing",
     "screen_orientation": "landscape",
     "collection_type": "racing",
     "app_platforms": "1,2",
     "developer_id": 377480,
     "app_id": 1013102,
-    "miniapp_id": "tapmcakcfxnohtqqmk"
+    "miniapp_id": "tapmcakcfxnohtqqmk",
+    "description": "《公路狂飙》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能和地形优势争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。"
   },
   "assets": {
-    "icon": "",
-    "screenshots": [],
-    "promotional_image": "",
-    "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png"
+    "icon": "./assets/image/racing_original_icon.png",
+    "icon_url": "https://img-tc.tapimg.com/market/images/FiVwwXyZtmr7bBe83IzLyVUrfote.png"
   },
   "dc_publish_sync": {
-    "synced": false,
+    "synced": true,
     "dcVersion": "V-20261031",
     "dcStatus": "INIT",
     "baseFields": {
-      "title": "公路狂飙：从外卖骑手到职业车手",
-      "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
-      "category": "simulation",
-      "trial_note": null,
-      "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png",
-      "banner_url": null,
-      "square_promo_url": null,
-      "cover_horizontal_url": null,
-      "cover_vertical_url": null,
-      "screenshot_urls": null
+      "title": "公路狂飙",
+      "description": "《公路狂飙》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能和地形优势争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
+      "category": "racing",
+      "trial_note": "",
+      "icon_url": "https://img-tc.tapimg.com/market/images/FiVwwXyZtmr7bBe83IzLyVUrfote.png",
+      "banner_url": "",
+      "square_promo_url": "",
+      "cover_horizontal_url": "",
+      "cover_vertical_url": "",
+      "screenshot_urls": []
     },
-    "pending": {
-      "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png"
-    },
+    "pending": {},
     "baseGameplayDemoVideoId": 0
   },
   "metadata": {
-    "updated_at": "2026-11-03T06:14:17.720Z"
+    "updated_at": "2026-11-03T07:10:34.297Z"
   },
   "test_qrcode": {
     "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793686457588.png",

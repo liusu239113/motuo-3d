@@ -60,6 +60,27 @@ function Checks.Run()
     for _,o in ipairs(Rules.CreateCourse(map)) do
         check(o.s>120 and math.abs(o.lane)+o.halfWidth+2.7<8,"发车区与宽体安全通道")
     end
+    local tracks=require("Tracks").List()
+    for _,track in ipairs(tracks) do
+        check(track.width>=16 and track.shoulder>=track.width*.5,"宽体赛道与路肩："..track.id)
+        local topLow,topHigh=math.huge,0
+        for _,v in ipairs(Data.List) do topLow=math.min(topLow,v.top);topHigh=math.max(topHigh,v.top) end
+        check(topHigh/topLow<1.22,"基础极速差距限制，慢车保留技能赢法："..track.id)
+    end
+    local Race=require("Race")
+    local Landscape=require("Landscape")
+    local race=Race.New(Landscape,Sim.New(Landscape),{mixed=true,laps=1,quiet=true,rosterOffset=0})
+    race:Start(1)
+    local seen={}
+    for _,r in ipairs(race.racers) do
+        if not r.isPlayer then
+            check(not seen[r.vehicleId],"同场对手种类不重复")
+            seen[r.vehicleId]=true
+            local v=Data.Get(r.vehicleId)
+            check(v~=nil and math.abs(r.driveSim.vehicle.maxSpeed-v.top/3.6)<.001,"AI使用自身动力而非玩家引擎")
+        end
+    end
+    race:Stop()
     check(require("ProfileChecks").Run().passed,"旧档和三局试驾事务")
     check(require("RewardedAdsChecks").Run().passed,"广告完成/关闭/拒绝/超时/重复回调")
     print(string.format("[混合验收] PASS %d项 / %d种独立3D载具 / 技能、地形、破障、存档和广告隔离回归",count,#Data.List))

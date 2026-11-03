@@ -295,12 +295,14 @@ function AI.NitroSafe(race, r)
 end
 
 local function laneScore(race, r, candidate, horizon)
+    local own=require("MixedVehicles").Get(r.vehicleId)
+    local ownWidth=own and own.size[1]*.5 or .30
     local score = abs(candidate - r.preferredLane) * 0.18 + abs(candidate - r.lane) * 0.22
     local laneTime = abs(candidate - r.lane) / (2.5 + r.skill) + 0.32
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
         if abs(d) > horizon then return end
-        local margin = o.halfWidth + 0.30 + (o.bike and 0.48 or 0.55)
+        local margin = o.halfWidth + ownWidth + (o.bike and 0.48 or 0.55)
         local closing = r.speed - o.speed
         local arrival = closing > 0.1 and (d - o.halfLength - 2) / closing or 99
         local atLaneChange = d - closing * min(laneTime, 1.5)
@@ -318,6 +320,16 @@ local function laneScore(race, r, candidate, horizon)
             score = score + 35 -- reservation, not mutual parking priority.
         end
     end, true)
+    local spec=require("MixedVehicles").Get(r.vehicleId)
+    if race.options.mixed and spec then
+        local laneTerrain=Mixed.Terrain(race.map,r.s,candidate)
+        if laneTerrain=="water" and spec.id=="jellyfish" then score=score-7
+        elseif (laneTerrain=="mud" or laneTerrain=="slime" or laneTerrain=="water")
+            and (spec.id=="hovercraft" or spec.id=="bathtub") then score=score-4
+        elseif laneTerrain=="gravel" and (spec.id=="tank" or spec.id=="centipede" or spec.id=="beetle") then score=score-3
+        elseif laneTerrain=="ice" and spec.id=="sled" then score=score-6
+        elseif laneTerrain~="asphalt" then score=score+3 end
+    end
     return score
 end
 

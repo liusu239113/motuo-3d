@@ -364,7 +364,7 @@ function Race:Start(laps)
         ---@type RaceRacer
         local r = {id = isPlayer and "player" or "ai" .. aiIndex,
             name = isPlayer and "你" or names[aiIndex], isPlayer = isPlayer,
-            vehicleId = isPlayer and self.sim.vehicleId or cars[(aiIndex - 1+rosterOffset) % #cars + 1],
+            vehicleId = isPlayer and self.sim.vehicleId or cars[((aiIndex - 1)*(self.options.mixed and 7 or 1)+rosterOffset) % #cars + 1],
             colorId = ({"red", "blue", "yellow", "white", "green", "violet", "blue", "yellow", "violet"})[i],
             index = i, x = 0, y = 0, z = 0, yaw = 0, pitch = 0, lean = 0, steer = 0,
             speed = 0, lane = lane, wantedLane = lane, s = s, roadS = s % self.length,

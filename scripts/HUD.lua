@@ -231,7 +231,7 @@ function HUD:Init(actions, controls)
             if not resource then print("[界面] 主视觉暂未就绪：" .. path) end
         end)
     end
-    print("[竞速界面] 钢黑琥珀 / 九款独立车型 / 真实3D车库 / 多指图片操控")
+    print("[竞速界面] 钢黑琥珀 / 27款载具 / 独立3D车库 / 混合技能竞速")
 end
 
 function HUD:BuildRide()
@@ -337,7 +337,7 @@ function HUD:BuildMenu()
     self.menuRaceButton = entry("进入赛事", function() self:OpenGarage(true) end, true)
     self.menuPracticeButton = entry("自由练习", function() self:OpenGarage(false) end, false)
     self.menuSettingsButton = entry("操作设置", function() self:OpenSettings() end, false)
-    -- main 的生涯入口会事后追加自己的返回按钮；这里只留固定槽，不复制业务回调。
+    -- 剧情入口只显示锁定状态，不创建外卖场景或触碰历史存档。
     self.menuReturnHost = UI.Panel {width = "100%", height = 56, padding = 0, flexShrink = 0,
         children = {UI.Button{text="剧情模式 · 暂未开放",width="100%",height=56,disabled=true,fontSize=18}}}
     self.menuPrimaryRow = UI.Panel {width = "100%", padding = 0, gap = 10,
@@ -753,7 +753,9 @@ function HUD:LayoutResponsive()
     self.garage:SetStyle({padding = compact and 10 or 20})
     self.garageList:SetWidth(compact and 184 or 228)
     self.confirmButton:SetWidth(compact and 190 or 228)
-    self.garageFooter:SetStyle({gap = compact and 9 or 16})
+    self.garageFooter:SetStyle({gap = compact and 9 or 16,flexWrap="wrap"})
+    self.buyButton:SetWidth(compact and 132 or 150)
+    self.trialButton:SetWidth(compact and 150 or 172)
     self.trackMap:SetStyle({width = compact and 126 or 152, height = compact and 95 or 122, top = compact and 77 or 89})
     self.rankPanel:SetWidth(compact and 126 or 152)
     self.navPanel:SetStyle({left = compact and 146 or 178, width = compact and 112 or 126})

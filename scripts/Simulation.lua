@@ -279,6 +279,8 @@ function Sim:Barrier(dt, world)
     local halfWidth = road.width or 4.8
     local shoulder = road.shoulder or halfWidth
     local limit = math.max(halfWidth, shoulder) + (map.activeId == "circuit" and 4 or BARRIER_MARGIN)
+    local mixed=require("MixedVehicles").Get(self.vehicleId)
+    if mixed then limit=limit-mixed.size[1]*.5 end
     local _, lateral = map.NearestRoad(self.x, self.z)
     local excess = math.abs(lateral) - limit
     if excess <= 0 then self.barrierHold = 0; return false end
@@ -494,6 +496,11 @@ end
 
 function Sim:Land(ground)
     local impactSpeed = math.max(0, -self.vY)
+    local id=self.vehicleId
+    if id=="jellyfish" or id=="helicopter" then impactSpeed=impactSpeed*.35 end
+    if id=="loader" and (impactSpeed>10 or math.abs(self.steer)>.7) then
+        impactSpeed=impactSpeed+7
+    end
     local completed = self.spinTarget ~= 0 and math.abs(self.airSpin - self.spinTarget) < 3
     self.landingStable = (self.spinTarget == 0 or completed) and impactSpeed < 17 and self.wheelieAngle < 45
     -- 180落地为街机转向辅助：下一地面步沿新heading正向行驶并减速，
