@@ -285,29 +285,7 @@ function RideAudio.CheckPadFeedback()
 end
 
 ---@param scene Scene
----@---@return table
-function RideAudio:GetStatus()
-    local output = {available = false, initialized = false, playing = false}
-    local ok, device = pcall(GetAudio)
-    if ok and device then
-        output.available, output.initialized, output.playing = true, device.initialized == true, device.playing == true
-        output.effectGain = device:GetMasterGain(SOUND_EFFECT)
-        output.musicGain = device:GetMasterGain(SOUND_MUSIC)
-    end
-    local engine = self.sources[ENGINE]
-    local layer = self.engineLayerSource
-    return {
-        stopped = self.stopped, unlocked = self.unlocked, effectsEnabled = self.effectsEnabled,
-        output = output, engineClass = self.engineClass, vehicleProfile = self.engineProfile,
-        engine = {loaded = self.sounds[ENGINE] ~= nil, frequency = engine and engine:GetFrequency() or 0,
-            gain = engine and engine.gain or 0, playing = engine and engine.playing or false},
-        mechanical = {loaded = self.engineLayerSound ~= nil, kind = self.engineLayerClass,
-            frequency = layer and layer:GetFrequency() or 0, gain = layer and layer.gain or 0,
-            playing = layer and layer.playing or false},
-    }
-end
-
-return RideAudio
+---@return RideAudio
 function RideAudio.New(scene)
     local self = setmetatable({}, RideAudio)
     self:Init(scene)
@@ -656,7 +634,7 @@ function RideAudio:Update(dt, sim, screen)
     -- sim.vehicleId由仿真提供，不把完整车型id改成class。
     local vehicleId = sim and sim.vehicleId
     if vehicleId then self:SetVehicle(vehicleId) end
-    local frameTime = math.max(0, dt)
+    local frameTime = Finite(dt) and math.max(0, dt) or 0
     local riding = sim ~= nil and screen == "ride" and not sim.finished and sim.paused ~= true
     local speed = sim and math.max(0, sim.speed) or 0
     local speedRatio = Unit(speed / 61.1)
@@ -664,18 +642,27 @@ function RideAudio:Update(dt, sim, screen)
     local idle, redline = vehicle and vehicle.idle or 1200, vehicle and vehicle.redline or 11000
     local rpmRatio = sim and Unit((sim.rpm - idle) / math.max(1, redline - idle)) or 0
     local throttle = sim and Unit(sim.throttle) or 0
-    local effectsActive = self.unlocked and self.effectsEnabled and riding
+    local effectsActive = frameTime > 0 and self.unlocked and self.effectsEnabled and riding
+    if not effectsActive then
+        for index = ENGINE, PASS do self:SilenceTrack(index) end
+        self:SilenceEngineLayer()
+    end
     local windGain = effectsActive and speedRatio ^ 1.5 * 0.30 or 0
     local brakeGain = effectsActive and sim and
         (sim.burnout and 0.24 or (sim.braking and Unit(speed / 18) * 0.25 or 0)) or 0
     self:UpdatePadFeedback(frameTime, sim, effectsActive)
 
     local engineProfile = self.engineProfile or {pitch = RideAudio.EnginePitch[self.engineClass] or 1, gain = 1}
-    local engineGain = effectsActive and (0.10 + rpmRatio * 0.15 + throttle * 0.12) * (engineProfile.gain or 1) or 0
-    local enginePitch = (0.68 + rpmRatio * 0.78 + throttle * 0.10) * (engineProfile.pitch or 1)
+    local engineGain = effectsActive and (0.12 + rpmRatio * 0.15 + throttle * 0.13 + speedRatio * 0.035) * (engineProfile.gain or 1) or 0
+    local enginePitch = (0.68 + rpmRatio * 0.70 + throttle * 0.12 + speedRatio * 0.12) * (engineProfile.pitch or 1)
+    if engineProfile.electric then
+        -- 电机无燃烧怠速：起步立即可听，速度决定电机音高，松油后随滚行轻声滑降。
+        engineGain = effectsActive and (0.025 + throttle * 0.34 + speedRatio * 0.20) * (engineProfile.gain or 1) or 0
+        enginePitch = (0.56 + speedRatio * 0.92 + throttle * 0.24) * (engineProfile.pitch or 1)
+    end
     self:UpdateLoop(ENGINE, engineGain, enginePitch, frameTime)
-    local layerGain = effectsActive and (engineProfile.layerGain or 0) * (0.45 + rpmRatio * 0.55 + throttle * 0.25) or 0
-    local layerPitch = (engineProfile.layerPitch or 1) * (0.78 + rpmRatio * 0.48 + throttle * 0.12)
+    local layerGain = effectsActive and (engineProfile.layerGain or 0) * (0.30 + speedRatio * 0.55 + throttle * 0.25) or 0
+    local layerPitch = (engineProfile.layerPitch or 1) * (0.78 + speedRatio * 0.52 + throttle * 0.12)
     self:UpdateEngineLayerLoop(layerGain, layerPitch, frameTime)
     self:UpdateLoop(WIND, windGain, 0.80 + speedRatio * 0.30, frameTime)
     self:UpdateLoop(BRAKE, brakeGain, 0.85 + speedRatio * 0.20, frameTime)
@@ -693,7 +680,8 @@ function RideAudio:Update(dt, sim, screen)
             and sim.elapsed >= self.previousElapsed
             and sim.health <= self.previousHealth
             and sim.overtakes >= self.previousOvertakes
-        local eventFrame = screen == "ride" or (screen == "result" and self.previousScreen == "ride")
+        local eventFrame = frameTime > 0 and sim.paused ~= true
+            and (screen == "ride" or (screen == "result" and self.previousScreen == "ride"))
         if sameRun and eventFrame then
             if sim.health < self.previousHealth then
                 local damageRatio = Unit((self.previousHealth - sim.health) / 65)
@@ -738,6 +726,27 @@ function RideAudio:Stop()
     self.scene = nil
     self.previousSim = nil
     print("[音频] 已停止并释放所有驾驶音源")
+end
+
+---@return table
+function RideAudio:GetStatus()
+    local output = {available = false, initialized = false, playing = false}
+    local ok, device = pcall(GetAudio)
+    if ok and device then
+        output.available, output.initialized, output.playing = true, device.initialized == true, device.playing == true
+        output.effectGain = device:GetMasterGain(SOUND_EFFECT)
+        output.musicGain = device:GetMasterGain(SOUND_MUSIC)
+    end
+    local engine, layer = self.sources[ENGINE], self.engineLayerSource
+    return {
+        stopped = self.stopped, unlocked = self.unlocked, effectsEnabled = self.effectsEnabled,
+        output = output, engineClass = self.engineClass, vehicleProfile = self.engineProfile,
+        engine = {loaded = self.sounds[ENGINE] ~= nil, frequency = engine and engine:GetFrequency() or 0,
+            gain = engine and engine.gain or 0, playing = engine and engine.playing or false},
+        mechanical = {loaded = self.engineLayerSound ~= nil, kind = self.engineLayerClass,
+            frequency = layer and layer:GetFrequency() or 0, gain = layer and layer.gain or 0,
+            playing = layer and layer.playing or false},
+    }
 end
 
 return RideAudio

@@ -13,6 +13,9 @@ function M.Reset(sim)
     sim.oddSkillName="";sim.oddTerrain="asphalt";sim.oddPickups=0
     sim.oddSkillResult,sim.oddSkillResultTimer="",0
     sim.oddLockTarget,sim.oddLockTimer=nil,0
+    sim.oddLockPending,sim.oddLockDuration,sim.oddLockDistance=false,0,0
+    sim.oddGrabTarget,sim.oddGrabTimer,sim.oddGrabDuration=nil,0,1.5
+    sim.oddGrabHolding,sim.oddGrabResolved=false,false
     sim.oddPreviousAltitude=0
     sim.oddContacts={};sim.oddCoinContacts={};sim.oddLastImpact=sim.impactSerial or 0
 end

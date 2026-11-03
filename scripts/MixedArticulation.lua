@@ -144,7 +144,8 @@ local function grabPose(state)
     if holding then elapsed = .72 end
     local openMagnitude, extension
     if elapsed < .18 then
-        openMagnitude = -14
+        local t = elapsed / .18
+        openMagnitude = -14 * t
         extension = 0
     elseif elapsed < .34 then
         local t = (elapsed - .18) / .16
@@ -153,11 +154,9 @@ local function grabPose(state)
     elseif elapsed < .48 then
         local t = (elapsed - .34) / .14
         openMagnitude = -14 + 26 * t
-        closedMagnitude = 12
         extension = .20
     elseif elapsed < 1.08 or holding then
         openMagnitude = 12
-        closedMagnitude = 12
         extension = .20
     elseif elapsed < 1.30 then
         local t = (elapsed - 1.08) / .22
@@ -178,9 +177,8 @@ end
 ---@return Vector3?
 function M.GetGrabLocalPosition(root)
     if not root or not root:GetChild("JawP", true) or not root:GetChild("JawN", true) then return nil end
-    local positive = root:GetChild("JawP", true).position
-    local negative = root:GetChild("JawN", true).position
-    return (positive + negative) * .5 + V(.20, 0, 0)
+    local center = (root:GetChild("JawP", true).worldPosition + root:GetChild("JawN", true).worldPosition) * .5
+    return root:WorldToLocal(center)
 end
 
 ---@param root Node

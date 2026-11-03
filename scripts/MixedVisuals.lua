@@ -252,7 +252,8 @@ function Adapter:Init(scene,id)
     -- 及武器挂架继续显示，保留操作时的空间感和真实关节动作。
     local hidden={Body=true,Turret=true,Rotor=true,DetailedBody=true}
     for _,draw in ipairs(self.body:GetComponents("StaticModel",true)) do
-        if id~="ebike" and (hidden[draw.node.name] or hidden[draw.node.parent.name]) then
+        if hidden[draw.node.name] or hidden[draw.node.parent.name]
+            or (id=="ebike" and draw.node.parent.name=="Body") then
             self.firstPersonMeshes[#self.firstPersonMeshes+1]=draw
         end
     end
@@ -274,7 +275,7 @@ function Adapter:SetFirstPerson(firstPerson)
     for _,draw in ipairs(self.firstPersonMeshes) do
         -- 只切绘制组件；不禁用Vehicle/SourceTransform和关节节点，
         -- 这样首视角和追尾视角之间切换不会丢失车轮/巨颚/旋翼状态。
-        draw.enabled=self.firstPerson and false or true
+        draw.enabled=not self.firstPerson
     end
     self.cockpit.enabled=false
 end
