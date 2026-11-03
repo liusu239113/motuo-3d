@@ -145,7 +145,7 @@ function Checks.Run()
         local old = fresh()
         local before = mutations
         check(old.TryLoad() and old.Coins() == 2300 and old.Owns("cruiser") and old.TrackUnlocked("coast"), "合法旧档金币与权益保留")
-        check(old.Owns("sport") and old.OwnsRider("green") and old.TrackUnlocked("circuit"), "合法旧档补齐免费项")
+        check(old.Owns("ebike") and old.OwnsRider("green") and old.TrackUnlocked("circuit"), "合法旧档补齐免费项")
         check(mutations == before and files[path] == text, "合法旧档加载不迁移覆写")
     end
     seed("version=1\ncoins=2300\nvehicle=retired-bike_1\nrider=old_color-2\ntrack=old_route-3\n")
