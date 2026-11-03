@@ -1,6 +1,22 @@
 -- 正式资源清单：只有已落盘且有完整D/N贴图的车型开放，不允许几何占位回退。
 local M = {}
 M.Vehicles = {
+    tank = {
+        model="model/513d518442be410b82afbc2726c8a43d/Meshes/513d518442be410b82afbc2726c8a43d.mdl",
+        material="model/513d518442be410b82afbc2726c8a43d/Materials/513d518442be410b82afbc2726c8a43d_00_tripo_material_d39ddc01-06b1-4fec-8a0c-e14e9907c992.xml",
+        diffuse="model/513d518442be410b82afbc2726c8a43d/Textures/513d518442be410b82afbc2726c8a43d_00_D.jpg",
+        normal="model/513d518442be410b82afbc2726c8a43d/Textures/513d518442be410b82afbc2726c8a43d_00_N.png",
+        rotation=-90, targetLength=3.4, targetSize=Vector3(2.181,1.736,3.4),
+        measuredSize=Vector3(.999512,.510254,.641113), label="轻型突击坦克", class="mixed", resources={}, articulated=true, delivered=false,
+    },
+    beetle = {
+        model="model/919dbe654dcc4020ba6bf82ee24f7d1c/Meshes/919dbe654dcc4020ba6bf82ee24f7d1c.mdl",
+        material="model/919dbe654dcc4020ba6bf82ee24f7d1c/Materials/919dbe654dcc4020ba6bf82ee24f7d1c_00_tripo_material_e8185d8b-7e34-478c-a253-6e935f784562.xml",
+        diffuse="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_D.jpg",
+        normal="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_N.png",
+        rotation=0, targetLength=3.2, targetSize=Vector3(3.2,2.028,3.2),
+        measuredSize=Vector3(.999512,.633301,.999512), label="蒸汽锹甲", class="mixed", resources={}, articulated=true, delivered=false,
+    },
     helicopter = {
         model="model/20a0a237-889c-51ee-8273-c8423e349994/Meshes/59dbd63b4cea40838063939717d5fbf8.mdl",
         material="model/20a0a237-889c-51ee-8273-c8423e349994/Materials/59dbd63b4cea40838063939717d5fbf8_00_tripo_material_89461654-690d-4548-89ee-2619023bb54c.xml",
@@ -19,7 +35,10 @@ M.Vehicles = {
         measuredSize=Vector3(.966796875,.998046875,.951171875), label="疾风电动车", class="mixed", resources={}, articulated=true,
     },
 }
-function M.IsReady(id) return M.Vehicles[id] ~= nil end
+function M.IsReady(id)
+    local config=M.Vehicles[id]
+    return config~=nil and config.delivered~=false
+end
 -- 正式混合车型与现有独立摩托组成对手池；未交付车型不再悄悄出现拼装替代物。
 ---@return string[]
 function M.RaceIds()

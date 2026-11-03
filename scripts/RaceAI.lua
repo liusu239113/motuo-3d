@@ -503,6 +503,7 @@ function AI.Update(race, r, dt)
     race:Place(r)
     local traveled = sqrt((r.x - r.lastX)^2 + (r.z - r.lastZ)^2)
     r.distanceDriven = r.distanceDriven + traveled
+    if r.driveSim then r.driveSim.distance = r.distanceDriven end
     r.steer = clamp((r.lane - oldLane) / max(dt, 0.00001) * 0.24, -1, 1)
     r.lean = -r.steer * min(28, r.speed * 0.5)
     AI.TrafficContacts(race, r)

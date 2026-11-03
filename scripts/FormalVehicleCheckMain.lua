@@ -138,7 +138,9 @@ function Start()
     assert(renderPath:Load(assert(cache:GetResource("XMLFile","RenderPaths/Forward.xml"))))
     viewport:SetRenderPath(renderPath)
     renderer:SetViewport(0,viewport)
-    print(string.format("[正式模型验收] PASS %s / %d原始三角面 / D+N / 独立部件动画 / pose=%.4f",id,count//3,pose))
+    local animated=id=="ebike" or id=="helicopter"
+    print(string.format("[正式模型验收] PASS %s / %d原始三角面 / D+N / %s / pose=%.4f",id,count//3,
+        animated and "独立部件动画已验证" or "静态模型检查，动画尚未验收",pose))
 end
 
 function Stop()

@@ -117,6 +117,45 @@ function Checks.Run()
     end
     local Race=require("Race")
     local Landscape=require("Landscape")
+    -- 只隔离车型登记和AI配置来覆盖任意长度；其余构造/发车仍执行真实Race源码。
+    -- 虚构ID不进入动力/资产加载，也不修改共享MixedAssets或Catalog。
+    local raceFile=assert(cache:GetFile("Race.lua"))
+    local raceLines={};while not raceFile:IsEof() do raceLines[#raceLines+1]=raceFile:ReadLine() end;raceFile:Dispose()
+    local AI=require("RaceAI")
+    local pool={}
+    local rosterRace=assert(load(table.concat(raceLines,"\n"),"MixedRosterRace","t",setmetatable({
+        require=function(name)
+            if name=="MixedAssets" then return {RaceIds=function() return pool end} end
+            if name=="RaceAI" then return {Build=AI.Build,Configure=function() end} end
+            return require(name)
+        end},{__index=_G})))()
+    local sample=rosterRace.New(Landscape,Sim.New(Landscape),{mixed=true,quiet=true,seed=4817})
+    for size=0,64 do
+        pool={};for i=1,size do pool[i]="roster_"..i end
+        local effective=size==0 and {"sport","cruiser","rally"} or pool
+        local n=#effective
+        for _,offset in ipairs({0,1,5,n-1,n,n+5,-1}) do
+            sample.options.rosterOffset=offset
+            sample:Start()
+            local rng=4817;for _=1,54 do rng=(rng*48271)%2147483647 end
+            check(sample.rng==rng,"选车不得额外消耗随机流")
+            local seen,roster={},{}
+            local step=n%7~=0 and 7 or 1
+            for _,r in ipairs(sample.racers) do
+                if not r.isPlayer then
+                    local index=#roster+1
+                    if (index-1)%n==0 then seen={} end
+                    check(not seen[r.vehicleId],"任意池长耗尽前不重复："..size)
+                    check(r.vehicleId==effective[((index-1)*step+offset)%n+1],"offset确定性轮换且保留原互质池顺序")
+                    seen[r.vehicleId]=true;roster[index]=r.vehicleId
+                else check(r.vehicleId==sample.sim.vehicleId,"轮换不改变玩家车型") end
+            end
+            sample:Start()
+            for _,r in ipairs(sample.racers) do
+                if not r.isPlayer then check(r.vehicleId==roster[r.index<5 and r.index or r.index-1],"重赛同offset稳定重放") end
+            end
+        end
+    end
     local race=Race.New(Landscape,Sim.New(Landscape),{mixed=true,laps=1,quiet=true,rosterOffset=0})
     race:Start(1)
     local seen={}
@@ -128,6 +167,21 @@ function Checks.Run()
             check(entry and entry.available and math.abs(r.driveSim.vehicle.maxSpeed-entry.speedStat/3.6)<.001,
                 "AI只用已交付正式车型及自身动力")
         end
+    end
+    race.phase="racing"
+    for _=1,100 do
+        race.elapsed=race.elapsed+.02
+        for _,r in ipairs(race.racers) do
+            if not r.isPlayer then
+                local before=r.distanceDriven
+                AI.Update(race,r,.02)
+                check(r.driveSim.distance==r.distanceDriven and r.distanceDriven>=before,
+                    "正式AI动力里程逐步同步真实行程，不使用时间或路线坐标")
+            end
+        end
+    end
+    for _,r in ipairs(race.racers) do
+        if not r.isPlayer then check(r.driveSim.distance>0,"正式AI轮转得到非零里程") end
     end
     race:Stop()
     local front=Rules.ContactResponse("tank",.8,3,.1)

@@ -72,12 +72,16 @@ function Checks.Run(hud,storage)
     check(hud.confirmButton.props.text=="GM 免费体验 · 出发 →","发车文案准确")
     check(not hud.buyButton:IsVisible() and not hud.trialButton:IsVisible(),"GM隐藏经济入口")
     local ready=0
+    local unavailableId=""
     for _,v in ipairs(Catalog.List) do
         if v.available then
             ready=ready+1
             check(Catalog.CanFreeExperience(v.id) and Catalog.CanDrive(v.id),v.id.."免费驾驶")
             for _=1,4 do check(Catalog.ConsumeDriveTrial(v.id),v.id.."发车及重赛不扣次") end
-        else check(not Catalog.CanFreeExperience(v.id),v.id.."未交付不能绕过") end
+        else
+            check(not Catalog.CanFreeExperience(v.id),v.id.."未交付不能绕过")
+            if unavailableId=="" then unavailableId=v.id end
+        end
     end
     check(ready>=11,"覆盖所有已登记正式车型，不硬编码两种")
     check(not Catalog.CanFreeExperience("missing"),"未知车型不可驾驶")
@@ -89,11 +93,14 @@ function Checks.Run(hud,storage)
     check(hud.screen=="loading","真实车库确认按钮可免费发车")
     hud.actions.menu()
     hud.actions.start(false)
-    hud:SelectVehicle("tank",true)
-    check(hud.confirmButton.props.disabled==true and hud.vehicleBadges.tank:GetText()=="准备中 · 不可驾驶",
-        "GM下未交付车型仍明确禁用")
-    hud.actions.confirmVehicle("tank")
-    check(hud.screen=="garage","主入口也阻止未交付车")
+    if unavailableId~="" then
+        hud:SelectVehicle(unavailableId,true)
+        check(hud.confirmButton.props.disabled==true
+            and hud.vehicleBadges[unavailableId]:GetText()=="准备中 · 不可驾驶",
+            "GM下未交付车型仍明确禁用："..unavailableId)
+        hud.actions.confirmVehicle(unavailableId)
+        check(hud.screen=="garage","主入口也阻止未交付车："..unavailableId)
+    end
     hud.actions.menu();hud:OpenSettings();UI.Layout()
     local r=hud.gmFreeButton:GetAbsoluteLayout()
     local w,h=UI.GetViewportSize()
