@@ -1,0 +1,93 @@
+{
+    "version": 2,
+    "script": "FormalVehicleCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 14034,
+    "frames_completed": 260,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "[2026-11-03 17_31_47_824][104] ERROR: bgfx invalid shader => /workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp:5555 errmsg:glLinkProgram error:0:error: fragment shader input `vTexCoord' has no matching output in the previous stage\nerror: fragment shader input `vTangent' has no matching output in the previous stage\nerror: fragment shader input `vNormal' has no matching output in the previous stage\nerror: fragment shader input `vWorldPos' has no matching output in the previous stage\n",
+                    "frame": 1
+                }
+            ]
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 13,
+            "component_count": 8,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 10,
+            "components": 5,
+            "hash": 1858593210,
+            "frame_time_ms": 1792.6429443359376
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 1858593210,
+            "frame_time_ms": 21.76099967956543
+        },
+        {
+            "frame": 130,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 1858593210,
+            "frame_time_ms": 22.006000518798829
+        },
+        {
+            "frame": 260,
+            "phase": "run",
+            "nodes": 10,
+            "components": 5,
+            "hash": 1858593210,
+            "frame_time_ms": 29.408000946044923
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 1363.4150390625,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 2,
+        "StaticModel": 3,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 1,
+        "total_errors": 1
+    }
+}

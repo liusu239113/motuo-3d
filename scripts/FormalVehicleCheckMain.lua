@@ -70,6 +70,18 @@ function Start()
         vehicle.enabled=false
     end
     Visual.Animate(vehicle,id,pose,{oddActive=active and 1 or 0})
+    for _,draw in ipairs(vehicle:GetComponents("StaticModel",true)) do
+        local mat=draw:GetMaterial()
+        for _,pass in ipairs(mat:GetTechnique(0):GetPasses()) do
+            print(string.format("[正式材质pass] %s VS=%s [%s] PS=%s [%s]",pass.name,
+                pass.vertexShader,pass.vertexShaderDefines,pass.pixelShader,pass.pixelShaderDefines))
+        end
+        break
+    end
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-formal-no-model" then vehicle.enabled=false end
+        if arg=="-formal-one-light" then fill.enabled=false end
+    end
     local cameraNode=scene_:CreateChild("Camera")
     cameraNode.position=Vector3(5.0,3.8,5.6)
     cameraNode:LookAt(Vector3(0,1,0))
