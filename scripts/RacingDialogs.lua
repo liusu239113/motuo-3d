@@ -9,6 +9,7 @@ local C = Theme.Colors
 ---@field controls MobileControls
 ---@field screen string
 ---@field portraitActive boolean
+---@field CancelSettingsInput? fun(self:RacingDialogs)
 local Dialogs = {}
 -- Modal 的内容/页脚是独立 Yoga 子树，不属于 children；在业务层逐一释放，避免重复销毁。
 local function disposeModal(modal)
@@ -30,6 +31,7 @@ local function addPages(modal, height, children)
     local frame, pages = Theme.FixedPages(children, 10)
     frame:SetStyle({height = height, flexGrow = 0, flexBasis = "auto", flexShrink = 1})
     modal:AddContent(frame)
+    local layoutWidth, layoutHeight = 400, height
     local function withModalLayout(fn, self, value)
         local content = modal.contentContainer_
         if not modal.node or not content or not content.node then return end
@@ -37,8 +39,7 @@ local function addPages(modal, height, children)
         UI.Layout = function()
             layout()
             if content.node then
-                YGNodeCalculateLayout(content.node, content.renderWidth_ or 400,
-                    content.renderHeight_ or height, YGDirectionLTR)
+                YGNodeCalculateLayout(content.node, layoutWidth, layoutHeight, YGDirectionLTR)
             end
         end
         local ok, result = pcall(fn, self, value)
@@ -49,11 +50,30 @@ local function addPages(modal, height, children)
     local paginate, setPage = pages.Paginate, pages.SetPage
     pages.Paginate = function(self) return withModalLayout(paginate, self) end
     pages.SetPage = function(self, page) return withModalLayout(setPage, self, page) end
-    local render = modal.RenderModalContent
-    modal.RenderModalContent = function(self, vg)
-        render(self, vg)
-        pages:Update(0)
-        render(self, vg)
+    -- Modal calls this measurement hook before drawing its body. Paginate the
+    -- independent subtree at the SAME constrained size the renderer will use;
+    -- rendering to discover geometry double-blends the backdrop and all text.
+    local measure = modal.CalculateContentHeight
+    modal.CalculateContentHeight = function(self, width)
+        local natural = measure(self, width)
+        local cp = self.props.contentPadding or 16
+        local vertical = type(cp) == "table" and (cp[1] + cp[3]) or cp * 2
+        local fp, footer = self.props.footerPadding, self.footerWidget_
+        local footerHeight = 0
+        if footer then
+            local modalWidth = width + (type(cp) == "table" and (cp[2] + cp[4]) or cp * 2)
+            YGNodeCalculateLayout(footer.node, modalWidth - fp[2] - fp[4], YGUndefined, YGDirectionLTR)
+            footerHeight = math.max(64, YGNodeLayoutGetHeight(footer.node) + fp[1] + fp[3])
+        end
+        local header = self.title_ and (self.props.headerHeight or 56) or 0
+        local maxHeights = {sm = 400, md = 600, lg = 720, xl = 800}
+        local maxHeight = maxHeights[self.size_] or (UI.GetHeight() * 0.9)
+        local total = math.min(natural + vertical + header + footerHeight, maxHeight)
+        local headerGap = self.title_ and (self.props.headerContentGap or 16) or 0
+        layoutWidth, layoutHeight = width, math.max(0, total - header - headerGap - footerHeight)
+        YGNodeCalculateLayout(self.contentContainer_.node, layoutWidth, layoutHeight, YGDirectionLTR)
+        withModalLayout(pages.Update, pages, 0)
+        return natural
     end
     modal.racingPages = pages
     return pages
@@ -71,6 +91,7 @@ end
 ---@param onConfirm fun(trackId:string):boolean?, string?
 function Dialogs:ShowTrackLock(track, currentCoins, onConfirm)
     self:CloseModal()
+    if self.CancelSettingsInput then self:CancelSettingsInput() end
     local price = math.max(0, math.floor(tonumber(track.price) or 0))
     local coins = math.max(0, math.floor(tonumber(currentCoins) or 0))
     local missing = math.max(0, price - coins)
@@ -141,6 +162,7 @@ function Dialogs:ShowTrackLock(track, currentCoins, onConfirm)
 end
 function Dialogs:ShowNotice(title, message)
     self:CloseModal()
+    if self.CancelSettingsInput then self:CancelSettingsInput() end
     local vw, vh = UI.GetViewportSize()
     local modal = UI.Modal {title = title or "提示", size = vw < 540 and "sm" or "md",
         closeOnOverlay = false, closeOnEscape = true,

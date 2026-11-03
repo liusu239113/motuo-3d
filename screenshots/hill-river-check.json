@@ -1,0 +1,130 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 69581,
+    "frames_completed": 420,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 513.781ms (threshold: 500ms)",
+                    "frame": 33
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 657.339ms (threshold: 500ms)",
+                    "frame": 85
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 536.769ms (threshold: 500ms)",
+                    "frame": 103
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 668.393ms (threshold: 500ms)",
+                    "frame": 125
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 738.156ms (threshold: 500ms)",
+                    "frame": 131
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2914.99ms (threshold: 500ms)",
+                    "frame": 145
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 45902.6ms (threshold: 500ms)",
+                    "frame": 146
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 3692,
+            "component_count": 1444,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1732.0169677734376
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.631000518798829
+        },
+        {
+            "frame": 210,
+            "phase": "run",
+            "nodes": 543,
+            "components": 301,
+            "hash": 1241708158,
+            "frame_time_ms": 16.604999542236329
+        },
+        {
+            "frame": 420,
+            "phase": "run",
+            "nodes": 543,
+            "components": 301,
+            "hash": 1241708158,
+            "frame_time_ms": 16.60300064086914
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 45902.640625,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 4,
+        "SkyLightCapture": 1,
+        "Light": 26,
+        "ProceduralSky": 1,
+        "Skybox": 1,
+        "CustomGeometry": 571,
+        "StaticModel": 655,
+        "Text3D": 119,
+        "AnimatedModel": 44,
+        "SoundSource": 20
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 7,
+        "total_errors": 7
+    }
+}

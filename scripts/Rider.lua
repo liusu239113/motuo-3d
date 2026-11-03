@@ -501,12 +501,15 @@ function Rider:ValidatePose()
 end
 
 -- 仅显式回归调用时读取CPU shadow buffer；不缓存Bone，也不在游戏每帧读顶点。
+---@param onlyLod? integer 只解码指定的0起始LOD；默认仍完整返回全部LOD供蒙皮验收。
 ---@return table[]
-function Rider:ReadSkinVertices()
+function Rider:ReadSkinVertices(onlyLod)
     local resource = self.model:GetModel()
     local lods = {}
     assert(resource:GetNumGeometries() == 1, "Rider skin test expects inspected single-geometry pack")
-    for lod = 0, resource:GetNumGeometryLodLevels(0) - 1 do
+    local lastLod=resource:GetNumGeometryLodLevels(0)-1
+    assert(onlyLod==nil or onlyLod>=0 and onlyLod<=lastLod,"蒙皮读取LOD越界")
+    for lod = onlyLod or 0, onlyLod or lastLod do
         local vb = resource:GetGeometry(0, lod):GetVertexBuffer(0)
         assert(vb:HasElement(TYPE_VECTOR3, SEM_POSITION)
             and vb:HasElement(TYPE_VECTOR4, SEM_BLENDWEIGHTS)

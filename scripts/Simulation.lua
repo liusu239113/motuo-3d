@@ -94,9 +94,8 @@ function Sim:SetVehicle(id)
         local stats = {}
         for key, value in pairs(VEHICLES[class] or {}) do stats[key] = value end
         vehicle = stats --[[@as table]]
-        local baseSpeed = ((VEHICLES[class] or {}).maxSpeed or vehicle.maxSpeed) --[[@as number]]
         local baseAcceleration = ((VEHICLES[class] or {}).acceleration or vehicle.acceleration) --[[@as number]]
-        if entry.speedStat then vehicle.maxSpeed = baseSpeed * (entry.speedStat / 234) end
+        if entry.speedStat then vehicle.maxSpeed = entry.speedStat / 3.6 end
         if entry.accelStat then vehicle.acceleration = baseAcceleration * entry.accelStat end
         if entry.offroadStat then vehicle.offroad = entry.offroadStat end
         if entry.handlingStat then vehicle.steering = entry.handlingStat end

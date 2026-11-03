@@ -81,7 +81,7 @@ function Actions.Switch(session,id)
     if ready then return complete() end
     session.loading=true
     session.view:ClosePhone(); session.view.controls:SetEnabled(false)
-    session.loader=Loader.New({},function(title,detail,fraction) session.view:ShowLoading(title,detail,fraction) end,
+    session.loader=Loader.New({},function(title,detail,fraction,numbers) session.view:ShowLoading(title,detail,fraction,numbers) end,
         function()
             session.loading=false; session.view:ShowGame()
             complete()

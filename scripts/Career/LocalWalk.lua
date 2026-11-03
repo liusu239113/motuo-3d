@@ -4,6 +4,7 @@
 -- 最多3路点、18候选、前视7m/侧移2.3m；至少1秒才重规划一次。
 -- 每条线完整扫掠静态墙+动态圆/OBB；占用改变则取消，失败安全等候。
 -- 不瞬移、不推人、不做无界A*或每帧搜索。
+local Motion=require("Career.TrafficMotion")
 local Walk={}
 Walk.REPLAN_SECONDS=1
 Walk.MAX_WAYPOINTS=3
@@ -56,17 +57,34 @@ function Walk.SegmentFree(city,p,ax,az,bx,bz,blockers,groups,cars)
     local low,high=p.minOffset or -2.3,p.maxOffset or 2.3
     if math.min(s1,s2)<-.001 or math.max(s1,s2)>p.length+.001
         or math.min(o1,o2)<low-.001 or math.max(o1,o2)>high+.001 then return false end
-    if not city:StaticSegmentFree(ax,az,bx,bz,.36,"walk",0) then return false end
+    local y1=city:WalkSurface(ax,az,p.height or 0)
+    local ym=city:WalkSurface((ax+bx)/2,(az+bz)/2,y1)
+    local y2=city:WalkSurface(bx,bz,ym)
+    if not city:StaticSegmentFree(ax,az,bx,bz,.36,"walk",y1) then return false end
+    -- Side view: the swept feet/head envelope must intersect a blocker before
+    -- its XZ circle/OBB can stop us; a player on the deck cannot block below.
+    local low,high=math.min(y1,ym,y2),math.max(y1,ym,y2)+1.8
     for _,b in ipairs(blockers) do
-        if not circleFree(ax,az,bx,bz,b.x,b.z,p.radius+b.radius+.45) then return false end
+        if not circleFree(ax,az,bx,bz,b.x,b.z,p.radius+b.radius+.45) then
+            local b1,b2=Motion.BlockerInterval(city,b)
+            if Motion.VerticalOverlap(low,high,b1,b2) then return false end
+        end
     end
     for _,group in ipairs(groups) do
         for _,other in ipairs(group) do
-            if other~=p and not circleFree(ax,az,bx,bz,other.x,other.z,.9) then return false end
+            if other~=p and not circleFree(ax,az,bx,bz,other.x,other.z,.9) then
+                local b1,b2=Motion.PersonInterval(city,other)
+                if Motion.VerticalOverlap(low,high,b1,b2) then return false end
+            end
         end
     end
     for _,group in ipairs(cars) do
-        for _,car in ipairs(group) do if not carFree(ax,az,bx,bz,car,.5) then return false end end
+        for _,car in ipairs(group) do
+            if not carFree(ax,az,bx,bz,car,.5) then
+                local b1,b2=Motion.VehicleInterval(city,car)
+                if Motion.VerticalOverlap(low,high,b1,b2) then return false end
+            end
+        end
     end
     return true
 end
@@ -75,6 +93,9 @@ local function plan(city,p,blockers,groups,cars)
     local state=p.localWalk
     state.attempts=state.attempts+1
     local s=math.max(0,math.min(p.length,(projection(p,p.x,p.z))))
+    -- 同步规划期间占用不变。首条侧移边只依赖offset，与ahead无关；false也复用。
+    local firstEdges={}
+    local firstPoints={}
     for _,ahead in ipairs({2.5,4.5,Walk.MAX_AHEAD}) do
         local finish=math.max(0,math.min(p.length,s+p.direction*ahead))
         if math.abs(finish-s)>1 then
@@ -82,15 +103,23 @@ local function plan(city,p,blockers,groups,cars)
                 for _,side in ipairs({1,-1}) do
                     local offset=amount*side
                     if offset>=(p.minOffset or -2.3) and offset<=(p.maxOffset or 2.3) then
-                        local ax,az=point(p,s,offset)
-                        local bx,bz=point(p,finish,offset)
-                        local cx,cz=point(p,finish,0)
-                        if Walk.SegmentFree(city,p,p.x,p.z,ax,az,blockers,groups,cars)
-                            and Walk.SegmentFree(city,p,ax,az,bx,bz,blockers,groups,cars)
-                            and Walk.SegmentFree(city,p,bx,bz,cx,cz,blockers,groups,cars) then
-                            state.points={{x=ax,z=az},{x=bx,z=bz},{x=cx,z=cz}}
-                            state.index=1; state.plans=state.plans+1
-                            return true
+                        if firstEdges[offset]==nil then
+                            local ax,az=point(p,s,offset)
+                            firstPoints[offset]={x=ax,z=az}
+                            firstEdges[offset]=Walk.SegmentFree(city,p,p.x,p.z,ax,az,blockers,groups,cars)
+                        end
+                        if firstEdges[offset] then
+                            local first=firstPoints[offset]
+                            local ax,az=first.x,first.z
+                            local bx,bz=point(p,finish,offset)
+                            if Walk.SegmentFree(city,p,ax,az,bx,bz,blockers,groups,cars) then
+                                local cx,cz=point(p,finish,0)
+                                if Walk.SegmentFree(city,p,bx,bz,cx,cz,blockers,groups,cars) then
+                                    state.points={{x=ax,z=az},{x=bx,z=bz},{x=cx,z=cz}}
+                                    state.index=1; state.plans=state.plans+1
+                                    return true
+                                end
+                            end
                         end
                     end
                 end
@@ -146,5 +175,23 @@ function Walk.Advance(city,p,dt,blockers,groups,cars)
         end
     end
     return moved
+end
+-- 不替换生产检测函数；用同一静态扫掠接口计数首边失败与成功重试。
+function Walk.CacheChecks()
+    local calls=0
+    local city={WalkSurface=function() return 0 end,
+        StaticSegmentFree=function() calls=calls+1;return false end}
+    local p={path={0,0,0,20},length=20,x=0,z=5,s=5,direction=1,radius=.32,height=0}
+    Walk.Reset(p)
+    assert(not plan(city,p,{},{},{}) and calls==6,"失败首边仍按三个前视距离重复检查")
+    assert(not plan(city,p,{},{},{}) and calls==12,"绕行通行结论跨规划缓存")
+    city.StaticSegmentFree=function() calls=calls+1;return true end
+    assert(plan(city,p,{},{},{}) and calls==15 and #p.localWalk.points==3,"首个合法绕行改变或跨规划沿用false")
+    ---@type {x:number,z:number}[]
+    local points=p.localWalk.points
+    assert(points[1].x==-1.1 and points[1].z==5 and points[2].x==-1.1 and points[2].z==7.5
+        and points[3].x==0 and points[3].z==7.5,"原候选顺序或路点改变")
+    print("[局部绕行缓存检查] PASS 六首边/false复用/跨规划失效/首个合法候选与三路点不变")
+    return true
 end
 return Walk

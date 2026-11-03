@@ -6,6 +6,14 @@ local Progress=require("Career.Progression")
 local Engagements=require("Career.Engagements")
 local C=K.C
 local Apps={}
+-- Data pagination precedes Widget creation. PhonePages only lays out this
+-- bounded batch; a long career never allocates one card per historical entry.
+Apps.WalletBatchSize=6
+---@type table<table, number>
+local walletPages=setmetatable({},{__mode="k"})
+---@param view CareerView
+---@return number
+function Apps.WalletDataPage(view) return walletPages[view] or 1 end
 local INTRO={
     {text="二狗，车钥匙给你了。那辆9号以前是我追对象时留下的，壳子磕过，电池还能用。后架我给你装了保温箱。",self=false},
     {text="先把饭吃上，晚上桥下或者公园能落脚。送餐别急，停稳下车再拿。等你真攒够五万，咱去车行看看。",self=false},
@@ -18,6 +26,24 @@ local KINDS={opening="初始生活现金",delivery="配送到账",meal="早餐�
     sponsor="车队赞助",fuel="摩托燃油",refuel="摩托燃油",home_purchase="房产买断",
     ad_tip="顾客小费（激励视频）",ad_subsidy="每日补贴（激励视频）"}
 function Apps.LedgerName(entry) return KINDS[entry.kind] or entry.kind end
+-- Newest first; keep stable source indices for existing bill ids/callbacks.
+-- Opening capital belongs only to “全部”, never to earned income.
+function Apps.WalletBatch(state,filter,page)
+    local indices={}
+    for i=#state.ledger,1,-1 do
+        local entry=state.ledger[i]
+        if filter=="all" or filter=="income" and entry.deltaCents>0 and entry.kind~="opening"
+            or filter=="expense" and entry.deltaCents<0 then indices[#indices+1]=i end
+    end
+    local count=#indices
+    local pages=math.max(1,math.ceil(count/Apps.WalletBatchSize))
+    local selected=math.max(1,math.min(pages,math.floor(page or 1)))
+    local first=(selected-1)*Apps.WalletBatchSize+1
+    local last=math.min(count,first+Apps.WalletBatchSize-1)
+    local rows={}
+    for i=first,last do rows[#rows+1]={index=indices[i],entry=state.ledger[indices[i]]} end
+    return {rows=rows,count=count,pages=pages,page=selected,first=count==0 and 0 or first,last=last}
+end
 -- 今日真正发生的收支，不将开局本金包装为今天挣到的钱。
 function Apps.Today(state)
     local income,expense=0,0
@@ -67,12 +93,14 @@ function Apps.Threads(state)
 end
 ---@param view CareerView
 function Apps.Reset(view)
-    view.phoneChatId=""; view.phoneLedgerId=""; view.phoneWalletFilter="all"
+    view.phoneChatId=""; view.phoneLedgerId=""; view.phoneWalletFilter="all"; walletPages[view]=1
     view.phoneReadThreads=view.phoneReadThreads or {}
 end
 ---@param view CareerView
 function Apps.Back(view)
-    if view.phonePage=="messages" and view.phoneChatId~="" then
+    if view.phonePage=="life" and view.phoneContent:GetTask() and view.phoneContent:GetTask()~="" then
+        view.phoneContent:OpenTask("")
+    elseif view.phonePage=="messages" and view.phoneChatId~="" then
         view.phoneChatId=""; view.phoneContent:ScrollToTop(); view:BuildPhone(view.phoneAppState,view.phoneAppOffer,view.phoneAppActive)
     elseif view.phonePage=="wallet" and view.phoneLedgerId~="" then
         view.phoneLedgerId=""; view.phoneContent:ScrollToTop(); view:BuildPhone(view.phoneAppState,view.phoneAppOffer,view.phoneAppActive)
@@ -221,37 +249,49 @@ function Apps.Wallet(view,content,state)
             K.Stat("今日收入",K.Money(income),C.white),K.Stat("今日支出",K.Money(expense),C.white)}}}})
     content:AddChild(card)
     content:AddChild(K.Text("今日按第"..state.day.."天流水汇总，不含开局本金。",9,C.muted,{id="career-wallet-today-note"}))
-    content:AddChild(K.Text("收支明细",13,C.ink,{fontWeight="bold"}))
+    local batch=Apps.WalletBatch(state,view.phoneWalletFilter,walletPages[view] or 1)
+    walletPages[view]=batch.page
+    content:AddChild(K.Text("收支明细 · "..(({all="全部",income="收入",expense="支出"})[view.phoneWalletFilter] or "全部"),13,C.ink,
+        {id="career-wallet-filter-title",fontWeight="bold"}))
     local filters=UI.Row{id="career-wallet-filters",width="100%",padding=0,gap=4}
     for _,filter in ipairs({{"all","全部"},{"income","收入"},{"expense","支出"}}) do
         local key=filter[1]
-        filters:AddChild(K.Button(filter[2],function() view.phoneWalletFilter=key; rebuild(view) end,
+        filters:AddChild(K.Button(filter[2],function() view.phoneWalletFilter=key; walletPages[view]=1; rebuild(view) end,
             "career-wallet-filter-"..key,view.phoneWalletFilter==key,{width="31%",flexGrow=1,flexShrink=1,flexBasis=0}))
     end
     content:AddChild(filters)
+    local dataPager=K.Card("career-wallet-data-pagination",{padding=6,gap=5,children={
+        K.Text(string.format("流水第%d / %d批 · 第%d～%d笔 / 共%d笔",batch.page,batch.pages,batch.first,batch.last,batch.count),10,C.muted,
+            {id="career-wallet-data-page"})}})
+    local dataButtons=UI.Row{width="100%",padding=0,gap=6}
+    local function changeBatch(direction)
+        walletPages[view]=math.max(1,math.min(batch.pages,batch.page+direction))
+        rebuild(view)
+        view.phoneContent:ShowWidget("career-wallet-data-pagination")
+    end
+    local previous=K.Button("上批流水",function() changeBatch(-1) end,"career-wallet-data-prev",false,
+        {flexGrow=1,flexShrink=1,flexBasis=0,width="auto",disabled=batch.page<=1})
+    local following=K.Button("下批流水",function() changeBatch(1) end,"career-wallet-data-next",true,
+        {flexGrow=1,flexShrink=1,flexBasis=0,width="auto",disabled=batch.page>=batch.pages})
+    dataButtons:AddChild(previous);dataButtons:AddChild(following);dataPager:AddChild(dataButtons)
+    content:AddChild(dataPager)
     local list=K.Card("career-wallet-ledger",{padding=0,gap=0})
     content:AddChild(list)
-    local count=0
-    for i=#state.ledger,1,-1 do
-        local entry=state.ledger[i]
-        local filter=view.phoneWalletFilter
-        if filter=="all" or filter=="income" and entry.deltaCents>0 and entry.kind~="opening"
-            or filter=="expense" and entry.deltaCents<0 then
-            count=count+1
-            local detail=entry
-            list:AddChild(UI.Panel{id="career-wallet-entry-"..i,width="100%",minHeight=86,padding=8,gap=4,
-                pointerEvents="box-only",borderBottomWidth=1,borderBottomColor=C.line,
-                onClick=function() view.phoneLedgerId=detail.id; rebuild(view) end,children={
-                    K.Text(Apps.LedgerName(entry),12,C.ink,{fontWeight="bold"}),
-                    K.Text(string.format("%+.2f",entry.deltaCents/100),13,entry.deltaCents>0 and C.green or C.ink,
-                        {id="career-wallet-entry-amount-"..i,fontWeight="bold"}),
-                    K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
-                    K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",9,C.muted)}})
-        end
+    for _,row in ipairs(batch.rows) do
+        local i,entry=row.index,row.entry
+        local detail=entry
+        list:AddChild(UI.Panel{id="career-wallet-entry-"..i,width="100%",minHeight=86,padding=8,gap=4,
+            pointerEvents="box-only",borderBottomWidth=1,borderBottomColor=C.line,
+            onClick=function() view.phoneLedgerId=detail.id; rebuild(view) end,children={
+                K.Text(Apps.LedgerName(entry),12,C.ink,{fontWeight="bold"}),
+                K.Text(string.format("%+.2f",entry.deltaCents/100),13,entry.deltaCents>0 and C.green or C.ink,
+                    {id="career-wallet-entry-amount-"..i,fontWeight="bold"}),
+                K.Text(K.Stamp(entry.day,entry.time),9,C.muted),
+                K.Text(entry.kind=="opening" and "本金 · 非配送收入" or "已记账 · 点开详情",9,C.muted)}})
     end
-    if count==0 then list:AddChild(K.Text("暂无"..(view.phoneWalletFilter=="income" and "收入" or "支出").."记录\n完成配送或发生消费后会在这里显示。",11,C.muted,
+    if batch.count==0 then list:AddChild(K.Text("暂无"..(view.phoneWalletFilter=="income" and "收入" or view.phoneWalletFilter=="expense" and "支出" or "收支").."记录\n完成配送或发生消费后会在这里显示。",11,C.muted,
         {id="career-wallet-empty",padding=12})) end
-    content:AddChild(K.Text("共"..count.."笔 · 点击账单可查看真实编号与账后余额",9,C.muted,{id="career-wallet-count"}))
+    content:AddChild(K.Text("共"..batch.count.."笔 · 每批最多"..Apps.WalletBatchSize.."笔\n上/下批切换账单；底部上/下一页浏览本批内容。",9,C.muted,{id="career-wallet-count"}))
     local archive=K.Card("career-wallet-storage",{children={K.Text("存档与备份",12,C.ink,{fontWeight="bold"}),
         K.Text(view.actions.saveStatus and view.actions.saveStatus() or "本地保存不等于云端确认。",9,C.muted),
         K.Text("保存会写本地并尝试账号云同步；读取云档需再次确认。",10,C.muted),

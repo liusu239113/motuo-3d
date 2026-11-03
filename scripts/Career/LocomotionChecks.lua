@@ -52,6 +52,177 @@ local function compareSourceSampling(motion)
     assert(report.samples==96 and report.matrices==2208,"源采样等价回归必须覆盖三动作32相位全部映射")
     return report
 end
+-- 独立旧路径：递归只调用自身，不能调用Rider.GetLocalBoneTransform（其递归会动态派发回新Rig）。
+-- 保留旧路径每层重新GetSkeleton/GetBone、节点读取顺序以及矩阵乘法括号。
+---@param rig CareerRig
+---@param name string
+---@return Matrix3x4
+local function originalTransform(rig,name)
+    local bind=rig.bind[name] --[[@as RiderBindPose]]
+    local bone=rig.model:GetSkeleton():GetBone(name)
+    assert(bone and bone.node,"Rider skeleton missing bone: "..name)
+    local transform=bone.node.transform --[[@as Matrix3x4]]
+    ---@type string?
+    local parent=bind.parentName
+    if parent then return originalTransform(rig,parent)*transform end
+    return rig.node.transform*rig.mesh.transform*transform
+end
+-- 原鞋底循环与原FK，独立于新helper/祖先矩阵表；完整/去重列表均可对照。
+---@param rig CareerRig
+---@param name string
+---@param complete? boolean
+---@return number, table<string, Matrix3x4>
+local function originalSole(rig,name,complete)
+    ---@type table<string, Matrix3x4>
+    local matrices={}
+    local lowest=math.huge
+    local vertices=complete and rig.fullSoleVertices[name] or rig.soleVertices[name]
+    for _,v in ipairs(vertices) do
+        local y=0
+        for k=1,4 do
+            if v.weights[k]>0 then
+                local boneName=tostring(rig.boneNames[v.indices[k]+1])
+                local m=matrices[boneName]
+                if not m then
+                    m=originalTransform(rig,boneName)*rig.model:GetSkeleton():GetBone(boneName).offsetMatrix --[[@as Matrix3x4]]
+                    matrices[boneName]=m
+                end
+                y=y+(m*v.position).y*v.weights[k]
+            end
+        end
+        lowest=math.min(lowest,y)
+    end
+    return lowest,matrices
+end
+local matrixFields={"m00","m01","m02","m03","m10","m11","m12","m13","m20","m21","m22","m23"}
+---@param a Matrix3x4
+---@param b Matrix3x4
+---@param name string
+local function exactMatrix(a,b,name)
+    for _,field in ipairs(matrixFields) do
+        -- 逐12元素完全相同，不以轴探针/epsilon隐藏乘法重结合或旧矩阵。
+        assert(a[field]==b[field],"局部FK/蒙皮矩阵必须逐元素精确等价: "..name.."/"..field)
+    end
+end
+-- 只在隔离检查里显式调用优化入口，不依赖给生产实例写同名方法的动态派发。
+-- Rig:SoleHeight内部的localBoneTransform不经公开方法，计数仅代表公开FK输出/鞋底输出及实际蒙皮矩阵。
+-- 骑姿IK中间公开查询另用测试代理接线并断言命中；官动内部查询不宣称全部截获。
+---@param rig CareerRig
+local function instrumentQueries(rig)
+    ---@type fun(self:CareerRig,name:string):Matrix3x4
+    local optimizedGet=rig.GetLocalBoneTransform
+    ---@type fun(self:CareerRig,name:string,complete?:boolean,inspect?:boolean):(number,table<string,Matrix3x4>?)
+    local optimizedSole=rig.SoleHeight
+    local report={queries=0,soles=0,skinMatrices=0,ridePoses=0,poseMatrices=0,mutationMatrices=0,referenceMatrices=0,referenceSoles=0}
+    ---@param self CareerRig
+    ---@param name string
+    ---@param label? string
+    ---@return Matrix3x4
+    local function observeTransform(self,name,label)
+        local actual=optimizedGet(self,name)
+        exactMatrix(actual,originalTransform(self,name),label or name)
+        report.queries=report.queries+1
+        return actual
+    end
+    ---@param self CareerRig
+    ---@param name string
+    ---@param complete? boolean
+    ---@return number
+    local function observeSole(self,name,complete)
+        local actual,matrices=optimizedSole(self,name,complete,true)
+        local expected,oldMatrices=originalSole(self,name,complete)
+        local used=assert(matrices)
+        assert(actual==expected,"原FK鞋底与查询内缓存鞋底必须精确相同: "..name)
+        for bone,m in pairs(oldMatrices) do
+            exactMatrix(assert(used[bone]),m,name.."/"..bone)
+            report.skinMatrices=report.skinMatrices+1
+        end
+        for bone in pairs(used) do assert(oldMatrices[bone],"鞋底蒙皮影响骨集合改变") end
+        report.soles=report.soles+1
+        return actual
+    end
+    return report,observeTransform,observeSole
+end
+-- 完整骑姿A/B：原FK驱动所有IK vs 新FK驱动所有IK，再比较全部骨矩阵/双鞋底。
+-- 连续转向、父节点远坐标/旋转/非均匀缩放；另改Rig根/mesh TRS/单骨旋转后立即重查。
+---@param rig CareerRig
+---@param report table
+---@param observeTransform fun(self:CareerRig,name:string,label?:string):Matrix3x4
+---@param observeSole fun(self:CareerRig,name:string,complete?:boolean):number
+local function compareRideQueries(rig,report,observeTransform,observeSole)
+    local previousGet=rawget(rig,"GetLocalBoneTransform")
+    local oldPoseQueries,newPoseQueries=0,0
+    local parentPosition,parentRotation,parentScale=rig.parent.position,Quaternion(rig.parent.rotation),rig.parent.scale
+    local nodePosition,nodeRotation,nodeScale=rig.node.position,Quaternion(rig.node.rotation),rig.node.scale
+    local meshPosition,meshRotation,meshScale=rig.mesh.position,Quaternion(rig.mesh.rotation),rig.mesh.scale
+    local steer,lean=rig.lastSteer,rig.lastLean
+    local ok,err=pcall(function()
+        for i=0,31 do
+            local angle=math.sin(i*.71)*35
+            rig.lastLean=math.sin(i*.43)*55
+            rig.parent:SetTransform(i%2==0 and Vector3(1400,42,-3100) or Vector3(-12000,350,8500),
+                Quaternion(math.cos(i*.31)*35,i*137,rig.lastLean),Vector3(1.03,.97,1.01))
+            rawset(rig,"GetLocalBoneTransform",originalTransform)
+            ---@param self CareerRig
+            ---@param name string
+            local function legacyGet(self,name)
+                oldPoseQueries=oldPoseQueries+1
+                return originalTransform(self,name)
+            end
+            rawset(rig,"GetLocalBoneTransform",legacyGet)
+            rig:PoseRide(angle)
+            rawset(rig,"GetLocalBoneTransform",originalTransform)
+            ---@type table<string, Matrix3x4>
+            local expected={}
+            for _,name in ipairs(rig.boneNames) do
+                expected[name]=originalTransform(rig,name)
+                report.referenceMatrices=report.referenceMatrices+1
+            end
+            local left=originalSole(rig,"L_Foot",true)
+            local right=originalSole(rig,"R_Foot",true)
+            report.referenceSoles=report.referenceSoles+2
+            ---@param self CareerRig
+            ---@param name string
+            local function checkedGet(self,name)
+                newPoseQueries=newPoseQueries+1
+                return observeTransform(self,name,"ride/IK/"..name)
+            end
+            rawset(rig,"GetLocalBoneTransform",checkedGet)
+            rig:PoseRide(angle)
+            rawset(rig,"GetLocalBoneTransform",previousGet)
+            for _,name in ipairs(rig.boneNames) do
+                local actual=observeTransform(rig,name,"ride/"..name)
+                exactMatrix(actual,expected[name],"ride/A-B/"..name)
+                report.poseMatrices=report.poseMatrices+1
+            end
+            local leftActual=observeSole(rig,"L_Foot",true)
+            local rightActual=observeSole(rig,"R_Foot",true)
+            assert(leftActual==left and rightActual==right,
+                "骑姿原/新IK的完整鞋底必须精确相同")
+            report.ridePoses=report.ridePoses+1
+        end
+        -- 不允许只对最终稳定姿态自证；祖先/mesh/根改变后要马上命中新数据。
+        rig.node:SetTransform(Vector3(.07,.02,-.03),Quaternion(7,19,-11),Vector3(.98,1.02,1.01))
+        rig.mesh:SetTransform(rig.mesh.position+Vector3(.02,-.01,.03),Quaternion(3,-5,2)*meshRotation,meshScale)
+        for _,name in ipairs({"Hip","Waist","L_Thigh","L_Calf","L_Foot","R_Thigh","R_Calf","R_Foot"}) do
+            local bone=rig.model:GetSkeleton():GetBone(name)
+            bone.node.rotation=Quaternion(7,-4,3)*bone.node.rotation
+            for _,target in ipairs(rig.boneNames) do
+                observeTransform(rig,target,"mutation/"..name.."/"..target)
+                report.mutationMatrices=report.mutationMatrices+1
+            end
+            observeSole(rig,"L_Foot");observeSole(rig,"R_Foot")
+        end
+    end)
+    rawset(rig,"GetLocalBoneTransform",previousGet)
+    rig.parent:SetTransform(parentPosition,parentRotation,parentScale)
+    rig.node:SetTransform(nodePosition,nodeRotation,nodeScale)
+    rig.mesh:SetTransform(meshPosition,meshRotation,meshScale)
+    rig.lastSteer,rig.lastLean=steer,lean
+    report.legacyPoseDispatchQueries=oldPoseQueries
+    report.optimizedPoseDispatchQueries=newPoseQueries
+    assert(ok,tostring(err))
+end
 ---@param session table
 function Checks.Run(session)
     requireTest(session)
@@ -63,10 +234,38 @@ function Checks.Run(session)
     local saved={phase=motion.phase,idleTime=motion.idleTime,speed=motion.speed,moving=motion.moving,running=motion.running,paused=motion.paused,ground=rig.ground}
     local report={poses=0,maxLengthError=0,minWalkHip=math.huge,maxWalkHip=-math.huge,minRunHip=math.huge,maxRunHip=-math.huge,
         flight=0,leftContacts=0,rightContacts=0,official=true,soleComparisons=0,maxSoleEquivalenceError=0}
+    local queryReport,observeTransform,observeSole=instrumentQueries(rig)
     local ok,err=pcall(function()
         rig.ground=nil
+        compareRideQueries(rig,queryReport,observeTransform,observeSole)
+        assert(queryReport.ridePoses==32 and queryReport.poseMatrices==32*#rig.boneNames
+            and queryReport.mutationMatrices==8*#rig.boneNames,
+            "骑姿须覆盖32连续转向与8次单骨变更后的全部FK/矩阵输出")
+        assert(queryReport.queries==queryReport.poseMatrices+queryReport.mutationMatrices+queryReport.optimizedPoseDispatchQueries
+            and queryReport.soles==80 and queryReport.skinMatrices>0,
+            "优化FK/鞋底观测必须具有非零公开输出及实际蒙皮矩阵覆盖")
+        assert(queryReport.referenceMatrices==32*#rig.boneNames and queryReport.referenceSoles==64,
+            "原始骑姿A/B必须确实运行并覆盖完整骨骼/双鞋底")
+        assert(queryReport.legacyPoseDispatchQueries>0 and queryReport.optimizedPoseDispatchQueries>0,
+            "原始与优化骑姿IK内部FK方法派发必须均有非零覆盖")
         assert(motion.clips.idle.animation.numTracks==97 and motion.clips.walk.animation.numTracks==98 and motion.clips.run.animation.numTracks==88,"官方资源版本/轨道不符，必须重新检查兼容性")
         assert(motion.clips.idle.keyframes==4947 and motion.clips.walk.keyframes==3626 and motion.clips.run.keyframes==2200,"不能用静态pose冒充官动关键帧")
+        ---@type {position:Vector3,indices:integer[],weights:number[]}[][]
+        local complete=rig:ReadSkinVertices()
+        ---@type {position:Vector3,indices:integer[],weights:number[]}[][]
+        local selected=rig:ReadSkinVertices(0)
+        assert(#selected==1 and #complete==rig.model:GetModel():GetNumGeometryLodLevels(0)
+            and #selected[1]==#complete[1],"指定LOD读取丢失顶点或默认不再返回全部LOD")
+        local completeLod=assert(complete[1])
+        local selectedLod=assert(selected[1])
+        for i,v in ipairs(completeLod) do
+            local chosen=selectedLod[i]
+            assert((v.position-chosen.position):Length()<1e-9,"LOD0位置读取改变")
+            for slot=1,4 do
+                assert(v.indices[slot]==chosen.indices[slot] and v.weights[slot]==chosen.weights[slot],"LOD0蒙皮权重或骨索引改变")
+            end
+        end
+        print(string.format("[初始化LOD读取检查] PASS 默认%d档/仅LOD0 %d顶点/逐点位置权重索引一致",#complete,#selected[1]))
         report.sourceEquivalence=compareSourceSampling(motion)
         for _,name in ipairs({"L_Foot","R_Foot"}) do
             assert(#rig.fullSoleVertices[name]>0 and #rig.soleVertices[name]>0,"当前模型必须有实际鞋部蒙皮顶点")
@@ -172,11 +371,15 @@ function Checks.Run(session)
         for _=1,30 do motion:Update(1/60,0,0) end
         assert(motion.moving==0 and motion.running==0,"停止后必须完整混回官方Idle")
     end)
+    report.queryEquivalence=queryReport
     rig.ground=saved.ground
     motion.phase,motion.idleTime,motion.speed,motion.moving,motion.running,motion.paused=saved.phase,saved.idleTime,saved.speed,saved.moving,saved.running,saved.paused
     motion:Evaluate()
     visuals.phase,visuals.gaitWeight,visuals.runWeight=motion.phase*math.pi*2,motion.moving,motion.running
     assert(ok,tostring(err))
+    print(string.format("[目标FK查询内复用等价] PASS %d公开FK/%d公开鞋底/%d实际蒙皮矩阵；骑姿%d/骑姿及变更矩阵%d；内部FK派发原/新%d/%d；12元素/鞋底精确相等；局部helper内部调用不计数",
+        queryReport.queries,queryReport.soles,queryReport.skinMatrices,queryReport.ridePoses,queryReport.poseMatrices,
+        queryReport.legacyPoseDispatchQueries,queryReport.optimizedPoseDispatchQueries))
     local equivalence=assert(report.sourceEquivalence)
     print(string.format("[官动精确缓存等价] PASS 源97->24骨 %d采样/%d映射矩阵，矩阵误差%.9g 髋误差%.9g 净空误差%.9g；鞋%d/%d->%d/%d顶点，%d鞋底对照最大误差%.9g",
         equivalence.samples,equivalence.matrices,equivalence.maxMatrixError,equivalence.maxHipError,equivalence.maxClearanceError,

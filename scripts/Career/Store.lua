@@ -99,6 +99,9 @@ local committed = nil
 local loadError = nil
 local transactionBusy = false
 local elapsedSinceSave = 0
+local pendingSave = false
+---@type string?
+local saveError = nil
 local cloudBusy = false
 local cloudStatus = "not_requested"
 local cloudRevision = -1
@@ -214,7 +217,7 @@ local function validate(p)
         or not finite(p.position.bikeX) or not finite(p.position.bikeZ) or not finite(p.position.bikeYaw) then
         return false, "生涯位置字段无效"
     end
-    if p.position.groundHeight~=nil and not range(p.position.groundHeight,0,20) then return false,"步行高度无效" end
+    if p.position.groundHeight~=nil and not range(p.position.groundHeight,-30,120) then return false,"步行高度无效" end
     if not Vehicles.ValidPosition(p.position,p.ownedMotorcycles) then return false,"城市车辆未拥有或停车字段无效" end
     if p.motorcycleFuel~=nil and not range(p.motorcycleFuel,0,100) then return false,"摩托燃油无效" end
     if not validSpace(p.position) or ((p.position.space or "city")~="city" and p.position.space~=p.accommodation) then
@@ -284,6 +287,7 @@ local function validate(p)
         end
     end
     if settledCount ~= p.completedOrders then return false, "完成数量与结算记录不一致" end
+    local activeIds,activeSequences={},{}
     for _, order in ipairs(p.activeOrders) do
         if type(order) ~= "table" or not integer(order.sequence, 1)
             or order.sequence >= p.nextOrderSequence or order.id ~= string.format("career-v1-%d", order.sequence)
@@ -292,6 +296,8 @@ local function validate(p)
             or not finite(order.remainingHours) or type(order.late) ~= "boolean" then
             return false, "活动订单状态无效"
         end
+        if activeIds[order.id] or activeSequences[order.sequence] then return false,"活动订单重复" end
+        activeIds[order.id],activeSequences[order.sequence]=true,true
         local template = Config.GetTemplate(order.templateId)
         if not template or order.pickupId ~= template.pickupId or order.dropoffId ~= template.dropoffId
             or order.tutorial ~= template.tutorial or order.title ~= template.title then
@@ -299,7 +305,9 @@ local function validate(p)
         end
         local expectedDistance = Config.RouteDistance(template.route)
         local expectedFee = template.tutorial and 500 or Config.FeeCents(expectedDistance)
-        if order.distanceMeters ~= expectedDistance or order.feeCents ~= expectedFee or not array(order.route)
+        -- JSON会舍入double；路线逐点和整数分报价仍严格校验，距离允许微米级回环误差。
+        if not finite(order.distanceMeters) or math.abs(order.distanceMeters-expectedDistance)>1e-6
+            or order.feeCents ~= expectedFee or not array(order.route)
             or #order.route ~= #template.route then return false, "订单报价或路线无效" end
         for i, point in ipairs(template.route) do
             local savedPoint = order.route[i]
@@ -369,7 +377,8 @@ local storage = {
 ---@param p CareerProfile
 ---@return boolean, string?
 local function persist(p)
-    local valid, validationMessage = validate(p)
+    local checked, valid, validationMessage = pcall(validate, p)
+    if not checked then return false, "生涯存档结构无效，原档已保留" end
     if not valid then return false, validationMessage end
     local encoded, text = pcall(cjson.encode, p)
     if not encoded then return false, "生涯存档编码失败" end
@@ -383,6 +392,7 @@ local function install(p)
     committed = copy(p)
     loadError = nil
     elapsedSinceSave = 0
+    pendingSave, saveError = false, nil
 end
 
 -- 主页检测不加载、不创建、不覆盖任何档案；坏档也返回true，交由Load报告错误。
@@ -402,7 +412,7 @@ function Store.SetPosition(position)
         or not finite(position.bikeX) or not finite(position.bikeZ) or not finite(position.bikeYaw) then
         return false, "位置字段无效"
     end
-    if position.groundHeight~=nil and not range(position.groundHeight,0,20) then return false,"步行高度无效" end
+    if position.groundHeight~=nil and not range(position.groundHeight,-30,120) then return false,"步行高度无效" end
     if not validSpace(position) then return false,"室内位置无效" end
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]
@@ -415,6 +425,7 @@ end
 ---@return boolean, string
 function Store.Load()
     if transactionBusy or cloudBusy then return false, "存档忙，请稍后重试" end
+    if pendingSave then return false, "当前进度尚未保存，请先重试保存；未用旧档覆盖内存进度" end
     local called, text, message, missing = pcall(storage.read, Config.SAVE_PATH)
     if not called then loadError = "读取生涯存档异常"; return false, loadError end
     if missing then return Store.NewCareer() end
@@ -422,7 +433,8 @@ function Store.Load()
     local decoded, p = pcall(cjson.decode, text)
     if not decoded then loadError = "生涯存档解析失败；原档已保留"; return false, loadError end
     p=Store.Normalize(p)
-    local valid, validationMessage = validate(p)
+    local checked, valid, validationMessage = pcall(validate, p)
+    if not checked then loadError="生涯存档结构无效；原档已保留"; return false,loadError end
     if not valid then loadError = validationMessage; return false, validationMessage or "生涯存档无效" end
     install(p)
     print(string.format("[Career.Store] loaded revision=%d day=%d cashCents=%d orders=%d", p.revision, p.day, p.cashCents, #p.activeOrders))
@@ -473,10 +485,13 @@ function Store.Save()
     candidate.revision = candidate.revision + 1
     local ok, message = persist(candidate)
     if not ok then
-        data = copy(committed)
+        -- 活动快照失败不回滚世界中的时间、消耗和位置；经济交易仍由Transaction先写后提交。
+        -- 保留完整内存快照，下个自动保存周期或显式保存重试，避免Actor与档案各走一半。
+        pendingSave = true
+        saveError = message or "本地保存失败"
         elapsedSinceSave = 0
-        print("[Career.Store] save failed; unsaved simulation rolled back")
-        return false, message or "保存失败，未保存的模拟时间已回滚"
+        print("[Career.Store] save failed; complete live snapshot retained for retry")
+        return false, "本地保存失败，当前进度仅在内存，30秒后自动重试；请勿退出：" .. saveError
     end
     install(candidate)
     return true, "本地保存成功（未确认云存档）"
@@ -702,9 +717,10 @@ function Store.Advance(dt, distanceMeters)
     if loadError then return false, loadError end
     if not data then Store.Get() end
     local p = data --[[@as CareerProfile]]
-    local hours = math.min(dt * Config.GAME_HOURS_PER_SECOND, 24 - p.time)
-    p.activeSeconds=(p.activeSeconds or 0)+hours/Config.GAME_HOURS_PER_SECOND
-    p.time = p.time + hours
+    -- 午夜只限制钟面，不冻结身体和订单；必须休息过夜，不能靠24:00无限免时配送。
+    local hours = dt * Config.GAME_HOURS_PER_SECOND
+    p.activeSeconds=(p.activeSeconds or 0)+dt
+    p.time = math.min(24, p.time + hours)
     p.hunger = math.max(0, p.hunger - hours * Config.HUNGER_PER_HOUR)
     local rate = p.equipment and p.equipment.raincoat and .85 or 1
     p.energy = math.max(0, p.energy - hours * Config.ENERGY_PER_HOUR * rate)
@@ -725,7 +741,7 @@ end
 
 ---@return table
 function Store.GetSaveStatus()
-    return { localReady = committed ~= nil, localError = loadError,
+    return { localReady = committed ~= nil, localError = loadError or saveError, pendingSave = pendingSave,
         cloud = cloudStatus, cloudRevision = cloudRevision,
         revision = data and data.revision or -1,
         warning = "本地WASM文件刷新不保证持久；仅cloud='confirmed'且版本一致代表云端回调已确认" }
@@ -795,7 +811,8 @@ function Store.LoadCloud(callback)
                 local p = type(values) == "table" and values[Config.CLOUD_KEY] or nil
                 if type(p) ~= "table" then finish(false, "云档为空或格式无效；未覆盖任何本地进度"); return end
                 p=Store.Normalize(p)
-                local valid, detail = validate(p)
+                local checked,valid,detail=pcall(validate,p)
+                if not checked then finish(false,"云档结构无效；原进度已保留"); return end
                 if not valid then finish(false, detail or "云档无效"); return end
                 local saved, saveMessage = persist(p)
                 if not saved then finish(false, saveMessage or "云档落地失败，原进度已保留"); return end
@@ -818,15 +835,18 @@ function Store.UseTestStorage(adapter)
     if transactionBusy or cloudBusy then error("Cannot test while storage is busy") end
     local previousStorage, previousData, previousCommitted = storage, data, committed
     local previousError, previousElapsed = loadError, elapsedSinceSave
+    local previousPendingSave, previousSaveError = pendingSave, saveError
     local previousCloudStatus, previousCloudRevision = cloudStatus, cloudRevision
     storage, data, committed, loadError = adapter, nil, nil, nil
     elapsedSinceSave = 0
+    pendingSave, saveError = false, nil
     local restored=false
     return function()
         if restored then return end
         restored=true
         storage, data, committed, loadError = previousStorage, previousData, previousCommitted, previousError
         elapsedSinceSave = previousElapsed
+        pendingSave, saveError = previousPendingSave, previousSaveError
         cloudBusy, transactionBusy = false, false
         cloudTimeout=nil; cloudElapsed=0
         cloudStatus, cloudRevision = previousCloudStatus, previousCloudRevision

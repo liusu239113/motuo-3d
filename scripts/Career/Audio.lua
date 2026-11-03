@@ -34,7 +34,11 @@ local AudioContextType={}
 ---@field zones table[]
 ---@field PhoneRing fun(self:CareerSoundscape)
 ---@field StopPhone fun(self:CareerSoundscape)
+---@field TrafficReaction fun(self:CareerSoundscape,car:table,actor:table):boolean
 ---@field musicHour number
+---@field scene Scene?
+---@field node Node?
+---@field phoneSource SoundSource?
 local Audio={}
 Audio.__index=Audio
 Audio.Paths={music="audio/night_ride.ogg",electric="audio/sfx/career_ebike_motor.mp3",
@@ -44,11 +48,12 @@ Audio.Paths={music="audio/night_ride.ogg",electric="audio/sfx/career_ebike_motor
     bridge="audio/sfx/career_bridge_wind_bed.ogg",traffic="audio/sfx/career_distant_traffic_bed.ogg",
     tap="audio/sfx/career_ui_tap.mp3",order="audio/sfx/career_order_chime.mp3",brake="audio/sfx/motorcycle_brake_loop.mp3",
     shop="audio/sfx/career_takeaway_shop_ambience.mp3",residential="audio/sfx/career_residential_evening_ambience.mp3",
-    musicDay="audio/radio_01.ogg",ring="audio/sfx/career_customer_call_ring.mp3"}
+    musicDay="audio/radio_01.ogg",ring="audio/sfx/career_customer_call_ring.mp3",
+    horn="audio/sfx/career_impatient_horn.mp3",complaint="audio/sfx/race_rider_curse_1.mp3"}
 Audio.Resources,Audio.ResourceTypes={},{}
 for _,path in pairs(Audio.Paths) do Audio.Resources[#Audio.Resources+1]=path; Audio.ResourceTypes[path]="Sound" end
 Audio.StepGain={concrete=.24,sand=.23,wood=.20}
-local singles={steps=true,sand=true,wood=true,tap=true,order=true,ring=true}
+local singles={steps=true,sand=true,wood=true,tap=true,order=true,ring=true,horn=true,complaint=true}
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.huge end
 local function unit(n) return finite(n) and math.max(0,math.min(1,n)) or 0 end
 local function smooth(n) local t=unit(n); return t*t*(3-2*t) end
@@ -157,6 +162,7 @@ function Audio.New(scene)
     self:Init(scene); return self
 end
 function Audio:Init(scene)
+    self.scene=scene -- 明确持有音频父场景；Stop时一并释放引用。
     self.node=scene:CreateChild("生涯音乐与分区音景")
     self.sources,self.sounds={},{}
     self.musicEnabled,self.effectsEnabled,self.unlocked=true,true,false
@@ -170,8 +176,8 @@ function Audio:Init(scene)
     self.paused,self.disposed=false,false
     for key,path in pairs(Audio.Paths) do
         local sound=cache:GetResource("Sound",path)
-        if sound and sound:GetLength()>0 then
-            sound.looped=not singles[key]
+        if sound and sound:GetLength()>0 and sound:GetFrequency()>0 then
+            sound:SetLooped(not singles[key])
             self.sounds[key]=sound
             local source=self.node:CreateChild(key):CreateComponent("SoundSource")
             source.soundType=(key=="music" or key=="musicDay") and SOUND_MUSIC or SOUND_EFFECT
@@ -182,18 +188,19 @@ function Audio:Init(scene)
     end
     self.phoneSource=self.node:CreateChild("独立模拟电话"):CreateComponent("SoundSource")
     self.phoneSource.soundType=SOUND_EFFECT
-    self.phoneSource.declickEnabled=true
+    self.phoneSource.declickEnabled=true; self.phoneSource.gain=0
     self.musicHour=8
 end
 function Audio:PhoneRing()
     if self.disposed or not self.unlocked or not self.effectsEnabled then return end
-    local sound=self.sounds.ring
-    if sound then self.phoneSource:Play(sound,0,.24) end
+    local sound,source=self.sounds.ring,self.phoneSource
+    -- 独立电话可在阻塞式通话页响铃；世界暂停不等于挂断，交由StopPhone显式管理。
+    if sound and source and not source.playing then source:Play(sound,0,.24) end
 end
 function Audio:StopPhone()
-    self.phoneSource:StopImmediate()
+    if self.phoneSource then self.phoneSource:StopImmediate(); self.phoneSource.gain=0 end
 end
-function Audio:Unlock() self.unlocked=true end
+function Audio:Unlock() if not self.disposed then self.unlocked=true end end
 function Audio:SetZones(zones) self.zones=zones or {}; self.mixElapsed=1 end
 function Audio:StopSteps()
     for _,key in ipairs({"steps","sand","wood"}) do
@@ -210,7 +217,7 @@ function Audio:SetPaused(paused)
     end
 end
 function Audio:Once(key)
-    if self.disposed or self.paused or not self.unlocked or not self.effectsEnabled then return end
+    if self.disposed or (self.paused and key~="tap") or not self.unlocked or not self.effectsEnabled then return end
     local source,sound=self.sources[key],self.sounds[key]
     if source and sound then
         source:Play(sound,0,key=="tap" and .18 or key=="steps" and Audio.StepGain.concrete or .35)
@@ -218,27 +225,47 @@ function Audio:Once(key)
         if key=="order" then self.orderCount=self.orderCount+1 end
     end
 end
+function Audio:TrafficReaction(car,actor)
+    if self.disposed or self.paused or not self.unlocked or not self.effectsEnabled then return false end
+    local horn,voice=self.sources.horn,self.sources.complaint
+    if not horn or not voice or not self.sounds.horn or not self.sounds.complaint or voice.playing then return false end
+    local distance=math.sqrt((car.x-actor.x)^2+(car.z-actor.z)^2)
+    if distance>18 then return false end
+    local gain=math.max(.08,.32*(1-distance/24))
+    horn:Play(self.sounds.horn,0,gain)
+    -- 复用项目已有中文抱怨素材；单一语音通道，暂停/音效关闭/离场沿用StopImmediate。
+    voice:Play(self.sounds.complaint,0,gain*.9)
+    print("[车道反应] 玩家持续挡路；鸣笛与短抱怨，25秒单车/8秒全局冷却")
+    return true
+end
 function Audio:Footstep(surface,foot)
     local kind=surface=="sand" and "sand" or surface=="wood" and "wood" or "concrete"
     local key=kind=="concrete" and "steps" or kind
     local source,sound=self.sources[key],self.sounds[key]
-    if not source or not sound or not self.unlocked or not self.effectsEnabled or self.paused then return end
+    if self.disposed or not source or not sound or not self.unlocked or not self.effectsEnabled or self.paused then return end
     -- 只作极轻的左右支撑定位，不用大幅随机pitch冒充多个素材。
     source:Play(sound,0,Audio.StepGain[kind],foot=="left" and -.055 or .055)
     self.lastSurface=kind; self.stepCount=self.stepCount+1
 end
 function Audio:Loop(key,gain,pitch,dt)
+    if self.disposed then return end
     local source,sound=self.sources[key],self.sounds[key]
-    if not source or not sound then return end
+    if not source or not sound or singles[key] then return end
     local music=key=="music" or key=="musicDay"
     local enabled=not self.paused and self.unlocked and (music and self.musicEnabled or not music and self.effectsEnabled)
-    local target=enabled and math.max(0,gain) or 0
+    -- 设置关闭/暂停必须立即静音，不让慢速环境淡出继续响数秒。
+    if not enabled or not finite(dt) or dt<=0 then
+        source.gain=0; if source.playing then source:StopImmediate() end; return
+    end
+    local target=unit(gain)
+    local playbackPitch=finite(pitch) and math.max(.1,math.min(4,pitch)) or 1
     local ambience=key=="sea" or key=="bridge" or key=="traffic" or key=="city" or key=="shop" or key=="residential"
     local rate=ambience and .9 or 7
     local level=source.gain+(target-source.gain)*(1-math.exp(-dt*rate))
     if target==0 and level<.0005 then source.gain=0; if source.playing then source:StopImmediate() end; return end
-    if target>0 and not source.playing then source:Play(sound,sound:GetFrequency()*pitch,level) end
-    source.gain=level; source.frequency=sound:GetFrequency()*pitch
+    local frequency=sound:GetFrequency()*playbackPitch
+    if target>0 and not source.playing then source:Play(sound,frequency,level) end
+    source.gain=level; source.frequency=frequency
 end
 -- 只读当前已求值的鞋底。无骨架或无地表时不假造支撑；context可接物理/FSM落足探针。
 ---@param actor CareerActor|table
@@ -271,6 +298,13 @@ end
 ---@param context? CareerAudioContext
 function Audio:Update(dt,actor,blocked,indoor,controls,order,context)
     if self.disposed then return end
+    if not self.effectsEnabled then
+        -- 普通循环和一次性尾音都遵守效果开关；不会修改音乐开关或重建source。
+        for key,source in pairs(self.sources) do
+            if key~="music" and key~="musicDay" then source.gain=0; if source.playing then source:StopImmediate() end end
+        end
+        self:StopPhone()
+    end
     context,controls=context or {},controls or {}
     local id=order and order.id or ""
     if blocked or not finite(dt) or dt<=0 or dt>.25 or not actor then
@@ -319,7 +353,9 @@ function Audio:Update(dt,actor,blocked,indoor,controls,order,context)
 end
 function Audio:Stop()
     if self.disposed then return end
-    self:SetPaused(true); self:StopPhone(); self.disposed=true
-    self.node:Dispose(); self.sources,self.sounds={},{}
+    self:SetPaused(true); self:StopPhone(); self.disposed=true; self.unlocked=false
+    if self.node then self.node:Dispose() end
+    self.node,self.phoneSource,self.scene=nil,nil,nil
+    self.sources,self.sounds={},{}
 end
 return Audio

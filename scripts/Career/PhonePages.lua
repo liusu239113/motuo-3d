@@ -24,6 +24,10 @@ local Kit=require("Career.PhoneKit")
 ---@field nextButton Button?
 ---@field pageLabel Label?
 ---@field pager Widget?
+---@field taskRoot Widget?
+---@field taskDirectory Widget?
+---@field tasks table[]
+---@field taskId string
 ---@overload fun(props?: PanelProps): CareerPhonePages
 local Pages=UI.Panel:Extend("CareerPhonePages")
 
@@ -31,6 +35,7 @@ function Pages:Init(props)
     self.records={};self.units={};self.pages={};self.generated={};self.constraints={}
     self.pageIndex=1;self.requestedPage=1;self.measuring=false;self.signature=""
     self.prevButton=nil;self.nextButton=nil;self.pageLabel=nil;self.pager=nil
+    self.taskRoot=nil;self.taskDirectory=nil;self.tasks={};self.taskId=""
     UI.Panel.Init(self,props or {})
 end
 
@@ -72,9 +77,113 @@ function Pages:RestoreSource()
     for _,widget in ipairs(generated) do if widget.node then widget:Destroy() end end
 end
 
+-- 通过稳定业务卡片id识别现有生活分区。View仍拥有全部业务动作与数据；
+-- 这里仅提供任务导航层，不需要给View或PhoneKit增加接线。
+-- 分页时识别已经构建完成的控件树。
+local LIFE_TASKS={
+    {id="today",label="今日安排",anchors={"career-life-summary","career-life-plan","career-life-alert-1"}},
+    {id="food",label="吃饭休息",anchors={"career-life-meal-card"}},
+    {id="home",label="今晚住处",title="今晚住哪里"},
+    {id="supply",label="续航与帮助",anchors={"career-life-range"}},
+    {id="status",label="收支与状态",anchors={"career-life-day-ledger","career-life-stat-hunger"}},
+    {id="settings",label="声音偏好",anchors={"career-music-card"}},
+}
+
+function Pages:ResetTasks()
+    for _,task in ipairs(self.tasks) do
+        for _,section in ipairs(task.sections) do
+            if section.widget.node then section.widget:SetVisible(section.visible~=false) end
+        end
+    end
+    self.taskRoot=nil;self.taskDirectory=nil;self.tasks={};self.taskId=""
+end
+
+function Pages:PrepareTasks()
+    local root=self:GetChildAt(1)
+    if self.taskRoot==root then return end
+    self:ResetTasks()
+    if not root or not root:FindById("career-life-summary") then return end
+    self.taskRoot=root
+    for _,definition in ipairs(LIFE_TASKS) do
+        self.tasks[#self.tasks+1]={id=definition.id,label=definition.label,sections={}}
+    end
+    for _,section in ipairs(root:GetChildren()) do
+        local assigned=false
+        for index,definition in ipairs(LIFE_TASKS) do
+            local match=false
+            for _,id in ipairs(definition.anchors or {}) do if section:FindById(id) then match=true;break end end
+            local title=section:GetChildAt(1)
+            if definition.title and title and title.props.text==definition.title then match=true end
+            if match then
+                self.tasks[index].sections[#self.tasks[index].sections+1]={widget=section,visible=section.props.visible}
+                assigned=true;break
+            end
+        end
+        -- 不丢弃新增业务分区：尚未明确分类的分区先保留在“今日安排”中。
+        if not assigned then self.tasks[1].sections[#self.tasks[1].sections+1]={widget=section,visible=section.props.visible} end
+    end
+    local directory=UI.Panel{id="career-life-tasks",width="100%",padding=0,gap=8,children={
+        Kit.Heading("生活目录","按事情找入口，不必逐页翻找。","career-life-task-heading")}}
+    for row=1,3 do
+        -- 分数scale下，Yoga会对各flex子控件独立取整。保留真实尾部空间，
+        -- 避免末尾完整按钮超出行框一物理像素；行容器本身也必须完整容纳。
+        local edge=2/math.max(.1,UI.GetScale())
+        local line=UI.Row{width="100%",padding=0,paddingBottom=edge,gap=6}
+        for column=1,2 do
+            local task=self.tasks[(row-1)*2+column]
+            line:AddChild(Kit.Button(task.label,function() self:OpenTask(task.id) end,"career-life-task-"..task.id,false,
+                {width="auto",flexGrow=1,flexShrink=1,flexBasis=0,marginRight=column==2 and edge or 0}))
+        end
+        directory:AddChild(line)
+    end
+    root:InsertChild(directory,1)
+    local back=Kit.Button("返回生活目录",function() self:OpenTask("") end,"career-life-task-back",false)
+    root:InsertChild(back,2)
+    self.taskDirectory=directory
+    self:ApplyTaskVisibility()
+end
+
+function Pages:ApplyTaskVisibility()
+    if not self.taskRoot then return end
+    if self.taskDirectory then self.taskDirectory:SetVisible(self.taskId=="") end
+    local back=self.taskRoot:FindById("career-life-task-back")
+    if back then back:SetVisible(self.taskId~="") end
+    ---@type Widget?
+    local ancestor=self.parent
+    while ancestor do
+        if ancestor.props.id=="career-phone-body" then
+            local toolbarBack=ancestor:FindById("career-phone-back") --[[@as Button?]]
+            if toolbarBack then toolbarBack:SetText(self.taskId~="" and "目录" or "首页") end
+            break
+        end
+        ancestor=ancestor.parent
+    end
+    for _,task in ipairs(self.tasks) do
+        for _,section in ipairs(task.sections) do section.widget:SetVisible(task.id==self.taskId and section.visible~=false) end
+    end
+end
+
+---@param id string 空字符串表示打开任务目录。
+---@return boolean
+function Pages:OpenTask(id)
+    if not self.taskRoot then return false end
+    local found=id==""
+    for _,task in ipairs(self.tasks) do if task.id==id then found=true end end
+    if not found then return false end
+    self:RestoreSource()
+    self.taskId=id;self.requestedPage=1;self.signature=""
+    self:ApplyTaskVisibility()
+    self:Paginate()
+    return true
+end
+
+---@return string?
+function Pages:GetTask() return self.taskRoot and self.taskId or nil end
+
 ---@param child Widget
 function Pages:AddChild(child)
     self:RestoreSource()
+    self:ResetTasks()
     UI.Widget.AddChild(self,child)
     self.signature=""
     self:RefreshPager()
@@ -84,6 +193,7 @@ end
 ---@param child Widget
 function Pages:RemoveChild(child)
     self:RestoreSource()
+    if child==self.taskRoot then self:ResetTasks() end
     UI.Widget.RemoveChild(self,child)
     self.signature=""
     self:RefreshPager()
@@ -92,6 +202,7 @@ end
 
 function Pages:ClearChildren()
     self:RestoreSource()
+    self:ResetTasks()
     UI.Widget.ClearChildren(self)
     self.signature=""
     self:RefreshPager()
@@ -103,6 +214,7 @@ Pages.RemoveAllChildren=Pages.ClearChildren
 -- continuation siblings, so perform that teardown BEFORE the base iteration.
 function Pages:Destroy()
     self:RestoreSource()
+    self:ResetTasks()
     UI.Widget.Destroy(self)
 end
 
@@ -276,8 +388,25 @@ end
 -- Measure the original, unconstrained vertical tree at its ACTUAL wrapping
 -- width. Then pack by applying candidates and measuring Yoga, not by guessed
 -- card heights or viewport-sized pixel jumps. Nothing is rendered mid-measure.
+-- UI.Update仍遍历隐藏子树，而Widget:IsVisible只检查自身props。
+-- 不测量脱离挂载或祖先隐藏的手机：这些状态下Yoga边界为零，
+-- 否则会每帧失效并反复尝试分页。
+---@return boolean
+function Pages:IsActiveInTree()
+    ---@type Widget?
+    local current=self
+    while current do
+        if not current.node or not current:IsVisible() or current.props.visibility=="hidden" then return false end
+        if not current.parent then return current==UI.GetRoot() end
+        current=current.parent
+    end
+    return false
+end
+
 function Pages:Paginate()
-    if self.measuring or not self:IsVisible() or self:GetNumChildren()==0 then self:RefreshPager();return end
+    if self.measuring or not self:IsActiveInTree() then return end
+    if self:GetNumChildren()==0 then self:RefreshPager();return end
+    self:PrepareTasks()
     self.measuring=true
     UI.Layout()
     local ready=self:GetLayout()
@@ -349,8 +478,9 @@ function Pages:Paginate()
 end
 
 function Pages:Update()
-    if self.measuring or not self:IsVisible() or self:GetNumChildren()==0 then return end
-    if self.signature~=self:SourceSignature() then self:Paginate() end
+    if self.measuring or not self:IsActiveInTree() or self:GetNumChildren()==0 then return end
+    if self.signature~=self:SourceSignature() then self:Paginate()
+    elseif self.requestedPage~=self.pageIndex then self:SetPage(self.requestedPage) end
 end
 
 function Pages:GetPageCount() return #self.pages end
@@ -358,7 +488,10 @@ function Pages:GetPage() return self.pageIndex end
 ---@param page number
 function Pages:SetPage(page)
     self.requestedPage=math.max(1,math.floor(page))
-    if self:GetNumChildren()>0 and self:IsVisible() and self.signature~=self:SourceSignature() then self:Paginate() end
+    -- 手机关闭或祖先隐藏时保留翻页请求；恢复可见前不应用分页遮罩，
+    -- 也不强制执行全局布局。
+    if not self:IsActiveInTree() then return end
+    if self:GetNumChildren()>0 and self.signature~=self:SourceSignature() then self:Paginate() end
     self.pageIndex=math.max(1,math.min(self.requestedPage,math.max(1,#self.pages)))
     self.requestedPage=self.pageIndex
     self:Apply(self.pages[self.pageIndex] or {})
@@ -368,9 +501,21 @@ end
 ---@param target Widget|string
 ---@return boolean
 function Pages:ShowWidget(target)
-    if self.signature~=self:SourceSignature() then self:Paginate() end
+    if not self:IsActiveInTree() then return false end
     local widget=type(target)=="string" and self:FindById(target) or target
     if not widget then return false end
+    if self.taskRoot then
+        for _,task in ipairs(self.tasks) do
+            for _,section in ipairs(task.sections) do
+                local current=widget
+                while current and current~=self.taskRoot do
+                    if current==section.widget and task.id~=self.taskId then self:OpenTask(task.id);break end
+                    current=current.parent
+                end
+            end
+        end
+    end
+    if self.signature~=self:SourceSignature() then self:Paginate() end
     for index,page in ipairs(self.pages) do
         for _,unit in ipairs(page) do
             if unit.source==widget or unit.members[widget] then self:SetPage(index);return true end

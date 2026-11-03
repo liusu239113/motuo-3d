@@ -1,0 +1,94 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "PASS",
+    "duration_ms": 547685,
+    "frames_completed": 400,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 4442,
+            "component_count": 2322,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1762.6259765625
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.607999801635743
+        },
+        {
+            "frame": 200,
+            "phase": "run",
+            "nodes": 535,
+            "components": 441,
+            "hash": 3131871610,
+            "frame_time_ms": 16.617000579833986
+        },
+        {
+            "frame": 400,
+            "phase": "run",
+            "nodes": 535,
+            "components": 441,
+            "hash": 3131871610,
+            "frame_time_ms": 16.617000579833986
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 523554.375,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 4,
+        "SkyLightCapture": 1,
+        "Light": 26,
+        "ProceduralSky": 1,
+        "Skybox": 1,
+        "CustomGeometry": 1125,
+        "StaticModel": 811,
+        "Text3D": 292,
+        "AnimatedModel": 41,
+        "SoundSource": 18
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 0
+    }
+}

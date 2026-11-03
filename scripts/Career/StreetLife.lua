@@ -50,10 +50,10 @@ Life.INTERACTION_RADIUS=3
 
 ---@type CareerStreetPersonSpec[]
 Life.Residents={
-    {id="breakfast_waiting",name="等早餐的街坊",point="breakfast",x=-19.1,z=-10.9,yaw=-55,role="waiting",asset=1},
+    {id="breakfast_waiting",name="等早餐的街坊",point="breakfast",x=-19.1,z=-10.9,yaw=-55,role="waiting",asset=3},
     {id="bridge_chat_a",name="桥下聊天的街坊",point="bridge",x=-10,z=-66.5,yaw=-42,role="chat",asset=2,partner="bridge_chat_b"},
     {id="bridge_chat_b",name="听街坊说话的居民",point="bridge",x=-11,z=-65.4,yaw=138,role="listening",asset=1,partner="bridge_chat_a"},
-    {id="phone_neighbor",name="店边看手机的居民",point="noodle",x=-72.7,z=10.9,yaw=155,role="phone",asset=2},
+    {id="phone_neighbor",name="店边看手机的居民",point="noodle",x=-72.7,z=10.9,yaw=155,role="phone",asset=4},
 }
 
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<math.huge end
@@ -160,7 +160,7 @@ end
 ---@param p CareerStreetPerson
 function Life:Pose(p)
     local rig=p.rig
-    rig:PoseWalk(0,0)
+    rig:PoseStandingCached()
     local t=p.clock+p.phase
     local breath=math.sin(t*1.6)*.65
     rig:SetBodyRotation("Spine02",breath,math.sin(t*.31)*.7)

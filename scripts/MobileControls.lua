@@ -47,6 +47,7 @@ function Controls:Init()
     self.details = {}
     ---@type table<string, table>
     self.actionStates = {}
+    self.lineStyle = false
     self.flashes, self.visualKeys = {}, {}
     self.nitroQueued = false
 end
@@ -313,7 +314,7 @@ end
 local CAPTIONS = {gas = "油门", brake = "刹车", nitro = "氮气", wheelie = "翘头", burnout = "烧胎", spin180 = "180°", spin360 = "360°"}
 local DETAILS = {gas = "按住加速", brake = "按住制动", nitro = "就绪 · 耗45", wheelie = "按住抬轮", burnout = "按住原地", spin180 = "点按起跳旋转", spin360 = "点按起跳旋转"}
 function Controls:CreateHold(key, text, width, height)
-    local image = Controls.Images[key]
+    local image = not self.lineStyle and Controls.Images[key] or nil
     local graphicProps = {position = "absolute", top = 3, left = 5, right = 5, bottom = 31, padding = 0, pointerEvents = "none"}
     ---@type Widget?
     local graphic = nil
@@ -322,7 +323,10 @@ function Controls:CreateHold(key, text, width, height)
         graphic = UI.Panel(graphicProps)
     else
         graphicProps.mark = key
-        graphic = ControlMark(graphicProps)
+        if self.lineStyle then
+            graphicProps.kind = key
+            graphic = require("Career.LineIcon")(graphicProps)
+        else graphic = ControlMark(graphicProps) end
     end
     -- 明确给出宽度，禁止 Label 把长状态当作 autoWidth 自动换行并向上顶住标题。
     local caption = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 19, height = 17,
@@ -378,7 +382,9 @@ end
 
 
 function Controls.Test()
+    local previousSensitivity, previousDeadzone = steerSensitivity, deadzone
     local c = Controls.New()
+    c:SetFeel(1, .12)
     c:SetEnabled(true)
     -- 同一百分比手指位移在紧凑/普通控件上等效；中心微抖不应让摩托突然偏航。
     for _, width in ipairs({180, 206, 218}) do
@@ -456,6 +462,7 @@ function Controls.Test()
     assert(c.steer == 0 and c.throttle == 0 and not c.spin360)
     for _, owner in pairs(c.pointers) do assert(owner == -1) end
     assert(not c:Press("gas", 100, 0, 1))
+    c:SetFeel(previousSensitivity, previousDeadzone)
     print("[手机操作自测] 中心低敏/渐进满舵/多宽度一致，多指独立，保持键释放，旋转单帧脉冲，暂停清空通过")
     return true
 end

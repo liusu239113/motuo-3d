@@ -5,6 +5,8 @@ local World = require("Career.WorldData")
 local Details = require("Career.CityDetails")
 local Expansion = require("Career.CityExpansion")
 local Environment = require("Career.CityEnvironment")
+local Hills = require("Career.HillDistrict")
+local BuildingLod = require("Career.BuildingLod")
 local V = Vector3
 ---@class CareerWorldChunk
 ---@field root Node
@@ -15,7 +17,18 @@ local V = Vector3
 ---@field ix number
 ---@field iz number
 ---@field distance number
+---@class CareerStreamRetry
+---@field ix number
+---@field iz number
+---@field failures number
+---@field after number
 ---@class CareerWorldStream
+---@field retries table<string, CareerStreamRetry>
+---@field updateTick number
+---@field job? thread
+---@field pendingRoot? Node
+---@field jobX? number
+---@field jobZ? number
 ---@field Stats fun(self:CareerWorldStream):table
 ---@field Unload fun(self:CareerWorldStream,k:string)
 ---@field Ensure fun(self:CareerWorldStream,x:number,z:number,radius?:number):table
@@ -41,6 +54,16 @@ local Stream = {}
 Stream.__index = Stream
 Stream.CELL,Stream.LOAD_DISTANCE,Stream.UNLOAD_DISTANCE,Stream.VIEW_DISTANCE = 256,550,850,450
 Stream.MAX_ACTIVE=80
+-- 以可见Update次数退避2/4/8/.../120帧；失败块仍会重试，但不占满后续帧预算。
+Stream.RETRY_BASE,Stream.RETRY_MAX=2,120
+-- 运行时按2ms切片，未完成块保持隐藏，完成后原子显示；首屏Ensure仍同步预热。
+Stream.BUILD_SLICE=.002
+local function checkpoint(deadline)
+    if deadline and os.clock()>=deadline.time then
+        coroutine.yield()
+        deadline.time=os.clock()+Stream.BUILD_SLICE
+    end
+end
 -- 原外区每块最多10楼/16树；邻里补街墙硬限24楼/格，另计真实模型LOD0预算。
 -- 程序几何仍限36k面；建筑/门面复用现有材质，最多约20个合批材质。
 -- 真实模型复用3套资源，按256m视觉块卸载；Text3D只用于POI和沿街店招。
@@ -56,6 +79,9 @@ for _,a in ipairs(architecture) do
         [a.root.."Textures/"..a.stem.."_00_D.jpg"]="Texture2D",[a.root.."Textures/"..a.stem.."_00_N.jpg"]="Texture2D"}) do
         Stream.Resources[#Stream.Resources+1]=p;Stream.ResourceTypes[p]=t
     end
+end
+for _,path in ipairs(BuildingLod.Resources) do
+    Stream.Resources[#Stream.Resources+1]=path;Stream.ResourceTypes[path]="Model"
 end
 local function key(ix,iz) return ix..":"..iz end
 local function cellDistance(ix,iz,x,z)
@@ -82,6 +108,7 @@ function Stream:Init(city)
     self.x,self.z=0,0
     self.planX,self.planZ=math.huge,math.huge
     self.plan,self.planBuilds={},0
+    self.retries,self.updateTick={},0
     for _,a in ipairs(architecture) do
         local model=cache:GetResource("Model",a.root.."Meshes/"..a.stem..".mdl")
         local source=cache:GetResource("Material",a.root.."Materials/"..a.material)
@@ -90,7 +117,7 @@ function Stream:Init(city)
             mat:SetTexture(TU_DIFFUSE,cache:GetResource("Texture2D",a.root.."Textures/"..a.stem.."_00_D.jpg"))
             mat:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",a.root.."Textures/"..a.stem.."_00_N.jpg"))
             mat:SetShaderParameter("Metallic",Variant(0));mat:SetShaderParameter("Roughness",Variant(.88))
-            self.models[#self.models+1]={model=model,material=mat}
+            self.models[#self.models+1]={model=model,material=mat,levels=BuildingLod.Levels(model)}
         else
             print("[WorldStream] 错误：建筑资源缺失 "..a.root)
             self.models[#self.models+1]={}
@@ -110,6 +137,8 @@ local function cellBatch(d,material,_x,_z)
     if batch then return batch end
     local cx,cz=d.root.position.x,d.root.position.z
     local node=d.root:CreateChild("WorldMaterial_"..material)
+    -- 新子节点不继承根的禁用状态；Commit前禁止渲染器读取尚无GPU缓冲的几何。
+    node:SetEnabled(false)
     -- root位于世界原点；批次局部原点固定为cell中心以降低大坐标精度损失。
     local ix,iz=d.root:GetVar("CellX"):GetInt(),d.root:GetVar("CellZ"):GetInt()
     cx,cz=ix*256+128,iz*256+128
@@ -149,6 +178,7 @@ do
     local allRoads={}
     for _,r in ipairs(World.Roads) do allRoads[#allRoads+1]=r end
     for _,r in ipairs(Expansion.Roads) do allRoads[#allRoads+1]=r end
+    for _,r in ipairs(Hills.Roads or {}) do allRoads[#allRoads+1]=r end
     for _,r in ipairs(allRoads) do
         if not r.old then
             local vertical=r.x1==r.x2
@@ -217,7 +247,16 @@ local function roadMarkings(d,cell)
             local id=material..table.concat(p,":")
             if not seen[id] and quads<1200 then
                 seen[id]=true
-                d:Quad(material,V(p[1],.073,p[2]),V(p[1],.073,p[4]),V(p[3],.073,p[2]),V(p[3],.073,p[4]))
+                local h=Hills.Bounds
+                local l,r,n,f=math.max(p[1],h.x1),math.min(p[3],h.x2),math.max(p[2],h.z1),math.min(p[4],h.z2)
+                local function flat(a,b,c,e)
+                    if a<c and b<e then d:Quad(material,V(a,.073,b),V(a,.073,e),V(c,.073,b),V(c,.073,e)) end
+                end
+                if l<r and n<f then
+                    Hills.RenderPatch(d,{x1=l,x2=r,z1=n,z2=f},material,.073)
+                    flat(p[1],p[2],l,p[4]);flat(r,p[2],p[3],p[4])
+                    flat(l,p[2],r,n);flat(l,f,r,p[4])
+                else flat(p[1],p[2],p[3],p[4]) end
                 quads=quads+1
             end
         end
@@ -278,7 +317,8 @@ end
 local function facade(d,b)
     local angle=math.rad(b.yaw)
     local cs,sn=math.cos(angle),math.sin(angle)
-    local function p(x,y,z) return V(b.x+x*cs+z*sn,y,b.z-x*sn+z*cs) end
+    local base=b.baseY or 0
+    local function p(x,y,z) return V(b.x+x*cs+z*sn,y+base,b.z-x*sn+z*cs) end
     local function quad(mat,x1,y1,x2,y2,z)
         d:Quad(mat,p(x1,y1,z),p(x1,y2,z),p(x2,y1,z),p(x2,y2,z))
     end
@@ -299,7 +339,7 @@ local function facade(d,b)
                     quad("glass",x+.9,y-.76,x-.9,y+.76,z+.03)
                 end
             end
-            d:Box("trim",b.x,y-1.04,b.z+side*(b.d/2+.11),b.w+.12,.13,.26,b.yaw)
+            d:Box("trim",b.x,y-1.04+base,b.z+side*(b.d/2+.11),b.w+.12,.13,.26,b.yaw)
         end
     end
     local door=p(0,1.35,-b.d/2-.14)
@@ -307,7 +347,7 @@ local function facade(d,b)
     local glass=p(0,1.35,-b.d/2-.25)
     d:Box("glass",glass.x,glass.y,glass.z,2.15,2.4,.04,b.yaw)
     local canopy=p(0,3.2,-b.d/2-.65)
-    d:Box("metal",canopy.x,3.2,canopy.z,math.min(b.w-2,13),.3,1.4,b.yaw)
+    d:Box("metal",canopy.x,canopy.y,canopy.z,math.min(b.w-2,13),.3,1.4,b.yaw)
 end
 local function detailedFront(d,b)
     local angle=math.rad(b.yaw)
@@ -409,7 +449,7 @@ end
 ---@param root Node
 ---@param b table
 ---@return boolean
-function Stream:Building(d,root,b)
+function Stream:Building(d,root,b,draws)
     local detailed=false
     if b.asset then
         local asset=self.models[b.asset]
@@ -428,28 +468,37 @@ function Stream:Building(d,root,b)
                     and math.abs(bounds.size.z-measured[3])<.000001,"neighbourhood MDL bounds replaced")
             end
             local holder=root:CreateChild(b.id)
-            holder.position=V(b.x,.085,b.z);holder.rotation=Quaternion(0,b.yaw,0)
+            holder.position=V(b.x,b.baseY or .085,b.z);holder.rotation=Quaternion(0,b.yaw,0)
             local mesh=holder:CreateChild("复用写实建筑")
+            mesh:SetEnabled(false)
             mesh.scale=V(sx,sy,sz)
             mesh.position=V(-bounds.center.x*sx,-bounds.min.y*sy,-bounds.center.z*sz)
             local draw=mesh:CreateComponent("StaticModel")
             draw.model=model;draw.material=asset.material
             draw.castShadows=true;draw.drawDistance=450;draw.shadowDistance=85
+            if draws then draws[#draws+1]={draw=draw,levels=asset.levels,x=b.x,z=b.z,level=1,near=45,mid=110,far=220} end
             detailed=true
         end
     end
     if detailed then
-        if b.expansion then expansionFront(d,b) else detailedFront(d,b) end
+        -- MDL已经包含门窗、空调和店面；包围盒最外沿不是墙面，禁止再悬空叠一套窗片。
+        -- 店名仍由地点标记/地图提供，不覆盖原模型贴图或重造落地碰撞。
     end
     if not detailed then
-        d:Box(b.style,b.x,b.h/2+.085,b.z,b.w,b.h,b.d,b.yaw)
+        local base=b.baseY or .085
+        d:Box(b.style,b.x,b.h/2+base,b.z,b.w,b.h,b.d,b.yaw)
         facade(d,b)
-        d:Box("trim",b.x,b.h+.18,b.z,b.w+.4,.22,b.d+.4,b.yaw)
-        d:Box("recess",b.x,b.h+.31,b.z,b.w-.7,.16,b.d-.7,b.yaw)
-        d:Box("metal",b.x+b.w*.2,b.h+.75,b.z+b.d*.2,2,1.0,1.4,b.yaw)
+        d:Box("trim",b.x,b.h+.095+base,b.z,b.w+.4,.22,b.d+.4,b.yaw)
+        d:Box("recess",b.x,b.h+.225+base,b.z,b.w-.7,.16,b.d-.7,b.yaw)
+        d:Box("metal",b.x+b.w*.2,b.h+.665+base,b.z+b.d*.2,2,1.0,1.4,b.yaw)
     end
     local lip=b.expansion and .1 or .3
-    d:Box("concrete",b.x,b.expansion and .0 or .18,b.z,b.w+lip,b.expansion and .24 or .4,b.d+lip,b.yaw)
+    if b.baseY then
+        local low=assert(b.foundationY)
+        d:Box("concrete",b.x,(low+b.baseY)/2,b.z,b.w+lip,b.baseY-low,b.d+lip,b.yaw)
+    else
+        d:Box("concrete",b.x,b.expansion and .0 or .18,b.z,b.w+lip,b.expansion and .24 or .4,b.d+lip,b.yaw)
+    end
     if not b.expansion and (b.asset or b.floors<=3) then
         local a=math.rad(b.yaw)
         local x,z=b.x-math.sin(a)*(b.d/2+.4),b.z-math.cos(a)*(b.d/2+.4)
@@ -498,28 +547,47 @@ end
 ---@param ix number
 ---@param iz number
 ---@return boolean
-function Stream:Load(ix,iz)
+function Stream:Load(ix,iz,deadline)
     local k=key(ix,iz)
     if self.chunks[k] or self.disposed then return false end
-    local data=World.DescribeCell(ix,iz)
-    if data.x1>=data.x2 or data.z1>=data.z2 then return false end
-    local root=self.root:CreateChild("World256_"..k)
-    root:SetVar("CellX",Variant(ix));root:SetVar("CellZ",Variant(iz))
+    local retry=self.retries[k]
+    if retry and self.updateTick<retry.after then return false end
+    ---@type Node?
+    local root=nil
     local ok,result=pcall(function()
-        local d=Details.New(root,self.mats)
+        -- 描述/节点创建也属于同一个失败事务；异常不能逃出Update而跳过退避。
+        local data=World.DescribeCell(ix,iz)
+        assert(data.x1<data.x2 and data.z1<data.z2,"WorldStream空块描述")
+        root=self.root:CreateChild("World256_"..k)
+        self.pendingRoot=root
+        root:SetEnabled(false)
+        root:SetVar("CellX",Variant(ix));root:SetVar("CellZ",Variant(iz))
+        -- World/Environment负责外区高度；所有新绘制节点创建即禁用，Finish后统一发布。
+        local d=Details.New(root,self.mats,{indexSurfaces=false,deferVisibility=true})
         -- 实例冒号方法覆盖保留显式self；LSP的method赋值签名漏计self，运行调用正确。
         ---@diagnostic disable-next-line: assign-type-mismatch
         d.Batch=cellBatch
-        for _,s in ipairs(data.grounds) do rect(d,s) end
+        if deadline then
+            local quad,triangle=d.Quad,d.Triangle
+            d.Quad=function(builder,...)
+                quad(builder,...);checkpoint(deadline)
+            end
+            d.Triangle=function(builder,...)
+                triangle(builder,...);checkpoint(deadline)
+            end
+        end
+        for _,s in ipairs(data.grounds) do rect(d,s);checkpoint(deadline) end
         local markingQuads=roadMarkings(d,data)
-        local terrainTriangles=Environment.RenderCell(d,data)
+        local terrainTriangles=Environment.RenderCell(d,data)+Hills.RenderCell(d,data)
         local models,modelTriangles,expansionModels=0,0,0
+        local draws={}
         for _,b in ipairs(data.buildings) do
-            if self:Building(d,root,b) then
+            if self:Building(d,root,b,draws) then
                 models=models+1
                 modelTriangles=modelTriangles+Expansion.Models[b.asset].triangles
                 if b.expansion then expansionModels=expansionModels+1 end
             end
+            checkpoint(deadline)
         end
         if expansionModels>0 then
             assert(expansionModels<=24 and modelTriangles<=200000,"邻里块真实模型预算超限")
@@ -533,16 +601,8 @@ function Stream:Load(ix,iz)
                 d:Box("recess",p.x,.606,p.z,p.w-.20,.025,p.d-.20)
                 d:Box("wood",p.x,2.05,p.z,.26,3.0,.26)
                 for _,c in ipairs({{-.65,3.6,0,1.15,.9,1.05},{.60,4.2,.25,1.25,1.0,1.15},{0,4.9,-.3,1.0,.8,1.05}}) do
-                    -- 合批椭球树冠，避免以方盒假装绿化；每层80面，无额外节点。
-                    for row=0,4 do for sector=0,7 do
-                        local function point(v,u)
-                            local phi=-math.pi/2+v*math.pi/5
-                            local theta=u*math.pi/4
-                            return V(p.x+c[1]+c[4]*math.cos(phi)*math.cos(theta),c[2]+c[5]*math.sin(phi),
-                                p.z+c[3]+c[6]*math.cos(phi)*math.sin(theta))
-                        end
-                        d:Quad("foliage",point(row,sector),point(row+1,sector),point(row,sector+1),point(row+1,sector+1))
-                    end end
+                    -- 合批椭球树冠，极点三角扇；每层64面，无额外节点。
+                    d:Ellipsoid("foliage",p.x+c[1],c[2],p.z+c[3],c[4],c[5],c[6])
                 end
                 d.trees=d.trees+1
             else
@@ -555,7 +615,9 @@ function Stream:Load(ix,iz)
             d:Ground(p.kind=="rest" and "paint" or "yellow",p.x,p.z,1.5,1.5,.09)
             d:Sign(p.label,p.x,2.4,p.z,0,.35)
         end
-        local stats=d:Finish()
+        local stats=d:Finish(deadline and function() checkpoint(deadline) end or nil)
+        stats.draws=draws
+        BuildingLod.Update(draws,self.x,self.z)
         stats.buildings,stats.models,stats.obstacles=#data.buildings,models,#data.obstacles
         stats.modelTriangles,stats.expansionModels=modelTriangles,expansionModels
         stats.markingQuads=markingQuads
@@ -566,13 +628,20 @@ function Stream:Load(ix,iz)
         d.shapes={}
         return stats
     end)
+    self.pendingRoot=nil
     if not ok then
-        root:Dispose();self.failed=self.failed+1
+        if root then root:Dispose() end
+        self.failed=self.failed+1
+        local failures=math.min((retry and retry.failures or 0)+1,8)
+        local delay=math.min(Stream.RETRY_MAX,Stream.RETRY_BASE*2^(failures-1))
+        self.retries[k]={ix=ix,iz=iz,failures=failures,after=self.updateTick+delay}
         print("[WorldStream] 错误：块"..k.." "..tostring(result))
         return false
     end
-    self.chunks[k]={root=root,stats=result,ix=ix,iz=iz}
-    root:SetEnabledRecursive(self.visible)
+    self.retries[k]=nil
+    local committed=assert(root)
+    self.chunks[k]={root=committed,stats=result,ix=ix,iz=iz}
+    committed:SetDeepEnabled(self.visible)
     self.loaded=self.loaded+1
     print(string.format("[WorldStream] 加载 %s / %d楼 / %.0f面 / %d批",k,result.buildings,result.triangles,result.batches))
     return true
@@ -616,11 +685,41 @@ function Stream:Candidates(x,z)
     end
     return self.plan
 end
+-- 只保留卸载半径内的故障记录；长途移动不会积累失败块，回访可重新尝试。
+---@param retries table<string, CareerStreamRetry>
+---@param x number
+---@param z number
+local function pruneRetries(retries,x,z)
+    for k,r in pairs(retries) do
+        if cellDistance(r.ix,r.iz,x,z)>Stream.UNLOAD_DISTANCE then retries[k]=nil end
+    end
+end
+function Stream:CancelBuild()
+    if self.job then coroutine.close(self.job);self.job=nil end
+    if self.pendingRoot then self.pendingRoot:Dispose();self.pendingRoot=nil end
+    self.jobX,self.jobZ=nil,nil
+end
+function Stream:ResumeBuild()
+    local job=self.job
+    if not job then return end
+    local ok,reason=coroutine.resume(job)
+    if not ok then self:CancelBuild();error(reason) end
+    if coroutine.status(job)=="dead" then self.job=nil;self.jobX,self.jobZ=nil,nil end
+end
 ---@param x number
 ---@param z number
 function Stream:Update(x,z)
     if self.disposed or not self.visible then return end
     self.x,self.z=x,z
+    self.updateTick=self.updateTick+1
+    if self.updateTick%8==0 then
+        for _,chunk in pairs(self.chunks) do BuildingLod.Update(chunk.stats.draws or {},x,z) end
+    end
+    pruneRetries(self.retries,x,z)
+    if self.job then
+        if cellDistance(assert(self.jobX),assert(self.jobZ),x,z)>Stream.UNLOAD_DISTANCE then self:CancelBuild()
+        else self:ResumeBuild();return end
+    end
     -- 一次Update最多一个块事务；先卸离开850m的最远块，防传送后旧块累积。
     local farKey,farDistance="",850
     local count=0
@@ -632,8 +731,16 @@ function Stream:Update(x,z)
     if farKey~="" then self:Unload(farKey);return end
     if count>=Stream.MAX_ACTIVE then return end
     for _,c in ipairs(self:Candidates(x,z)) do
-        if cellDistance(c.ix,c.iz,x,z)<=550 and not self.chunks[key(c.ix,c.iz)] then
-            self:Load(c.ix,c.iz);return
+        local k=key(c.ix,c.iz)
+        local retry=self.retries[k]
+        if cellDistance(c.ix,c.iz,x,z)<=550 and not self.chunks[k]
+            and (not retry or self.updateTick>=retry.after) then
+            -- 失败也消耗本帧唯一事务；冷却候选仅跳过，不在同帧追加Load。
+            self.jobX,self.jobZ=c.ix,c.iz
+            self.job=coroutine.create(function()
+                self:Load(c.ix,c.iz,{time=os.clock()+Stream.BUILD_SLICE})
+            end)
+            self:ResumeBuild();return
         end
     end
 end
@@ -643,8 +750,11 @@ end
 ---@return table
 function Stream:Ensure(x,z,radius)
     if self.disposed then return self:Stats() end
+    self:CancelBuild()
     self.x,self.z=x,z
+    pruneRetries(self.retries,x,z)
     -- 首屏/传送是显式同步例外；不需要移动角色就能先获得空块地面。
+    -- Load仍遵守故障退避；同帧重复Ensure不反复构建持续失败块。
     local stale={}
     for k,c in pairs(self.chunks) do if cellDistance(c.ix,c.iz,x,z)>850 then stale[#stale+1]=k end end
     for _,k in ipairs(stale) do self:Unload(k) end
@@ -655,7 +765,10 @@ end
 function Stream:SetVisible(visible)
     if self.disposed then return end
     self.visible=visible
-    self.root:SetEnabledRecursive(visible)
+    -- 只切换已提交块；不能短暂启用仍在协程中构造的pending子树。
+    self.root:SetEnabled(visible)
+    for _,chunk in pairs(self.chunks) do chunk.root:SetDeepEnabled(visible) end
+    if self.pendingRoot then self.pendingRoot:SetDeepEnabled(false) end
 end
 ---@return table
 function Stream:Stats()
@@ -663,7 +776,9 @@ function Stream:Stats()
         batches=0,triangles=0,buildings=0,models=0,modelTriangles=0,maxCellModelTriangles=0,expansionModels=0,
         obstacles=0,signs=0,trees=0,markingQuads=0,
         cellSize=256,viewDistance=450,loadDistance=550,unloadDistance=850,maxActive=Stream.MAX_ACTIVE,
-        visible=self.visible,disposed=self.disposed,pending=0,planBuilds=self.planBuilds,candidates=#self.plan}
+        visible=self.visible,disposed=self.disposed,pending=0,cooling=0,retryCells=0,
+        updateTick=self.updateTick,retryMax=Stream.RETRY_MAX,planBuilds=self.planBuilds,candidates=#self.plan}
+    for _ in pairs(self.retries) do result.retryCells=result.retryCells+1 end
     for _,c in pairs(self.chunks) do
         result.active=result.active+1
         result.maxCellModelTriangles=math.max(result.maxCellModelTriangles,c.stats.modelTriangles or 0)
@@ -673,8 +788,11 @@ function Stream:Stats()
     end
     if not self.disposed then
         for _,c in ipairs(self:Candidates(self.x,self.z)) do
-            if cellDistance(c.ix,c.iz,self.x,self.z)<=550 and not self.chunks[key(c.ix,c.iz)] then
+            local k=key(c.ix,c.iz)
+            if cellDistance(c.ix,c.iz,self.x,self.z)<=550 and not self.chunks[k] then
                 result.pending=result.pending+1
+                local retry=self.retries[k]
+                if retry and self.updateTick<retry.after then result.cooling=result.cooling+1 end
             end
         end
         result.planBuilds,result.candidates=self.planBuilds,#self.plan
@@ -684,12 +802,16 @@ function Stream:Stats()
 end
 function Stream:Dispose()
     if self.disposed then return end
+    self:CancelBuild()
     local keys={}
     for k in pairs(self.chunks) do keys[#keys+1]=k end
     for _,k in ipairs(keys) do self:Unload(k) end
     self.root:Dispose()
-    for _,a in ipairs(self.models) do if a.material then a.material:Dispose() end end
-    self.plan={}
+    for _,a in ipairs(self.models) do
+        if a.material then a.material:Dispose() end
+        for i=2,#(a.levels or {}) do a.levels[i]:Dispose() end
+    end
+    self.plan,self.retries={},{}
     self.models={};self.disposed=true;self.visible=false
 end
 return Stream

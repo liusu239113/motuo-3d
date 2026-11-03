@@ -1,5 +1,7 @@
 -- 联系人驻点与局部街坊：真实便服骨骼复用，不新增人物美术/clip/事务/UI。
 local Life=require("Career.StreetLife")
+local World=require("Career.WorldData")
+local bridge=assert(require("Career.HousingData").Get("bridge"))
 ---@class CareerContacts
 ---@field root Node
 ---@field city CareerCity
@@ -16,9 +18,9 @@ Contacts.__index=Contacts
 ---@type CareerStreetPersonSpec[]
 Contacts.List={
     {id="station",name="老街站长",point="breakfast",x=-28.6,z=-10.9,yaw=60,role="waiting",asset=1},
-    {id="cousin",name="表哥",point="bridge",x=-9.9,z=-73.3,yaw=60,role="bridge",asset=2},
-    {id="mechanic",name="车行师傅",point="dealer",x=110.5,z=83.2,yaw=-90,role="waiting",asset=1},
-    {id="breakfast_owner",name="早餐店老板",point="breakfast",x=-22,z=-11.1,yaw=0,role="merchant",asset=2},
+    {id="cousin",name="表哥",point="bridge",x=bridge.x+2.4,z=bridge.z+1.6,yaw=-120,role="bridge",asset=2},
+    {id="mechanic",name="车行师傅",point="dealer",x=110.5,z=83.2,yaw=-90,role="waiting",asset=3},
+    {id="breakfast_owner",name="早餐店老板",point="breakfast",x=-22,z=-11.1,yaw=0,role="merchant",asset=4},
 }
 ---@param city CareerCity
 ---@return CareerContacts
@@ -36,7 +38,7 @@ function Contacts:Init(city)
     for _,item in ipairs(Life.Residents) do specs[#specs+1]=item end
     self.life=Life.New(city,self.root,specs)
     self.people=self.life.people
-    local font=assert(cache:GetResource("Font","Fonts/MiSans-Regular.ttf"))
+    local font=assert(cache:GetResource("Font","Fonts/NotoSerifSC-Game.otf"))
     for _,item in ipairs(Contacts.List) do
         local p=assert(self:Get(item.id))
         local name=p.node:CreateChild("联系人名字牌")
@@ -47,7 +49,7 @@ function Contacts:Init(city)
         text.textAlignment=HA_CENTER; text.color=Color(.92,.89,.77)
         text.faceCameraMode=FC_ROTATE_XYZ; text.drawDistance=35; text.castShadows=false
     end
-    print("[街区生活] 4名联系人+4名驻足街坊；复用两套便服资源、程序化上肢轻动作，无新动作clip")
+    print("[街区生活] 4名联系人+4名驻足街坊；复用四套便服资源、程序化上肢轻动作，无新动作clip")
 end
 ---@param id string
 ---@return CareerStreetPerson?
@@ -58,7 +60,13 @@ end
 ---@param actor CareerActor|table
 ---@param radius? number 默认3m，候选查询不替代现场事务授权
 ---@return CareerStreetPerson?,number
-function Contacts:Nearest(actor,radius) return self.life:Nearest(actor,radius) end
+function Contacts:Nearest(actor,radius)
+    if actor and actor.walkHeight~=nil
+        and not World.HasGroundSupport(actor.x,actor.z,actor.walkHeight,self.city:Surface(actor.x,actor.z)) then
+        return nil,math.huge
+    end
+    return self.life:Nearest(actor,radius)
+end
 function Contacts:BeginGesture(id,kind,duration) return self.life:BeginGesture(id,kind,duration) end
 function Contacts:Respond(id,kind) return self.life:Respond(id,kind) end
 ---@param dt number

@@ -2,6 +2,7 @@
 -- 扩展字段向后兼容缺省值；不改变v1旧订单报价。
 local Store=require("Career.Store")
 local Property=require("Career.Property")
+local Config=require("Career.Config")
 local Progress={}
 Progress.Equipment={
     {id="insulated_box",name="加固双单保温箱",price=28000,level=2,description="容量2份；保持独立箱体挂点"},
@@ -97,41 +98,177 @@ function Progress.BuyHome(id)
         return true,string.format("已买断%s，支出%.2f元，永久产权已本地保存；此处每晚免房费。（游戏固定价，非现实房价）",home.name,price/100)
     end)
 end
+-- 纯查询：必须传入档案快照；不会Store.Get、补字段、写档或提前锁定报价。
+-- UI确认后WorkWeek在事务内重新查询，不可拿旧预览作为付款授权。
+---@param p CareerProfile
+---@return table
+function Progress.WorkWeekPreview(p)
+    local rule=Config.WORK_WEEK
+    local manual=math.max(0,p.completedOrders-(p.lastScheduleManualOrders or 0))
+    local seconds=math.max(0,(p.activeSeconds or 0)-(p.lastScheduleSeconds or 0))
+    local level=Progress.Level(p)
+    local orders=level>=4 and rule.goldOrders or level>=3 and rule.skilledOrders or rule.cityOrders
+    local average=level>=4 and rule.goldAverageCents or level>=3 and rule.skilledAverageCents or rule.cityAverageCents
+    local gross=orders*average
+    local housing=Property.NightlyCost(p,p.accommodation)*rule.days
+    local costs=rule.livingCents+rule.perOrderCostCents*orders+housing
+    local reason=""
+    if p.day<rule.unlockDay or p.completedOrders<rule.requiredManualOrders or not p.flags.firstRest then
+        reason="第10天起，亲送10单并休息过后开放周排班"
+    elseif manual<rule.requiredManualOrders or seconds<rule.requiredActiveSeconds then
+        reason=string.format("下次排班资格：新亲送%d/10单，活动%.0f/15分钟；亲送只作资格，不抵扣未来收入。",manual,seconds/60)
+    elseif #p.activeOrders>0 then reason="先完成所有手头订单"
+    elseif p.career and p.career.pending then reason="先完成已报名训练或赛事，再安排未来工作周"
+    elseif p.position.space and p.position.space~="city" then reason="请先离开住处再安排未来工作周"
+    elseif p.hunger<35 or p.energy<40 then reason="先吃饭休息，身体不适合排班"
+    elseif p.cashCents+gross<costs then reason="该住处的排班支出超过现有现金与收入" end
+    return {days=rule.days,fromDay=p.day,toDay=p.day+rule.days,level=level,
+        manualOrders=manual,activeSeconds=seconds,requiredManualOrders=rule.requiredManualOrders,
+        requiredActiveSeconds=rule.requiredActiveSeconds,remainingManualOrders=math.max(0,rule.requiredManualOrders-manual),
+        remainingActiveSeconds=math.max(0,rule.requiredActiveSeconds-seconds),unlockDay=rule.unlockDay,
+        simulatedOrders=orders,averageCents=average,grossCents=gross,livingCents=rule.livingCents,
+        perOrderCostsCents=rule.perOrderCostCents*orders,housingCents=housing,costsCents=costs,netCents=gross-costs,
+        ready=reason=="",reason=reason,
+        description="完整模拟未来7天；此前亲送已即时结算，只作资格，不扣未来单量。每次排班后需重新亲送10单和活动15分钟。"}
+end
 -- 每次周排班都需要新完成15分钟活动与10份亲送，不允许连点快进刷现金。
--- 亲送收入已即时入账；这里只补未亲送订单，餐食/整备与7晚住宿另记支出。
+-- 亲送不再抵扣未来单量；手送越多不会少赚，历史积累超过周单量也照常模拟完整7天。
 function Progress.WorkWeek()
     return Store.Transaction(function(p)
+        local preview=Progress.WorkWeekPreview(p)
+        if not preview.ready then return false,preview.reason end
         extras(p)
-        if p.day<10 or p.completedOrders<10 or not p.flags.firstRest then return false,"第10天起，亲送10单并休息过后开放周排班" end
-        local manual=p.completedOrders-(p.lastScheduleManualOrders or 0)
-        local seconds=(p.activeSeconds or 0)-(p.lastScheduleSeconds or 0)
-        if manual<10 or seconds<900 then
-            return false,string.format("本周代表班次：亲送%d/10单，活动%.0f/15分钟。每周都需重新亲跑。",manual,seconds/60)
-        end
-        if #p.activeOrders>0 then return false,"先完成所有手头订单" end
-        if p.hunger<35 or p.energy<40 then return false,"先吃饭休息，身体不适合排班" end
-        local level=Progress.Level(p)
-        local total=level>=4 and 348 or level>=3 and 300 or 240
-        local average=level>=4 and 620 or level>=3 and 600 or 580
-        local simulated=math.max(0,total-manual)
-        local gross=simulated*average
-        local housing=Property.NightlyCost(p,p.accommodation)*7
-        local costs=17600+30*simulated+housing
-        if p.cashCents+gross<costs then return false,"该住处的排班支出超过现有现金与收入" end
         local key="week:"..(p.weeksWorked+1)
-        local ok,message=Store.ApplyCash(p,gross,"scheduled_delivery",key..":income")
+        local ok,message=Store.ApplyCash(p,preview.grossCents,"scheduled_delivery",key..":income")
         if not ok then return false,message end
-        local paid,detail=Store.ApplyCash(p,-costs,"scheduled_living",key..":cost")
+        local paid,detail=Store.ApplyCash(p,-preview.costsCents,"scheduled_living",key..":cost")
         if not paid then return false,detail end
         p.weeksWorked=p.weeksWorked+1
-        p.simulatedOrders=p.simulatedOrders+simulated
+        p.simulatedOrders=p.simulatedOrders+preview.simulatedOrders
         p.lastScheduleManualOrders=p.completedOrders
         p.lastScheduleSeconds=p.activeSeconds or 0
-        p.day=p.day+7; p.time=8; p.hunger=65; p.energy=85; p.battery=80
+        p.day=p.day+preview.days; p.time=8; p.hunger=65; p.energy=85; p.battery=80
         p.flags.weekSchedule=true
-        p.lastDaySummary={day=p.day-1,incomeCents=gross,expenseCents=costs,balanceCents=p.cashCents}
-        return true,string.format("7天排班结束：本周亲送%d单已另结；模拟%d单，收入%.2f元，餐食整备住宿%.2f元，新增净存%.2f元。",manual,simulated,gross/100,costs/100,(gross-costs)/100)
+        p.lastDaySummary={day=p.day-1,incomeCents=preview.grossCents,expenseCents=preview.costsCents,balanceCents=p.cashCents}
+        print(string.format("[Career.Progression] future week=%d manualQualification=%d simulated=%d netCents=%d",p.weeksWorked,preview.manualOrders,preview.simulatedOrders,preview.netCents))
+        return true,string.format("未来7天排班结束：此前亲送%d单仅作资格、不抵未来收入；完整模拟%d单，收入%.2f元，餐食整备住宿%.2f元，新增净存%.2f元。",preview.manualOrders,preview.simulatedOrders,preview.grossCents/100,preview.costsCents/100,preview.netCents/100)
     end)
+end
+-- 连续成长路线只复用亲送等级、现有装备、人物委托和钱包；不另建可领奖状态。
+-- 返回独立快照，反复查询/回读旧档不会补发奖金，也不改变31份旧单报价。
+---@param p CareerProfile
+---@return table
+function Progress.ProgressForecast(p)
+    local week=Progress.WorkWeekPreview(p)
+    local target=Config.FIRST_MOTORCYCLE_TARGET_CENTS
+    local complete=p.flags.firstMotorcycle==true
+    local gap=complete and 0 or math.max(0,target-p.cashCents)
+    local milestones={}
+    local equipmentSteps={}
+    local lifeReserve=require("Career.LifeStatus").Plan(p).reserveCents
+    for _,item in ipairs(Progress.Equipment) do
+        local owned=p.equipment and p.equipment[item.id]==true or false
+        local unlocked=Progress.Level(p)>=item.level and (item.id~="large_box" or (p.equipment and p.equipment.insulated_box==true))
+        equipmentSteps[#equipmentSteps+1]={id=item.id,title=item.name,owned=owned,unlocked=unlocked==true,
+            priceCents=item.price,reserveCents=lifeReserve,remainingCents=owned and 0 or math.max(0,item.price+lifeReserve-p.cashCents),
+            description=item.description,required=false,rewardCents=0}
+    end
+    for _,cents in ipairs(Config.SAVINGS_STEPS_CENTS) do
+        milestones[#milestones+1]={id="savings:"..cents,title=string.format("攒车小目标 · %.0f元",cents/100),
+            currentCents=p.cashCents,targetCents=cents,remainingCents=math.max(0,cents-p.cashCents),
+            done=p.cashCents>=cents,rewardCents=0}
+    end
+    -- 周次估算使用同一生产预览，考虑等级随模拟订单升级；不伪造亲送收入或领奖。
+    local balance,totalSimulated,estimatedWeeks=p.cashCents,p.simulatedOrders or 0,0
+    ---@type table<string, any>
+    local estimateProfile={}
+    for key,value in pairs(p) do estimateProfile[key]=value end
+    while not complete and balance<target and estimatedWeeks<1000 do
+        estimateProfile.completedOrders=p.completedOrders+estimatedWeeks*Config.WORK_WEEK.requiredManualOrders
+        estimateProfile.simulatedOrders=totalSimulated
+        estimateProfile.cashCents=balance
+        local estimate=Progress.WorkWeekPreview(estimateProfile --[[@as CareerProfile]])
+        if estimate.netCents<=0 then break end
+        balance=balance+estimate.netCents
+        totalSimulated=totalSimulated+estimate.simulatedOrders
+        estimatedWeeks=estimatedWeeks+1
+    end
+    local reachable=complete or balance>=target
+    local _,levelName=Progress.Level(p)
+    return {targetId="first_motorcycle",targetCents=target,cashCents=p.cashCents,remainingCents=gap,
+        motorcyclePriceCents=Progress.Motorcycles[1].price,trainingBudgetCents=200000,livingReserveCents=200000,
+        completed=complete,level=week.level,levelName=levelName,week=week,milestones=milestones,equipmentSteps=equipmentSteps,
+        estimatedWeeks=reachable and estimatedWeeks or nil,estimatedGameDays=reachable and estimatedWeeks*7 or nil,
+        minimumActiveSeconds=reachable and (estimatedWeeks==0 and 0 or week.remainingActiveSeconds+math.max(0,estimatedWeeks-1)*900) or nil,
+        requiredNewManualOrders=reachable and (estimatedWeeks==0 and 0 or week.remainingManualOrders+math.max(0,estimatedWeeks-1)*10) or nil,
+        unlockDaysRemaining=math.max(0,Config.WORK_WEEK.unlockDay-p.day),
+        assumptions="按当前住处、现有周排班和等级成长估算；每周仍需新的10份亲送、15分钟活动与生活条件。未计亲送净收支、装备购置、额外消费或委托奖金，不承诺实际达成时长；无需广告。",
+        firstTwentyMinutes={
+            {fromMinute=0,toMinute=5,pointId="breakfast",title="认路与第一份热早餐",detail="骑9号到早餐店，停稳下车取餐，再到旧宅交付教学单；配送费5元。"},
+            {fromMinute=5,toMinute=15,pointId="breakfast",title="站长的三份新早餐",detail="教学后现场接站长委托，再接3份新早餐准时亲送；必须回早餐店交付，既有一次谢礼15元，不自动远程领奖。"},
+            {fromMinute=15,toMinute=20,pointId="bridge",title="把生活和下一步安排清楚",detail="查看饭钱与免费落脚点，按需吃饭休息；随后回桥下接表哥回信。下一阶段累计亲送10单，攒280元双单箱；首车不是20分钟承诺。"},
+        }}
+end
+---@param p CareerProfile
+---@return table
+function Progress.NextGoal(p)
+    local function goal(id,title,detail,pointId,current,target,action)
+        return {id=id,title=title,detail=detail,pointId=pointId,point=pointId,current=current,target=target,
+            remaining=math.max(0,target-current),action=action,rewardCents=0}
+    end
+    local order=p.activeOrders[1]
+    if order then
+        return goal("delivery:"..order.id,order.status=="accepted" and "先取好手头餐品" or "先送好手头餐品",
+            "每份订单独立取送；迟到仍按原配送费结算，但不计准时人物委托。",
+            order.status=="accepted" and order.pickupId or order.dropoffId,0,1,"delivery")
+    end
+    if p.career and p.career.pending then
+        return goal("career_pending","完成已报名项目","先完成当前训练或赛事，不能同时推进排班。","dealer",0,1,"career")
+    end
+    if not p.flags.tutorialCompleted then
+        return goal("tutorial","第一笔自己挣的钱","先完成教学早餐，认识取餐、交付和5元到账；不需广告。","breakfast",0,1,"delivery")
+    end
+    if p.hunger<=55 or p.energy<=45 or p.time>=21 then
+        local advice=require("Career.LifeStatus").Advice(p)
+        return goal("life","先把今天过稳",advice.detail,advice.point,0,1,"life")
+    end
+    local engagement=require("Career.Engagements").NextGoal(p)
+    if engagement and (engagement.id~="mechanic_balance" or p.flags.professional) then return engagement end
+    local equipment=p.equipment or {}
+    if p.completedOrders<10 then
+        return goal("rider_10","成为城市骑手","累计10份亲送开放双单箱；模拟单不代替这项新人目标。","breakfast",p.completedOrders,10,"delivery")
+    end
+    if not p.flags.firstMotorcycle and p.day<Config.WORK_WEEK.unlockDay
+        and p.cashCents<Config.FIRST_MOTORCYCLE_TARGET_CENTS and not equipment.insulated_box then
+        local reserve=require("Career.LifeStatus").Plan(p).reserveCents
+        return goal("equipment:insulated_box","装稳第一只双单箱",
+            "双单箱280元，需另留下一餐和今晚住宿预算；容量变2，每单原价不变，不要求购买才能攒首车。",
+            "breakfast",math.max(0,p.cashCents-reserve),Progress.Equipment[1].price,"equipment")
+    end
+    if not p.flags.firstRest then
+        return goal("first_rest","有一个能落脚的晚上","先休息一晚，桥下与公园免费；人物回信与后续排班都需要休息经历。","bridge",0,1,"life")
+    end
+    if not p.flags.firstMotorcycle then
+        local week=Progress.WorkWeekPreview(p)
+        if p.cashCents>=Config.FIRST_MOTORCYCLE_TARGET_CENTS then
+            return goal("first_motorcycle","去看属于自己的第一辆摩托","5万元已备齐：二手训练版46000元，护具课程预算2000元，生活周转2000元。","dealer",p.cashCents,Config.FIRST_MOTORCYCLE_TARGET_CENTS,"motorcycle")
+        end
+        if p.day<week.unlockDay then
+            return goal("week_unlock","站稳日常，再安排未来7天","第10天开放排班；不必反复空睡，先做好亲送、熟人回访与日常补给。","breakfast",p.day,week.unlockDay,"delivery")
+        end
+        local forecast=Progress.ProgressForecast(p)
+        for _,step in ipairs(forecast.milestones) do
+            if not step.done then
+                local detail=string.format("距本段还差%.2f元；当前住处未来7天净存%.2f元。",step.remainingCents/100,week.netCents/100)
+                return goal(step.id,step.title,detail..(week.ready and "资格已齐，可查看完整排班预览。" or week.reason),
+                    "breakfast",p.cashCents,step.targetCents,week.ready and "workWeek" or "delivery")
+            end
+        end
+    end
+    if not p.flags.professional then
+        return goal("training","从城市街头到封闭训练场","换回9号完成日常配送；车行报名训练并保留2000元周转金。","dealer",0,1,"training")
+    end
+    return goal("career_series","下一场职业赛","到车行查看已开放赛事与车队合同；住房、装备与收藏按自己的节奏选择。","dealer",p.career and p.career.points or 0,18,"career")
 end
 function Progress.BuyMotorcycle(id)
     local item
@@ -167,6 +304,7 @@ function Progress.CompleteTraining(finished)
     return Store.Transaction(function(p)
         extras(p)
         if not (p.career.pending and p.career.pending.training) then return false,"没有待完成的训练" end
+        if #p.activeOrders>0 then return false,"请先完成配送订单，再结算训练" end
         if not finished then return false,"训练未通过，报名保留，可以免费重练" end
         p.flags.professional=true; p.career.pending=false
         p.day=p.day+3; p.time=8; p.energy=90; p.hunger=70
@@ -247,6 +385,7 @@ function Progress.SettleRace(place,finished,expectedRaceId)
         extras(p)
         local race=p.career.pending
         if not race then return false,"没有生涯待结算赛事" end
+        if #p.activeOrders>0 then return false,"请先完成配送订单，再结算赛事" end
         if expectedRaceId and expectedRaceId~=race.id then return false,"赛事结果已过期，不能结算另一场报名" end
         if race.training then return false,"训练必须通过训练资格入口结算" end
         local series=Progress.Series[race.series]

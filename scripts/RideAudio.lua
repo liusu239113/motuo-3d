@@ -25,6 +25,7 @@
 ---@field sources table<number, SoundSource?>
 ---@field pitches table<number, number>
 ---@field musicEnabled boolean
+---@field musicDuck? number 语音期间的音乐目标系数；不累乘源增益
 ---@field effectsEnabled boolean
 ---@field unlocked boolean
 ---@field stopped boolean
@@ -450,7 +451,7 @@ function RideAudio:Update(dt, sim, screen)
     if self.unlocked and self.musicEnabled then
         musicGain = riding and 0.18 or (screen == "result" and 0.085 or 0.055)
     end
-    self:UpdateLoop(MUSIC, musicGain, 1, frameTime)
+    self:UpdateLoop(MUSIC, musicGain*Unit(self.musicDuck or 1), 1, frameTime)
 
     if sim then
         -- 更换仿真实例、时间回退、血量恢复或计数归零都只重建基线，不误播事件。

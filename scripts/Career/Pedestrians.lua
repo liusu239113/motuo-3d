@@ -1,4 +1,4 @@
--- 独立便服路人：使用两套真实骨骼模型，复用骑手库的两段IK，不复制主角外卖服。
+-- 独立便服路人：四套已有真实骨骼模型，复用骑手库的两段IK，不复制主角外卖服。
 local Rig=require("Career.Rig")
 local Walk=require("Career.LocalWalk")
 ---@class CareerPedestrians
@@ -21,6 +21,9 @@ local PedestrianAssetType={}
 local specs={
     {root="model/8e64bae4-5b82-5be6-8c95-b000fb191bdb/",stem="rig-1-99f19e84-13a1-418a-b205-f5728233dcad",suffix="684fb712-5dcb-4fcf-8b05-c8b855c2b5fd",height=1.73,name="羽绒服路人"},
     {root="model/c993b86d-09f2-5573-a033-4568fad5ce67/",stem="rig-1-6e1ff8c0-1bfd-41eb-992e-03838035c444",suffix="2c590ce0-b4bb-4afe-8357-411942174cd6",height=1.79,name="夹克路人"},
+    {root="model/e440d08e-5b0d-55ae-b368-2d2da9e21122/",stem="rig-1-f4b048bc-2e56-4901-931a-f07ef5a695d2",suffix="3c49bff3-7579-4f0c-8bdd-13f3497da040",height=1.68,name="黑衣街坊"},
+    {root="model/b2849c2afd734d59aaf285fcb69b2b1a/",stem="rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14",suffix="f6f61c31-14b2-4a13-a6ed-039b59564bd7",height=1.82,name="黄夹克街坊",
+        normal="model/b2849c2afd734d59aaf285fcb69b2b1a/Textures/rig-1-e41d7bfb-0916-49c9-bbcf-cb2d5f522d14_00_N.png"},
 }
 -- 供外区交通/现场联系人复用同两套便服资源；老街8人路径与步态独立保持。
 Pedestrians.Specs=specs
@@ -29,7 +32,7 @@ for _,s in ipairs(specs) do
     s.model=s.root.."Meshes/"..s.stem..".mdl"
     s.material=s.root.."Materials/"..s.stem.."_00_tripo_material_"..s.suffix..".xml"
     s.diffuse=s.root.."Textures/"..s.stem.."_00_D.jpg"
-    s.normal=s.root.."Textures/"..s.stem.."_00_N.jpg"
+    s.normal=s.normal or s.root.."Textures/"..s.stem.."_00_N.jpg"
     for path,kind in pairs({[s.model]="Model",[s.material]="Material",[s.diffuse]="Texture2D",[s.normal]="Texture2D"}) do
         Pedestrians.Resources[#Pedestrians.Resources+1]=path; Pedestrians.ResourceTypes[path]=kind
     end
@@ -60,7 +63,7 @@ function Pedestrians:Init(root,city)
         rig.ground=city
         rig.model.drawDistance=85; rig.model.shadowDistance=30
         local length=math.sqrt((p[3]-p[1])^2+(p[4]-p[2])^2)
-        local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,gaitWeight=0,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
+        local person={node=node,rig=rig,path=p,length=length,s=length*(i%3)/3,direction=i%2==0 and 1 or -1,phase=i,gaitWeight=0,poseElapsed=(i%4)*.0125,speed=.9+(i%3)*.12,x=0,z=0,radius=.32}
         -- Corridor stays on the original sidewalk, including the off-centre paths 3/7.
         local low,high=-2.3,2.3
         if i==3 then low,high=-2.3,1.2 end
@@ -84,9 +87,6 @@ function Pedestrians:Update(dt,blockers)
         or traffic and (traffic.disposed or not traffic.active or traffic.nearOld==false) then return end
     dt=math.min(dt,.25)
     blockers=blockers or {}
-    self.poseTime=self.poseTime+dt
-    local poseReady=self.poseTime>=1/20
-    if poseReady then self.poseTime=self.poseTime%(1/20) end
     local viewer=blockers[1]
     local outer=traffic and traffic.outer
     local groups={self.people,outer and outer.people or {}}
@@ -102,9 +102,13 @@ function Pedestrians:Update(dt,blockers)
         p.phase=(p.phase+moved*2*math.pi/Rig.CycleLength(p.gaitWeight,0))%(math.pi*2)
         p.node.position=Vector3(p.x,self.city:Surface(p.x,p.z),p.z)
         p.node.rotation=Quaternion(0,p.yaw or 0,0)
-        -- Actual XZ distance drives gait; stop/wait has no phantom stride. No Place() projection off-route.
-        if poseReady and (not viewer or (p.x-viewer.x)^2+(p.z-viewer.z)^2<85^2) then
+        -- 移动/碰撞每帧保持原精度；只有昂贵的骨骼与鞋底求解按距离分频，各人错峰。
+        p.poseElapsed=math.min(.3,(p.poseElapsed or 0)+dt)
+        local distance=viewer and (p.x-viewer.x)^2+(p.z-viewer.z)^2 or 0
+        local period=distance<22^2 and .05 or distance<45^2 and .1 or .25
+        if distance<85^2 and p.poseElapsed>=period then
             p.rig:PoseWalk(p.phase,p.gaitWeight)
+            p.poseElapsed=p.poseElapsed%period
         end
     end
 end

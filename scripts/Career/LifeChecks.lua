@@ -4,6 +4,11 @@ local Life=require("Career.LifeStatus")
 local UI=require("urhox-libs/UI")
 local Kit=require("Career.PhoneKit")
 local Checks={}
+-- 可独立调用，不必启动LifeChecks.Run里的电话/天气/城市序列。
+---@param session CareerSession
+function Checks.Layout(session)
+    return require("Career.HudLayoutChecks").Run(session)
+end
 ---@param session CareerSession
 function Checks.Run(session,shot)
     assert(session.options.test and session.restoreTestStorage,"生活验收必须内存隔离")
@@ -93,7 +98,8 @@ function Checks.Run(session,shot)
     local NightLighting=require("Career.NightLighting")
     local lamps=assert(session.nightLighting)
     local actorPosition=session.actor.node.worldPosition
-    local vehiclePosition=session.actor.visuals.bikeVisual.worldPosition
+    local subjectVisuals=session.actor.visuals --[[@as CareerActorVisuals]]
+    local vehiclePosition=subjectVisuals.bikeVisual.worldPosition
     session.actor.node.worldPosition=vehiclePosition
     NightLighting.Update(lamps,session.actor,Atmosphere.Sample(1,12),false)
     assert(not lamps.head.enabled and not lamps.tail.enabled,"晴天正午不应开启车灯")
@@ -191,7 +197,8 @@ function Checks.Run(session,shot)
     if session.options.lifeRide then
         session.actor.mounted=true;session.actor.visuals:SetMounted(true)
         session.actor:SyncVisuals(0)
-        local rider=session.actor.visuals.mountedRider
+        local subjectVisuals=session.actor.visuals --[[@as CareerActorVisuals]]
+        local rider=subjectVisuals.mountedRider
         for _,steer in ipairs({0,-1,1}) do
             rider:PoseRide(steer)
             local pose=rider:ReadPose()

@@ -290,8 +290,74 @@ function Checks.Coverage(session)
     end)
 end
 
+-- 独立纯逻辑专项，无Session/Store读写、无引擎节点；主会话可单独调用，不触发世界长测。
+function Checks.NavigationPlan()
+    local function templates()
+        local values={}
+        assert(#Config.orderTemplates==31,"订单模板数改变")
+        for _,t in ipairs(Config.orderTemplates) do
+            values[#values+1]=t.id..":"..tostring(t.timeLimitHours)..":"..tostring(t.tutorial)
+            local meters=Config.RouteDistance(t.route)
+            values[#values+1]=string.format("%.9f:%d",meters,Config.FeeCents(meters))
+            for _,p in ipairs(t.route) do values[#values+1]=string.format("%.9f:%.9f",p.x,p.z) end
+        end
+        return table.concat(values,"|")
+    end
+    local before=templates()
+    local bridge=assert(World.Bridges[1])
+    local layer="bridge:"..bridge.id
+    assert(World.NavigationLayer(bridge.x,bridge.z,bridge.y)==layer)
+    assert(World.NavigationLayer(bridge.x,bridge.z,0)=="ground","桥下同XZ不能吸附桥层")
+    assert(World.NavigationLayer(bridge.x,bridge.z,bridge.y,"vehicle")=="ground")
+    assert(World.NavigationLayer(-450,-450,4)=="ground","海岸4m地面不是桥层")
+    local ground=assert(World.Route(bridge.x,bridge.z,bridge.x,bridge.z-80))
+    local compatible=assert(World.NavigationRoute(bridge.x,bridge.z,bridge.x,bridge.z-80))
+    assert(#ground==#compatible,"省略height必须保持旧接口路线")
+    for i,p in ipairs(ground) do near(p.x,compatible[i].x);near(p.z,compatible[i].z) end
+    local cases={{0,0,bridge.y},{-20,-32,.085+32/62*6},{20,-32,.085+32/62*6},
+        {-20,-63,.085+1/62*6},{-20,-64,.085},{19,-12,.085+52/62*6}}
+    for _,start in ipairs(cases) do for _,side in ipairs({-1,1}) do
+        local x,z=bridge.x+start[1],bridge.z+start[2]
+        local tx,tz=bridge.x+side*64,bridge.z-74.6
+        local route=assert(World.NavigationRoute(x,z,tx,tz,start[3]))
+        near(route[1].x,x);near(route[1].z,z);near(route[1].y,start[3])
+        assert(route[1].layer==layer,"坡上低于.65m起点也应认实际坡层")
+        local height=start[3]
+        local changed=false
+        for i=2,#route do
+            local a,b=route[i-1],route[i]
+            if a.layer~=b.layer then
+                assert(not changed and a.layer==layer and b.layer=="ground","非法换层")
+                near(a.z,bridge.z-64);near(b.z,bridge.z-66)
+                near(math.abs(a.x-bridge.x),20);near(a.x,b.x)
+                changed=true
+            end
+            -- 仅逐0.1m复核有限桥层与坡脚；远端地面段用精确扫掠，避免长路线帧遍历。
+            if a.layer==layer then
+                local n=math.max(1,math.ceil(math.sqrt((a.x-b.x)^2+(a.z-b.z)^2)/.1))
+                for step=1,n do
+                    local px,pz=a.x+(b.x-a.x)*step/n,a.z+(b.z-a.z)*step/n
+                    assert(World.IsFree(px,pz,.32,"walk",height),"导航桥段偏离实际支撑/碰撞")
+                    local nextHeight=World.Surface(px,pz,"walk",height)
+                    assert(math.abs(nextHeight-height)<=.1,"导航高度突降或隔层吸附")
+                    height=nextHeight
+                end
+                near(height,b.y,.001)
+            else assert(World.SegmentFree(a,b,.32),"导航地面段穿入坡道/实体") end
+        end
+        assert(changed,"桥上导航未通过坡脚换层")
+        near(route[#route].x,tx);near(route[#route].z,tz)
+    end end
+    assert(not World.NavigationRoute(bridge.x,bridge.z,bridge.x,bridge.z-80,bridge.y+2),"不支持的悬空高度应拒绝")
+    assert(not World.NavigationRoute(bridge.x,bridge.z,bridge.x,bridge.z-80,0,layer),"错误层和高度不得静默降层")
+    assert(before==templates(),"动态导航修改31单固定路线/时限/报价")
+    passed("独立桥层导航：同XZ分层、坡中/低坡/桥顶双侧下桥、0.1m真实支撑、31模板报价签名不变；未访问Store")
+    return true
+end
+
 function Checks.Run(session)
     isolated(session)
+    Checks.NavigationPlan()
     local started=os.clock()
     local a,city=assert(session.actor),assert(session.city)
     local traffic=assert(session.traffic)

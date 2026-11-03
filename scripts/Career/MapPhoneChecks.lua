@@ -49,7 +49,8 @@ end
 ---@param id string
 ---@return Widget
 local function find(view,id)
-    local widget=assert(view.phoneBody:FindById(id),"缺少手机控件："..id)
+    local widget=view.phoneBody:FindById(id)
+    assert(widget,"缺少手机控件："..id)
     return widget
 end
 ---@param view CareerView
@@ -140,7 +141,8 @@ end
 function Checks.Run(session)
     assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function",
         "MapPhoneChecks 只允许明确 test=true 的隔离 Session")
-    local actor=assert(session.actor,"人物未就绪")
+    local actor=session.actor
+    assert(actor,"人物未就绪")
     local view=session.view
     assert(session.running and UI.GetRoot()==view.root and not view.blocked and view.phonePage=="",
         "请在已挂载、非弹窗、非手机的测试游戏态调用")
@@ -250,6 +252,8 @@ function Checks.Run(session)
         assert(view.mapDistrictId=="north_lake" and find(view,"career-map-indoor"))
         assert(#verifyRows(view,"north_lake",0,6144)==4)
         local map=find(view,"career-phone-map")
+        assert(view.phoneContent:ShowWidget(map),"室内地图需切换到实际所在页")
+        layout(view); map:Update(0)
         local viewport=assert(map:GetChildAt(1)):GetLayout()
         local player=find(view,"career-phone-map-player")
         local scale=math.min(viewport.w,viewport.h)/30000
@@ -461,6 +465,7 @@ function Checks.RunLayout(view,state,offer,active,checkApp)
                     local last=assert(holder:FindById("career-motorcycle-rally_3")):GetAbsoluteLayout()
                     assert(inside(last,view.phoneContent:GetAbsoluteLayout()),"最后操作不能切半或丢失")
                 end
+                if app[1]=="life" then require("Career.PhoneAppChecks").LifeTasks(view) end
                 if checkApp then checkApp(app[1]) end
                 local oldPage=tree(assert(view.phoneContent:GetChildAt(1)))
                 local back=assert(holder:FindById("career-phone-back"))

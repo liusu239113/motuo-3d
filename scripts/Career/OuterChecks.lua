@@ -4,6 +4,7 @@ local Store=require("Career.Store")
 local Config=require("Career.Config")
 local Traffic=require("Career.Traffic")
 local Outer=require("Career.OuterTraffic")
+local Signals=require("Career.OuterSignals")
 local World=require("Career.WorldData")
 local Checks={}
 
@@ -29,18 +30,36 @@ end
 local function capture(items)
     local result={}
     for _,item in ipairs(items) do
-        result[#result+1]={item=item,fields=shallow(item),position=item.node.position,
+        local fields=shallow(item)
+        local walk=item.localWalk
+        -- Only the mutable plain-data navigation state is copied. Node/rig/route
+        -- ownership stays by identity; a generic recursive clone would corrupt it.
+        if walk then
+            fields.localWalk=shallow(walk)
+            fields.localWalk.points={}
+            for i,p in ipairs(walk.points) do fields.localWalk.points[i]=shallow(p) end
+        end
+        result[#result+1]={item=item,fields=fields,walk=walk,position=item.node.position,
             rotation=item.node.rotation,enabled=item.node:IsEnabled()}
     end
     return result
 end
 local function restoreItems(snapshots)
     for _,saved in ipairs(snapshots) do
+        local snapshot=saved.fields.localWalk
+        if saved.walk then
+            restoreFields(saved.walk,snapshot)
+            saved.walk.points={}
+            for i,p in ipairs(snapshot.points) do saved.walk.points[i]=shallow(p) end
+        end
         restoreFields(saved.item,saved.fields)
+        if saved.walk then saved.item.localWalk=saved.walk end
         saved.item.node.position=saved.position
         saved.item.node.rotation=saved.rotation
         saved.item.node:SetEnabledRecursive(saved.enabled)
         if saved.item.rig then saved.item.rig:PoseWalk(saved.item.phase,saved.item.gaitWeight) end
+        assert(same(saved.item.localWalk,snapshot),"acceptance failed to restore pedestrian localWalk data")
+        assert(not saved.walk or saved.item.localWalk==saved.walk,"acceptance replaced caller localWalk identity")
     end
 end
 local function unchanged(items,snapshots,message)
@@ -95,10 +114,54 @@ local function validate(session)
     end
 end
 
+-- 只检查真实道路候选，不建新实体、不改变生产外区池。
+function Checks.RoadCoverage()
+    local lanes=0
+    for _,p in ipairs({{240,-44},{-240,-44},{24,240},{24,-240},{768,0}}) do
+        local fixture=setmetatable({actor={x=p[1],z=p[2]},lanes={}},{__index=Outer})
+        fixture:Scan()
+        assert(#fixture.lanes>0 and #fixture.lanes<=8,"有真实宽路的邻里没有交通候选")
+        for _,route in ipairs(fixture.lanes) do
+            assert(route.width>=12 and route.finish-route.start>=140,"汽车被分配到窄巷或短掉头段")
+            lanes=lanes+1
+        end
+    end
+    print(string.format("[邻里车流覆盖] PASS 5处/%d安全候选；固定6车4人预算不扩容",lanes))
+    return true
+end
+
+-- Pure snapshot regression: no engine allocation or Store access. Emulate both
+-- Advance's in-place edits and Release's replacement of p.localWalk before cleanup.
+function Checks.SnapshotPlan()
+    Checks.RoadCoverage()
+    local node={position=0,rotation=0,enabled=true}
+    function node:IsEnabled() return self.enabled end
+    function node:SetEnabledRecursive(value) self.enabled=value end
+    local walk={points={{x=1,z=2},{x=3,z=4}},index=1,cooldown=.5,plans=2,attempts=3,completed=1,waiting=0}
+    local item={node=node,localWalk=walk,x=1,z=2}
+    local snapshots=capture({item})
+    walk.cooldown=9;walk.points[1].x=100;walk.points={};walk.index=8
+    item.localWalk={points={},index=99};item.x=20
+    restoreItems(snapshots)
+    assert(item.localWalk==walk and item.localWalk.index==1 and item.localWalk.cooldown==.5
+        and item.localWalk.points[1].x==1 and item.x==1,"snapshot failed in-place/replacement restore")
+    item.localWalk.points[1].x=200
+    restoreItems(snapshots)
+    assert(item.localWalk.points[1].x==1,"restored points aliased immutable snapshot")
+    local without={node=node}
+    local clean=capture({without})
+    without.localWalk={points={},index=5}
+    restoreItems(clean)
+    assert(without.localWalk==nil,"snapshot must remove newly introduced localWalk")
+    print("[外区快照验收通过] localWalk原位变更/替换/二次恢复不污染快照；无引擎对象克隆/存档访问")
+    return true
+end
+
 ---@param session CareerSession
 function Checks.Run(session)
     assert(session.options.test==true and type(session.restoreTestStorage)=="function",
         "OuterChecks requires Session.New({test=true}) memory storage; never run on a real save")
+    Checks.SnapshotPlan()
     local actor,city,traffic,camera=assert(session.actor),assert(session.city),assert(session.traffic),assert(session.camera)
     local outer=assert(traffic.outer,"outer traffic not installed") --[[@as CareerOuterTraffic]]
     assert(not traffic.disposed and not outer.disposed,"traffic already disposed")
@@ -125,6 +188,14 @@ function Checks.Run(session)
     local originalOuter=shallow(outer)
     local signals=outer.signals --[[@as OuterSignalSystem]]
     local signalTime=signals.time
+    -- Signal nodes can be legitimately unloaded/disposed during twelve-district travel.
+    -- Save the restorable set/phase/visibility, not disposed Node handles. Lifetime
+    -- loaded/unloaded counters intentionally remain real, monotonically counted work.
+    local signalVisible,signalRootEnabled=signals.visible,signals.root:IsEnabled()
+    local signalSet,signalPhases,signalEnabled={},{},{}
+    for id,visual in pairs(signals.visuals) do
+        signalSet[id]=true;signalPhases[id]=visual.phase;signalEnabled[id]=visual.root:IsEnabled()
+    end
     -- Release removes array entries, so retain independent array snapshots.
     for _,field in ipairs({"cars","people","carPool","peoplePool","lanes"}) do originalOuter[field]=shallow(outer[field]) end
     local cars,people=capture(outer.carPool),capture(outer.peoplePool)
@@ -167,8 +238,10 @@ function Checks.Run(session)
                 realCamera.autoAspectRatio=false; realCamera.aspectRatio=16/9
                 local cp=realCamera.node.worldPosition
                 assert((cp-Vector3(actor.x,cp.y,actor.z)):LengthSquared()<100^2,"camera did not follow fixture")
-                local behind=cp-realCamera.node.worldDirection*80
-                assert(realCamera.frustum:IsInside(Sphere(behind,4))==OUTSIDE,"real camera frustum cannot reject behind-camera sphere")
+                local behind=Vector3(cp.x-realCamera.node.worldDirection.x*80,
+                    cp.y-realCamera.node.worldDirection.y*80,cp.z-realCamera.node.worldDirection.z*80)
+                local behindSphere=Sphere(behind,4)
+                assert(realCamera.frustum:IsInside(behindSphere)==OUTSIDE,"real camera frustum cannot reject behind-camera sphere")
                 local viewport=assert(renderer:GetViewport(0),"no production viewport")
                 assert(viewport:GetCamera()==realCamera,"Hidden uses another viewport camera")
             end
@@ -274,7 +347,23 @@ function Checks.Run(session)
         traffic.time,traffic.nearOld,traffic.pedestrians.poseTime=previous.time,previous.nearOld,previous.poseTime
         city.signals:Update(previous.time)
         traffic.root:SetEnabledRecursive(previous.root); outer.root:SetEnabledRecursive(previous.outerRoot)
-        signals:Update(signalTime,actor.x,actor.z,originalOuter.active and previous.space=="city")
+        -- Recreate precisely the saved resident set, rather than Update(actor-position)
+        -- guessing which old signal nodes used to be present within hysteresis distance.
+        local remove={}
+        for id in pairs(signals.visuals) do if not signalSet[id] then remove[#remove+1]=id end end
+        for _,id in ipairs(remove) do signals:Unload(id) end
+        signals.time,signals.visible=signalTime,signalVisible
+        for _,junction in ipairs(Signals.Junctions) do if signalSet[junction.id] then signals:Load(junction) end end
+        signals:SetTime(signalTime);signals.root:SetEnabledRecursive(signalRootEnabled)
+        for id,visual in pairs(signals.visuals) do
+            assert(signalSet[id] and visual.phase==signalPhases[id],"outer signal resident set/phase not restored")
+            visual.root:SetEnabledRecursive(signalEnabled[id])
+        end
+        for id in pairs(signalSet) do assert(signals.visuals[id],"outer signal resident junction missing after restore") end
+        local signalStats=signals:Stats()
+        local residentCount=0;for _ in pairs(signalSet) do residentCount=residentCount+1 end
+        assert(signalStats.active==residentCount and signalStats.loaded-signalStats.unloaded==residentCount
+            and signalStats.time==signalTime and signalStats.visible==signalVisible,"outer signal restore balance/time/visibility")
         -- Parent recursive visibility can enable idle slots: restore per-slot visibility last.
         restoreItems(cars); restoreItems(people)
         session.online,session.yaw,session.pitch=previous.online,previous.yaw,previous.pitch
@@ -293,6 +382,7 @@ function Checks.Run(session)
     assert(restored,restoreError)
     print(string.format("[外区交通验收通过] 真实camera/frustum Update生成%d车/%d人；30s静态域/停车/玩家/车车OBB与行人无重叠，移动%.1fm/%.1fm；老街远处冻结、暂停/室内冻结、3次回收复用节点不增长；原内存档与actor/traffic/camera恢复；CPU %.3fs",
         maxCars,maxPeople,movedCars,movedPeople,os.clock()-started))
+    print("[外区交通验收恢复说明] localWalk及路点按独立纯数据快照恢复；外区信号恢复原驻留集合/相位/时钟/可见性，节点可能重建，loaded/unloaded保留真实累计工作量，不承诺计数或节点身份回滚")
     return true
 end
 return Checks

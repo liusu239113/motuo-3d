@@ -41,6 +41,25 @@ function Property.CanBuy(p,id)
     end
     return true
 end
+-- 收藏与免租价值都可查：只免对应住处房费，不生租金/被动现金，不增大体力上限。
+---@param p CareerProfile
+---@param id string
+---@return table?
+function Property.Value(p,id)
+    local home=Housing.Get(id)
+    if not home then return nil end
+    local owned=Property.Owns(p,id)
+    local saving=home.buyPriceCents and home.price or 0
+    return {id=id,owned=owned,selected=p.accommodation==id,energyAfterRest=home.energy,
+        rentalNightlyCents=home.price,nightlyCents=Property.NightlyCost(p,id),
+        potentialNightlySavingsCents=saving,potentialWeekSavingsCents=saving*7,
+        currentWeekSavingsCents=owned and p.accommodation==id and saving*7 or 0,
+        rentEquivalentNights=home.buyPriceCents and home.price>0 and math.ceil(home.buyPriceCents/home.price) or nil,
+        passiveIncomeCents=0,collectionAsset=home.buyPriceCents~=nil,
+        detail=home.buyPriceCents and "买断是长期收藏与稳定落脚点：只免这套住处每晚房费，休息恢复与同房型租住一致；不出租、不生利息或被动收入，也不替代饭钱、整备与训练预算。"
+            or home.price==0 and "免费落脚点仍可正常休息；不需要买房才能继续配送、排班或买首车。"
+            or "旅舍按晚收费，不出售产权；可先租住体验，不必为成长强行购房。"}
+end
 -- 返回独立展示快照；selected与owned分别表示今晚选择和永久产权，不混为一谈。
 ---@class CareerPropertyInfo
 ---@field id string

@@ -14,6 +14,9 @@ local STEM="rig-1-4db698a0-fa75-4297-921d-cb4897aad9cb"
 ---@field walkWeight number
 ---@field walkRun number
 ---@field locomotion? CareerLocomotion
+---@field standingPose? {ground:CareerCity?,left:number,right:number,position:Vector3,rotations:table<string,Quaternion>}
+---@field standingBuilds? number
+---@field standingRestores? number
 ---@field EnableOfficialLocomotion fun(self: CareerRig): CareerLocomotion
 local Rig={}
 Rig.__index=Rig
@@ -54,6 +57,7 @@ function Rig:InitCareer(parent,asset)
     self.bind,self.arms,self.legs,self.boneNames={},{},{},{}
     self.warnedReach,self.initializing={},false
     self.visible,self.disposed,self.lastSteer,self.lastLean=true,false,0,0
+    self.standingBuilds,self.standingRestores=0,0
     local skeleton=self.model:GetSkeleton()
     for index=0,skeleton:GetNumBones()-1 do
         local bone=skeleton:GetBone(index)
@@ -82,7 +86,7 @@ function Rig:InitCareer(parent,asset)
     self.feet={L_Foot=self:GetBonePosition("L_Foot"),R_Foot=self:GetBonePosition("R_Foot")}
     self.soleVertices={L_Foot={},R_Foot={}}
     ---@type table[]
-    local skin=assert(self:ReadSkinVertices()[1])
+    local skin=assert(self:ReadSkinVertices(0)[1])
     for _,v in ipairs(skin) do
         for _,sideName in ipairs({"L_","R_"}) do
             local weight=0
@@ -120,11 +124,45 @@ function Rig:InitCareer(parent,asset)
     -- 只缓存鞋部顶点，不在每帧读回整个人物VB；矩阵按骨名在本次求值内复用。
     print(string.format("[城市角色] %s %d骨，原始尺寸%s，等比身高%.2fm",asset.name,skeleton:GetNumBones(),resource.boundingBox.size:ToString(),asset.height))
 end
+-- 查询内只复用Skeleton/绑定表/根Node引用；矩阵仍按原来的父到子括号顺序相乘。
+-- matrices只由SoleHeight在一次无骨骼写入的求值内创建；不能提升到self/帧/IK事务。
+-- IK的PointJoint/SetLocalBoneRotation会交替读写骨骼，每次公开查询必须重读整条祖先链。
+---@param bind table<string, RiderBindPose>
+---@param skeleton Skeleton
+---@param node Node
+---@param mesh Node
+---@param name string
+---@param matrices? table<string, Matrix3x4>
+---@return Matrix3x4
+local function localBoneTransform(bind,skeleton,node,mesh,name,matrices)
+    if matrices and matrices[name] then return matrices[name] end
+    local bone=skeleton:GetBone(name)
+    local boneNode=bone and bone.node
+    assert(boneNode,"Rider skeleton missing bone: "..name)
+    local localTransform=boneNode.transform
+    local parent=bind[name].parentName
+    local transform=parent and localBoneTransform(bind,skeleton,node,mesh,parent,matrices)*localTransform
+        or node.transform*mesh.transform*localTransform
+    if matrices then matrices[name]=transform end
+    return transform
+end
+---@param name string
+---@return Matrix3x4
+function Rig:GetLocalBoneTransform(name)
+    return localBoneTransform(self.bind,self.model:GetSkeleton(),self.node,self.mesh,name)
+end
 ---@param name string
 ---@param complete? boolean 仅等价性检查使用未去重完整鞋列表
-function Rig:SoleHeight(name,complete)
+---@param inspect? boolean 仅隔离回归取回本次实际蒙皮矩阵；默认严格保留单返回值
+---@return number
+---@return table<string, Matrix3x4>?
+function Rig:SoleHeight(name,complete,inspect)
     ---@type table<string, Matrix3x4>
     local matrices={}
+    ---@type table<string, Matrix3x4>
+    local transforms={}
+    local skeleton=self.model:GetSkeleton()
+    local bind,node,mesh=self.bind,self.node,self.mesh
     local lowest=math.huge
     local vertices=complete and self.fullSoleVertices[name] or self.soleVertices[name]
     for _,v in ipairs(vertices) do
@@ -134,7 +172,7 @@ function Rig:SoleHeight(name,complete)
                 local boneName=tostring(self.boneNames[v.indices[k]+1])
                 local m=matrices[boneName]
                 if not m then
-                    m=self:GetLocalBoneTransform(boneName)*self.model:GetSkeleton():GetBone(boneName).offsetMatrix --[[@as Matrix3x4]]
+                    m=localBoneTransform(bind,skeleton,node,mesh,boneName,transforms)*skeleton:GetBone(boneName).offsetMatrix --[[@as Matrix3x4]]
                     matrices[boneName]=m
                 end
                 y=y+(m*v.position).y*v.weights[k]
@@ -142,6 +180,7 @@ function Rig:SoleHeight(name,complete)
         end
         lowest=math.min(lowest,y)
     end
+    if inspect then return lowest,matrices end
     return lowest
 end
 function Rig:Reset()
@@ -278,6 +317,35 @@ function Rig:PoseWalk(phase,weight,run)
         self:SolveChain(chain,target,V(chain.side*.18,-.08,-1),false)
         -- 手腕沿小臂，不把手指硬锁世界前向；twist保留绑定旋转。
     end
+end
+-- 驻足人物只改变上肢；地面双脚支撑值不变时复用精确站姿，避免每人20Hz重算鞋底蒙皮。
+-- 缓存限定到本Rig/地面对象与两脚实际地表高度；跨路沿、抬高地表会重新求解，不近似采样。
+function Rig:PoseStandingCached()
+    local left,right=0,0
+    if self.ground then
+        local root=self.parent.worldPosition
+        local a=self.parent.worldTransform*V(self.feet.L_Foot.x,self.soleOffsets.L_Foot,self.feet.L_Foot.z)
+        local b=self.parent.worldTransform*V(self.feet.R_Foot.x,self.soleOffsets.R_Foot,self.feet.R_Foot.z)
+        left=self.ground:WalkSurface(a.x,a.z,root.y)-root.y
+        right=self.ground:WalkSurface(b.x,b.z,root.y)-root.y
+    end
+    local saved=self.standingPose
+    if not saved or saved.ground~=self.ground or saved.left~=left or saved.right~=right then
+        self:PoseWalk(0,0)
+        local rotations={}
+        for _,name in ipairs(self.boneNames) do
+            rotations[name]=Quaternion(self.model:GetSkeleton():GetBone(name).node.rotation)
+        end
+        self.standingPose={ground=self.ground,left=left,right=right,position=Vector3(self.mesh.position),rotations=rotations}
+        self.standingBuilds=(self.standingBuilds or 0)+1
+        return
+    end
+    self.mesh.position=saved.position
+    for _,name in ipairs(self.boneNames) do
+        self.model:GetSkeleton():GetBone(name).node.rotation=saved.rotations[name]
+    end
+    self.walkPhase,self.walkWeight,self.walkRun=0,0,0
+    self.standingRestores=(self.standingRestores or 0)+1
 end
 function Rig:SetVisible(visible) self.visible=visible; self.node:SetEnabledRecursive(visible) end
 function Rig:Dispose()

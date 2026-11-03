@@ -1,0 +1,112 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 132896,
+    "frames_completed": 300,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 643.391ms (threshold: 500ms)",
+                    "frame": 85
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 680.22ms (threshold: 500ms)",
+                    "frame": 122
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 741.707ms (threshold: 500ms)",
+                    "frame": 131
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2838.64ms (threshold: 500ms)",
+                    "frame": 145
+                },
+                {
+                    "category": "lua",
+                    "message": "[2026-11-02 22_23_53_210][256] ERROR: Execute Lua function failed: [string \"Career/Session\"]:924: [string \"Career/MapOverlay\"]:500: [string \"Career/MapOverlay\"]:494: atlas close callback duplicated or omitted\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"Career/Session\"]:924: in method 'Update'\n\t[string \"main\"]:1092: in function 'HandleUpdate'",
+                    "frame": 145
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 110625ms (threshold: 500ms)",
+                    "frame": 146
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1714.385009765625
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.597999572753908
+        },
+        {
+            "frame": 150,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.628999710083009
+        },
+        {
+            "frame": 300,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.607999801635743
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 110625.2265625,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 5,
+        "total_errors": 6
+    }
+}

@@ -113,8 +113,10 @@ end
 function Checks.Run(session)
     assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function",
         "StreetInteractionChecks requires explicit test=true isolated Session")
-    local actor=assert(session.actor,"actor must already be ready")
-    local city=assert(session.city,"city must already be ready")
+    local actor=session.actor
+    local city=session.city
+    assert(actor,"actor must already be ready")
+    assert(city,"city must already be ready")
     local view=session.view
     assert(session.running and UI.GetRoot()==view.root,"ready production game UI must be mounted")
     idle(view)
@@ -145,13 +147,14 @@ function Checks.Run(session)
     local passed,failure=pcall(function()
         assert(Store.NewCareer())
         session.space,session.online,session.running="city",false,true
-        actor.mounted,actor.speed,actor.walkHeight=false,0,0
+        actor.mounted,actor.speed,actor.walkHeight=false,0,city:Surface(actor.x,actor.z)
         -- Change isolated logical coordinates only. Neither engine nodes nor the real
         -- parked vehicle are moved; no streaming, saved profile load or collision edit.
         ---@param x number
         ---@param z number
         local function at(x,z)
-            actor.x,actor.z,actor.speed,actor.walkHeight,actor.mounted=x,z,0,0,false
+            -- Logical placement must match the real pavement, not absolute sea level.
+            actor.x,actor.z,actor.speed,actor.walkHeight,actor.mounted=x,z,0,city:Surface(x,z),false
             session:Refresh()
         end
         ---@param person CareerStreetPerson
@@ -225,12 +228,14 @@ function Checks.Run(session)
             tap(view,"career-conversation-rest")
             freed(stale); idle(view)
             unchanged(before,startWrites,writes)
-            local target=assert(session:Target(),"cousin navigation must produce a real target")
+            local target=session:Target()
+            assert(target,"cousin navigation must produce a real target")
             assert(session.waypoint=="bridge" and session.manualWaypoint and target.pointId=="bridge"
                 and view.notice.props.text:find("已标出桥下落脚点",1,true),
                 "cousin rest choice must only navigate, never charge or advance the night")
 
-            local mechanic=assert(city.contacts:Get("mechanic"),"mechanic contact missing")
+            local mechanic=city.contacts:Get("mechanic")
+            assert(mechanic,"mechanic contact missing")
             local dealer=Config.points.dealer
             at(dealer.x+1,dealer.z+1.5)
             assert(Config.DistanceTo("dealer",actor.x,actor.z)<=Config.INTERACTION_RADIUS
@@ -272,10 +277,10 @@ function Checks.Run(session)
         assert(not session:TalkTo("station"),"moving contact interaction must be rejected")
         actor.speed=0; actor.walkHeight=6
         assert(not session:TalkTo("station"),"bridge deck must not talk through to ground")
-        actor.walkHeight=0
+        actor.walkHeight=city:Surface(actor.x,actor.z)
         near(cousin); actor.walkHeight=6
         assert(not session:TalkTo("cousin"),"underpass cousin must reject player overhead")
-        actor.walkHeight=0
+        actor.walkHeight=city:Surface(actor.x,actor.z)
         unchanged(before,startWrites,writes); idle(view)
 
         -- Opening a valid conversation does not freeze authorization at old coordinates.

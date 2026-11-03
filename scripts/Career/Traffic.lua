@@ -7,6 +7,7 @@ local OuterTraffic=require("Career.OuterTraffic")
 local Motion=require("Career.TrafficMotion")
 local Riders=require("Career.TrafficRiders")
 local Collision=require("Career.FootprintCollision")
+local DisplayLod=require("Career.BuildingLod")
 ---@class CityTraffic
 ---@field cars table[]
 ---@field IsFree fun(self:CityTraffic,x:number,z:number,r:number):boolean
@@ -40,6 +41,11 @@ end
 Traffic.CircleFree=Motion.CircleFree
 Traffic.Separate=Motion.Separate
 Traffic.Shape=Motion.Shape
+
+Traffic.PersonInterval=Motion.PersonInterval
+Traffic.VehicleInterval=Motion.VehicleInterval
+Traffic.VerticalOverlap=Motion.VerticalOverlap
+function Traffic:BlockerOverlaps(car,b) return Motion.BlockerOverlaps(self.city,car,b) end
 ---@param city CareerCity
 ---@param actor CareerActor
 ---@return CityTraffic
@@ -55,6 +61,8 @@ function Traffic:Init(city,actor)
     self.root:SetEnabledRecursive(city.space=="city")
     self.cars={}
     self.time,self.active,self.disposed=0,true,false
+    self.tickCarry=0
+    print("[老街交通时钟] 固定60Hz累计步；保留不足一步余时，不限追步；离开老街清余，碰撞仍逐<=0.10m检测")
     self.nearOld=math.abs(actor.x)<=OuterTraffic.OLD_MARGIN and math.abs(actor.z)<=OuterTraffic.OLD_MARGIN
     self.pedestrians=Pedestrians.New(self.root,city)
     local blockers=self:Blockers()
@@ -80,6 +88,11 @@ function Traffic:Init(city,actor)
                 car.s=car.s+8
             end
             assert(placed,"交通生成点无可用空间")
+            car.displayLods={}
+            if not riding then
+                DisplayLod.Vehicle(node,car.displayLods,car.x,car.z)
+                DisplayLod.Update(car.displayLods,actor.x,actor.z)
+            end
             self.cars[#self.cars+1]=car
         end
     end
@@ -90,10 +103,14 @@ function Traffic:Init(city,actor)
 end
 function Traffic:Blockers()
     local a=self.actor
-    local list={{x=a.x,z=a.z,radius=a.mounted and a:VehicleRadius() or .32,
+    local low,high
+    if a.mounted then low,high=Traffic.VehicleInterval(self.city,{x=a.x,z=a.z,vehicleId=a.vehicleId})
+    else low,high=Traffic.PersonInterval(self.city,{x=a.x,z=a.z,height=self.city:WalkSurface(a.x,a.z,a.walkHeight)}) end
+    local list={{x=a.x,z=a.z,radius=a.mounted and a:VehicleRadius() or .32,height=low,y1=low,y2=high,
         shape=Collision.Pose(a:Footprint(),a.x,a.z,a.yaw)}}
     local function park(id,x,z,yaw,radius)
-        list[#list+1]={x=x,z=z,radius=radius,shape=require("Career.VehicleFootprints").At(id,x,z,yaw)}
+        local y1,y2=Traffic.VehicleInterval(self.city,{x=x,z=z,vehicleId=id})
+        list[#list+1]={x=x,z=z,radius=radius,height=y1,y1=y1,y2=y2,shape=require("Career.VehicleFootprints").At(id,x,z,yaw)}
     end
     if not a.mounted then park(a.vehicleId,a.bikeX,a.bikeZ,a.bikeYaw,a:VehicleRadius()) end
     for id,p in pairs(a.parking) do
@@ -102,7 +119,10 @@ function Traffic:Blockers()
     local people=self.city.deliveryPeople
     if people then
         for _,person in ipairs(people.people) do
-            if person.active or person.hold>0 then list[#list+1]={x=person.x,z=person.z,radius=.4} end
+            if person.active or person.hold>0 then
+                local y1,y2=Traffic.PersonInterval(self.city,person)
+                list[#list+1]={x=person.x,z=person.z,radius=.4,height=y1,y1=y1,y2=y2}
+            end
         end
     end
     if self.city.crowd then
@@ -125,32 +145,46 @@ function Traffic:CanPlace(car,blockers)
     if self.city.space=="city" and not OuterTraffic.StaticFree(self.city,car) then return false end
     if self.outer and not self.outer:Separate(car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not Traffic.Separate(car,other) then return false end end
-    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b) then return false end end
-    for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius) then return false end end
+    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
+    for _,p in ipairs(self.pedestrians.people) do if not Traffic.CircleFree(car,p.x,p.z,p.radius,self.city,p.height) then return false end end
     return true
 end
-function Traffic:CollisionShapes(result,area,dx,dz)
+function Traffic:CollisionShapes(result,area,dx,dz,mode,height)
+    local x,z=(area.x1+area.x2)/2,(area.z1+area.z2)/2
+    local low=height or self.city:Surface(x,z)
+    local high=low+1.8
+    local function overlaps(y1,y2) return Traffic.VerticalOverlap(low,high,y1,y2) end
     local function carList(cars)
         for _,car in ipairs(cars) do
             local reach=(car.length+car.width)/2
             if car.x+reach>=math.min(area.x1,area.x1+dx)-.01 and car.x-reach<=math.max(area.x2,area.x2+dx)+.01
                 and car.z+reach>=math.min(area.z1,area.z1+dz)-.01 and car.z-reach<=math.max(area.z2,area.z2+dz)+.01 then
-                result[#result+1]=Motion.Shape(car)
+                local y1,y2=Traffic.VehicleInterval(self.city,car)
+                if overlaps(y1,y2) then result[#result+1]=Motion.Shape(car) end
+            end
+        end
+    end
+    local function peopleList(people)
+        for _,p in ipairs(people) do
+            if p.x+p.radius>=math.min(area.x1,area.x1+dx)-.01 and p.x-p.radius<=math.max(area.x2,area.x2+dx)+.01
+                and p.z+p.radius>=math.min(area.z1,area.z1+dz)-.01 and p.z-p.radius<=math.max(area.z2,area.z2+dz)+.01 then
+                local y1,y2=Traffic.PersonInterval(self.city,p)
+                if overlaps(y1,y2) then result[#result+1]=Collision.Circle(p.x,p.z,p.radius) end
             end
         end
     end
     carList(self.cars)
-    for _,p in ipairs(self.pedestrians.people) do result[#result+1]=Collision.Circle(p.x,p.z,p.radius) end
+    peopleList(self.pedestrians.people)
     if self.outer and not self.outer.disposed then
         carList(self.outer.cars)
-        for _,p in ipairs(self.outer.people) do result[#result+1]=Collision.Circle(p.x,p.z,p.radius) end
+        peopleList(self.outer.people)
     end
 end
-function Traffic:IsFree(x,z,r)
+function Traffic:IsFree(x,z,r,height)
     if not self.active or self.city.space~="city" then return true end
     local shape=Collision.Circle(x,z,r)
     local others={}
-    self:CollisionShapes(others,shape,0,0)
+    self:CollisionShapes(others,shape,0,0,"walk",height)
     for _,other in ipairs(others) do if not Collision.Free(shape,other,Collision.SKIN) then return false end end
     return true
 end
@@ -178,7 +212,7 @@ function Traffic:Step(dt,blockers)
         end
         for _,b in ipairs(blockers) do
             local u,v=localPoint(car,b.x,b.z)
-            if v>=0 and math.abs(u)<car.width/2+b.radius+.5 then gap=math.min(gap,v-car.length/2-b.radius-1.4) end
+            if v>=0 and math.abs(u)<car.width/2+b.radius+.5 and self:BlockerOverlaps(car,b) then gap=math.min(gap,v-car.length/2-b.radius-1.4) end
         end
         local target=math.min(car.cruise,math.sqrt(math.max(0,gap)*5))
         -- 在掉头弧之前提前减到8km/h，车身不在路端瞬时翻转。
@@ -200,10 +234,34 @@ function Traffic:Step(dt,blockers)
         end
     end
 end
+-- One fixed tick remains the original Step (same signal/gap ordering and
+-- <=.10m collision substeps). Only the rendering-frame partition is changed.
+-- Fractional time is retained, never rounded up into a second 8.5ms step for
+-- a 17ms frame. Near-old freezing deliberately discards only its <1tick carry.
+local FIXED_TICK=1/60
+function Traffic:AdvanceTicks(duration,blockers,nearOld)
+    if not nearOld then self.tickCarry=0;return 0 end
+    local remaining=(self.tickCarry or 0)+duration
+    local count=0
+    while remaining>=FIXED_TICK do
+        self:Step(FIXED_TICK,blockers)
+        remaining=remaining-FIXED_TICK
+        count=count+1
+    end
+    self.tickCarry=remaining
+    return count
+end
 function Traffic:Update(dt)
     if not self.active or self.disposed or self.city.space~="city" or dt<=0 or dt~=dt then return end
     local duration=math.min(dt,.25)
     local blockers=self:Blockers()
+    Motion.BeginStaticScope(self.city)
+    local ok,message=pcall(self.UpdateScoped,self,duration,blockers)
+    Motion.EndStaticScope()
+    if not ok then error(message,0) end
+end
+-- 即使推进抛错也由Update释放同步静态缓存；不吞掉原错误。
+function Traffic:UpdateScoped(duration,blockers)
     -- 老街保留15车/8人结构，离开±220m后时钟、位移、步态和胎面均冻结。
     -- 无追帧；重返后从原位继续。450m外不会继续大量采样老街轮胎。
     self.nearOld=math.abs(self.actor.x)<=OuterTraffic.OLD_MARGIN and math.abs(self.actor.z)<=OuterTraffic.OLD_MARGIN
@@ -211,13 +269,119 @@ function Traffic:Update(dt)
     local dx,dz=math.max(0,math.abs(self.actor.x)-180),math.max(0,math.abs(self.actor.z)-180)
     local showOld=dx*dx+dz*dz<=450^2
     if self.root:IsEnabled()~=showOld then self.root:SetEnabledRecursive(showOld) end
+    self:AdvanceTicks(duration,blockers,self.nearOld)
     if self.nearOld then
-        local count=math.max(1,math.ceil(duration*60))
-        for _=1,count do self:Step(duration/count,blockers) end
         for _,car in ipairs(self.cars) do self:ApplyContact(car) end
         self.pedestrians:Update(duration,blockers)
     end
+    -- 只切显示网格，不停碰撞或移动；屏外老街仍保留原有位置/车型。
+    for _,car in ipairs(self.cars) do
+        for _,entry in ipairs(car.displayLods or {}) do entry.x,entry.z=car.x,car.z end
+        DisplayLod.Update(car.displayLods or {},self.actor.x,self.actor.z)
+    end
     self.outer:Update(duration,blockers)
+end
+-- Explicit restore hook. Saved static parking has priority over ephemeral NPCs.
+-- Validate a bounded plan first, commit only when every old-street slot has a
+-- safe route point. Unrelated legal traffic remains in place; outer pool slots
+-- are recycled (not spawned into view) after a successful restore.
+function Traffic:ReconcileParking()
+    if self.disposed or self.city.space~="city" then return false end
+    local blockers=self:Blockers()
+    local cars,people,rejectedCars,rejectedPeople={},{},{},{}
+    local function carFree(car)
+        if not Motion.StaticFree(self.city,car) then return false end
+        for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
+        for _,other in ipairs(cars) do if not Motion.Separate(car,other,self.city) then return false end end
+        return true
+    end
+    local function personFree(p)
+        local y1,y2=Motion.PersonInterval(self.city,p)
+        if not self.city:StaticFree(p.x,p.z,p.radius,"walk",y1) then return false end
+        for _,b in ipairs(blockers) do
+            local low,high=Motion.BlockerInterval(self.city,b)
+            if Motion.VerticalOverlap(y1,y2,low,high)
+                and not Collision.Free(Collision.Circle(p.x,p.z,p.radius),b.shape or Collision.Circle(b.x,b.z,b.radius),Collision.SKIN) then return false end
+        end
+        for _,car in ipairs(cars) do if not Motion.CircleFree(car,p.x,p.z,p.radius,self.city,y1) then return false end end
+        for _,other in ipairs(people) do
+            local low,high=Motion.PersonInterval(self.city,other)
+            if Motion.VerticalOverlap(y1,y2,low,high) and (p.x-other.x)^2+(p.z-other.z)^2<(p.radius+other.radius+Collision.SKIN)^2 then return false end
+        end
+        return true
+    end
+    local function copy(record)
+        local result={}
+        for k,v in pairs(record) do result[k]=v end
+        return result
+    end
+    for _,car in ipairs(self.cars) do
+        local probe=copy(car);probe.source=car
+        if carFree(probe) then cars[#cars+1]=probe else rejectedCars[#rejectedCars+1]=probe end
+    end
+    for _,probe in ipairs(rejectedCars) do
+        local start=probe.s
+        local found=false
+        for n=1,80 do
+            probe.s=(start+n*Routes.LENGTH/80)%Routes.LENGTH
+            probe.x,probe.z,probe.yaw=Routes.Pose(probe.route,probe.s)
+            if carFree(probe) then cars[#cars+1]=probe;found=true;break end
+        end
+        assert(found,"No safe traffic slot during parking reconciliation; parking retained")
+    end
+    for _,p in ipairs(self.pedestrians.people) do
+        local probe=copy(p);probe.source=p
+        if personFree(probe) then people[#people+1]=probe else rejectedPeople[#rejectedPeople+1]=probe end
+    end
+    for _,probe in ipairs(rejectedPeople) do
+        local found=false
+        for n=0,47 do
+            probe.s=probe.length*n/47
+            local f=probe.s/probe.length
+            probe.x,probe.z=probe.path[1]+(probe.path[3]-probe.path[1])*f,probe.path[2]+(probe.path[4]-probe.path[2])*f
+            if personFree(probe) then people[#people+1]=probe;found=true;break end
+        end
+        assert(found,"No safe pedestrian slot during parking reconciliation; parking retained")
+    end
+    for _,probe in ipairs(cars) do
+        local car=probe.source
+        if car.s~=probe.s then
+            car.s,car.x,car.z,car.yaw,car.speed=probe.s,probe.x,probe.z,probe.yaw,0
+            self:ApplyContact(car)
+        end
+    end
+    for _,probe in ipairs(people) do
+        local p=probe.source
+        if p.x~=probe.x or p.z~=probe.z then
+            p.s=probe.s; self.pedestrians:Place(p)
+            require("Career.LocalWalk").Reset(p)
+            p.gaitWeight=0
+        end
+    end
+    local outer=self.outer --[[@as CareerOuterTraffic?]]
+    if outer and not outer.disposed then
+        for i=#outer.cars,1,-1 do outer:ReleaseCar(i) end
+        for i=#outer.people,1,-1 do outer:ReleasePerson(i) end
+    end
+    -- Incremental crowd slots can safely retire while the restore screen is up;
+    -- otherwise a person initially inside a saved shell cannot sweep out of it.
+    local crowd=self.city.crowd
+    if crowd then
+        local parked=self.actor:ParkedShapes()
+        if self.actor.mounted then parked[#parked+1]=Collision.Pose(self.actor:Footprint(),self.actor.x,self.actor.z,self.actor.yaw) end
+        for i=#crowd.people,1,-1 do
+            local p=crowd.people[i]
+            local low,high=Motion.PersonInterval(self.city,p)
+            local collides=false
+            for _,shape in ipairs(parked) do
+                local y=self.city:Surface((shape.x1+shape.x2)/2,(shape.z1+shape.z2)/2)
+                if Motion.VerticalOverlap(low,high,y,y+1.85) and not Collision.Free(Collision.Circle(p.x,p.z,p.radius),shape,Collision.SKIN) then collides=true;break end
+            end
+            if collides then crowd:Retire(i) end
+        end
+    end
+    print(string.format("[停车恢复让位] 老街%d车/%d人重定位；外区动态池已回收；静态停车未移动",#rejectedCars,#rejectedPeople))
+    return true
 end
 function Traffic:Hint(x,z,yaw)
     local outer=self.outer --[[@as CareerOuterTraffic]]
@@ -238,7 +402,10 @@ function Traffic:Dispose()
     if self.disposed then return end
     self.disposed=true; self.active=false
     self.outer:Dispose()
-    for _,car in ipairs(self.cars) do Riders.Dispose(car.riding) end
+    for _,car in ipairs(self.cars) do
+        Riders.Dispose(car.riding)
+        for _,entry in ipairs(car.displayLods or {}) do DisplayLod.Release(entry.levels) end
+    end
     for _,p in ipairs(self.pedestrians.people) do p.rig:Dispose() end
     self.root:Dispose()
 end

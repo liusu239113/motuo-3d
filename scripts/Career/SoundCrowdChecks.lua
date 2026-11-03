@@ -145,6 +145,17 @@ function Checks.Motion(scene,city)
             end
             sound:Update(.05,actor,true,false,{},nil)
             for _,source in pairs(sound.sources) do assert(not source.playing and source.gain==0,"暂停未停止全部音源") end
+            sound:Once("tap")
+            assert(sound.sources.tap.playing,"手机暂停世界时仍应允许UI点击音")
+            sound:SetPaused(true)
+            local beforeOrder=sound.orderCount
+            local offer={id="review-same-offer"}
+            actor.mounted=true
+            sound:Update(.05,actor,false,false,{},offer)
+            assert(sound.orderCount==beforeOrder+1)
+            sound:Update(.05,actor,true,false,{},offer)
+            sound:Update(.05,actor,false,false,{},offer)
+            assert(sound.orderCount==beforeOrder+1,"恢复同一派单不得重复提示")
             actor.mounted=false
             sound.paused=false
             for _,surface in ipairs({"concrete","sand","wood"}) do
@@ -214,6 +225,12 @@ function Checks.Pool(scene,city)
         fixture.StaticSegmentFree=originalSegment
         -- 退休只放回槽；再次Acquire使用同一个Node，绝不新增大模型。
         crowd:Retire(1)
+        local retired=crowd.pool[1]
+        for _,slot in ipairs(crowd.pool) do if not slot.active then retired=slot; break end end
+        crowd.root:SetEnabledRecursive(false)
+        crowd.root:SetEnabledRecursive(true)
+        crowd:Update(0,actor,false,nil)
+        assert(not retired.node.enabledSelf,"切回室外不得复活退休人物槽")
         crowd.routes={{path={-80,-8.7,-38,-8.7},length=42,id="reuse"}}
         crowd.shapes={}
         crowd.Hidden=function() return true end
@@ -224,6 +241,42 @@ function Checks.Pool(scene,city)
     end)
     crowd:Dispose(); crowd:Dispose(); scratch:Dispose(); assert(ok,tostring(err))
 end
+-- Independent lightweight Crowd fixture: no skeletal pool, no shared session
+-- mutation. Use the real bridge/terrain surface and production Snapshot/sweeps.
+function Checks.Layers(session)
+    assert(session.options.test==true and type(session.restoreTestStorage)=="function","isolated test session required")
+    local fixture=setmetatable({space="city",actor=false,traffic=false,crowd=false,deliveryPeople=false},{__index=session.city}) --[[@as CareerCity]]
+    local crowd=setmetatable({city=fixture,people={},shapes={},disposed=false},Crowd)
+    local x,z=771,96
+    local ground,deck=fixture:Surface(x,z),fixture:WalkSurface(x,z,6.085)
+    local p={x=x,z=z,height=deck,radius=.30,active=true} --[[@as CareerCrowdPerson]]
+    crowd.people={p}
+    local actor={x=x,z=z,mounted=false,vehicleId="borrowed_ebike",yaw=0,walkHeight=ground}
+    crowd:Snapshot(actor)
+    assert(crowd:SegmentFree(p,x,z,x+.1,z),"bridge crowd blocked by player directly below")
+    actor.walkHeight=deck;crowd:Snapshot(actor)
+    assert(not crowd:SegmentFree(p,x,z,x+.1,z),"same-deck player ignored by crowd")
+    actor.walkHeight=ground;p.height=ground;crowd:Snapshot(actor)
+    assert(not crowd:SegmentFree(p,x,z,x+.1,z),"same-ground player ignored by crowd")
+    -- Crowd-vs-crowd, not just actor snapshots.
+    crowd.shapes={};p.height=deck
+    local other={x=x,z=z,height=ground,radius=.30,active=true} --[[@as CareerCrowdPerson]]
+    crowd.people={p,other}
+    assert(crowd:SegmentFree(p,x,z,x+.1,z),"crowd under bridge blocks deck crowd")
+    other.height=deck
+    assert(not crowd:SegmentFree(p,x,z,x+.1,z),"same-layer crowd overlap not blocked")
+    crowd.people={p};p.height=deck
+    local blockers=crowd:GetBlockers()
+    assert(blockers[1].height==deck and blockers[1].y1==deck and blockers[1].y2==deck+1.8,"crowd blocker dropped support interval")
+    assert(crowd:IsFree(x,z,.32,ground) and not crowd:IsFree(x,z,.32,deck),"crowd IsFree remains XZ-only")
+    -- A short/low ramp body may overlap a taller body; layer ids must not make
+    -- near-feet disjoint automatically. Intervals, not abs(height)>threshold.
+    other.height=deck-1.5;crowd.people={p,other};crowd.shapes={}
+    assert(not crowd:SegmentFree(p,x,z,x+.1,z),"vertically intersecting people on ramp passed through")
+    print("[人群分层专项通过] 真桥同XZ玩家/人群上下层反证/同层阻挡/低坡区间相交/Blockers高度；无人物池推进")
+    return true
+end
+
 function Checks.Run(session)
     assert(session.options and session.options.test==true and type(session.restoreTestStorage)=="function","仅隔离test Session可运行")
     Checks.Steps(); Checks.Motion(session.scene,session.city); Checks.Pool(session.scene,session.city)

@@ -9,6 +9,12 @@ local Pedestrians=require("Career.Pedestrians")
 local Rig=require("Career.Rig")
 local Walk=require("Career.LocalWalk")
 local Motion=require("Career.TrafficMotion")
+local DisplayLod=require("Career.BuildingLod")
+-- 共用真实路面数据；邻里12m街道原先遗漏，5m巷道仍不分配汽车掉头环线。
+local nearbyRoads={}
+for _,list in ipairs({World.Roads,World.ExpansionRoads}) do
+    for _,road in ipairs(list) do nearbyRoads[#nearbyRoads+1]=road end
+end
 ---@class OuterTrafficCar
 ---@field id string
 ---@field riding? TrafficRiderVisual 当前外区不启用骑手，显式保留共享验收类型
@@ -25,18 +31,23 @@ local Motion=require("Career.TrafficMotion")
 ---@field travelled number
 ---@field route table
 ---@field contactX? number
+---@field displayLods? table[]
 ---@field contactZ? number
 ---@field contactYaw? number
+---@field blockedByPlayer? number
+---@field reactionCooldown? number
 ---@class OuterTrafficPerson
 ---@field node Node
 ---@field rig CareerRig
 ---@field x number
 ---@field z number
 ---@field radius number
+---@field height? number 支撑高度；省略时从真实地表查询，不以海拔推断桥层
 ---@field s number
 ---@field direction number
 ---@field phase number
 ---@field gaitWeight number
+---@field poseElapsed? number
 ---@field speed number
 ---@field yaw number
 ---@field turn number
@@ -56,10 +67,13 @@ local Motion=require("Career.TrafficMotion")
 ---@field disposed boolean
 ---@field active boolean
 ---@field steps number
+---@field tickCarry number
 ---@field poseTime number
 ---@field recycled number
 ---@field Hint fun(self:CareerOuterTraffic,x:number,z:number,yaw:number):string?
 ---@field AcquireCar fun(self:CareerOuterTraffic,id:string):OuterTrafficCar?
+---@field ReleaseCar fun(self:CareerOuterTraffic,index:integer)
+---@field ReleasePerson fun(self:CareerOuterTraffic,index:integer)
 ---@field Scan fun(self:CareerOuterTraffic)
 ---@field Step fun(self:CareerOuterTraffic,dt:number,blockers:table[])
 ---@field Gap fun(self:CareerOuterTraffic,car:OuterTrafficCar,blockers:table[]):number
@@ -146,15 +160,27 @@ function Outer:Init(owner)
     self.peoplePool={}
     self.lanes={}
     self.time,self.scanTime,self.poseTime=0,0,0
+    self.tickCarry=0
     self.scanX,self.scanZ=math.huge,math.huge
     self.active,self.disposed=false,false
     ---@type OuterSignalSystem
     self.signals=Signals.New(self)
     self.spawned,self.recycled,self.contactSolves,self.rejected,self.steps=0,0,0,0,0
     -- 接地显式使用共享WorldData，不依赖已stream的道路/建筑实体或老街surface缓存。
-    self.ground={Surface=function(_,x,z) return World.Surface(x,z,"vehicle",0) end} --[[@as CareerCity]]
+    self.ground={space="city",Surface=function(_,x,z) return World.Surface(x,z,"vehicle",0) end,
+        FlatHeight=function(_,x1,z1,x2,z2) return self.city:FlatHeight(x1,z1,x2,z2) end} --[[@as CareerCity]]
     ---@type Camera?
     self.camera=nil
+    -- 模型、胎面标定与骨架只在加载遮罩内建立；运行中Fill只复用槽位。
+    -- 六车四人预算不变，不在骑行一帧里连续创建四套人物骨骼。
+    for slot=1,Outer.CAR_BUDGET do
+        local id=Assets.TrafficIds[(slot-1)%#Assets.TrafficIds+1]
+        self:AcquireCar(id)
+    end
+    for _=1,Outer.PEOPLE_BUDGET do self:AcquirePerson() end
+    for _,car in ipairs(self.carPool) do car.inUse=false end
+    for _,p in ipairs(self.peoplePool) do p.inUse=false end
+    print("[外区交通预热] 六车四人槽位已在加载阶段创建，运行中仅复用")
 end
 
 -- 至少45/70米外且完整外包球在相机视锥外才出生/重用；无有效相机时宁缺不贴脸。
@@ -169,8 +195,8 @@ end
 function Outer:Scan()
     self.scanX,self.scanZ=self.actor.x,self.actor.z
     local candidates={}
-    for _,road in ipairs(World.Roads) do
-        if not road.old then
+    for _,road in ipairs(nearbyRoads) do
+        if not road.old and road.width>=12 then
             local ns=math.abs(road.x2-road.x1)<.01
             local ew=math.abs(road.z2-road.z1)<.01
             if ns or ew then
@@ -207,7 +233,7 @@ end
 -- 裁出两个交叉路之间的同侧步道，绝不把无信号过街当成人行道。
 function Outer.SidewalkPath(route,at)
     local lo,hi=route.start+12,route.finish-12
-    for _,road in ipairs(World.Roads) do
+    for _,road in ipairs(nearbyRoads) do
         local perpendicular=route.axis=="ns" and road.z1==road.z2 or route.axis=="ew" and road.x1==road.x2
         if perpendicular then
             local cross=route.axis=="ns" and road.z1 or road.x1
@@ -229,16 +255,33 @@ function Outer:CarFree(car,blockers)
     if oldArea(car.x,car.z) or not Outer.StaticFree(self.city,car) then return false end
     for _,other in ipairs(self.cars) do if other~=car and not self.owner.Separate(car,other) then return false end end
     for _,other in ipairs(self.owner.cars) do if not self.owner.Separate(car,other) then return false end end
-    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b) then return false end end
-    for _,p in ipairs(self.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius+.15) then return false end end
-    for _,p in ipairs(self.owner.pedestrians.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius) then return false end end
+    for _,b in ipairs(blockers) do if not Motion.BlockerFree(car,b,self.city) then return false end end
+    for _,p in ipairs(self.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius+.15,self.city,p.height) then return false end end
+    for _,p in ipairs(self.owner.pedestrians.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius,self.city,p.height) then return false end end
     return true
 end
 function Outer:PersonFree(x,z,ignore,blockers)
-    if oldArea(x,z) or not self.city:StaticFree(x,z,.36,"walk",0) then return false end
-    for _,b in ipairs(blockers) do if distance2(x,z,b)<(.32+b.radius+.45)^2 then return false end end
-    for _,p in ipairs(self.people) do if p~=ignore and distance2(x,z,p)<.9^2 then return false end end
-    for _,p in ipairs(self.owner.pedestrians.people) do if distance2(x,z,p)<.9^2 then return false end end
+    if oldArea(x,z) then return false end
+    local y=self.city:WalkSurface(x,z,0)
+    if not self.city:StaticFree(x,z,.36,"walk",y) then return false end
+    for _,b in ipairs(blockers) do
+        if distance2(x,z,b)<(.32+b.radius+.45)^2 then
+            local y1,y2=Motion.BlockerInterval(self.city,b)
+            if Motion.VerticalOverlap(y,y+1.8,y1,y2) then return false end
+        end
+    end
+    for _,p in ipairs(self.people) do
+        if p~=ignore and distance2(x,z,p)<.9^2 then
+            local y1,y2=Motion.PersonInterval(self.city,p)
+            if Motion.VerticalOverlap(y,y+1.8,y1,y2) then return false end
+        end
+    end
+    for _,p in ipairs(self.owner.pedestrians.people) do
+        if distance2(x,z,p)<.9^2 then
+            local y1,y2=Motion.PersonInterval(self.city,p)
+            if Motion.VerticalOverlap(y,y+1.8,y1,y2) then return false end
+        end
+    end
     for _,car in ipairs(self.cars) do if not self.owner.CircleFree(car,x,z,.5) then return false end end
     for _,car in ipairs(self.owner.cars) do if not self.owner.CircleFree(car,x,z,.5) then return false end end
     return true
@@ -251,13 +294,14 @@ function Outer:IsFree(x,z,r)
 end
 function Outer:Separate(car)
     for _,other in ipairs(self.cars) do if not self.owner.Separate(car,other) then return false end end
-    for _,p in ipairs(self.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius) then return false end end
+    for _,p in ipairs(self.people) do if not self.owner.CircleFree(car,p.x,p.z,p.radius,self.city,p.height) then return false end end
     return true
 end
 
 function Outer:ReleaseCar(index)
     local car=table.remove(self.cars,index)
     visible(car.node,false); car.speed=0; car.inUse=false
+    car.blockedByPlayer=0; car.reactionCooldown=0
     self.recycled=self.recycled+1
 end
 function Outer:ReleasePerson(index)
@@ -277,6 +321,8 @@ function Outer:AcquireCar(id)
     local size=node:GetVar("VehicleSize"):GetVector3()
     ---@type OuterTrafficCar
     local car={id=id,node=node,length=size.z,width=size.x,x=0,z=0,yaw=0,s=0,speed=0,cruise=6.5,inUse=true,travelled=0,route={}}
+    car.displayLods={}
+    DisplayLod.Vehicle(node,car.displayLods,0,0)
     self.carPool[#self.carPool+1]=car
     return car
 end
@@ -406,7 +452,7 @@ function Outer:Gap(car,blockers)
     end
     for _,b in ipairs(blockers) do
         local u,v=localPoint(car,b.x,b.z)
-        if v>=0 and math.abs(u)<car.width/2+b.radius+.5 then gap=math.min(gap,v-car.length/2-b.radius-1.4) end
+        if v>=0 and math.abs(u)<car.width/2+b.radius+.5 and Motion.BlockerOverlaps(self.city,car,b) then gap=math.min(gap,v-car.length/2-b.radius-1.4) end
     end
     return math.max(0,gap)
 end
@@ -440,11 +486,27 @@ function Outer:Step(dt,blockers)
     end
 end
 function Outer:Walk(dt,blockers)
-    if self.disposed or self.city.space~="city" or not self.owner.active or dt<=0 or dt~=dt or dt==math.huge then return end
+    if self.disposed or self.city.space~="city" or not self.owner.active or #self.people==0 or dt<=0 or dt~=dt or dt==math.huge then return end
     dt=math.min(dt,.25)
-    self.poseTime=self.poseTime+dt
-    local poseReady=self.poseTime>=1/20
-    if poseReady then self.poseTime=self.poseTime%(1/20) end
+    -- LocalWalk repeatedly asks the exact same support triples while checking
+    -- candidate edges. Memoize numeric (x,z,seed) only within this Walk call;
+    -- the seed is essential for coincident bridge/ground coordinates. Static
+    -- segment casts are NEVER cached/skipped, including every .1m substep.
+    local samples={}
+    local city=self.city
+    local walkCity={
+        WalkSurface=function(_,x,z,height)
+            local zs=samples[x]
+            if not zs then zs={};samples[x]=zs end
+            local hs=zs[z]
+            if not hs then hs={};zs[z]=hs end
+            local seed=height or 0
+            if hs[seed]==nil then hs[seed]=city:WalkSurface(x,z,seed) end
+            return hs[seed]
+        end,
+        StaticSegmentFree=function(_,...) return city:StaticSegmentFree(...) end,
+        Surface=function(_,...) return city:Surface(...) end,
+    } --[[@as CareerCity]]
     local groups={self.people,self.owner.pedestrians.people}
     local cars={self.cars,self.owner.cars}
     for _,p in ipairs(self.people) do
@@ -455,7 +517,7 @@ function Outer:Walk(dt,blockers)
             local difference=(target-p.yaw+180)%360-180
             p.yaw=p.yaw+math.max(-120*dt,math.min(120*dt,difference))
         else
-            moved=Walk.Advance(self.city,p,dt,blockers,groups,cars)
+            moved=Walk.Advance(walkCity,p,dt,blockers,groups,cars)
             if #p.localWalk.points==0 and (p.s<=.00001 or p.s>=p.length-.00001) then
                 p.direction=p.s<=.00001 and 1 or -1; p.turn=1.6
             end
@@ -467,8 +529,27 @@ function Outer:Walk(dt,blockers)
         p.phase=(p.phase+moved*2*math.pi/Rig.CycleLength(p.gaitWeight,0))%(2*math.pi)
         p.node.position=Vector3(p.x,World.Surface(p.x,p.z,"walk",0),p.z)
         p.node.rotation=Quaternion(0,p.yaw,0)
-        if poseReady and distance2(p.x,p.z,self.actor)<110^2 then p.rig:PoseWalk(p.phase,p.gaitWeight) end
+        p.poseElapsed=math.min(.3,(p.poseElapsed or 0)+dt)
+        local distance=distance2(p.x,p.z,self.actor)
+        local period=distance<22^2 and .05 or distance<45^2 and .1 or .25
+        if distance<110^2 and p.poseElapsed>=period then
+            p.rig:PoseWalk(p.phase,p.gaitWeight)
+            p.poseElapsed=p.poseElapsed%period
+        end
     end
+end
+local FIXED_TICK=1/60
+function Outer:AdvanceTicks(duration,blockers,active)
+    if not active then self.tickCarry=0;return 0 end
+    local remaining=(self.tickCarry or 0)+duration
+    local count=0
+    while remaining>=FIXED_TICK do
+        self:Step(FIXED_TICK,blockers)
+        remaining=remaining-FIXED_TICK
+        count=count+1
+    end
+    self.tickCarry=remaining
+    return count
 end
 function Outer:Update(dt,blockers)
     if self.disposed or self.city.space~="city" or not self.owner.active or dt<=0 or dt~=dt or dt==math.huge then return end
@@ -479,6 +560,7 @@ function Outer:Update(dt,blockers)
     for _,p in ipairs(self.peoplePool) do visible(p.node,p.inUse and self.active) end
     self.signals:Update(self.time,self.actor.x,self.actor.z,self.active)
     if not self.active then
+        self:AdvanceTicks(0,blockers,false)
         for i=#self.cars,1,-1 do self:ReleaseCar(i) end
         for i=#self.people,1,-1 do self:ReleasePerson(i) end
         return
@@ -501,9 +583,12 @@ function Outer:Update(dt,blockers)
         if moved or #self.lanes==0 then self:Scan() end
         self:Fill(blockers)
     end
-    local count=math.max(1,math.ceil(duration*60))
-    for _=1,count do self:Step(duration/count,blockers) end
-    for _,car in ipairs(self.cars) do self:ApplyContact(car) end
+    self:AdvanceTicks(duration,blockers,true)
+    for _,car in ipairs(self.cars) do
+        self:ApplyContact(car)
+        for _,entry in ipairs(car.displayLods or {}) do entry.x,entry.z=car.x,car.z end
+        DisplayLod.Update(car.displayLods or {},self.actor.x,self.actor.z)
+    end
     self:Walk(duration,blockers)
 end
 function Outer:Hint(x,z,yaw)
@@ -522,8 +607,32 @@ function Outer:Dispose()
     self.disposed=true; self.active=false
     self.signals:Dispose()
     for _,p in ipairs(self.peoplePool) do p.rig:Dispose() end
+    for _,car in ipairs(self.carPool) do
+        for _,entry in ipairs(car.displayLods or {}) do DisplayLod.Release(entry.levels) end
+    end
     self.root:Dispose()
     self.cars,self.people,self.carPool,self.peoplePool,self.lanes={},{},{},{},{}
     self.camera=nil
+end
+-- Plain-data broad-phase regression; no pool/Node or saved state is touched.
+function Outer.CacheChecks()
+    local samples=0
+    local city={WalkSurface=function() samples=samples+1;return 0 end,StaticFree=function() return true end}
+    local owner={cars={},pedestrians={people={}},CircleFree=Motion.CircleFree}
+    local outer=setmetatable({city=city,owner=owner,people={},cars={}},Outer)
+    local far={x=900,z=900,radius=.32} --[[@as OuterTrafficPerson]]
+    outer.people={far};owner.pedestrians.people={far}
+    assert(outer:PersonFree(300,300,nil,{far}) and samples==1,"far/ignored people queried height")
+    ---@type OuterTrafficPerson
+    local near={x=300,z=300,radius=.32,height=6} --[[@as OuterTrafficPerson]]
+    outer.people={near};owner.pedestrians.people={}
+    assert(outer:PersonFree(300,300,nil,{}),"bridge person blocks ground spawn")
+    near.height=0
+    assert(not outer:PersonFree(300,300,nil,{}),"same-layer person no longer blocks spawn")
+    assert(outer:PersonFree(300,300,near,{}),"ignored person still blocks spawn")
+    samples=0
+    assert(not outer:PersonFree(0,0,nil,{}) and samples==0,"old area queried height before rejection")
+    print("[外区广相检查] PASS 远距先XZ/忽略自身/同层阻挡/桥层分离/老街早拒绝")
+    return true
 end
 return Outer

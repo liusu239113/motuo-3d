@@ -37,6 +37,7 @@ local raceAudio_ = nil
 local selectedLaps_, selectedRider_ = 3, "green"
 local selectedTrack_, loadedTrack_ = "circuit", ""
 local boostFov_ = 0.0
+local profileRetrySeconds_ = 0.0
 local raceTest_, raceAutodrive_ = false, false
 local trackTest_, trackCheckIndex_, trackCheckFrames_ = false, 1, 0
 ---@type World?
@@ -78,6 +79,7 @@ local clock_, accumulator_, lastYaw_ = 0.0, 0.0, 0.0
 local resultShown_, autoTest_, selfTest_, portrait_ = false, false, false, false
 -- 竞速结算广告：只在自由竞速结算发放，生涯赛事走生涯现金通道，不混用金币。
 local resultAdAvailable_, resultAdClaimed_ = false, false
+local resultRewardPending_ = false -- 仅当前结果页已应用但未保存的奖励，不借用其他赛局pending
 local testMode_, testShot_, testVehicle_, testRoute_ = "", "", "sport", -1.0
 local careerReadyShot_,careerReadyFrames_="",0
 local testScenery_, testNitroShot_ = false, false
@@ -107,6 +109,68 @@ local testAudio_ = nil
 ---@type table<number, SoundSource>
 local testSources_ = {}
 local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
+
+-- 只读诊断：TimeStep 是未在本脚本截断的事件间隔，不是最终手机呈现 FPS 验收。
+-- os.clock 仅包围生涯脚本调用，CPU 不含 GPU，也不代表整帧耗时。
+-- 状态仅保存数值/布尔量，不持有 session、actor 或 scene；复用容器避免逐帧分配。
+local careerPerf_ = {active = false, pendingPost = false, seconds = 0.0, frames = 0,
+    maxInterval = 0.0, over50 = 0, over100 = 0,
+    updateSum = 0.0, updateMax = 0.0, postSum = 0.0, postMax = 0.0, postFrames = 0}
+
+local function ResetCareerPerf()
+    careerPerf_.active, careerPerf_.pendingPost = false, false
+    careerPerf_.seconds, careerPerf_.frames, careerPerf_.maxInterval = 0.0, 0, 0.0
+    careerPerf_.over50, careerPerf_.over100 = 0, 0
+    careerPerf_.updateSum, careerPerf_.updateMax = 0.0, 0.0
+    careerPerf_.postSum, careerPerf_.postMax, careerPerf_.postFrames = 0.0, 0.0, 0
+end
+
+local function IsCareerPerfActive()
+    return careerMode_ and career_ ~= nil and not career_.disposed and career_.running
+        and not career_.loading and career_.actor ~= nil and not career_.view:IsBlocking()
+end
+
+---@param rawDt number
+---@param cpu number
+local function RecordCareerPerfUpdate(rawDt, cpu)
+    if not careerPerf_.active then
+        -- 进入/恢复的首个间隔可能来自加载、暂停或其他模式，丢弃后再开始采样。
+        careerPerf_.active = true
+        return
+    end
+    if rawDt <= 0 then ResetCareerPerf(); return end
+    careerPerf_.seconds = careerPerf_.seconds + rawDt
+    careerPerf_.frames = careerPerf_.frames + 1
+    careerPerf_.maxInterval = math.max(careerPerf_.maxInterval, rawDt)
+    if rawDt > .05 then careerPerf_.over50 = careerPerf_.over50 + 1 end
+    if rawDt > .1 then careerPerf_.over100 = careerPerf_.over100 + 1 end
+    careerPerf_.updateSum = careerPerf_.updateSum + cpu
+    careerPerf_.updateMax = math.max(careerPerf_.updateMax, cpu)
+    careerPerf_.pendingPost = true
+end
+
+---@param cpu number
+local function RecordCareerPerfPost(cpu)
+    if not careerPerf_.pendingPost then return end
+    careerPerf_.pendingPost = false
+    careerPerf_.postFrames = careerPerf_.postFrames + 1
+    careerPerf_.postSum = careerPerf_.postSum + cpu
+    careerPerf_.postMax = math.max(careerPerf_.postMax, cpu)
+    if careerPerf_.seconds < 5 then return end
+    -- 仅到期时格式化、读取 renderer 最新已完成渲染统计及当前坐标；不遍历场景。
+    local actor = career_ and career_.actor
+    local location = actor and string.format(" xz=(%.1f,%.1f)", actor.x, actor.z) or ""
+    print(string.format("[生涯性能] eventWindow=%.2fs frames=%d eventFPS=%.2f intervalMean/Max=%.1f/%.1fms >50ms=%d >100ms=%d UpdateCPU(mean/max)=%.2f/%.2fms PostCPU(mean/max)=%.2f/%.2fms postCalls=%d rendererLast.numBatches=%d numPrimitives=%d%s；CPU不含GPU；FPS为事件间隔观测，非最终真机验收",
+        careerPerf_.seconds, careerPerf_.frames, careerPerf_.frames / careerPerf_.seconds,
+        careerPerf_.seconds * 1000 / careerPerf_.frames, careerPerf_.maxInterval * 1000,
+        careerPerf_.over50, careerPerf_.over100,
+        careerPerf_.updateSum * 1000 / careerPerf_.frames, careerPerf_.updateMax * 1000,
+        careerPerf_.postSum * 1000 / careerPerf_.postFrames, careerPerf_.postMax * 1000,
+        careerPerf_.postFrames, renderer.numBatches, renderer.numPrimitives, location))
+    -- 不追赶补打日志；每个新窗口重新累计约 5 秒，下一帧无需再次暖身。
+    ResetCareerPerf()
+    careerPerf_.active = true
+end
 
 local function ApplyQuality()
     renderer.dynamicInstancing = true
@@ -142,6 +206,10 @@ local function ClearActions()
 end
 
 local function SetScreen(screen)
+    if screen~=screen_ then
+        RewardedAds.Cancel()
+        if screen~="result" then resultRewardPending_=false end
+    end
     -- 设置层可直接覆盖实战界面，暂停时保留仪表位置用于所见即所得编辑。
     if screen == "pause" then
         hud_.pausedCockpitVisible = hud_.cockpit:IsVisible()
@@ -301,8 +369,17 @@ local function FinishRidePreparation()
     end
 end
 
+local function RequireRaceProfile(allowCareer)
+    if allowCareer and careerRace_ then return true end
+    local ok,message=Profile.TryLoad(true)
+    if ok then return true end
+    hud_:ShowNotice("独立竞速进度不可用",(message or "读取失败")
+        .."\n原档已保留。已暂停独立竞速、购买和金币奖励，王二狗生涯不受影响。")
+    return false
+end
+
 local function StartRide(challenge)
-    if screen_ == "loading" then return end
+    if screen_ == "loading" or not RequireRaceProfile(true) then return end
     -- 圈数由赛道固定；进入车库时就同步，不保留玩家自选。
     local track = Tracks.Get(selectedTrack_)
     if track then selectedLaps_ = math.max(1, math.min(9, track.laps or 3)) end
@@ -317,7 +394,7 @@ local function StartRide(challenge)
 end
 
 local function ConfirmVehicle(id)
-    if screen_ == "loading" then return end
+    if screen_ == "loading" or not RequireRaceProfile(true) then return end
     local entry = Catalog.Get(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
@@ -366,22 +443,34 @@ end
 local function WatchResultAdBonus()
     if not resultAdAvailable_ or resultAdClaimed_ then return end
     if not hud_ or hud_.screen ~= "result" then return end
+    if not RequireRaceProfile() then return end
     local earned = math.floor(sim_ and sim_.coinsEarned or 0)
     if earned <= 0 then return end
 
+    local bonusSim,bonusRace=sim_,race_
     RewardedAds.Show {
+        isValid=function() return sim_==bonusSim and race_==bonusRace and not careerMode_ and screen_=="result" end,
         setBusy = function(busy)
             hud_:SetResultAdOffer(resultAdAvailable_, busy, busy and "广告加载中…" or "看广告 · 双倍金币")
         end,
         onReward = function()
-            resultAdClaimed_ = true
-            resultAdAvailable_ = false
-            -- 与首次结算同额补发，等于把本场金币翻倍；只发一次。
-            Profile.AddCoins(earned)
+            -- 与首次结算同额补发；本次applied独立于其他未保存奖励的全局pending。
+            local saved, message, applied = Profile.AddCoins(earned)
+            resultRewardPending_ = applied and not saved
+            if not applied then
+                resultAdAvailable_ = false
+                hud_:SetResultAdOffer(false,false)
+                hud_:SetResultReward(message or "金币未变更")
+                hud_:ShowNotice("奖励未入账",message or "无法增加金币，原余额未修改")
+                return
+            end
+            resultAdClaimed_, resultAdAvailable_ = true, false
             hud_:RefreshOwnership()
             hud_:SetResultAdOffer(false, false)
-            hud_.resultStats:SetText(string.format("本场金币 %d · 看广告已双倍，额外到账 +%d\n余额 %d 金币",
-                earned, earned, Profile.Coins()))
+            local resultHUD = hud_ --[[@as HUD]]
+            resultHUD:SetResultReward(string.format("本场金币 %d · 广告额外 +%d · 余额 %d 金币%s",
+                earned, earned, Profile.Coins(), saved and " · 已保存" or " · 待保存，请勿退出"))
+            if not saved then hud_:ShowNotice("奖励待保存", (message or "保存失败") .. "\n系统会自动重试，不需要再看广告。") end
             print(string.format("[广告奖励] 竞速结算双倍 +%d，余额 %d", earned, Profile.Coins()))
         end,
         onFailure = function(msg)
@@ -397,6 +486,7 @@ local function ReturnToCareer()
     if loader_ then loader_:Cancel(); loader_=nil end
     hud_:CloseModal()
     DisposeRideWorld(); touch_:SetEnabled(false); hud_.root:SetVisible(false)
+    ResetCareerPerf()
     careerMode_,careerRace_=true,false
     hud_:SetCareerRace(false)
     career_:Home(message)
@@ -674,7 +764,15 @@ end
 function Start()
     graphics.windowTitle = "公路狂飙：从外卖骑手到职业车手"
     input.mouseMode = MM_ABSOLUTE
-    hud_ = HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
+    ---@type fun()?
+    local restoreUnavailableProfile=nil
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-profilebadchecks" then
+            restoreUnavailableProfile=require("ProfileChecks").BeginUnavailableProfile()
+        end
+    end
+    local hudCreated,hudOrError=pcall(function()
+        return HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         watchResultAd = WatchResultAdBonus,
         selectVehicle = function(id)
             if screen_ ~= "loading" and Catalog.Get(id) then selectedVehicle_ = id end
@@ -685,13 +783,15 @@ function Start()
         end,
         selectLaps = function(count) if screen_ ~= "loading" then selectedLaps_ = count end end,
         selectTrack = function(id)
-            if screen_ == "loading" or not Tracks.Get(id) or not Profile.TrackUnlocked(id) then return end
+            if screen_ == "loading" or not Tracks.Get(id) or not RequireRaceProfile(true) then return end
+            if not careerRace_ and not Profile.TrackUnlocked(id) then return end
             selectedTrack_ = id
             selectedLaps_ = assert(Tracks.Get(id)).laps
             hud_:SelectLaps(selectedLaps_, false)
             print("[地图] 初选 " .. id .. "，确认出发后重建，不提前替换当前世界")
         end,
         buyVehicle = function(id)
+            if not RequireRaceProfile() then return end
             local item = Catalog.Get(id)
             if not item then return end
             local ok, message = Profile.Buy(id, item.price or 0)
@@ -706,6 +806,7 @@ function Start()
             print("[商店] " .. (item.name or id) .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
         end,
         buyRider = function(id)
+            if not RequireRaceProfile() then return end
             local price = 0
             for _, rider in ipairs(HUD.Riders) do if rider.id == id then price = rider.price or 0 end end
             local ok, message = Profile.BuyRider(id, price)
@@ -720,6 +821,7 @@ function Start()
             print("[商店] 配色 " .. id .. "：" .. message .. "，余额 " .. tostring(Profile.Coins()))
         end,
         unlockTrack = function(id)
+            if not RequireRaceProfile() then return end
             local track = Tracks.Get(id)
             if not track or screen_ == "loading" then return end
             hud_:ShowTrackLock(track, Profile.Coins(), function()
@@ -756,6 +858,18 @@ function Start()
             SetCamera()
         end,
         retry = RetryLoading}, touch_)
+    end)
+    if not hudCreated then
+        if restoreUnavailableProfile then restoreUnavailableProfile() end
+        error(hudOrError)
+    end
+    hud_=hudOrError --[[@as HUD]]
+    if restoreUnavailableProfile then
+        local ok,message=pcall(function() require("ProfileChecks").RunUnavailableUI(hud_) end)
+        restoreUnavailableProfile()
+        if not ok then error(message) end
+        hud_:RefreshOwnership()
+    end
     local autoStart, challenge = false, false
     for _, arg in ipairs(GetArguments()) do
         if arg == "-autotest" then autoTest_ = true end
@@ -764,6 +878,10 @@ function Start()
         if arg == "-nomirrors" then disableMirrors_ = true end
         if arg == "-controlchecks" then assert(require("ControlChecks").Run(hud_, touch_).passed) end
         if arg == "-profilechecks" then assert(require("ProfileChecks").Run().passed) end
+        if arg == "-careerlogicchecks" then
+            local checks=require("Career.Checks")
+            checks.RunLogic(); checks.RunProgression(); checks.RunCloudTimeout()
+        end
         if arg == "-featurechecks" then assert(require("FeatureChecks").Run().passed) end
         if arg == "-featuremapchecks" then assert(require("FeatureChecks").RealMaps(Landscape).passed) end
         if arg == "-padfeedbackchecks" then
@@ -880,6 +998,10 @@ function Start()
             careerCheck,careerStart,legacyTest=true,true,false
         end
         -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
+        if arg=="-careerframeprobe" or arg=="-careerperfchecks" or arg=="-careerturnchecks"
+            or arg=="-careertrafficchecks" or arg=="-careerhillchecks" or arg=="-careerhillshot" then
+            careerCheck,careerStart,legacyTest=true,true,false
+        end
         if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
             or arg=="-careercollisionquality" or arg=="-careerenvironmentquality" or arg=="-careersoundcrowdquality"
             or arg:match("^%-careerappshot=") or arg:match("^%-careeranimshot=") or arg:match("^%-careercityshot=")
@@ -897,10 +1019,12 @@ function Start()
     end
     if careerCheck then SubscribeToEvent("PostRenderUpdate","CaptureCareerReadyFrame") end
     career_ = CareerSession.New({test=careerCheck, legacy=function()
+        ResetCareerPerf()
         careerMode_,careerRace_=false,false
         hud_:SetCareerRace(false)
         hud_.root:SetVisible(true); UI.SetRoot(hud_.root); MainMenu()
     end, race=function(pending)
+        ResetCareerPerf()
         careerRaceId_=pending.id
         careerMode_,careerRace_=false,true
         hud_:SetCareerRace(true)
@@ -1016,11 +1140,41 @@ end
 ---@param eventType string
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
-    CareerStore.UpdateCloud(eventData:GetFloat("TimeStep"))
-    local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)
+    local rawDt = eventData:GetFloat("TimeStep")
+    CareerStore.UpdateCloud(rawDt)
+    local dt = math.min(rawDt, 0.1)
     -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
     RewardedAds.Update(dt)
-    if careerMode_ and career_ then career_:Update(dt); return end
+    if Profile.HasPendingSave() then
+        profileRetrySeconds_=profileRetrySeconds_+dt
+        if profileRetrySeconds_>=5 then
+            profileRetrySeconds_=0
+            local saved=Profile.RetryPendingSave()
+            if saved then
+                print("[竞速进度] 待保存奖励已成功补存")
+                if resultRewardPending_ and not careerMode_ and hud_ and hud_.screen=="result" then
+                    hud_:SetResultReward(string.format("奖励已保存 · 余额 %d 金币",Profile.Coins()))
+                end
+                resultRewardPending_=false
+            end
+        end
+    else profileRetrySeconds_=0 end
+    if careerMode_ and career_ then
+        local sample = IsCareerPerfActive()
+        if not sample then ResetCareerPerf() end
+        local started = os.clock()
+        career_:Update(dt)
+        local cpu = os.clock() - started
+        if sample and IsCareerPerfActive() then RecordCareerPerfUpdate(rawDt, cpu)
+        else ResetCareerPerf() end
+        return
+    end
+    ResetCareerPerf()
+    -- 暂停/设置/模态会提前返回，但循环声和短音包络仍必须消费静音状态。
+    if screen_~="ride" or hud_:IsModalOpen() then
+        if sound_ then sound_:Update(dt,sim_ --[[@as RideAudioState]],"pause") end
+        if raceAudio_ then raceAudio_:Update(dt,sim_,pendingChallenge_ and race_ or nil,false) end
+    end
     clock_ = clock_ + dt
     local portrait = graphics:GetHeight() > graphics:GetWidth()
     if portrait ~= portrait_ then
@@ -1177,6 +1331,7 @@ function HandleUpdate(eventType, eventData)
         local finished = sim_.finished or (pendingChallenge_ and race_ and race_.phase == "finished")
         if finished and not resultShown_ then
             resultShown_ = true
+            resultRewardPending_=false
             local careerResultMessage=""
             if careerRace_ and race_ and race_.player then
                 local _,message=SettleCareerResult()
@@ -1186,18 +1341,25 @@ function HandleUpdate(eventType, eventData)
                 local place = race_.player.rank or 9
                 local track = Tracks.Get(selectedTrack_)
                 local reward = Profile.RaceReward(place, selectedLaps_, track and track.reward or 120)
-                Profile.AddCoins(reward)
-                sim_.coinsEarned = reward
-                print(string.format("[奖励] 第%d名 · %s · +%d金币，余额 %d", place,
-                    track and track.name or selectedTrack_, reward, Profile.Coins()))
-                -- 第1名通关即解锁该赛道指向的下一站。
-                if place == 1 then
-                    for _, item in ipairs(Tracks.List()) do
-                        if item.requires == selectedTrack_ and not Profile.TrackUnlocked(item.id) then
-                            Profile.UnlockTrack(item.id, 0)
-                            print("[解锁] 夺冠解锁下一赛道：" .. item.name)
-                        end
+                local unlocks={}
+                if place==1 then
+                    for _,item in ipairs(Tracks.List()) do
+                        if item.requires==selectedTrack_ and not Profile.TrackUnlocked(item.id) then unlocks[#unlocks+1]=item.id end
                     end
+                end
+                local saved, saveMessage, applied = Profile.GrantRaceRewards(reward,unlocks)
+                resultRewardPending_=applied and not saved
+                if not saved then
+                    careerResultMessage=(saveMessage or "奖励未入账")
+                        ..(applied and "；奖励待保存，请勿退出，系统将自动重试。" or "；本次奖励未入账，原余额未修改。")
+                end
+                sim_.coinsEarned = applied and reward or 0
+                print(string.format("[奖励] 第%d名 · %s · +%d金币，余额 %d", place,
+                    track and track.name or selectedTrack_, sim_.coinsEarned, Profile.Coins()))
+                if applied and #unlocks>0 then
+                    local message="夺冠解锁下一赛道"..(saved and " · 已保存" or " · 权益待保存，请勿退出")
+                    careerResultMessage=(careerResultMessage~="" and careerResultMessage.."\n" or "")..message
+                    print("[解锁] "..message)
                 end
                 hud_:RefreshOwnership()
             end
@@ -1205,7 +1367,9 @@ function HandleUpdate(eventType, eventData)
             hud_:ShowResult(sim_)
             OfferResultAdBonus(math.floor(sim_.coinsEarned or 0))
             if careerResultMessage~="" then
-                hud_.resultStats:SetText(careerResultMessage.."\n奖金计入生涯现金，不发放旧竞速金币。")
+                hud_:SetResultReward(careerResultMessage..(careerRace_ and "\n奖金计入生涯现金，不发放旧竞速金币。" or ""))
+            elseif not careerRace_ and (sim_.coinsEarned or 0)>0 then
+                hud_:SetResultReward(string.format("本场金币 +%d · 余额 %d 金币",sim_.coinsEarned,Profile.Coins()))
             end
         end
     end
@@ -1217,8 +1381,9 @@ function HandleUpdate(eventType, eventData)
         bike_.riderRig:Update(testSteer_, true, testLean_)
     end
     if pendingChallenge_ and raceVisuals_ then raceVisuals_:Update(screen_ == "ride" and dt or 0, sim_) end
-    sound_:Update(dt, sim_ --[[@as RideAudioState]], screen_)
     if raceAudio_ then raceAudio_:Update(dt, sim_, pendingChallenge_ and race_ or nil, screen_ == "ride" or screen_ == "result") end
+    sound_.musicDuck=raceAudio_ and raceAudio_:GetMusicDuck() or 1
+    sound_:Update(dt, sim_ --[[@as RideAudioState]], screen_)
     hud_:Update(dt, sim_, firstPerson_)
     CheckRaceFlow()
     CheckTrackFlow()
@@ -1228,6 +1393,7 @@ end
 ---@param eventData InputFocusEventData
 function HandleInputFocus(eventType, eventData)
     if not eventData:GetBool("Focus") or eventData:GetBool("Minimized") then
+        ResetCareerPerf()
         if careerMode_ and career_ then
             career_.view:ResetInput()
             if career_.running and not career_.view:IsBlocking() then career_:Pause() end
@@ -1242,7 +1408,17 @@ end
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
-    if careerMode_ and career_ then career_:PostUpdate(math.min(eventData:GetFloat("TimeStep"),.1)); return end
+    if careerMode_ and career_ then
+        if not IsCareerPerfActive() then ResetCareerPerf() end
+        local dt = math.min(eventData:GetFloat("TimeStep"), .1)
+        local started = os.clock()
+        career_:PostUpdate(dt)
+        local cpu = os.clock() - started
+        if IsCareerPerfActive() then RecordCareerPerfPost(cpu)
+        else ResetCareerPerf() end
+        return
+    end
+    ResetCareerPerf()
     if screen_ == "settings" then return end
     if not ready_ or not bike_ or not chase_ or not helmetCamera_ then return end
     local dt = math.min(eventData:GetFloat("TimeStep"), 0.1)

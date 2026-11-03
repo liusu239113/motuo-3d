@@ -7,6 +7,7 @@ local Delivery=require("Career.Delivery")
 local World=require("Career.WorldData")
 ---@class CareerDeliveryMarkerChecks
 ---@field Run fun(session:CareerSession):boolean
+---@field Support fun(session:CareerSession):boolean
 ---@field Shot fun(session:CareerSession,view:string)
 local Checks={}
 local function copy(v)
@@ -96,10 +97,96 @@ local function collisionSnapshot(city)
         for _,c in ipairs(cells) do assert(same(World.DescribeCell(c.ix,c.iz).obstacles,c.obstacles),"World obstacles changed") end
     end
 end
+-- 真实Session入口、真实城市Surface；仅联系人候选/显示回调为计数夹具，不生成新城。
+-- 独立内存Store finally恢复，订单仍用真实模板/Delivery授权，绝不直接改结算结果。
+function Checks.Support(session)
+    isolated(session)
+    local liveCity=assert(session.city)
+    local realCity=setmetatable({space="city"},{__index=liveCity}) --[[@as CareerCity]]
+    local files={}
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text) files[path]=text;return true end,
+        cloud={Get=function() error("支撑专项禁云") end,Set=function() error("支撑专项禁云") end}},function()
+        assert(Store.NewCareer())
+        local coast=assert(Config.points.coast_view)
+        local actor={x=coast.x,z=coast.z,walkHeight=realCity:Surface(coast.x,coast.z),mounted=false,speed=0} --[[@as CareerActor]]
+        near(actor.walkHeight,4)
+        local talks,dialogs,notices,saves=0,0,0,0
+        local city=setmetatable({contacts={Nearest=function() return {id="support_fixture",name="岸坡联系人"},0 end}},{__index=realCity})
+        local harness=setmetatable({actor=actor,city=city,space="city",running=true,online=false,options={test=true},
+            waypoint="coast_view",manualWaypoint=true,navigation={key="",route={}},
+            view={Notice=function() notices=notices+1 end,ShowDialog=function() dialogs=dialogs+1 end},
+            TalkTo=function() talks=talks+1;return true end,SavePosition=function() saves=saves+1 end,
+            RefreshPhone=function() end,DeliveryResponse=function() end,OfferAdTip=function() end},getmetatable(session)) --[[@as CareerSession]]
+        assert(harness:Allowed("coast_view"),"海岸4m真实地面2m内必须可交互")
+        harness:Interact();assert(dialogs==1,"海岸4m景点被绝对高度拒绝")
+        actor.x=coast.x+4;actor.walkHeight=realCity:Surface(actor.x,actor.z)
+        assert(not harness:Allowed("coast_view"),"海岸地面不得扩大2m授权")
+        assert(harness:State().contactName=="岸坡联系人","海岸4m真实地面未展示联系人")
+        harness:Interact();assert(talks==1,"海岸4m真实地面不能现场交谈")
+        local groundedHeight=actor.walkHeight
+        actor.walkHeight=groundedHeight+.2
+        assert(not harness:Allowed("coast_view"),"离地20cm不得交互")
+        assert(harness:State().contactName==nil,"悬空姿态不应展示可交谈提示")
+        harness:Interact();assert(talks==1 and dialogs==1,"悬空姿态不得远程交谈或打开景点")
+        actor.walkHeight=groundedHeight
+        -- 在岸坡使用真实Actor.Move一步，float/连续坡面不会被5cm贴脚容差误拒绝。
+        local mover=setmetatable({city=realCity,walkHeight=groundedHeight,yaw=0},getmetatable(session.actor)) --[[@as CareerActor]]
+        local x,z,blocked=mover:Move(actor.x,actor.z,.1,.1,.32)
+        assert(not blocked,"海岸贴脚一步实际碰撞被挡")
+        actor.x,actor.z,actor.walkHeight=x,z,mover.walkHeight
+        near(actor.walkHeight,realCity:Surface(x,z),.0001)
+        assert(harness:State().contactName=="岸坡联系人","真实Actor.Move后地形float误拒绝")
+        -- 真实Contacts.Nearest与StreetActions.TalkTo，联系人为局部纯数据夹具；不声称海岸已有NPC。
+        local person={id="support_fixture",name="岸坡联系人",point="coast_view",x=actor.x,z=actor.z}
+        local responds,conversations=0,0
+        local contactClass=require("Career.Contacts")
+        local lifeClass=require("Career.StreetLife")
+        local contacts=setmetatable({city=realCity,disposed=false,
+            life=setmetatable({city=realCity,disposed=false,people={person},byId={support_fixture=person}},lifeClass),
+            Respond=function() responds=responds+1 end},contactClass)
+        city.contacts=contacts
+        harness.view.ShowConversation=function() conversations=conversations+1 end
+        assert(contacts:Nearest(actor,3)==person,"真实Contacts应允许4m地面候选")
+        local talk=require("Career.StreetActions").TalkTo
+        assert(talk(harness,"support_fixture") and responds==1 and conversations==1,"真实StreetActions拒绝海岸4m地面")
+        actor.walkHeight=actor.walkHeight+.2
+        assert(not contacts:Nearest(actor,3),"真实Contacts不得把离地者作为可谈候选")
+        assert(not talk(harness,"support_fixture") and responds==1,"真实StreetActions不得隔高度交谈")
+        actor.walkHeight=realCity:Surface(actor.x,actor.z)
+        -- 2m有效取送点：即使高度不足旧+1m阈值，也必须阻止悬空取/送。
+        local meal=order("noodle_office","accepted",1)
+        assert(Store.Transaction(function(p) p.activeOrders={meal};p.nextOrderSequence=2;return true end))
+        local pickup=assert(Config.points[meal.pickupId])
+        actor.x,actor.z=pickup.x,pickup.z
+        local y=realCity:Surface(actor.x,actor.z)
+        for _,dy in ipairs({.2,6}) do
+            actor.walkHeight=y+dy
+            local revision=Store.Get().revision
+            harness:Interact()
+            assert(Store.Get().revision==revision and assert(Delivery.GetActive()).status=="accepted" and saves==0,
+                "悬空取餐不得SavePosition或推进订单")
+        end
+        actor.walkHeight=y;actor.x=pickup.x+2.01
+        harness:Interact();assert(assert(Delivery.GetActive()).status=="accepted","2m外不得取餐")
+        actor.x=pickup.x;actor.walkHeight=realCity:Surface(actor.x,actor.z);harness:Interact()
+        assert(assert(Delivery.GetActive()).status=="picked_up","真实地面原地2m取餐应保持可用")
+        local drop=assert(Config.points[meal.dropoffId]);actor.x,actor.z=drop.x,drop.z
+        actor.walkHeight=realCity:Surface(actor.x,actor.z)+.2
+        local before=Store.Get();harness:Interact()
+        assert(Store.Get().revision==before.revision and assert(Delivery.GetActive()).status=="picked_up","悬空送餐不得结算")
+        actor.walkHeight=realCity:Surface(actor.x,actor.z);harness:Interact()
+        assert(not Delivery.GetActive(),"真实地面2m送达应保持可用")
+        assert(notices>0 and saves>0,"支撑专项未经过真实交互分支")
+    end)
+    print("[支撑层交互专项通过] 海岸4m State/Interact/Allowed、真实Actor.Move贴坡、悬空取送拒绝、原2m授权；仅隔离内存")
+    return true
+end
 ---@param session CareerSession
 ---@return boolean
 function Checks.Run(session)
     isolated(session)
+    Checks.Support(session)
     local city,scene=assert(session.city),assert(session.scene)
     local production=assert(session.deliveryMarkers,"Session.BuildWorld must create markers")
     assert(not production.disposed and production.city==city and production.root:GetParent()==city.root,"Session marker wiring broken")
@@ -187,7 +274,7 @@ function Checks.Run(session)
         collisionUnchanged()
         -- 近门前距离只在地面步行且真实整段净空时走直线；不修改订单/原路网/2米授权。
         local office=assert(Config.points.office)
-        local approachActor={x=office.x,z=office.z-7,walkHeight=0,mounted=false} --[[@as CareerActor]]
+        local approachActor={x=office.x,z=office.z-7,walkHeight=city:Surface(office.x,office.z-7),mounted=false} --[[@as CareerActor]]
         local approach=setmetatable({actor=approachActor,city=city,space="city",manualWaypoint=true,
             waypoint="office",navigation={key="",route={}}},getmetatable(session)) --[[@as CareerSession]]
         assert(city:StaticSegmentFree(approachActor.x,approachActor.z,office.x,office.z,.32,"walk",0),"门前7米实景接近段应净空")
@@ -199,9 +286,38 @@ function Checks.Run(session)
         local routedPoints=assert(routed.route)
         near(routed.distance,Config.RouteDistance(routedPoints))
         assert(routed.distance>7,"骑行仍应显示原道路路线")
-        approachActor.mounted=false;approachActor.walkHeight=6
-        near(assert(approach:Target()).distance,routed.distance)
-        approachActor.walkHeight=0;approachActor.z=office.z+7
+        -- office处凭空height=6不是桥层；NavigationLayer只认真实支撑，不能把伪高层当桥顶反证。
+        -- 改用真实外区天桥，同XZ切换桥下/桥顶且不手动清缓存，验证层key及坡脚接续。
+        local bridge=assert(World.Bridges[1])
+        approachActor.mounted=false;approachActor.x,approachActor.z=bridge.x,bridge.z
+        approach.waypoint="world_east_market_lobby"
+        approachActor.walkHeight=city:Surface(bridge.x,bridge.z)
+        assert(World.NavigationLayer(bridge.x,bridge.z,approachActor.walkHeight)=="ground")
+        local under=assert(approach:Target());local underKey=approach.navigation.key
+        local underRoute=assert(under.route)
+        assert(#underRoute>1 and underRoute[1].layer~="bridge:"..bridge.id,"桥下同XZ不得导航上桥")
+        approachActor.walkHeight=bridge.y
+        assert(World.NavigationLayer(bridge.x,bridge.z,bridge.y)=="bridge:"..bridge.id)
+        local above=assert(approach:Target());local aboveRoute=assert(above.route)
+        assert(approach.navigation.key~=underKey and #aboveRoute>1 and aboveRoute[1].layer=="bridge:"..bridge.id,
+            "桥顶必须换导航缓存层，不复用同XZ地面路线")
+        near(aboveRoute[1].y,bridge.y)
+        local ramp=false
+        for i=2,#aboveRoute do
+            local a,b=aboveRoute[i-1],aboveRoute[i]
+            if a.layer~="ground" and b.layer=="ground" then
+                near(a.z,bridge.z-64);near(b.z,bridge.z-66);near(math.abs(a.x-bridge.x),20)
+                ramp=true
+            end
+        end
+        local destination=assert(Config.points[approach.waypoint])
+        assert(ramp and above.distance>Config.DistanceTo(destination.id,bridge.x,bridge.z)+20,
+            "真实桥顶必须沿坡道返回地面，不能直落同XZ")
+        near(above.distance,Config.RouteDistance(aboveRoute))
+        approachActor.walkHeight=city:Surface(bridge.x,bridge.z)
+        near(assert(approach:Target()).distance,under.distance)
+        approach.waypoint="office";approachActor.x=office.x
+        approachActor.walkHeight=city:Surface(office.x,office.z+7);approachActor.z=office.z+7
         assert(not city:StaticSegmentFree(approachActor.x,approachActor.z,office.x,office.z,.32,"walk",0),"隔墙反例必须有实际低墙")
         local blocked=assert(approach:Target())
         ---@type CareerRoutePoint[]

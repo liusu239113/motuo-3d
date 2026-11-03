@@ -23,6 +23,8 @@ end
 ---@field settingsReturn string
 ---@field OpenSettings fun(self:HUD)
 ---@field pausedCockpitVisible boolean?
+---@field resultRewardText string?
+---@field SetResultReward fun(self:HUD, text:string)
 local HUD = {}
 HUD.__index = HUD
 local C = RacingTheme.Colors
@@ -44,8 +46,8 @@ local RIDERS = {
     {id = "violet", color = {111, 75, 137, 255}, price = 2600},
 }
 HUD.Riders = RIDERS
-HUD.Resources, HUD.ResourceTypes = {KEYART, GARAGE, "Fonts/NotoSansSC-Black.ttf", "Fonts/MiSans-Regular.ttf"},
-    {[KEYART] = "Texture2D", [GARAGE] = "Texture2D", ["Fonts/NotoSansSC-Black.ttf"] = "Font", ["Fonts/MiSans-Regular.ttf"] = "Font"}
+HUD.Resources, HUD.ResourceTypes = {KEYART, GARAGE, RacingTheme.FontPath, RacingTheme.HeroImage},
+    {[KEYART] = "Texture2D", [GARAGE] = "Texture2D", [RacingTheme.FontPath] = "Font", [RacingTheme.HeroImage] = "Texture2D"}
 for _, path in ipairs(MobileControls.Resources) do
     HUD.Resources[#HUD.Resources + 1], HUD.ResourceTypes[path] = path, MobileControls.ResourceTypes[path]
 end
@@ -446,9 +448,14 @@ function HUD:BuildGarage()
     self.confirmButton = button("确认座驾 · 出发 →", function()
         local item = Catalog.Get(self.selectedVehicle)
         if not item then return end
+        local profile,profileError = Profile.GetForDisplay()
+        if profileError and not self.careerRace then
+            self:ShowNotice("竞速进度不可用",profileError.."\n原档已保留，未开启购买或比赛。")
+            return
+        end
         if item.available == false then
             self:ShowNotice("车型尚未开放", "「" .. (item.name or item.id) .. "」的独立驾驶资源尚未交付，请选择其他座驾。")
-        elseif not Profile.Owns(item.id) then
+        elseif not self.careerRace and not profile.owned[item.id] then
             if self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
         elseif self.actions.confirmVehicle then self.actions.confirmVehicle(self.selectedVehicle) end
     end, true, 228)
@@ -545,6 +552,7 @@ function HUD:SetResultAdOffer(available, busy, text)
 end
 
 function HUD:SetCareerRace(enabled)
+    self.careerRace = enabled == true
     self.careerPauseRestart:SetVisible(not enabled)
     self.careerPauseReturn:SetText(enabled and "返回生涯（保留报名）" or "主菜单")
     self.resultRestart:SetVisible(not enabled)
@@ -574,10 +582,11 @@ end
 function HUD:SelectVehicle(id, notify)
     local item = Catalog.Get(id)
     if not item then return end
+    local profile,profileError = Profile.GetForDisplay()
     self.selectedVehicle = id
     for _, v in ipairs(Catalog.List) do
         local selected = v.id == id
-        local owned = Profile.Owns(v.id)
+        local owned = profile.owned[v.id] == true
         self.vehicleCards[v.id]:SetStyle({borderColor = selected and C.cyan or BORDER,
             backgroundGradient = RacingTheme.Gradient(selected and {39, 57, 61, 245} or {30, 37, 43, 235},
                 selected and {20, 33, 39, 245} or {17, 21, 26, 235})})
@@ -591,21 +600,22 @@ function HUD:SelectVehicle(id, notify)
     self.vehicleSpecs:SetText(string.format("极速 %s km/h  /  加速 %d  /  操控 %d  /  耐久 %d",
         tostring(item.speedStat or item.speed or "—"), math.floor(item.acceleration or 0),
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
-    local owned = Profile.Owns(id)
+    local owned = profile.owned[id] == true
     local price = item.price or 0
-    self.coinLabel:SetText("金币 " .. tostring(Profile.Coins()))
-    self.buyButton:SetVisible(not owned and price > 0)
+    self.coinLabel:SetText(profileError and "竞速进度不可用 · 原档已保留" or "金币 " .. tostring(profile.coins))
+    self.buyButton:SetVisible(not profileError and not owned and price > 0)
     self.buyButton:SetText("购买 · " .. tostring(price) .. " 金币")
-    self.buyButton:SetDisabled(false)
-    self.confirmButton:SetDisabled(false)
-    self.confirmButton:SetText(item.available == false and "独立车型准备中"
+    self.buyButton:SetDisabled(profileError~=nil)
+    self.confirmButton:SetDisabled(profileError~=nil and not self.careerRace)
+    self.confirmButton:SetText(profileError and not self.careerRace and "进度读取失败 · 暂不可出发" or item.available == false and "独立车型准备中"
         or (not owned and ("未拥有 · " .. tostring(price) .. " 金币")) or "确认座驾 · 出发 →")
     if self.screen == "garage" then self.preview:Select(id, item.available) end
     if notify and self.actions.selectVehicle then self.actions.selectVehicle(id) end
 end
 function HUD:SelectRider(id, notify)
     if not self.riderButtons[id] then return end
-    local owned = Profile.OwnsRider(id)
+    local profile = Profile.GetForDisplay()
+    local owned = profile.ownedRiders[id] == true
     if not owned and notify and self.actions.buyRider then
         -- 未拥有时交给主流程购买；买成功后由主流程再次调用本函数同步画面。
         self.actions.buyRider(id)
@@ -614,7 +624,7 @@ function HUD:SelectRider(id, notify)
     self.selectedRider = id
     for _, rider in ipairs(RIDERS) do if rider.id == id then self.preview:SetRiderColor(rider.color) end end
     for colorId, swatch in pairs(self.riderButtons) do
-        local selectable = Profile.OwnsRider(colorId)
+        local selectable = profile.ownedRiders[colorId] == true
         swatch:SetStyle({borderColor = colorId == id and AMBER or (selectable and BORDER or {92, 74, 52, 200}),
             borderWidth = colorId == id and 2 or 1,
             opacity = selectable and 1 or 0.55})
@@ -623,11 +633,12 @@ function HUD:SelectRider(id, notify)
 end
 -- 购买成功后刷新配色与金币
 function HUD:RefreshOwnership()
+    local profile,profileError = Profile.GetForDisplay()
     self.trackSignature = ""
     self:RefreshTrackCards()
-    self.coinLabel:SetText("金币 " .. tostring(Profile.Coins()))
+    self.coinLabel:SetText(profileError and "竞速进度不可用 · 原档已保留" or "金币 " .. tostring(profile.coins))
     for colorId, swatch in pairs(self.riderButtons) do
-        local selectable = Profile.OwnsRider(colorId)
+        local selectable = profile.ownedRiders[colorId] == true
         swatch:SetStyle({borderColor = colorId == self.selectedRider and AMBER or (selectable and BORDER or {92, 74, 52, 200}),
             borderWidth = colorId == self.selectedRider and 2 or 1,
             opacity = selectable and 1 or 0.55})
@@ -921,7 +932,8 @@ function HUD:RefreshResults()
     -- Do not read raw racer.finishTime/time from the public classification payload.
     local rows = race.results or race.standings or {}
     self.resultTitle:SetText(result.title or "竞速结算")
-    self.resultStats:SetText((result.reason or "") .. string.format("\n排名 %02d / %02d    用时 %s", math.floor(result.position or race.position or 1), #rows, clock(result.elapsed or race.elapsed or 0)))
+    local summary = (result.reason or "") .. string.format("\n排名 %02d / %02d    用时 %s", math.floor(result.position or race.position or 1), #rows, clock(result.elapsed or race.elapsed or 0))
+    self.resultStats:SetText(summary .. (self.resultRewardText and "\n" .. self.resultRewardText or ""))
     for i, row in ipairs(self.resultRows) do
         local entry = rows[i]
         row:SetVisible(entry ~= nil)
@@ -932,7 +944,12 @@ function HUD:RefreshResults()
         end
     end
 end
+function HUD:SetResultReward(text)
+    self.resultRewardText = text
+    if self.screen == "result" and self.hasRace then self:RefreshResults() end
+end
 function HUD:ShowResult(sim)
+    self.resultRewardText = nil
     self:SetScreen("result")
     if self.hasRace then self:RefreshResults(); return end
     for _, row in ipairs(self.resultRows) do row:SetVisible(false) end

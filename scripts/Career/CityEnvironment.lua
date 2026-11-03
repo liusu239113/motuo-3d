@@ -99,6 +99,25 @@ Environment.StaticObstacles={
     {id="coast_water_south",kind="water",x1=-1152,x2=-seaEdge,z1=-1152,z2=-664,y1=-10,y2=50},
     {id="coast_water_end",kind="water",x1=-1152,x2=-684,z1=-664,z2=-656,y1=-10,y2=50},
 }
+-- 海湾远端封边（不删水域保护、不允许从4m岸丘横跳到外侧0m绿地）：
+-- x=-1152 或 z=-1152: 外地0m | 0.40m厚挡土墙+护栏 | 岸丘/海床Height。
+-- 两条752m边以8m一节共用可见Box/AABB，墙底低于两侧地面20cm，顶高于最高侧1.10m。
+-- 近城x=-400、z=-400边Height恒为.055，仅5.5cm路缘，保留原20m入口及双向通行。
+-- 段接缝首尾相接；外侧/内侧、干岸4m/水下-3m和角点都用同一静态碰撞，不随卸块消失。
+---@type CoastObstacle[]
+Environment.BoundaryWalls={}
+for _,axis in ipairs({"x","z"}) do
+    for lo=-1152,-408,8 do
+        local hi=lo+8
+        local x1,x2=axis=="x" and -1152.2 or lo,axis=="x" and -1151.8 or hi
+        local z1,z2=axis=="z" and -1152.2 or lo,axis=="z" and -1151.8 or hi
+        local a=Environment.Height(axis=="x" and -1152 or lo,axis=="z" and -1152 or lo)
+        local b=Environment.Height(axis=="x" and -1152 or hi,axis=="z" and -1152 or hi)
+        Environment.BoundaryWalls[#Environment.BoundaryWalls+1]={id="coast_boundary_"..axis..lo,kind="boundary",
+            x1=x1,x2=x2,z1=z1,z2=z2,y1=math.min(0,a,b)-.2,y2=math.max(0,a,b)+1.1}
+    end
+end
+for _,wall in ipairs(Environment.BoundaryWalls) do Environment.StaticObstacles[#Environment.StaticObstacles+1]=wall end
 for _,p in ipairs(Environment.Props) do
     local y=assert(Environment.Surface(p.x,p.z))
     Environment.StaticObstacles[#Environment.StaticObstacles+1]={id=p.id,kind=p.kind,
@@ -121,16 +140,20 @@ Environment.Free=Environment.IsFree
 function Environment.SegmentFree(a,b,r)
     local radius=r or .8
     for _,o in ipairs(Environment.StaticObstacles) do
-        local lo,hi=0,1
-        for _,v in ipairs({{a.x,b.x-a.x,o.x1-radius,o.x2+radius},{a.z,b.z-a.z,o.z1-radius,o.z2+radius}}) do
-            if math.abs(v[2])<1e-10 then
-                if v[1]<=v[3] or v[1]>=v[4] then lo,hi=1,0;break end
-            else
-                local s,t=(v[3]-v[1])/v[2],(v[4]-v[1])/v[2]
-                lo,hi=math.max(lo,math.min(s,t)),math.min(hi,math.max(s,t))
+        -- 精确包围盒早拒绝：远边188节墙仍参与碰撞，但不为每条内湾视线分配slab临时表。
+        if math.max(a.x,b.x)+radius>o.x1 and math.min(a.x,b.x)-radius<o.x2
+            and math.max(a.z,b.z)+radius>o.z1 and math.min(a.z,b.z)-radius<o.z2 then
+            local lo,hi=0,1
+            for _,v in ipairs({{a.x,b.x-a.x,o.x1-radius,o.x2+radius},{a.z,b.z-a.z,o.z1-radius,o.z2+radius}}) do
+                if math.abs(v[2])<1e-10 then
+                    if v[1]<=v[3] or v[1]>=v[4] then lo,hi=1,0;break end
+                else
+                    local s,t=(v[3]-v[1])/v[2],(v[4]-v[1])/v[2]
+                    lo,hi=math.max(lo,math.min(s,t)),math.min(hi,math.max(s,t))
+                end
             end
+            if lo<hi and hi>0 and lo<1 then return false end
         end
-        if lo<hi and hi>0 and lo<1 then return false end
     end
     return true
 end
@@ -160,7 +183,7 @@ function Environment.PrewarmNavigation()
     local started=os.clock()
     local base={}
     for _,p in ipairs(Environment.ApproachRoutes.coast_pier) do base[#base+1]={x=p.x,z=p.z} end
-    for _,o in ipairs(Environment.StaticObstacles) do if o.kind~="water" then
+    for _,o in ipairs(Environment.StaticObstacles) do if o.kind~="water" and o.kind~="boundary" then
         for _,xx in ipairs({o.x1-.81,o.x2+.81}) do for _,zz in ipairs({o.z1-.81,o.z2+.81}) do
             if Environment.Contains(xx,zz) and Environment.IsFree(xx,zz,.8) then base[#base+1]={x=xx,z=zz} end
         end end
@@ -336,6 +359,19 @@ local function sphere(d,mat,x,y,z,rx,ry,rz)
         else d:Quad(mat,point(row,sector),point(row+1,sector),point(row,sector+1),point(row+1,sector+1)) end
     end end
 end
+-- 独立有限封边批次，测试可记录Box验证视觉外轮廓，不必建整片海岸或访问引擎对象。
+function Environment.RenderBoundary(d,cell)
+    local count=0
+    for _,wall in ipairs(Environment.BoundaryWalls) do
+        local l,r,n,f=math.max(wall.x1,cell.x1),math.min(wall.x2,cell.x2),math.max(wall.z1,cell.z1),math.min(wall.z2,cell.z2)
+        if l<r and n<f then
+            d:Box("concrete",(l+r)/2,(wall.y1+wall.y2)/2,(n+f)/2,r-l,wall.y2-wall.y1,f-n)
+            d:Box("metal",(l+r)/2,wall.y2-.04,(n+f)/2,r-l,.08,f-n)
+            count=count+1
+        end
+    end
+    return count
+end
 function Environment.RenderCell(d,cell)
     local V=Vector3
     local count=Environment.TerrainTriangles(cell,function(mat,a,b,c)
@@ -345,6 +381,8 @@ function Environment.RenderCell(d,cell)
         local l,r,n,f=math.max(b.x1,cell.x1),math.min(b.x2,cell.x2),math.max(b.z1,cell.z1),math.min(b.z2,cell.z2)
         if l<r and n<f then fn(l,r,n,f) end
     end
+    -- 可见封边直接用静态碰撞Box的外轮廓；按块裁切而非中心归属，跨256m块不漏半边墙。
+    Environment.RenderBoundary(d,cell)
     clipped(Environment.Connector,function(l,r,n,f) d:Quad("concrete",V(l,.055,n),V(l,.055,f),V(r,.055,n),V(r,.055,f)) end)
     clipped({x1=-1152,x2=-seaEdge,z1=-1152,z2=-seaEdge},function(l,r,n,f)
         d:Quad("coast_water",V(l,.15,n),V(l,.15,f),V(r,.15,n),V(r,.15,f))

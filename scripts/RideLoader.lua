@@ -12,7 +12,7 @@ Loader.CoreResources = {
     {"TextureCube", "uuid://E4ehad-5axjv7Ml9zasxNx06"},
     {"Model", "Models/Box.mdl"}, {"Model", "Models/Cylinder.mdl"},
     {"Model", "Models/Sphere.mdl"}, {"Model", "Models/Cone.mdl"},
-    {"Font", "Fonts/MiSans-Regular.ttf"}, {"Font", "Fonts/MiSans-Bold.ttf"},
+    {"Font", "Fonts/NotoSerifSC-Game.otf"},
 }
 
 ---@param extraResources string[]?

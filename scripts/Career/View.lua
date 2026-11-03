@@ -17,6 +17,8 @@ local Team = require("Career.Team")
 local World = require("Career.WorldData")
 local Dashboard = require("Career.LifeDashboard")
 local Life = require("Career.LifeStatus")
+local LoadingScreen = require("Career.LoadingScreen")
+local LineIcon = require("Career.LineIcon")
 local C = Theme.Colors
 local function label(text,size,color,props) return Theme.Label(text,size or 12,color or C.white,props) end
 local function btn(text,click,primary,props)
@@ -24,9 +26,15 @@ local function btn(text,click,primary,props)
     local width=props.width or "100%"
     return Theme.Button(text,click,primary,width,props)
 end
+local function hudTouchHeight(size)
+    local pixels=UI.Theme.FontSize(size)
+    local measured=UI.MeasureTextFit("手机上车交互",{fontSize=pixels,minFontSize=pixels,
+        fontFace=UI.Theme.FontFace(nil,"normal"),width=1000,multiline=false,lineHeight=1.4})
+    return math.max(PhoneKit.TouchSize(),math.ceil(measured.height or 0)+4)
+end
 local function hudButton(text,click,id,width)
     local size=math.max(18,18/math.max(.1,UI.GetScale()))
-    local touch=PhoneKit.TouchSize()
+    local touch=hudTouchHeight(size)
     return UI.Button{id=id,text=text,onClick=click,width=width or 80,height=touch,minWidth=touch,minHeight=touch,
         padding=0,paddingHorizontal=0,paddingVertical=0,hoverPadding=0,pressedPadding=0,fontSize=size,
         textColor=C.white,backgroundColor={0,0,0,0},backgroundGradient=false,
@@ -103,12 +111,15 @@ function View:Init(actions)
     self.blocked=false
     -- 与原竞速共用组件、图片、多指归属和玩家操作方案；实例分开，避免覆盖旧HUD的控件引用。
     self.controls=MobileControls.New()
+    self.controls.lineStyle=true
     self.controlWidth,self.controlHeight=0,0
     self.mountedControls=false
     self.lookPointer=-1
     self.lookX,self.lookY,self.lookDeltaX,self.lookDeltaY=0,0,0,0
     self.root=UI.Panel{width="100%",height="100%",padding=0,pointerEvents="box-none"}
-    self.home=full{backgroundGradient=Theme.Gradient({25,34,40,255},{7,11,15,255}),padding=32,gap=12}
+    self.home=full{backgroundImage=Theme.HeroImage,backgroundFit="cover",backgroundColor={9,13,17,255},padding=32,gap=12}
+    self.home:AddChild(full{pointerEvents="none",backgroundGradient={type="linear",direction="to-right",
+        from={3,7,10,210},to={3,7,10,0}}})
     self.home:AddChild(Theme.Kicker("ROAD TO THE GRID  /  从生活驶向赛场"))
     self.home:AddChild(label("公路狂飙",46,C.white,{fontWeight="bold"}))
     self.home:AddChild(label("从外卖骑手到职业车手",20,C.amber))
@@ -127,21 +138,26 @@ function View:Init(actions)
         textStroke={width=1,color={0,0,0,230}},textShadow={offsetX=0,offsetY=2,blur=0,color={0,0,0,230}}})
     self.map=Map.New("career-minimap")
     self.map.root:SetStyle{width="100%",height=88,padding=0,borderWidth=0,borderRadius=0,
-        backgroundColor={0,0,0,0},backgroundGradient=false,boxShadow=false}
+        backgroundColor={7,12,16,190},backgroundGradient=false,boxShadow=false}
     self.map.scaleLabel:SetVisible(false)
     self.map.edgeDistance:SetVisible(false)
     self.mapCaption=PhoneKit.Text("附近街区 · 南城老街",10,C.white,{id="career-minimap-caption"})
     self.mapOpenHint=PhoneKit.Text("点开全城地图",9,C.cyan,{id="career-map-open-hint"})
     self.mapOpen=UI.Panel{id="career-minimap-open",width="100%",minHeight=44,padding=0,gap=3,
         pointerEvents="box-only",onClick=function()
+            if self.lastActor and math.abs(self.lastActor.speed)>.35 then self:Notice("请先停稳再打开地图"); return end
             if not self:IsBlocking() then self:OpenWorldMap() end
         end,children={self.mapCaption,self.map.root,self.mapOpenHint}}
+    self.navText=UI.Panel{width="100%",padding=0,gap=10,pointerEvents="box-none",
+        children={self.objective,self.deliveryStatus,self.hint}}
     self.navPanel=UI.Panel{id="career-navigation-card",position="absolute",left=12,top=12,width=192,padding=0,gap=5,
-        backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mapOpen,self.objective,self.deliveryStatus,self.hint}}
+        backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mapOpen,self.navText}}
     self.pauseButton=hudButton("Ⅱ",actions.pause,"career-hud-pause",52)
     self.pauseButton:SetStyle{position="absolute",right=12,top=12}
     self.menuButton=hudButton("手机",function() actions.phone("apps") end,"career-phone",80)
     self.menuButton:SetStyle{position="absolute",right=74,top=12}
+    self.menuButton:SetStyle{paddingLeft=24}
+    self.menuButton:AddChild(LineIcon{kind="phone",position="absolute",left=0,top="25%",width=22,height="50%",pointerEvents="none"})
     -- 空白画面支持单指拖动视角，其他手指仍可独立持有转向与踏板。
     self.lookArea=UI.Panel(Theme.Full{pointerEvents="box-only",
         onPointerDown=function(event)
@@ -173,6 +189,10 @@ function View:Init(actions)
     safe:AddChild(self.menuButton)
     self.mountButton=hudButton("上车",actions.mount,"career-mount",80)
     self.interactButton=hudButton("交互",actions.interact,"career-interact",80)
+    for _,item in ipairs({{button=self.mountButton,kind="bike"},{button=self.interactButton,kind="interact"}}) do
+        item.button:SetStyle{paddingLeft=24}
+        item.button:AddChild(LineIcon{kind=item.kind,position="absolute",left=0,top="25%",width=22,height="50%",pointerEvents="none"})
+    end
     self.actionTray=UI.Row{position="absolute",right=12,top="50%",gap=24,padding=0,
         backgroundColor={0,0,0,0},pointerEvents="box-none",children={self.mountButton,self.interactButton}}
     safe:AddChild(self.actionTray)
@@ -204,6 +224,8 @@ function View:Init(actions)
     self.notice=label("",12,C.amber,{position="absolute",top=12,left="30%",right="22%",whiteSpace="normal",textAlign="center",maxLines=3})
     self.root:AddChild(self.home); self.root:AddChild(self.game); self.root:AddChild(self.phone)
     self.root:AddChild(self.overlay); self.root:AddChild(self.notice)
+    self.loadingScreen=LoadingScreen.New()
+    self.root:AddChild(self.loadingScreen.root)
     self.worldMap=MapOverlay.New(function() self:CloseWorldMap() end,function(id)
         self.actions.setWaypoint(id)
         self:CloseWorldMap()
@@ -225,7 +247,9 @@ function View:OpenWorldMap()
     self:ClosePhone();self:CloseConversation()
     self.overlay:SetVisible(false);self.speech:SetVisible(false);self.notice:SetText("")
     self.blocked=true;self:ResetInput();self.controls:SetEnabled(false)
-    self.worldMap:Open(self.lastMapPosition or {x=0,z=-20,yaw=0},self.lastTarget,self.lastOrder)
+    local mapTarget=self.lastTarget
+    if self.lastIndoor then mapTarget=nil end
+    self.worldMap:Open(self.lastMapPosition or {x=0,z=-20,yaw=0},mapTarget,self.lastOrder)
 end
 function View:CloseWorldMap()
     self.worldMap:Close()
@@ -247,14 +271,19 @@ function View:ShowConversation(name,text,choices)
     destroyChildren(self.conversationBody)
     self.conversationBody:AddChild(label("现场交谈 · "..name,17,C.amber,{id="career-conversation-name",fontWeight="bold"}))
     self.conversationBody:AddChild(label(text,13,C.white,{id="career-conversation-line",whiteSpace="normal",maxLines=4}))
-    local options=UI.Row{id="career-conversation-options",width="100%",flexWrap="wrap",gap=6,padding=0}
+    local options=UI.Row{id="career-conversation-options",width="100%",flexWrap="wrap",gap=6,padding=0,
+        paddingBottom=2/math.max(.1,UI.GetScale())}
     self.conversationBody:AddChild(options)
     for _,choice in ipairs(choices) do
+        local touch=PhoneKit.TouchSize()
+        local pixels=UI.Theme.FontSize(12)
+        local measured=UI.MeasureTextWidth(choice.text,pixels,UI.Theme.FontFace(nil,"bold"))
+        -- 按真实文案保留最小宽度；竖屏容不下并排按钮时整项换行，不缩字或截断。
         options:AddChild(btn(choice.text,function()
             self:CloseConversation()
             if choice.onClick then choice.onClick() end
-        end,choice.primary,{id="career-conversation-"..choice.id,width="48%",flexGrow=1,flexShrink=1,
-            height=44,padding=5,fontSize=12}))
+        end,choice.primary,{id="career-conversation-"..choice.id,width="48%",flexGrow=1,flexShrink=0,
+            height=touch,minHeight=touch,minWidth=math.max(touch,math.ceil(measured)+36),padding=5,fontSize=12,minFontSize=12}))
     end
     self.conversation:SetVisible(true)
 end
@@ -268,6 +297,7 @@ function View:UpdateSpeech(dt)
     if self.speechTime==0 then self.speech:SetVisible(false) end
 end
 function View:ShowHome(hasSave,message)
+    self.loadingScreen:Hide()
     self:CloseWorldMap()
     self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ClosePhone()
@@ -280,16 +310,26 @@ function View:ShowHome(hasSave,message)
     if message then self.homeActions:AddChild(label(message,10,C.muted,{whiteSpace="normal"})) end
 end
 function View:ShowGame()
+    self.loadingScreen:Hide()
     self:CloseWorldMap()
     self:CloseConversation()
     self.home:SetVisible(false); self.game:SetVisible(true); self.overlay:SetVisible(false)
     self.controlWidth,self.controlHeight=0,0
     self.blocked=false; self.controls:SetEnabled(self.phonePage=="")
 end
-function View:ShowLoading(title,detail,fraction)
-    self:ShowDialog(title,detail..string.format("\n已完成 %.0f%%",fraction*100),{})
+function View:ShowLoading(title,detail,fraction,numbers)
+    if not self.loadingScreen.root:IsVisible() then
+        self:CloseWorldMap(); self:CloseConversation(); self:ClosePhone()
+        self:ResetInput(); self.controls:SetEnabled(false)
+        self.overlay:SetVisible(false); self.speech:SetVisible(false); self.notice:SetText("")
+        self.speechTime=0; self.blocked=true
+        if self.actions.endCall then self.actions.endCall() end
+        print("[生涯加载] 固定背景与状态区已打开；后续进度只更新已有控件")
+    end
+    self.loadingScreen:Show(title,detail,fraction,numbers)
 end
 function View:ShowDialog(title,text,buttons,forceScroll)
+    self.loadingScreen:Hide()
     self:CloseWorldMap()
     self:CloseConversation(); self.speech:SetVisible(false); self.speechTime=0
     self:ResetInput(); self.controls:SetEnabled(false)
@@ -532,12 +572,21 @@ function View:BuildPhone(state,offer,active)
             self.phoneTitle:SetText("买断确认")
             text(property.name,18)
             text(string.format("一次买断 ¥%.0f\n购后至少保留 ¥%.0f 生活费",property.buyPriceCents/100,property.reserveCents/100),15)
+            local value=require("Career.Property").Value(state,property.id)
             text("游戏内固定定价，非现实房价。取得永久产权后，对应住处免每晚房费；不会自动入住或移动人物。",13)
+            if value then text(value.detail..string.format("\n按租金折合约%d晚；不是快速回本投资，也没有被动收入。",value.rentEquivalentNights or 0),12,C.muted) end
             button("确认买断",function() a.confirmBuyHome(property.id) end,true,"career-property-confirm")
             button("先不买",function() a.phone("progression") end,false,"career-property-cancel")
         end
     elseif page=="progression" then
         text(Progress.Chapter(state),17,C.amber)
+        local goal=Progress.NextGoal(state)
+        action("career-next-goal",goal.title,goal.detail,nil,"导航到下一步",function()
+            if goal.pointId then a.setWaypoint(goal.pointId);a.closePhone() end
+        end,true)
+        local forecast=Progress.ProgressForecast(state)
+        text(string.format("首车资金 %.2f / %.2f 元",state.cashCents/100,forecast.targetCents/100),13,C.amber)
+        text(forecast.assumptions,11,C.muted)
         local level,name=Progress.Level(state)
         text(string.format("%s Lv.%d · 携带容量%d份",name,level,Progress.Capacity(state)),13)
         text("装备、买车与职业报名需到南城车行；住房可在手机选择，再去对应入口入住。",11,C.muted)
@@ -573,7 +622,9 @@ function View:BuildPhone(state,offer,active)
         if home.width then button("到门口进入住处",a.enterHousing,false) end
         button("到休息点过夜",a.sleepHousing,false)
         section("工作周 · 解锁后可选")
-        text("第10天起开放，每周需重新亲送10单并活动15分钟。亲送与模拟收入不重复，房费按7晚另算。",11,C.muted)
+        text("第10天起开放，每周需重新亲送10单并活动15分钟。亲送仅作资格，安排的是未来完整7天，过往亲送不再抵扣模拟单。",11,C.muted)
+        local week=Progress.WorkWeekPreview(state)
+        text(string.format("未来7天：%d单 · 收入%.2f元 · 总成本%.2f元 · 净存%.2f元",week.simulatedOrders,week.grossCents/100,week.costsCents/100,week.netCents/100),12,C.amber)
         button("查看并确认7天排班",a.workWeek,false)
         section("人生第一辆摩托")
         text("现金达到5万元后首购二手训练版：46000元；另备2000元护具训练、2000元周转。",11,C.muted)
@@ -729,15 +780,22 @@ function View:Update(state,actor,target,active,offer,dt)
     local indoor=state.currentSpace and state.currentSpace~="city"
     self.lastIndoor=indoor==true
     self.mountButton:SetVisible(not indoor)
-    self.interactButton:SetVisible(indoor or state.contactName~=nil or target~=nil and target.distance<12)
+    local nearbyService=false
+    for _,point in ipairs(Config.pointList) do
+        if (point.kind=="charge" or point.kind=="rest" or point.kind=="merchant")
+            and Config.DistanceTo(point.id,actor.x,actor.z)<=Config.INTERACTION_RADIUS then nearbyService=true; break end
+    end
+    self.interactButton:SetVisible(indoor or nearbyService or state.contactName~=nil or target~=nil and target.distance<12)
     self.map.root:SetVisible(true)
     self.mapOpen:SetVisible(true)
     self.mapCaption:SetText("附近街区 · "..World.District(actor.x,actor.z).label)
     self.interactButton:SetText(indoor and (target and target.name=="床边 · 休息" and "休息" or "出门")
+        or active and nearbyService and target and target.distance>=12 and "交互"
         or active and (active.status=="accepted" and "取餐" or "送达") or state.contactName and "交谈" or "交互")
     self.dashboard:Update(state,actor)
-    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance)) or "")
-    self.objective:SetVisible(target~=nil)
+    self.objective:SetText(target and (target.name.." · "..mapDistance(target.distance))
+        or state.nextGoal and ("下一步 · "..state.nextGoal.title) or "手机查看下一步目标")
+    self.objective:SetVisible(true)
     if active then
         local minutes=math.ceil(math.abs(active.remainingHours)*60)
         self.deliveryStatus:SetText(string.format("%s · %s%d分钟",active.status=="accepted" and "取餐" or "送达",
@@ -761,31 +819,51 @@ function View:Update(state,actor,target,active,offer,dt)
 end
 function View:LayoutControls()
     local area=self.controlLayer:GetAbsoluteLayout()
-    if area.w<=60 or area.h<=60 then return end
+    if area.w~=area.w or area.h~=area.h or area.w==math.huge or area.h==math.huge or area.w<=60 or area.h<=60 then return end
     local bounds=self.hudSafe:GetAbsoluteLayout()
     local w,h=bounds.w,bounds.h
+    -- 首次ShowGame时安全区尚未参与Yoga，非有限尺寸不能进入字号/宽度缓存。
+    if w~=w or h~=h or w==math.huge or h==math.huge or w<=60 or h<=60 then return end
     local size=math.max(18,18/math.max(.1,UI.GetScale()))
-    local navWidth=math.min(290*size/18,w*.34)
-    self.navPanel:SetStyle{width=navWidth,gap=10,top=76}
-    self.dashboard:Layout()
-    self.dashboard.root:SetStyle{right=174,top=18}
+    local short=h<440 and w>h
+    local navWidth=short and math.min(w-24,math.max(350,w*.65))
+        or math.min(290*size/18,math.max(150,w*.34),math.max(1,w-24))
+    local styleKey=string.format("%.2f:%.2f:%.2f",w,h,size)
+    self.dashboard:Layout(w,h)
+    if self.hudStyleKey~=styleKey then
+        self.hudStyleKey=styleKey
+        -- 短横屏将地图与正文分栏；文字有实际行宽，底部仍留给步行/驾驶操作。
+        self.navPanel:SetStyle{width=navWidth,gap=10,top=self.dashboard.navigationTop or 76,
+            flexDirection=short and "row" or "column",alignItems="flex-start"}
+        self.mapOpen:SetStyle{width=short and 96 or "100%",flexShrink=0}
+        self.navText:SetStyle{width=short and "auto" or "100%",flexGrow=short and 1 or 0,
+            flexBasis=short and 0 or "auto",minWidth=0,flexShrink=0,
+            paddingBottom=2/math.max(.1,UI.GetScale())}
+        self.notice:SetStyle{left=12,right=12,top=h*.70,fontSize=size}
+        local touchSize=hudTouchHeight(size)
+        self.pauseButton:SetStyle{top=12,right=12,width=touchSize,height=touchSize,minWidth=touchSize,minHeight=touchSize}
+        self.menuButton:SetStyle{top=12,right=touchSize+28,width=80,fontSize=size,height=touchSize,minHeight=touchSize}
+        for _,button in ipairs({self.mountButton,self.interactButton}) do
+            button:SetStyle{fontSize=size,minFontSize=size,height=touchSize,minHeight=touchSize}
+        end
+        -- 短横屏动作放在导航右侧，右下留出完整摇杆/踏板矩形，而不是逼操作控件出屏。
+        self.actionTray:SetStyle{top=short and (self.dashboard.actionTop or 76) or math.max(150,h-190),gap=w<600 and 8 or 24}
+        self.objective:SetStyle{fontSize=size*1.1,minFontSize=size*1.1,lineHeight=1}
+        self.deliveryStatus:SetStyle{fontSize=size,minFontSize=size,lineHeight=1}
+        self.map.root:SetStyle{height=h<440 and 64 or 88}
+        self.mapCaption:SetVisible(false)
+        self.mapOpenHint:SetVisible(false)
+        self.mapOpen:SetVisible(true)
+        self.hint:SetVisible(false)
+        self.controlHint:SetVisible(false)
+    end
     local dash=self.dashboard.root:GetLayout()
-    self.notice:SetStyle{left="25%",right="25%",top=h*.70,fontSize=size}
-    local touchSize=PhoneKit.TouchSize()
-    self.pauseButton:SetStyle{top=12,right=12,width=touchSize,height=touchSize,minWidth=touchSize,minHeight=touchSize}
-    self.menuButton:SetStyle{top=12,right=touchSize+28,width=96,fontSize=size}
-    self.actionTray:SetStyle{top=math.max(150,h-190),gap=24}
-    self.objective:SetStyle{fontSize=size*1.1}
-    self.deliveryStatus:SetStyle{fontSize=size}
-    self.map.root:SetStyle{height=88}
-    self.mapCaption:SetVisible(false)
-    self.mapOpenHint:SetVisible(false)
-    self.mapOpen:SetVisible(true)
-    self.objective:SetVisible(self.lastTarget~=nil)
+    local nav=self.navPanel:GetLayout()
+    self.objective:SetVisible(true)
     self.deliveryStatus:SetVisible(self.lastActive==true)
-    self.hint:SetVisible(false)
-    self.controlHint:SetVisible(false)
-    local signature=string.format("%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.interactButton:IsVisible()))
+    -- 正文首Render/文案更新会改变导航自然高度，不能只按状态栏高度缓存避让。
+    local signature=string.format("%.1f:%.1f:%.1f:%.1f:%.1f:%s:%s:%s",w,h,dash.h,nav.w,nav.h,
+        tostring(self.mountedControls),tostring(self.lastTarget~=nil),tostring(self.interactButton:IsVisible()))
     local layoutChanged=self.hudLayoutSignature~=signature
     self.hudLayoutSignature=signature
     local sizeChanged=area.w~=self.controlWidth or area.h~=self.controlHeight
@@ -794,14 +872,19 @@ function View:LayoutControls()
         self.controls:SetCompact(area.w<920 or area.h<470)
         self.controls:ApplyScheme(ControlSettings.Current(),area.w,area.h)
     end
-    if self.mountedControls and (layoutChanged or sizeChanged) then
-        -- 生涯独立摆位，不覆盖保存的竞速方案；驾驶操作靠屏幕下沿，不悬在视野上方。
-        for _,key in ipairs({"gas","brake","steering"}) do
-            local widget=self.controls.widgets[key]
-            local box=widget:GetLayout()
-            local x=key=="steering" and 12 or key=="gas" and area.w-box.w-12 or area.w-box.w-116
-            widget:SetStyle{left=math.max(0,x),top=math.max(0,area.h-box.h-16)}
+    if layoutChanged or sizeChanged then
+        if self.mountedControls then
+            -- 生涯独立摆位，不覆盖保存的竞速方案；驾驶操作靠屏幕下沿。
+            for _,key in ipairs({"gas","brake","steering"}) do
+                local widget=self.controls.widgets[key]
+                local width,height=self.controls:ButtonSize(key,ControlSettings.Current())
+                local x=key=="steering" and 12 or key=="gas" and area.w-width-12 or area.w-width-116
+                widget:SetStyle{left=math.max(0,x),top=math.max(0,area.h-height-16)}
+            end
+        else
+            self.walkStick.root:SetStyle{left=22,top=math.max(0,area.h-182)}
         end
+        UI.Layout()
         self:AvoidHUDControls()
     end
 end
@@ -820,8 +903,9 @@ function View:AvoidHUDControls()
     local function overlaps(x,y,w,h,r)
         return x<r.x+r.w+6 and x+w>r.x-6 and y<r.y+r.h+6 and y+h>r.y-6
     end
-    for _,key in ipairs({"gas","brake","steering"}) do
-        local widget=self.controls.widgets[key]
+    local widgets=self.mountedControls and {self.controls.widgets.gas,self.controls.widgets.brake,self.controls.widgets.steering}
+        or {self.walkStick.root}
+    for _,widget in ipairs(widgets) do
         local b=widget:GetAbsoluteLayout()
         local x,y,w,h=b.x-area.x,b.y-area.y,b.w,b.h
         if w>0 and h>0 then

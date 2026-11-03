@@ -106,6 +106,7 @@ function Checks.Run()
         assert(original.engagements==nil and Engagements.Validate(original))
         local beforeWrites=writes
         assert(Engagements.State(original).list[1].status=="locked")
+        assert(Engagements.NextGoal(original)==nil,"未解锁人物链不制造新任务")
         assert(writes==beforeWrites and Store.Get().engagements==nil,"只读State不能迁移或写档")
         assert(Store.Load() and Store.Get().engagements==nil,"无委托字段的v1旧档必须兼容")
 
@@ -121,6 +122,12 @@ function Checks.Run()
         assert(not Engagements.Claim("engagement:v1:breakfast_shift",context("breakfast")))
         deliver() -- 教学首单只能解锁，不可以追补委托进度。
         assert(row("breakfast_shift").status=="available")
+        beforeWrites=writes
+        local nextGoal=assert(Engagements.NextGoal(Store.Get()))
+        assert(nextGoal.id=="breakfast_shift" and nextGoal.stage=="available" and nextGoal.rewardCents==1500)
+        nextGoal.rewardCents=999999
+        assert(assert(Engagements.NextGoal(Store.Get())).rewardCents==1500 and writes==beforeWrites,
+            "目标快照不能修改规则、自动接取或发奖金")
         assert(Store.Rest("bridge"))
         assert(Store.Transaction(function(p) p.equipment={insulated_box=true,large_box=true}; return true end))
         -- 接委托之前已接的同店订单，哪怕之后准时亲送，也不能计入。
@@ -225,7 +232,7 @@ function Checks.Run()
         assert(Progress.BuyMotorcycle("sport"))
         assert(Progress.Train())
         assert(not Progress.CompleteTraining(false))
-        deliver()
+        assert(not Delivery.GetOffer() and not Delivery.Accept(),"只报名未通过训练时不允许再接配送")
         assert(deliveryCount("mechanic_balance")==0,"只报名未通过训练不计")
         assert(Progress.CompleteTraining(true))
         local first,second=acceptOrder(),acceptOrder()

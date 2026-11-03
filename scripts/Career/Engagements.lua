@@ -292,6 +292,30 @@ function Engagements.State(p)
     return state
 end
 
+-- 纯查询给主HUD/手机复用当前人物链；必须传快照，不回退Store.Get、不补实例或领奖。
+---@param p CareerProfile
+---@return table?
+function Engagements.NextGoal(p)
+    if not Engagements.Validate(p) then return nil end
+    local state=Engagements.State(p)
+    for _,row in ipairs(state.list) do
+        if not row.claimed and row.status~="locked" then
+            local current,target=0,1
+            if row.accepted and not row.canClaim then
+                for _,objective in ipairs(row.objectives) do
+                    if not objective.done then current,target=objective.current,objective.target; break end
+                end
+            end
+            return {id=row.id,title=row.title,detail=row.canAccept and row.objectiveText or row.progressText,
+                pointId=row.nextPointId,point=row.nextPointId,current=current,target=target,
+                remaining=math.max(0,target-current),action="engagement",stage=row.status,
+                instanceId=row.instanceId,rewardCents=row.rewardCents,
+                rewardNote="既有人物委托一次谢礼，必须完成条件并到现场交付；查询不发钱"}
+        end
+    end
+    return nil
+end
+
 ---@param id string Definitions中的id，不能用实例ID接取
 ---@param ctx CareerEngagementContext 必填；由Session实时生成
 ---@return boolean, string

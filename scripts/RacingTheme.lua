@@ -2,6 +2,8 @@
 -- All page/component styling lives here; the UI library owns fonts, frames and DPI.
 local UI = require("urhox-libs/UI")
 local Racing = {}
+Racing.HeroImage = "image/career_city_rider_menu_20261101090041.png"
+Racing.FontPath = "Fonts/NotoSerifSC-Game.otf"
 Racing.Colors = {
     amber = {226, 177, 101, 255}, cyan = {112, 207, 211, 255},
     white = {239, 242, 243, 255}, muted = {167, 177, 184, 255},
@@ -15,7 +17,7 @@ end
 local shadow = {{x = 0, y = 3, blur = 10, color = {0, 0, 0, 65}}}
 Racing.Theme = UI.Theme.ExtendTheme(UI.Theme.defaultTheme, {
     fonts = {{family = "sans", weights = {
-        normal = "Fonts/NotoSerifSC-Game.otf", bold = "Fonts/NotoSerifSC-Game.otf",
+        normal = Racing.FontPath, bold = Racing.FontPath,
     }}},
     colors = {
         primary = C.amber, primaryHover = {242, 199, 131, 255}, primaryPressed = {177, 130, 64, 255},

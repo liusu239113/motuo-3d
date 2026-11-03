@@ -3,6 +3,20 @@ local Config=require("Career.Config")
 local Housing=require("Career.HousingData")
 local Property=require("Career.Property")
 local Life={}
+-- 明确的迟到反馈快照，供订单HUD/交付前提示使用；不能从历史流水推断已送达单的迟到。
+-- 倒计时恰为0仍准时；late=true或remainingHours<0均显示迟到，与委托拒计保持一致。
+-- 不扣款、不发钱、不写标记；调用方应在Delivery移除订单前获取此快照。
+---@param order CareerOrder
+---@return table
+function Life.DeliveryFeedback(order)
+    local late=order.late==true or order.remainingHours<0
+    return {orderId=order.id,late=late,delayGameMinutes=late and math.max(0,math.ceil(-order.remainingHours*60)) or 0,
+        feeCents=order.feeCents,penaltyCents=0,payableCents=order.feeCents,
+        meetsOnTimeCondition=not late and not order.tutorial,
+        title=late and "这单迟到了，配送费不暗扣" or "配送时限正常",
+        detail=late and "仍按接单原价结算；此单不计要求准时亲送的人物委托，下一份新单仍可正常争取。请安全完成交付。"
+            or "按接单原价结算；人物委托另需满足接取后新单、商家和现场交付等条件。"}
+end
 local function restAdvice(p,home,title,detail,urgent)
     local order=p.activeOrders[1]
     if order then

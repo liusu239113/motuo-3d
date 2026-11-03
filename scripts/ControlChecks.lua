@@ -22,6 +22,7 @@ local Checks = {}
 ---@field files table<string, string>
 ---@field writes integer
 ---@field reads integer
+---@field failWrite? boolean
 
 -- 用资源缓存读取文本脚本，不能使用沙箱已移除的 loadfile/dofile。
 -- ReadString 读取的是带终止符的序列化字符串，源码必须逐行读取。
@@ -58,6 +59,7 @@ local function newSettings(source, store)
                 end,
                 WriteString = function(_, text)
                     assert(opened and mode == FILE_WRITE, "[ControlChecks] 非法写入内存文件")
+                    if store.failWrite then return false end
                     store.files[path] = text
                     store.writes = store.writes + 1
                     return true
@@ -98,6 +100,7 @@ function Checks.Run(hud, controls)
     check(not UI.Input.HasActivePointer(), "真实手指按住时不能运行测试")
     check(not hud.portraitActive and not hud.portrait:IsVisible(), "请在横屏提示关闭后运行")
     check(not hud.dragSlot, "不能打断玩家正在进行的布局拖动")
+    check(not hud:IsModalOpen(), "请先关闭原业务模态，测试不得销毁玩家正在查看的弹窗")
     check(hud.screen ~= "garage", "请先退出车库，避免页面切换销毁真实车库预览")
     for _, owner in pairs(controls.pointers) do check(owner == -1, "开始测试前操控指针必须释放") end
 
@@ -492,6 +495,79 @@ function Checks.Run(hud, controls)
             "六方案滑杆下缘手势抬手必须结束拖动并保存一次")
         zero("六方案工具面板手势不得触发背后的驾驶输入")
         passed("六方案真实换行、全部子控件完整容纳、死区滑杆下缘新触摸命中与保存")
+
+        -- A captured first finger must not write through second-finger dialogs,
+        -- the portrait cover, or a real overlay; fresh hover is not ownership.
+        local reset = assert(findButton(hud.settingsTools, "恢复默认"))
+        -- Brake stays outside the expanded tool panel, unlike the gas position
+        -- deliberately moved into its footprint by earlier regression groups.
+        down(brake, FIRST, 0.5, 0.5, true)
+        send(PointerEvent.Types.PointerMove, FIRST, area.x + area.w * 0.88, area.y + area.h * 0.83, true)
+        click(reset)
+        check(hud.settingsResetConfirm:IsVisible() and not hud.dragSlot, "第二指打开恢复确认必须立即取消旧布局捕获")
+        local beforeReset = store.writes
+        click(assert(findButton(hud.settingsResetConfirm, "确认")))
+        local defaultX, defaultY = Settings.DefaultPos.brake[1], Settings.DefaultPos.brake[2]
+        local resetWrites = store.writes
+        send(PointerEvent.Types.PointerMove, FIRST, area.x + area.w * 0.60, area.y + area.h * 0.90, true)
+        finish(PointerEvent.Types.PointerUp, FIRST)
+        check(Settings.Current().pos.brake[1] == defaultX and Settings.Current().pos.brake[2] == defaultY
+            and store.writes == resetWrites and resetWrites > beforeReset,
+            "恢复后旧指针迟到Move/Up不得反写默认落点或额外保存")
+        local afterReset = store.writes
+        send(PointerEvent.Types.PointerMove, FIRST, lower.x + lower.w * 0.8, lower.y + lower.h / 2, true)
+        check(store.writes == afterReset and not hud.dragSlot and not deadzoneSlider.state.dragging,
+            "无按下的hover不得重启已取消编辑或滑杆")
+        active[FIRST] = nil
+        passed("第二指确认恢复默认后旧drag/hover不得反写")
+
+        for _, cover in ipairs({"确认", "竖屏", "模态"}) do
+            down(deadzoneSlider, FIRST, 0.5, 0.5, true)
+            check(deadzoneSlider.state.dragging, "遮罩用例须先真实捕获滑杆")
+            local value, writes = Settings.Current().steeringDeadzone, store.writes
+            if cover == "确认" then click(reset)
+            elseif cover == "竖屏" then hud.portrait:Show(); hud:UpdateLayout()
+            else hud:ShowNotice("捕获隔离测试", "遮罩期间不能修改后面的操作设置。") end
+            send(PointerEvent.Types.PointerMove, FIRST, lower.x + lower.w - 2, lower.y, true)
+            finish(PointerEvent.Types.PointerUp, FIRST)
+            check(Settings.Current().steeringDeadzone == value and store.writes == writes
+                and not deadzoneSlider.state.dragging and deadzoneSlider.settingsPointer == nil,
+                "滑杆不得跨" .. cover .. "写值、保存或残留dragging")
+            if cover == "确认" then click(assert(findButton(hud.settingsResetConfirm, "取消")))
+            elseif cover == "竖屏" then hud.portrait:Hide()
+            else hud:CloseModal() end
+            layout()
+            -- Fresh second pointer must own a NEW gesture after the cover closes.
+            down(deadzoneSlider, SECOND, 0.5, 0.5, false)
+            check(deadzoneSlider.settingsPointer == SECOND, "遮罩关闭后新手势须可正常开始")
+            finish(PointerEvent.Types.PointerCancel, SECOND)
+            local frozen = Settings.Current().steeringDeadzone
+            send(PointerEvent.Types.PointerMove, SECOND, lower.x + 2, lower.y, false)
+            check(Settings.Current().steeringDeadzone == frozen and not deadzoneSlider.state.dragging,
+                "PointerCancel后hover不得复活滑杆")
+            active[SECOND] = nil
+        end
+        passed("真实确认/竖屏/模态遮罩阻断滑杆捕获，Cancel后可重新操作")
+
+        local oldFile = store.files["pursuit_controls.txt"]
+        local callback = hud.actions.settings
+        local exits = 0
+        hud.actions.settings = function(enabled)
+            if not enabled then exits = exits + 1 end
+            callback(enabled)
+        end
+        store.failWrite = true
+        click(complete)
+        check(hud.screen == "settings" and controls.editor ~= nil and exits == 0,
+            "真实完成按钮保存失败必须留在编辑页且不得调用退出业务回调")
+        check(hud.settingsHint:GetText() == "操作方案写入失败，请重试"
+            and store.files["pursuit_controls.txt"] == oldFile, "写失败必须保留具体重试提示和原文件")
+        store.failWrite = false
+        click(complete)
+        check(hud.screen == "pause" and controls.editor == nil and exits == 1,
+            "用户明确重试保存成功后才允许退出一次")
+        hud.actions.settings = callback
+        passed("真实WriteString失败→完成不退出/具体失败提示保留→重试成功才退出")
     end)
 
     -- 每步清理独立 pcall：即使某个 UI 恢复步骤失败，也必须继续恢复共享函数和业务回调。
@@ -504,6 +580,9 @@ function Checks.Run(hud, controls)
         cleanup(function() if active[id] then finish(PointerEvent.Types.PointerCancel, id) end end)
     end
     cleanup(function()
+        hud:CloseModal()
+        hud.portrait:Hide()
+        hud:CancelSettingsInput()
         if hud.dragSlot then hud:EndDragSettingButton(nil, true) end
         hud:SetScreen(oldScreen)
         controls:SetEditor(oldEditor)

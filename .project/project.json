@@ -6,14 +6,13 @@
     "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
-  "version": "1.0.18",
+  "version": "1.0.23",
   "taptap_publish": {
     "title": "公路狂飙：从外卖骑手到职业车手",
     "description": "王二狗带着50元和表哥借来的战损电动车，在南城送餐、维持生活、改善装备与住处，攒钱购入摩托，走向职业赛场。保留独立竞速模式与原有进度。",
     "category": "simulation",
     "screen_orientation": "landscape",
     "collection_type": "racing",
-    "trial_note": "",
     "app_platforms": "1,2",
     "developer_id": 377480,
     "app_id": 1013102,
@@ -22,10 +21,11 @@
   "assets": {
     "icon": "",
     "screenshots": [],
-    "promotional_image": ""
+    "promotional_image": "",
+    "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png"
   },
   "dc_publish_sync": {
-    "synced": true,
+    "synced": false,
     "dcVersion": "V-20261031",
     "dcStatus": "INIT",
     "baseFields": {
@@ -40,10 +40,16 @@
       "cover_vertical_url": null,
       "screenshot_urls": null
     },
-    "pending": {},
+    "pending": {
+      "icon_url": "https://img.tapimg.com/market/images/ef4719159691d7db73760cadfc67eac4.png"
+    },
     "baseGameplayDemoVideoId": 0
   },
   "metadata": {
-    "updated_at": "2026-10-31T03:51:48.738Z"
+    "updated_at": "2026-11-03T03:52:50.904Z"
+  },
+  "test_qrcode": {
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793677970771.png",
+    "generated_at": "2026-11-03T03:52:50.904Z"
   }
 }

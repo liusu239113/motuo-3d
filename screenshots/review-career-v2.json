@@ -1,0 +1,92 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 67311,
+    "frames_completed": 1800,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-10-31 18_21_42_437][200] ERROR: Execute Lua function failed: [string \"Career/Session\"]:830: [string \"Career/Checks\"]:356: 局部地图应通过生产actions直接打开全城地图并清输入\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"Career/Session\"]:830: in method 'Update'\n\t[string \"main\"]:1043: in function 'HandleUpdate'",
+                    "frame": 130
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 20303ms (threshold: 10000ms)",
+                    "frame": 131
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 2467.868896484375
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.618000030517579
+        },
+        {
+            "frame": 900,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 20.836000442504884
+        },
+        {
+            "frame": 1800,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.628999710083009
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 20302.970703125,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 1,
+        "total_errors": 2
+    }
+}

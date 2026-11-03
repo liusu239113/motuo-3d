@@ -4,6 +4,7 @@ local Visuals = require("Career.ActorVisuals")
 local Vehicles = require("Career.VehicleData")
 local Footprints = require("Career.VehicleFootprints")
 local Collision = require("Career.FootprintCollision")
+local CityCollision = require("Career.CityCollision")
 local V = Vector3
 
 ---@class CareerActorInput
@@ -153,17 +154,70 @@ function Actor:ParkingSnapshot()
     return parks
 end
 function Actor:RestoreVehicles(pos)
-    self.parking={}
+    -- Restore is a static parking transaction, not a live spawn query.
+    --       saved A | saved B (legal)     [invalid C]
+    -- Reserve ALL legal target shells before repairing C; traffic/pedestrians,
+    -- the previous active vehicle and pairs() order must never move A or B.
+    -- Illegal overlaps: active target wins, then vehicle-id lexical order.
+    -- Only rejected targets search <=25m; failure leaves the previous fleet intact.
+    local active=pos.activeVehicle or Vehicles.EBIKE
+    local targets={[active]={x=pos.bikeX,z=pos.bikeZ,yaw=pos.bikeYaw}}
+    local ids={active}
+    local others={}
     for id,p in pairs(pos.vehicleParking or {}) do
-        local x,z=self.city:FindShapeFree(p.x,p.z,Footprints.Get(id),p.yaw,"vehicle",0,id)
-        self.parking[id]={x=x,z=z,yaw=p.yaw}
+        if id~=active then targets[id]={x=p.x,z=p.z,yaw=p.yaw}; others[#others+1]=id end
     end
-    self.vehicleId=pos.activeVehicle or Vehicles.EBIKE
-    local x,z=self.city:FindShapeFree(pos.bikeX,pos.bikeZ,self:Footprint(true),pos.bikeYaw,"vehicle",0,self.vehicleId)
-    self.bikeX,self.bikeZ,self.bikeYaw=x,z,pos.bikeYaw
-    self.parking[self.vehicleId]={x=x,z=z,yaw=pos.bikeYaw}
-    self.visuals:SetVehicle(self.vehicleId)
-    self.visuals:UpdateParking(self.parking,self.city)
+    table.sort(others)
+    for _,id in ipairs(others) do ids[#ids+1]=id end
+    local planned,reserved,rejected,repairs={},{},{},{}
+    local function free(id,x,z,yaw)
+        local shape=Footprints.Get(id)
+        if not self.city:StaticShapeFree(x,z,shape,yaw,"vehicle",self.city:Surface(x,z)) then return false end
+        local posed=Collision.Pose(shape,x,z,yaw)
+        for _,other in ipairs(reserved) do
+            if not Collision.Free(posed,other,Collision.SKIN) then return false end
+        end
+        return true
+    end
+    local function reserve(id,x,z,yaw)
+        planned[id]={x=x,z=z,yaw=yaw}
+        reserved[#reserved+1]=Footprints.At(id,x,z,yaw)
+    end
+    for _,id in ipairs(ids) do
+        local p=targets[id]
+        assert(Vehicles.Known(id) and type(p.x)=="number" and type(p.z)=="number" and type(p.yaw)=="number"
+            and p.x==p.x and p.z==p.z and p.yaw==p.yaw
+            and math.abs(p.x)<math.huge and math.abs(p.z)<math.huge and math.abs(p.yaw)<math.huge,"Invalid parking restore target")
+        if free(id,p.x,p.z,p.yaw) then reserve(id,p.x,p.z,p.yaw)
+        else rejected[#rejected+1]=id end
+    end
+    for _,id in ipairs(rejected) do
+        local p=targets[id]
+        local found=false
+        for ring=1,100 do
+            for i=1,32 do
+                local angle=i*math.pi/16
+                local x,z=p.x+math.sin(angle)*ring*.25,p.z+math.cos(angle)*ring*.25
+                if free(id,x,z,p.yaw) then
+                    reserve(id,x,z,p.yaw)
+                    repairs[#repairs+1]={id=id,fromX=p.x,fromZ=p.z,x=x,z=z}
+                    found=true; break
+                end
+            end
+            if found then break end
+        end
+        assert(found,"No static parking restore position within 25m for "..id.."; previous fleet retained")
+    end
+    local current=planned[active]
+    self.vehicleId=active
+    self.bikeX,self.bikeZ,self.bikeYaw=current.x,current.z,current.yaw
+    self.parking,self.parkingRepairs=planned,repairs
+    self.visuals:SetVehicle(active)
+    self.visuals:UpdateParking(planned,self.city)
+    for _,repair in ipairs(repairs) do
+        print(string.format("[停车恢复修复] %s 非法静态/重叠车位 (%.3f,%.3f) -> (%.3f,%.3f)；合法车位保持原样",
+            repair.id,repair.fromX,repair.fromZ,repair.x,repair.z))
+    end
 end
 
 ---@param x number
@@ -180,8 +234,9 @@ function Actor:Move(x, z, dx, dz, radius, yaw, ignoreId)
     local walking=radius==WALK_RADIUS
     local shape=walking and self:Footprint(false) or self:Footprint(true)
     for _ = 1, steps do
+        local height=walking and self.walkHeight or self.city:Surface(x+stepX,z+stepZ)
         local nextX,nextZ,hit=self.city:MoveShape(x,z,stepX,stepZ,shape,yaw or self.yaw,
-            walking and "walk" or "vehicle",self.walkHeight,ignoreId)
+            walking and "walk" or "vehicle",height,ignoreId)
         if walking then self.walkHeight=self.city:WalkSurface(nextX,nextZ,self.walkHeight) end
         if hit or math.abs(nextX-x-stepX)+math.abs(nextZ-z-stepZ)>.0001 then blocked=true end
         x,z=nextX,nextZ
@@ -199,28 +254,17 @@ function Actor:TurnTo(x,z,fromYaw,toYaw)
     local shape=self:Footprint(true)
     -- Only a broad-phase success may skip narrow angular casts; failure never
     -- blocks a gap using this enclosing disc.
-    if self.city:IsShapeFree(x,z,Collision.Circle(0,0,shape.reach),0,"vehicle",0,self.vehicleId) then
-        return wrapYaw(toYaw),false
-    end
+    local context=CityCollision.BeginTurn(self.city,x,z,shape,self.city:Surface(x,z),self.vehicleId)
+    if context.clear then return wrapYaw(toYaw),false end
     local accepted=fromYaw
+    local first=Collision.Pose(shape,0,0,accepted)
+    local pad=shape.reach*(1-math.cos(math.rad(math.abs(delta/count))*.5))+.000001
     for i=1,count do
         local nextYaw=fromYaw+delta*i/count
-        local first=Collision.Pose(shape,0,0,accepted)
         local last=Collision.Pose(shape,0,0,nextYaw)
-        local parts={}
-        local pad=shape.reach*(1-math.cos(math.rad(math.abs(delta/count))*.5))+.000001
-        for index,p in ipairs(first.parts) do
-            local points={}
-            for _,v in ipairs(p.points) do
-                for _,d in ipairs({{pad,pad},{-pad,pad},{pad,-pad},{-pad,-pad}}) do points[#points+1]={x=v.x+d[1],z=v.z+d[2]} end
-            end
-            for _,v in ipairs(last.parts[index].points) do
-                for _,d in ipairs({{pad,pad},{-pad,pad},{pad,-pad},{-pad,-pad}}) do points[#points+1]={x=v.x+d[1],z=v.z+d[2]} end
-            end
-            parts[#parts+1]={points=Collision.Hull(points)}
-        end
-        if not self.city:IsShapeFree(x,z,Collision.Shape(parts),0,"vehicle",0,self.vehicleId) then return accepted,true end
+        if not CityCollision.TurnFree(context,first,last,pad) then return accepted,true end
         accepted=nextYaw
+        first=last
     end
     return wrapYaw(accepted),false
 end
@@ -359,7 +403,7 @@ function Actor:ToggleMount()
         return false, "请先停稳再上下车（速度需低于0.5m/s）"
     end
     self.reverseHold=0
-    if not self.mounted and self.walkHeight>1 then return false,"请先沿天桥坡道回到地面，再走到车旁" end
+    if not self.mounted and self.walkHeight>self.city:Surface(self.x,self.z)+1 then return false,"请先沿天桥坡道回到地面，再走到车旁" end
     if not self.mounted then
         local dx, dz = self.bikeX - self.x, self.bikeZ - self.z
         local distance = math.sqrt(dx * dx + dz * dz)
@@ -368,7 +412,7 @@ function Actor:ToggleMount()
             return false, "请走到停放的车旁3米内，不会随地召回车辆"
         end
         -- A nearby bike behind a wall is not reachable through that wall.
-        if not self.city:IsShapeFree(self.bikeX,self.bikeZ,self:Footprint(true),self.bikeYaw,"vehicle",0,self.vehicleId) then
+        if not self.city:IsShapeFree(self.bikeX,self.bikeZ,self:Footprint(true),self.bikeYaw,"vehicle",self.city:Surface(self.bikeX,self.bikeZ),self.vehicleId) then
             return false,"车辆旁空间不足，请先移开其它障碍物"
         end
         local mountX, mountZ, blocked = self:Move(self.x, self.z, dx, dz, WALK_RADIUS,self.yaw,self.vehicleId)
@@ -386,6 +430,7 @@ function Actor:ToggleMount()
     -- Step out past the real side / nose / cargo edge, not the enclosing disc.
     -- The traversed path ignores only this bike; the final walker must also
     -- clear its actual shell, so a tiny slot cannot be used as a dismount cheat.
+    self.walkHeight=self.city:Surface(self.bikeX,self.bikeZ)
     local heading = math.rad(self.bikeYaw)
     local footprint=self:Footprint(true)
     local exits={{footprint.x1-WALK_RADIUS-.08,0},{footprint.x2+WALK_RADIUS+.08,0},
@@ -424,7 +469,7 @@ end
 ---@param yaw number
 function Actor:Teleport(x, z, yaw, height)
     if self.disposed then return end
-    self.walkHeight=height or 0
+    self.walkHeight=self.mounted and self.city:Surface(x,z) or (height or self.city:Surface(x,z))
     self.yaw=wrapYaw(yaw)
     self.x,self.z=self.city:FindShapeFree(x,z,self:Footprint(),self.yaw,
         self.mounted and "vehicle" or "walk",self.walkHeight,self.mounted and self.vehicleId or nil)

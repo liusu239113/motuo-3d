@@ -14,6 +14,7 @@ local Expansion = require("Career.CityExpansion")
 local Environment = require("Career.CityEnvironment")
 local Collision = require("Career.CityCollision")
 local Footprint = require("Career.FootprintCollision")
+local DisplayLod = require("Career.BuildingLod")
 ---@class CareerCity
 ---@field actor? CareerActor
 ---@field contacts CareerContacts
@@ -41,6 +42,9 @@ for _,asset in ipairs(architecture) do
         City.Resources[#City.Resources+1]=path; City.ResourceTypes[path]=kind
     end
 end
+for _,path in ipairs(DisplayLod.Resources) do
+    City.Resources[#City.Resources+1]=path;City.ResourceTypes[path]="Model"
+end
 for _, path in ipairs(Landscape.Resources) do
     City.Resources[#City.Resources + 1] = path
     City.ResourceTypes[path] = Landscape.ResourceTypes[path]
@@ -67,6 +71,8 @@ function City:Init(scene)
     self.root = scene:CreateChild("南城老街生涯城区")
     self.obstacles, self.markers, self.buildings = {}, {}, 0
     self.buildingFootprints={}
+    self.displayBuildings={}
+    self.displayBuildingTick=0
     self.disposed=false
     self.space="city"
     ---@type CityTraffic?
@@ -98,6 +104,7 @@ function City:Init(scene)
     self.streetDressing=StreetDressing.New(self)
     Environment.BuildCore(self)
     self.contacts=require("Career.Contacts").New(self)
+    Collision.Index(self)
     self.signals=Signals.New(self.root,self.details)
     self.stats = self.details:Finish()
     World.SetLegacy(self.obstacles,self.details.surfaces)
@@ -202,11 +209,13 @@ function City:DetailedBuilding(index,x,z,w,depth,height,yaw,name)
     body.position=Vector3(-bounds.center.x*scale,-bounds.min.y*scale,-bounds.center.z*scale)
     local draw=body:CreateComponent("StaticModel")
     draw.model=model
+    self.displayBuildings[#self.displayBuildings+1]={draw=draw,levels=DisplayLod.Levels(model),x=x,z=z,level=1,near=45,mid=110,far=220}
     local mat=cache:GetResource("Material",asset.root.."Materials/"..asset.material):Clone()
     mat:SetTexture(TU_DIFFUSE,cache:GetResource("Texture2D",asset.root.."Textures/"..asset.stem.."_00_D.jpg"))
     mat:SetTexture(TU_NORMAL,cache:GetResource("Texture2D",asset.root.."Textures/"..asset.stem.."_00_N.jpg"))
     mat:SetShaderParameter("Metallic",Variant(0)); mat:SetShaderParameter("Roughness",Variant(.88))
     draw.material=mat; draw.castShadows=true; draw.drawDistance=400; draw.shadowDistance=85
+    -- 低层实占条带仍取原模型；显示简化不参与碰撞和尺寸计算。
     -- 俯视：低墙/地基 [实占条带]；高处外挑屋檐不投成地面整块空气墙。
     -- 每条来自LOD0三角形与地面0..3.2m的裁剪，填满两侧墙之间的楼内。
     -- 地台与碰撞共用同一条带；保留低层墙脚、5cm可见地基唇，不全局缩障碍。
@@ -341,6 +350,8 @@ function City:Surface(x,z)
     if self.space~="city" then return .085 end
     local environment=Environment.Surface(x,z)
     if environment~=nil then return environment end
+    local hill=require("Career.HillDistrict").Surface(x,z)
+    if hill~=nil then return hill end
     if World.IsOld(x,z) then return self.details:Surface(x,z) end
     return math.max(self.details:Surface(x,z),World.Surface(x,z,"vehicle",0))
 end
@@ -348,11 +359,19 @@ function City:WalkSurface(x,z,height)
     if self.space~="city" then return .085 end
     local environment=Environment.Surface(x,z)
     if environment~=nil then return environment end
+    if require("Career.HillDistrict").Contains(x,z) then return World.Surface(x,z,"walk",height or 0) end
     if World.IsOld(x,z) then return self.details:Surface(x,z) end
     return math.max(self.details:Surface(x,z),World.Surface(x,z,"walk",height or 0))
 end
+function City:FlatHeight(x1,z1,x2,z2)
+    return require("Career.FlatSurface").Height(self,x1,z1,x2,z2)
+end
 function City:UpdateStreaming(x,z)
-    if self.space=="city" then self.stream:Update(x,z) end
+    if self.space=="city" then
+        self.stream:Update(x,z)
+        self.displayBuildingTick=self.displayBuildingTick+1
+        if self.displayBuildingTick%8==0 then DisplayLod.Update(self.displayBuildings,x,z) end
+    end
 end
 
 -- 侧视接触设计（米）： rear<0 --- 车根0 --- front>0。
@@ -389,7 +408,8 @@ end
 function City:IsShapeFree(x,z,shape,yaw,mode,height,ignoreId)
     return Collision.ShapeFree(self,shape,x,z,yaw,mode,height,ignoreId)
 end
-function City:StaticShapeFree(x,z,shape,yaw,mode,height)
+function City:StaticShapeFree(x,z,shape,yaw,mode,height,posed,candidates)
+    if posed then return Collision.PosedFree(self,posed,shape,x,z,mode,height,nil,true,candidates) end
     return Collision.ShapeFree(self,shape,x,z,yaw,mode,height,nil,true)
 end
 function City:MoveShape(x,z,dx,dz,shape,yaw,mode,height,ignoreId)
@@ -429,5 +449,7 @@ function City:Dispose()
     local dressing=self.streetDressing --[[@as CareerStreetDressing]]
     dressing:Dispose()
     self.root:Dispose()
+    for _,entry in ipairs(self.displayBuildings) do DisplayLod.Release(entry.levels) end
+    self.displayBuildings={}
 end
 return City

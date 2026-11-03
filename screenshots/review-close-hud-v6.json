@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "ReviewHudChecks.lua",
+    "result": "FAIL",
+    "duration_ms": 10173,
+    "frames_completed": 120,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-11-01 04_54_15_143][90] ERROR: Execute Lua function failed: [ReviewHudChecks] FAILED [string \"Career/Store\"]:864: [string \"ReviewHudChecks\"]:70: [ReviewHudChecks] 多尺寸失败 640x360: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 640x360 scale=0.9129 / 可见HUD组重叠 career-navigation-card (12.0,180.7 416.3x93.1) / career-hud-speed (211.4,248.7 216.9x89.8)；800x600: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 800x600 scale=0.9129 / 单行文字截断/越宽 career-hud-clock measured=120.499 content=108.449 bounds=108.449 padding=(nil,nil) font=43.380；390x844: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 390x844 scale=0.9129 / 单行文字截断/越宽 career-hud-clock measured=120.499 content=108.449 bounds=108.449 padding=(nil,nil) font=43.380\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"ReviewHudChecks\"]:79: in method 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:1657: in field 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:790: in function <[string \"urhox-libs/UI/Core/UI\"]:789>",
+                    "frame": 0
+                }
+            ]
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 2618.363037109375
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 26.947999954223634
+        },
+        {
+            "frame": 60,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.617000579833986
+        },
+        {
+            "frame": 120,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.613000869750978
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 199.70599365234376,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 1
+    }
+}

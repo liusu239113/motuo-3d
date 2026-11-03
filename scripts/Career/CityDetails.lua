@@ -21,26 +21,32 @@ local V = Vector3
 ---@field font Font
 ---@field surfaces table[]
 ---@field surfaceCells table<string, table[]>
+---@field indexSurfaces boolean
+---@field deferVisibility boolean
 local Details = {}
 Details.__index = Details
 
 ---@param root Node
 ---@param mats table<string, Material>
+---@param options? {indexSurfaces?: boolean, deferVisibility?: boolean} 流式块关闭地表登记并延迟显示至整块提交
 ---@return CityDetails
-function Details.New(root, mats)
+function Details.New(root, mats, options)
     local self = setmetatable({}, Details)
-    self:Init(root, mats)
+    self:Init(root, mats, options)
     return self
 end
 
 ---@param root Node
 ---@param mats table<string, Material>
-function Details:Init(root, mats)
+---@param options? {indexSurfaces?: boolean, deferVisibility?: boolean}
+function Details:Init(root, mats, options)
     self.root, self.mats = root, mats
     self.batches, self.shapes, self.surfaces, self.surfaceCells = {}, {}, {}, {}
+    self.indexSurfaces = not options or options.indexSurfaces ~= false
+    self.deferVisibility = options and options.deferVisibility == true or false
     self.meshCount, self.boxes, self.signs, self.trees, self.cylinders = 0, 0, 0, 0, 0
-    self.font = assert(cache:GetResource("Font", "Fonts/MiSans-Regular.ttf"), "City: missing sign font")
-    self.shapes.cylinder = CylinderGeometry(.5, .5, 1, 12):ToModel()
+    self.font = assert(cache:GetResource("Font", "Fonts/NotoSerifSC-Game.otf"), "City: missing sign font")
+    -- Bar首次使用时再分配圆柱；纯合批流式块不需要临时Model。
 end
 
 ---@param material string
@@ -48,12 +54,14 @@ end
 ---@param z number
 ---@return CityBatch
 function Details:Batch(material, x, z)
-    local gx, gz = math.floor(x / 48), math.floor(z / 48)
+    -- 96m空间材质合批：保留全部原顶点/贴图/法线，仅减少相邻48m碎批。
+    local gx, gz = math.floor(x / 96), math.floor(z / 96)
     local key = gx .. ":" .. gz .. ":" .. material
     local batch = self.batches[key]
     if batch then return batch end
-    local cx, cz = gx * 48 + 24, gz * 48 + 24
-    local node = self.root:CreateChild("City48m_" .. key)
+    local cx, cz = gx * 96 + 48, gz * 96 + 48
+    local node = self.root:CreateChild("City96m_" .. key)
+    if self.deferVisibility then node:SetEnabled(false) end
     node.position = V(cx, 0, cz)
     local geom = node:CreateComponent("CustomGeometry")
     geom:BeginGeometry(0, TRIANGLE_LIST)
@@ -105,12 +113,47 @@ function Details:Triangle(material,a,b,c,tile)
     local batch=self:Batch(material,(a.x+b.x+c.x)/3,(a.z+b.z+c.z)/3)
     local normal=cross:Normalized()
     local origin=V(batch.cx,0,batch.cz)
-    for _,p in ipairs({a,b,c}) do
+    local function vertex(p)
         batch.geometry:DefineVertex(p-origin)
         batch.geometry:DefineNormal(normal)
-        batch.geometry:DefineTexCoord(Vector2(p.x*(tile or .5),p.z*(tile or .5)))
+        local scale=tile or .5
+        if math.abs(normal.y)>.6 then batch.geometry:DefineTexCoord(Vector2(p.x*scale,p.z*scale))
+        elseif math.abs(normal.x)>.6 then batch.geometry:DefineTexCoord(Vector2(p.z*scale,p.y*scale))
+        else batch.geometry:DefineTexCoord(Vector2(p.x*scale,p.y*scale)) end
     end
+    vertex(a);vertex(b);vertex(c)
     batch.vertices=batch.vertices+3
+end
+
+-- 椭球树冠：南北极各8个三角扇，中间3圈各16面，共64面而非含16个退化面的80面。
+-- 极点精确共点、接缝复用角度0；每面独立法线/主轴UV，避免零法线与竖直面UV坍缩。
+---@param material string
+---@param x number
+---@param y number
+---@param z number
+---@param rx number
+---@param ry number
+---@param rz number
+function Details:Ellipsoid(material,x,y,z,rx,ry,rz)
+    assert(rx>0 and ry>0 and rz>0,"City: ellipsoid radii must be positive")
+    local function point(row,sector)
+        if row==0 then return V(x,y-ry,z) end
+        if row==5 then return V(x,y+ry,z) end
+        local phi=-math.pi/2+row*math.pi/5
+        local theta=(sector%8)*math.pi/4
+        return V(x+rx*math.cos(phi)*math.cos(theta),y+ry*math.sin(phi),z+rz*math.cos(phi)*math.sin(theta))
+    end
+    for row=0,4 do
+        for sector=0,7 do
+            local a,b=point(row,sector),point(row+1,sector)
+            if row==0 then self:Triangle(material,a,b,point(row+1,sector+1))
+            elseif row==4 then self:Triangle(material,a,b,point(row,sector+1))
+            else
+                local c,d=point(row,sector+1),point(row+1,sector+1)
+                self:Triangle(material,a,b,c);self:Triangle(material,c,b,d)
+            end
+        end
+    end
 end
 
 ---@param material string
@@ -144,7 +187,7 @@ end
 function Details:Ground(material,x,z,w,d,y)
     local yy = y or .05
     -- 视觉地面与查询共用同一份矩形，标线只是贴花，不额外垫高鞋底和轮胎。
-    if material~="paint" and material~="yellow" then
+    if self.indexSurfaces and material~="paint" and material~="yellow" then
         local surface={x=x,z=z,w=w,d=d,y=yy}
         self.surfaces[#self.surfaces+1]=surface
         -- 16m格只筛候选，最终仍按真实矩形判断，不做高度量化或插值。
@@ -177,8 +220,10 @@ end
 ---@param b Vector3
 ---@param diameter number
 function Details:Bar(mat,a,b,diameter)
+    if not self.shapes.cylinder then self.shapes.cylinder = CylinderGeometry(.5, .5, 1, 12):ToModel() end
     local delta = b-a
     local node = self.root:CreateChild("CityMetalTube")
+    if self.deferVisibility then node:SetEnabled(false) end
     node.position = (a+b)*.5
     node.rotation = Quaternion(Vector3.UP, delta:Normalized())
     node.scale = V(diameter,delta:Length(),diameter)
@@ -199,6 +244,7 @@ end
 ---@param color? Color
 function Details:Sign(text,x,y,z,yaw,height,color)
     local node = self.root:CreateChild("CitySign_"..text)
+    if self.deferVisibility then node:SetEnabled(false) end
     node.position = V(x,y,z)
     node.rotation = Quaternion(0,yaw,0)
     -- Text3D uses 1/128 metre per font pixel. A 64px font is 0.5m before scaling.
@@ -301,12 +347,14 @@ function Details:Lamp(x,z,yaw)
     self:Box("lamp",x+dx*1.25,6.25,z+dz*1.25,.32,.035,.88,yaw)
 end
 
-function Details:Finish()
+---@param checkpoint? fun()
+function Details:Finish(checkpoint)
     local vertices=0
     for _,batch in pairs(self.batches) do
         assert(batch.geometry:GenerateTangents(),"City: tangent generation failed")
         batch.geometry:Commit()
         vertices=vertices+batch.vertices
+        if checkpoint then checkpoint() end
     end
     return {batches=self.meshCount,boxes=self.boxes,signs=self.signs,trees=self.trees,cylinders=self.cylinders,triangles=vertices/3}
 end

@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "ReviewHudChecks.lua",
+    "result": "FAIL",
+    "duration_ms": 20806,
+    "frames_completed": 120,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-11-01 02_00_52_982][78] ERROR: Execute Lua function failed: [ReviewHudChecks] FAILED [string \"Career/Store\"]:864: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 1000x400 scale=1.0000 / 单行文字截断/越宽 career-hud-speed\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"ReviewHudChecks\"]:70: in method 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:1657: in field 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:790: in function <[string \"urhox-libs/UI/Core/UI\"]:789>",
+                    "frame": 0
+                }
+            ]
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 6620.52001953125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 24.57900047302246
+        },
+        {
+            "frame": 60,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 19.69099998474121
+        },
+        {
+            "frame": 120,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 22.9689998626709
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 387.3710021972656,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 1
+    }
+}

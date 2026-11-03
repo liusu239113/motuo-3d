@@ -305,7 +305,7 @@ function Checks.Shot(session,id)
     for _,arg in ipairs(GetArguments()) do if arg=="-careercityshot="..id then allowed=true end end
     assert(allowed,"必须显式-careercityshot=<方向>")
     local positions={east={240,-44,0},west={-240,-44,0},north={24,240,90},south={24,-240,90},
-        start={0,-20,25},plaza={338,-116,155}}
+        start={0,-20,25},plaza={338,-116,155},low={240,-44,0},wall={245,-44,-90}}
     local p=assert(positions[id],"街区实拍方向不存在")
     local a,city=assert(session.actor),assert(session.city)
     session:ApplySpace("city");session.online=false;session.waypoint=""
@@ -314,12 +314,54 @@ function Checks.Shot(session,id)
     a.mounted=false;a.visuals:SetMounted(false)
     a.bikeX,a.bikeZ,a.bikeYaw=p[1]-2,p[2]-2,p[3]
     a:Teleport(p[1],p[2],p[3]);a.speed,a.steer=0,0;a:SyncVisuals(0)
+    -- 冻结的是交通逻辑，不应冻结在开局位置的显示LOD；保持同视点前后对照公平。
+    local display=require("Career.BuildingLod")
+    for _,car in ipairs(session.traffic.cars) do
+        for _,entry in ipairs(car.displayLods or {}) do entry.x,entry.z=car.x,car.z end
+        display.Update(car.displayLods or {},a.x,a.z)
+    end
+    for _,car in ipairs(session.traffic.outer.cars) do
+        for _,entry in ipairs(car.displayLods or {}) do entry.x,entry.z=car.x,car.z end
+        display.Update(car.displayLods or {},a.x,a.z)
+    end
     session:UpdateEnvironment(12)
-    session.yaw,session.pitch=p[3],12
+    session.yaw,session.pitch=p[3],id=="low" and -15 or 12
     session.camera:SetModeConfig("normal",{distance=7.8,offset=Vector3(0,1.4,0),fov=60})
     session.camera:SetMode("normal");session.camera:Update(2,a.node,session.yaw,session.pitch)
+    if id=="low" then
+        local position=session.camera:GetNode().position
+        assert(position.y>city:WalkSurface(position.x,position.z,a.walkHeight)+.1,"负pitch相机仍穿地")
+        print(string.format("[相机防穿地] PASS pitch=-15 cameraY=%.4f",position.y))
+    end
     session.view:ClosePhone();session.view:ShowGame();session.view:ResetInput();session:Refresh()
     session.view.overlay:SetVisible(false)
+    session.shotRenderFrames=0
+    for _,arg in ipairs(GetArguments()) do
+        if arg=="-careerrenderaudit" then
+            local nodes={city=city.root,stream=city.stream.root,traffic=session.traffic.root,crowd=session.crowd.root,
+                walker=a.visuals.walkNode,bike=a.visuals.bikeNode}
+            local labels={"city","stream","traffic","crowd","walker","bike"}
+            local originalEnabled={}
+            for label,node in pairs(nodes) do
+                local states={{node=node,enabled=node.enabledSelf}}
+                for _,child in ipairs(node:GetChildren(true)) do states[#states+1]={node=child,enabled=child.enabledSelf} end
+                originalEnabled[label]=states
+            end
+            local frame=0
+            local old=session.PostUpdate
+            session.PostUpdate=function(self,dt)
+                old(self,dt);frame=frame+1
+                if frame==15 then print(string.format("[渲染拆分] 全部 %d批/%d图元",renderer.numBatches,renderer.numPrimitives)) end
+                for i,label in ipairs(labels) do
+                    if frame==16+(i-1)*4 then nodes[label]:SetEnabledRecursive(false) end
+                    if frame==18+(i-1)*4 then
+                        print(string.format("[渲染拆分] 隐藏%s %d批/%d图元",label,renderer.numBatches,renderer.numPrimitives))
+                        for _,state in ipairs(originalEnabled[label]) do state.node:SetEnabled(state.enabled) end
+                    end
+                end
+            end
+        end
+    end
     print(string.format("[邻里实拍就绪] %s (%.1f,%.1f) 当前城市真实街面/正午/450m视距，无假背景",id,p[1],p[2]))
 end
 return Checks

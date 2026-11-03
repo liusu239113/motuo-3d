@@ -6,6 +6,7 @@ local Tracks = require("Tracks")
 local Instruments = require("RaceInstruments")
 local C = Theme.Colors
 ---@class RouteSelect
+---@field careerRace? boolean
 ---@field selectedTrack string
 ---@field trackCards table<string, Card>
 ---@field trackGraphics table<string, RouteGraphic>
@@ -27,7 +28,10 @@ end
 function Routes.Metrics(w, h)
     local padding = w < 920 and 12 or 20
     local inner = math.max(1, w - padding * 2)
-    local columns = inner >= 960 and 3 or (inner >= 640 and 2 or 1)
+    -- Keep multi-column rows atomic: PhonePages can split one vertical card,
+    -- not two/three equally tall columns. Reserve header, footnote and pager
+    -- space before choosing columns; short landscape uses full-width cards.
+    local columns = h < 520 and 1 or (inner >= 960 and 3 or (inner >= 640 and 2 or 1))
     local mapHeight = h >= 650 and 78 or 62
     return {padding = padding, columns = columns, gap = 12, mapHeight = mapHeight,
         cardWidth = (inner - (columns - 1) * 12) / columns}
@@ -53,26 +57,34 @@ function Routes:BuildTracks()
 end
 function Routes:RefreshTrackCards()
     local entries = list()
-    local signature = {tostring(self.routeColumns)}
+    local profile,profileError = Profile.GetForDisplay()
+    local signature = {tostring(self.routeColumns),tostring(profileError),tostring(self.careerRace)}
     for _, entry in ipairs(entries) do
-        signature[#signature + 1] = entry.id .. tostring(Profile.TrackUnlocked(entry.id)) .. tostring(entry.price)
+        signature[#signature + 1] = entry.id .. tostring(profile.unlockedTracks[entry.id]) .. tostring(entry.price)
     end
     local key = table.concat(signature, "/")
-    self.routeBalance:SetText("持有金币  " .. tostring(Profile.Coins()))
+    self.routeBalance:SetText(profileError and "竞速进度不可用 · 原档保留" or "持有金币  " .. tostring(profile.coins))
     if self.trackSignature == key then return end
     self.trackSignature, self.trackCount = key, #entries
     -- Restore source widgets before rebuilding; page masks must not reference removed rows.
     self.routeScroll:RestoreSource()
-    self.trackGrid:ClearChildren()
-    self.trackCards, self.trackGraphics = {}, {}
-    local columns, row = math.max(1, self.routeColumns), UI.Row {width = "100%", gap = 12, padding = 0}
+    for i = self.trackGrid:GetNumChildren(), 1, -1 do
+        local child = self.trackGrid:GetChildAt(i)
+        if child then child:Destroy() end
+    end
+    self.trackCards, self.trackGraphics, self.trackBadges = {}, {}, {}
+    local columns = math.max(1, self.routeColumns)
+    -- Do not allocate an unattached initial Row (it owns a native Yoga node).
+    -- A single column is a genuine vertical card list, safely fragmentable at
+    -- sibling boundaries on very short screens; horizontal rows stay whole.
+    local row = self.trackGrid
     for index, track in ipairs(entries) do
         local entry = track
-        if (index - 1) % columns == 0 then
+        if columns > 1 and (index - 1) % columns == 0 then
             row = UI.Row {width = "100%", gap = 12, padding = 0, alignItems = "stretch"}
             self.trackGrid:AddChild(row)
         end
-        local unlocked = Profile.TrackUnlocked(entry.id)
+        local unlocked = self.careerRace or profile.unlockedTracks[entry.id] == true
         -- Locked maps stay legible. A dedicated badge and the two-line condition explain their state.
         local graphic = Instruments.Route {width = "100%", height = self.routeMapHeight,
             padding = 0, backgroundColor = {8, 14, 18, 255}, borderRadius = 1, pointerEvents = "none"}
@@ -85,11 +97,17 @@ function Routes:RefreshTrackCards()
                 backgroundColor = unlocked and {31, 56, 60, 255} or {60, 47, 29, 255}})
         local footer = unlocked and "点按选择此赛道" or string.format("金币解锁  %d  /  或前置夺冠", entry.price or 0)
         local condition = unlocked and "返回车库确认座驾后出发" or Routes.Requirement(entry)
-        local card = Theme.Card {flexGrow = 1, flexBasis = 0, minWidth = 0,
+        local card = Theme.Card {width = columns == 1 and "100%" or nil,
+            flexGrow = columns == 1 and 0 or 1, flexBasis = columns == 1 and "auto" or 0, minWidth = 0,
             padding = 10, gap = 4, clickable = true, hoverable = true, pointerEvents = "box-only",
             onClick = function()
                 if self:IsModalOpen() then return end
-                if Profile.TrackUnlocked(entry.id) then
+                local current,readError=Profile.GetForDisplay()
+                if readError and not self.careerRace then
+                    if self.actions.unlockTrack then self.actions.unlockTrack(entry.id) end
+                    return
+                end
+                if self.careerRace or current.unlockedTracks[entry.id] then
                     self:SelectTrack(entry.id, true); self:SetScreen("garage")
                 elseif self.actions.unlockTrack then
                     print("[赛道界面] 查看锁定条件 " .. entry.id)
@@ -111,6 +129,7 @@ function Routes:RefreshTrackCards()
                         Theme.Label(footer, 10, unlocked and C.cyan or C.amber, {height = 20, width = "100%", fontWeight = "bold"}),
                         Theme.Label(condition, 9, C.muted, {height = 18, width = "100%", maxLines = 1})}},
             }}
+        self.trackBadges[entry.id] = stateBadge
         self.trackCards[entry.id], self.trackGraphics[entry.id] = card, graphic
         row:AddChild(card)
     end
@@ -118,11 +137,21 @@ function Routes:RefreshTrackCards()
     if remainder > 0 then
         for _ = remainder + 1, columns do row:AddChild(UI.Panel {flexGrow = 1, flexBasis = 0, padding = 0, pointerEvents = "none"}) end
     end
+    -- Route labels keep the authored font size even when a page changes width.
+    -- Reflow/pagination, never text auto-fit, is responsible for making them fit.
+    local function fixedFonts(widget)
+        if widget._className == "Label" then widget.props.minFontSize = widget.props.fontSize end
+        for _, child in ipairs(widget:GetChildren()) do fixedFonts(child) end
+    end
+    fixedFonts(self.trackGrid)
     self:UpdateTrackSelectionStyle()
 end
 function Routes:UpdateTrackSelectionStyle()
+    local profile = Profile.GetForDisplay()
     for id, card in pairs(self.trackCards) do
         local selected = id == self.selectedTrack
+        local badge = self.trackBadges and self.trackBadges[id] --[[@as Label?]]
+        if badge then badge:SetText((self.careerRace or profile.unlockedTracks[id]) and (selected and "已选择" or "可参赛") or "未解锁") end
         card:SetStyle({borderColor = selected and C.cyan or C.border,
             backgroundGradient = Theme.Gradient(selected and {34, 53, 57, 255} or {30, 37, 43, 255},
                 selected and {20, 32, 37, 255} or {16, 21, 26, 255})})
@@ -135,7 +164,7 @@ function Routes:LayoutTracks(w, h)
     self.trackSelection:SetStyle({padding = metrics.padding})
     if changed then self:RefreshTrackCards() end
     for _, graphic in pairs(self.trackGraphics) do graphic:SetHeight(metrics.mapHeight) end
-    self.routeTitle:SetFontSize(w < 600 and 18 or 23)
+    self.routeTitle:SetFontSize(23)
     self.routeSubtitle:SetVisible(w >= 650)
     self.routeFootnote:SetStyle({whiteSpace = w < 600 and "normal" or "nowrap", height = w < 600 and 36 or 22})
     print(string.format("[赛道排版] %.0fx%.0f / %d列 / 固定按钮分页", w, h, metrics.columns))
@@ -147,7 +176,8 @@ function Routes:OpenTracks()
 end
 function Routes:SelectTrack(id, notify)
     local selected = Tracks.Get(id)
-    if not selected or not Profile.TrackUnlocked(id) then return false end
+    local profile = Profile.GetForDisplay()
+    if not selected or not self.careerRace and not profile.unlockedTracks[id] then return false end
     self.selectedTrack = id
     self:UpdateTrackSelectionStyle()
     self.trackButton:SetText("赛道 · " .. selected.name .. " ›")

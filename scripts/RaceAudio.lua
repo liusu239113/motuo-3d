@@ -1,4 +1,4 @@
--- 独立竞速音频。只持有自己的六个通道；不修改RideAudio的六个旧音源或全局音量。
+-- 独立竞速音频。六个效果通道 + 一个互斥语音通道；不修改RideAudio或全局音量。
 ---@class RaceAudio
 ---@field scene Scene?
 ---@field node Node?
@@ -9,6 +9,10 @@
 ---@field stopped boolean
 ---@field lastSeq number
 ---@field currentRace table?
+---@field curseTimer number
+---@field curseIndex integer
+---@field lastSpeakerId string
+---@field musicDuck number
 local RaceAudio = {}
 RaceAudio.__index = RaceAudio
 RaceAudio.Resources = {
@@ -27,8 +31,29 @@ RaceAudio.Resources = {
 RaceAudio.Count = #RaceAudio.Resources
 local SIREN, COUNTDOWN, START, CONTACT, BOOST, FINISH = 1, 2, 3, 4, 5, 6
 local CURSE_FIRST, CURSE_COUNT = 7, 4
--- 相邻两次骂声至少间隔1.2秒，避免连环碰撞时四段语音叠在一起糊成噪音。
-local CURSE_COOLDOWN = 1.2
+-- 冷却至少1.2秒且覆盖整段原速语音和尾部留白；playing再兜底音频线程延迟。
+local CURSE_COOLDOWN, CURSE_GAP = 1.2, 0.18
+local function finite(value) return type(value) == "number" and value == value and math.abs(value) < math.huge end
+
+-- contact是无方向的车手互撞：优先target AI，target是玩家则取另一位AI。
+-- 单人撞障碍的contact只有player，不得替附近无关AI发言；bash若恢复则仅受击AI发言。
+---@param event table
+---@param race table?
+---@return table?
+function RaceAudio.Speaker(event, race)
+    if not race or (event.kind ~= "contact" and event.kind ~= "bash") then return nil end
+    ---@type table?
+    local target = nil
+    ---@type table?
+    local actor = nil
+    for _, racer in ipairs(race.racers or {}) do
+        if racer.id == event.targetId then target = racer end
+        if racer.id == event.racerId then actor = racer end
+    end
+    if target and target.id ~= "player" and not target.isPlayer then return target end
+    if event.kind == "contact" and actor and actor.id ~= "player" and not actor.isPlayer then return actor end
+    return nil
+end
 
 ---@param scene Scene
 ---@return RaceAudio
@@ -47,8 +72,9 @@ function RaceAudio:Init(scene)
     self.currentRace = nil
     self.unlocked, self.effectsEnabled, self.stopped = false, true, false
     self.curseTimer, self.curseIndex = 0, 0
+    self.lastSpeakerId, self.musicDuck = "", 1
     for index = 1, RaceAudio.Count do self:LoadOne(index) end
-    print("[竞速音频] 独立六通道准备完成，等待用户输入解锁")
+    print("[竞速音频] 六效果通道及单语音通道准备完成，等待用户输入解锁")
 end
 
 ---@param index integer
@@ -64,11 +90,17 @@ function RaceAudio:LoadOne(index)
         print("[竞速音频] 资源不可用：" .. path)
         return false
     end
-    sound.looped = index == SIREN
-    local source = self.node:CreateChild("RaceChannel_" .. index, LOCAL):CreateComponent("SoundSource", LOCAL)
-    source.soundType = SOUND_EFFECT
-    source.gain = 0
-    source.declickEnabled = true
+    sound:SetLooped(index == SIREN)
+    -- 四段语音资源共享已有source；重试加载也不重建已经创建的通道。
+    local channel = index >= CURSE_FIRST and CURSE_FIRST or index
+    local source = self.sources[channel]
+    if not source then
+        source = self.node:CreateChild("RaceChannel_" .. channel, LOCAL):CreateComponent("SoundSource", LOCAL)
+        source.soundType = SOUND_EFFECT
+        source.gain = 0
+        source.declickEnabled = true
+        self.sources[channel] = source
+    end
     self.sounds[index], self.sources[index] = sound, source
     return true
 end
@@ -84,29 +116,45 @@ function RaceAudio:SetEffectsEnabled(enabled)
     if not enabled then self:Silence() end
 end
 
--- 对手被撞：只在玩家附近的真实碰撞触发，按事件序号确定性地选一条语音。
+-- 只接受已验证、真正参与事件的非玩家发言者；不截断在播台词、不排队补播。
 ---@param event table
-function RaceAudio:Curse(event)
-    if self.curseTimer > 0 then return end
-    local who = tostring(event.targetId or "") .. tostring(event.racerId or "")
-    local offset = 0
+---@param speaker table
+---@return boolean
+function RaceAudio:Curse(event, speaker)
+    local source = self.sources[CURSE_FIRST]
+    if self.stopped or not self.unlocked or not self.effectsEnabled or self.curseTimer > 0
+        or not speaker or speaker.id == "player" or speaker.isPlayer or not source or source.playing then return false end
+    if event.kind ~= "contact" and event.kind ~= "bash" then return false end
+    if speaker.id ~= event.racerId and speaker.id ~= event.targetId then return false end
+    if event.kind == "bash" and speaker.id ~= event.targetId then return false end
+    local who, offset = tostring(speaker.id), 0
     for index = 1, #who do offset = offset + who:byte(index) end
-    self.curseIndex = (offset + (event.seq or 0)) % CURSE_COUNT
-    self:PlayOnce(CURSE_FIRST + self.curseIndex, 0.52)
-    self.curseTimer = CURSE_COOLDOWN
+    self.curseIndex = offset % CURSE_COUNT
+    local sound = self.sounds[CURSE_FIRST + self.curseIndex]
+    if not sound then return false end
+    source:Play(sound, 0, 0.52)
+    self.curseTimer = math.max(CURSE_COOLDOWN, sound:GetLength() + CURSE_GAP)
+    self.lastSpeakerId = who
+    self.musicDuck = 0.4
+    return true
 end
 
+-- 由主混音方乘入音乐目标gain，不改用户音乐开关/基础音量；勿逐帧乘当前gain。
+function RaceAudio:GetMusicDuck() return self.musicDuck or 1 end
+
 function RaceAudio:Silence()
-    for _, source in pairs(self.sources) do
-        source.gain = 0
-        source:StopImmediate()
+    -- sources[7..10]是同一对象别名，只停止一次。
+    for index = SIREN, CURSE_FIRST do
+        local source = self.sources[index]
+        if source then source.gain = 0; source:StopImmediate() end
     end
+    self.curseTimer, self.lastSpeakerId, self.musicDuck = 0, "", 1
 end
 
 ---@param index integer
 ---@param gain number
 function RaceAudio:PlayOnce(index, gain)
-    if self.stopped or not self.unlocked or not self.effectsEnabled then return end
+    if self.stopped or not self.unlocked or not self.effectsEnabled or index >= CURSE_FIRST then return end
     local source, sound = self.sources[index], self.sounds[index]
     if source and sound then source:Play(sound, 0, gain) end
 end
@@ -122,8 +170,10 @@ function RaceAudio:Update(dt, sim, race, active)
         self:Silence()
         self.currentRace, self.lastSeq = race, 0
     end
-    self.curseTimer = math.max(0, self.curseTimer - math.max(0, dt))
-    local audible = active ~= false and self.unlocked and self.effectsEnabled
+    local frameTime = finite(dt) and math.max(0, dt) or 0
+    self.curseTimer = math.max(0, self.curseTimer - frameTime)
+    local audible = active ~= false and frameTime > 0 and self.unlocked and self.effectsEnabled
+        and not (sim and sim.paused)
     if not audible then self:Silence() end
     if race then
         for _, event in ipairs(race.events or {}) do
@@ -136,23 +186,23 @@ function RaceAudio:Update(dt, sim, race, active)
                     elseif event.kind == "finish" and (player or not event.racerId) then self:PlayOnce(FINISH, 0.58)
                     elseif event.kind == "contact" or event.kind == "bash" then
                         if player then self:PlayOnce(CONTACT, 0.42) end
-                        -- 玩家参与或就在附近时，被撞的一方会骂一句。
-                        local near = player
-                        if not near and sim and race.racers then
-                            for _, racer in ipairs(race.racers) do
-                                if racer.id == event.racerId or racer.id == event.targetId then
-                                    local dx, dz = (racer.x or 0) - (sim.x or 0), (racer.z or 0) - (sim.z or 0)
-                                    near = dx * dx + dz * dz < 60 * 60
-                                    break
-                                end
-                            end
+                        local speaker = RaceAudio.Speaker(event, race)
+                        -- 距离按真正发言者判断，不能取另一位靠近玩家的碰撞参与者。
+                        if speaker and sim and finite(speaker.x) and finite(speaker.z)
+                            and finite(sim.x) and finite(sim.z) then
+                            local dx, dz = speaker.x - sim.x, speaker.z - sim.z
+                            if dx * dx + dz * dz < 60 * 60 then self:Curse(event, speaker) end
                         end
-                        if near then self:Curse(event) end
                     elseif event.kind == "boost" and player then self:PlayOnce(BOOST, 0.43) end
                 end
             end
         end
     end
+    local voice = self.sources[CURSE_FIRST]
+    local duckTarget = 1.0
+    if audible and voice and voice.playing then duckTarget = 0.4 end
+    local duck = self.musicDuck or 1
+    self.musicDuck = duckTarget < duck and duckTarget or duck + (duckTarget - duck) * (1 - math.exp(-frameTime * 5))
     local source, sound = self.sources[SIREN], self.sounds[SIREN]
     if not source or not sound then return end
     local police = race and (race.pursuit or race.police)
@@ -166,7 +216,7 @@ function RaceAudio:Update(dt, sim, race, active)
         end
         target = 0.32 * math.max(0, 1 - distance / 140)
     end
-    local gain = source.gain + (target - source.gain) * (1 - math.exp(-math.max(0, dt) * 7))
+    local gain = source.gain + (target - source.gain) * (1 - math.exp(-frameTime * 7))
     if not audible or (target == 0 and gain < 0.001) then
         source.gain = 0
         if source.playing then source:Stop() end

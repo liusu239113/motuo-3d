@@ -2,6 +2,41 @@
 local UI = require("urhox-libs/UI")
 local RacingTheme = require("RacingTheme")
 local Settings = require("ControlSettings")
+local PointerEvent = require("urhox-libs/UI/Core/PointerEvent")
+-- UI still delivers Move/Up to captured widgets after a cover appears. Own each
+-- slider gesture explicitly: hover, another finger and late Pan events cannot write.
+local SettingsSlider = UI.Slider:Extend("RacingSettingsSlider")
+function SettingsSlider:CanEdit()
+    return self.settingsOwner and not self.settingsOwner:SettingsInputBlocked()
+        and self.settingsOwner.settingsTools:IsVisible()
+end
+function SettingsSlider:OnPointerDown(event)
+    if not self:CanEdit() or self.settingsPointer ~= nil or not event:IsPrimaryAction() then return end
+    self.settingsPointer = event.pointerId
+    UI.Slider.OnPointerDown(self, event)
+end
+function SettingsSlider:OnPointerMove(event)
+    if self.settingsPointer ~= event.pointerId then return end
+    if not self:CanEdit() then self.settingsOwner:CancelSettingsInput(); return end
+    UI.Slider.OnPointerMove(self, event)
+end
+function SettingsSlider:OnPointerUp(event)
+    if self.settingsPointer ~= event.pointerId then return end
+    if not self:CanEdit() then self.settingsOwner:CancelSettingsInput(); return end
+    UI.Slider.OnPointerUp(self, event)
+    self.settingsPointer = nil
+end
+function SettingsSlider:OnPointerCancel(event)
+    if self.settingsPointer ~= event.pointerId then return end
+    self.settingsPointer = nil
+    self:SetState({dragging = false, hovered = false})
+    UI.Widget.OnPointerCancel(self, event)
+end
+-- Pointer events are authoritative. PanStart may arrive after a reset/cover;
+-- never let it re-arm an already cancelled slider or save a second time.
+function SettingsSlider:OnPanStart() return self.settingsPointer ~= nil and self:CanEdit() end
+function SettingsSlider:OnPanMove() end
+function SettingsSlider:OnPanEnd() end
 ---@class ControlEditor
 ---@field screen string
 ---@field controls MobileControls
@@ -10,6 +45,8 @@ local Settings = require("ControlSettings")
 ---@field controlWidgets table<string, Widget>
 ---@field cockpit Widget
 ---@field pausedCockpitVisible boolean?
+---@field portraitActive boolean
+---@field portrait Panel
 ---@field SetScreen fun(self:ControlEditor, screen:string)
 ---@field LayoutResponsive fun(self:ControlEditor)
 local Editor = {}
@@ -27,6 +64,33 @@ local function full(props)
     return props
 end
 
+function Editor:SettingsInputBlocked()
+    return self.screen ~= "settings" or self.portraitActive == true
+        or (self.portrait and self.portrait:IsVisible())
+        or (self.settingsConfirm and self.settingsConfirm:IsVisible())
+        or (self.settingsResetConfirm and self.settingsResetConfirm:IsVisible())
+        or UI.GetTopOverlay() ~= nil
+end
+
+function Editor:CancelSettingsInput()
+    -- Cancel only editor-owned captures, not the second finger opening a dialog.
+    local pointers = {}
+    if self.dragPointer ~= nil then pointers[self.dragPointer] = true end
+    for _, slider in ipairs({self.settingsSensitivity, self.settingsDeadzone}) do
+        if slider.settingsPointer ~= nil then pointers[slider.settingsPointer] = true end
+        if slider.settingsPointer ~= nil or slider.state.dragging then
+            slider.settingsPointer = nil
+            slider:SetState({dragging = false, hovered = false})
+        end
+    end
+    if self.dragSlot then self:EndDragSettingButton(nil, true) end
+    for id in pairs(pointers) do
+        local event = PointerEvent.new(PointerEvent.Types.PointerCancel, {pointerId = id})
+        UI.HandlePointerEvent(event)
+        require("urhox-libs/UI/Core/Gesture").HandlePointerCancel(event)
+    end
+end
+
 function Editor:BuildSettings()
         self.settingsSlot, self.settingsReturn, self.settingsToolsOpen = "steering", "menu", false
         self.settingsSchemeLabel = label("")
@@ -37,21 +101,23 @@ function Editor:BuildSettings()
         self.settingsSchemeRow = UI.Row {width="100%", minWidth=0, padding=0, gap=5, flexWrap="wrap"}
         self.settingsSensitivityValue, self.settingsDeadzoneValue = label(""), label("")
         local function saved() self:SaveSettings("已保存并应用") end
-        self.settingsSensitivity = UI.Slider {width="100%", min=50, max=160, step=1, value=100,
+        self.settingsSensitivity = SettingsSlider {width="100%", min=50, max=160, step=1, value=100,
             onChange=function(_, value)
                 if self.refreshingSettings then return end
                 Settings.SetSlider("steeringSensitivity", value/100)
                 self.settingsSensitivityValue:SetText(string.format("转向灵敏度  %.2f", value/100))
                 self:ApplySettings()
             end, onChangeEnd=saved}
-        self.settingsDeadzone = UI.Slider {width="100%", min=2, max=30, step=1, value=12,
+        self.settingsDeadzone = SettingsSlider {width="100%", min=2, max=30, step=1, value=12,
             onChange=function(_, value)
                 if self.refreshingSettings then return end
                 Settings.SetSlider("steeringDeadzone", value/100)
                 self.settingsDeadzoneValue:SetText(string.format("转向死区  %d%%", math.floor(value)))
                 self:ApplySettings()
             end, onChangeEnd=saved}
+        self.settingsSensitivity.settingsOwner, self.settingsDeadzone.settingsOwner = self, self
         local function resize(delta)
+            self:CancelSettingsInput()
             Settings.Scale(self.settingsSlot, delta)
             self:ApplySettings(); self:RefreshSettings(); self:SaveSettings("尺寸已保存")
         end
@@ -59,15 +125,16 @@ function Editor:BuildSettings()
                 self.settingsSchemeLabel, self.settingsSchemeRow,
                 UI.Row {padding=0, gap=5, children={
                     button("复制当前", function()
+                        self:CancelSettingsInput()
                         local ok, message=Settings.AddScheme("")
                         self:RefreshSettings(); self:ApplySettings()
                         self.settingsHint:SetText(ok and ("已复制："..message) or message)
                     end, 90),
                     button("删除方案", function()
                         if #Settings.All()<=1 then self.settingsHint:SetText("至少保留一套方案"); return end
-                        self.settingsConfirm:Show()
+                        self:CancelSettingsInput(); self.settingsConfirm:Show()
                     end, 90),
-                    button("恢复默认", function() self.settingsResetConfirm:Show() end, 90)}},
+                    button("恢复默认", function() self:CancelSettingsInput(); self.settingsResetConfirm:Show() end, 90)}},
                 UI.Row {padding=0, gap=6, alignItems="center", children={self.settingsSelection,
                     button("缩小", function() resize(-0.05) end, 60),
                     button("放大", function() resize(0.05) end, 60)}},
@@ -75,6 +142,7 @@ function Editor:BuildSettings()
                 self.settingsDeadzoneValue, self.settingsDeadzone,
                 label("滑杆松手自动保存；收起面板可编辑其后方的按键。",8)}}
         self.settingsToolbarButton = button("灵敏度 / 方案", function()
+            self:CancelSettingsInput()
             self.settingsToolsOpen=not self.settingsToolsOpen
             self.settingsTools:SetVisible(self.settingsToolsOpen)
             self.settingsToolbarButton:SetText(self.settingsToolsOpen and "收起面板" or "灵敏度 / 方案")
@@ -101,6 +169,7 @@ function Editor:BuildSettings()
             if ok then self:SaveSettings("方案已删除") end
         end)
         self.settingsResetConfirm=confirm("恢复当前布局、尺寸和灵敏度？",function()
+            self:CancelSettingsInput()
             Settings.ResetLayout()
             Settings.SetSlider("steeringSensitivity",1);Settings.SetSlider("steeringDeadzone",0.12)
             self.settingsResetConfirm:Hide();self:RefreshSettings();self:ApplySettings();self:SaveSettings("已恢复默认")
@@ -135,16 +204,17 @@ function Editor:OpenSettings()
     end
 
 function Editor:CloseSettings()
-        if self.dragSlot then self:EndDragSettingButton(nil,true) end
-        if not self:SaveSettings("全部设置已保存") then return end
+        self:CancelSettingsInput()
+        if not self:SaveSettings("全部设置已保存") then return false end
         self.controls:SetEditor(nil)
         self.settingsConfirm:Hide();self.settingsResetConfirm:Hide()
         if self.actions.settings then self.actions.settings(false) else self:SetScreen(self.settingsReturn) end
         UI.Layout();self:ApplySettings();UI.Layout()
+        return true
     end
 
 function Editor:BeginDragSettingButton(slot,event,widget)
-        if self.dragSlot or self.screen~="settings" then return end
+        if self.dragSlot or self:SettingsInputBlocked() then return end
         self.settingsSlot,self.dragSlot,self.dragPointer=slot,slot,event.pointerId
         local rect,area=widget:GetAbsoluteLayout(),self.controlLayer:GetAbsoluteLayout()
         self.dragOffsetX,self.dragOffsetY=event.x-rect.x,event.y-rect.y
@@ -156,6 +226,7 @@ function Editor:BeginDragSettingButton(slot,event,widget)
 
 function Editor:DragSettingButton(event)
         if not self.dragSlot or event.pointerId~=self.dragPointer then return end
+        if self:SettingsInputBlocked() then self:CancelSettingsInput(); return end
         local widget=self.controlWidgets[self.dragSlot]
         local x=math.max(0,math.min(self.dragRectW-self.dragWidth,event.x-self.dragRectX-self.dragOffsetX))
         local y=math.max(0,math.min(self.dragRectH-self.dragHeight,event.y-self.dragRectY-self.dragOffsetY))
@@ -165,7 +236,7 @@ function Editor:DragSettingButton(event)
 
 function Editor:EndDragSettingButton(event,cancelled)
         if not self.dragSlot or (event and event.pointerId~=self.dragPointer) then return end
-        if not cancelled and self.dragPreviewX then
+        if not cancelled and not self:SettingsInputBlocked() and self.dragPreviewX then
             Settings.SetPosition(self.dragSlot,self.dragPreviewX,self.dragPreviewY)
             self:SaveSettings("位置已自动保存")
         end
@@ -182,10 +253,10 @@ function Editor:RefreshSettings()
             local b=self.settingsSchemeButtons[i]
             if not b then
                 b=button("",function()
-                    if self.dragSlot then self:EndDragSettingButton(nil,true) end
-                    local ok=Settings.SetActive(idx)
+                    self:CancelSettingsInput()
+                    local ok, err=Settings.SetActive(idx)
                     self:RefreshSettings();self:ApplySettings()
-                    self.settingsHint:SetText(ok and "方案已切换并应用" or "方案保存失败，请重试")
+                    self.settingsHint:SetText(ok and "方案已切换并应用" or (err or "方案保存失败，请重试"))
                 end,90)
                 b:SetHeight(28)
                 self.settingsSchemeButtons[i]=b;self.settingsSchemeRow:AddChild(b)
@@ -210,6 +281,7 @@ function Editor:ApplySettings()
     end
 
 function Editor:UpdateLayout()
+        if self:SettingsInputBlocked() then self:CancelSettingsInput() end
         self:LayoutResponsive()
         local l=self.controlLayer:GetAbsoluteLayout()
         if (self.screen=="ride" or self.screen=="settings") and not self.dragSlot

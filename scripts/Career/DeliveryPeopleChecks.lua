@@ -114,6 +114,7 @@ end
 ---@param p CareerDeliveryPerson
 ---@param city CareerCity
 local function trafficBlocker(p,city)
+    ---@type CityTraffic
     local traffic=assert(city.traffic,"production traffic must already be ready")
     local found=false
     for _,blocker in ipairs(traffic:Blockers()) do
@@ -179,6 +180,7 @@ local function conversationLayout(session)
     local city,actor=assert(session.city),assert(session.actor)
     local owner=assert(city.contacts:Get("breakfast_owner"))
     actor.x,actor.z=owner.x,owner.z+1.1
+    actor.walkHeight=city:Surface(actor.x,actor.z)
     assert(session:TalkTo("breakfast_owner"),"real contact conversation fixture rejected")
     UI.Layout()
     local body=session.view.conversationBody:GetAbsoluteLayout()
@@ -255,7 +257,7 @@ function Checks.Run(session)
         pool=People.New(city)
         local testPool=assert(pool)
         session.deliveryPeople,city.deliveryPeople=testPool,testPool
-        actor.mounted,actor.speed,actor.walkHeight=false,0,0
+        actor.mounted,actor.speed,actor.walkHeight=false,0,city:Surface(actor.x,actor.z)
         session.online=false
         session.navigation={key="",route={}} -- 保持外层 navigation 表本身不变
         local profile=Store.Get()
@@ -345,6 +347,7 @@ function Checks.Run(session)
             parking={[parkedId]={x=parkedX,z=parkedZ,yaw=0}}}
         sync(testPool,{},parkingViewer) -- 清除之前的目标，强制重新 Bind
         sync(testPool,{fixtures[1]},parkingViewer)
+        ---@type CareerDeliveryPerson
         local avoided=assert(testPool:Get("noodle"),"parked non-current vehicle left no valid alternate stand")
         assert((avoided.x-parkedX)^2+(avoided.z-parkedZ)^2>=(parkedRadius+avoided.radius)^2,
             "new Bind overlaps a non-current parked vehicle")
@@ -354,6 +357,7 @@ function Checks.Run(session)
         sync(testPool,{fixtures[1]})
         local merchant=assert(testPool:Get("noodle"))
         testPool:Update(.1,nearActor(merchant),true)
+        ---@type Vector3
         local rest=merchant.rig:GetBonePosition("R_Hand")
         local beforePoses=merchant.poseCount
         assert(testPool:Respond("noodle",true),"active merchant did not respond")
@@ -389,13 +393,38 @@ function Checks.Run(session)
         -- 仅使用生产 Session.Interact：成功事务才触发真实回应；
         -- 授权拒绝或内存提交失败都不得触发回应。
         local function at(pointId)
+            -- 上一次重复交互可能打开住处生活页；下一段现场操作必须从可操作的街景开始。
+            view:ClosePhone(); view:ShowGame()
             local point=assert(Config.points[pointId])
-            actor.x,actor.z,actor.speed,actor.walkHeight,actor.mounted=point.x,point.z,0,0,false
+            actor.x,actor.z,actor.speed,actor.walkHeight,actor.mounted=
+                point.x,point.z,0,city:Surface(point.x,point.z),false
             session:Refresh()
             assert(assert(session:Target()).distance<.01,"marker navigation must display actual zero-distance arrival")
         end
         local function unchanged(before,writeCount)
             assert(same(Store.Get(),before) and writes==writeCount,"rejected/duplicate handoff mutated wallet/order/profile")
+        end
+        local function declineTip()
+            -- 送达后的可选小费弹窗会隐藏街头字幕并冻结世界；真实点击“不领”再继续人物验收。
+            assert(view:IsBlocking() and view.overlay:IsVisible() and not view.speech:IsVisible(),
+                "delivery tip dialog must freeze the world and hide street speech")
+            local decline
+            for _,button in ipairs(buttons(view.dialogBody)) do
+                if button.props.text=="先不领" then decline=button; break end
+            end
+            assert(decline,"missing optional tip decline button")
+            UI.Layout()
+            local bounds=decline:GetAbsoluteLayoutForHitTest()
+            assert(decline:IsVisible() and bounds.w>0 and bounds.h>0,"tip decline button is not live")
+            local PointerEvent=require("urhox-libs/UI/Core/PointerEvent")
+            local scale=UI.GetScale()
+            local pointer={pointerId=780005,pointerType="touch",x=(bounds.x+bounds.w/2)*scale,
+                y=(bounds.y+bounds.h/2)*scale,button=PointerEvent.Button.Left}
+            local state=Store.Get(); local n=writes
+            UI.HandlePointerEvent(PointerEvent.new("PointerDown",pointer))
+            UI.HandlePointerEvent(PointerEvent.new("PointerUp",pointer))
+            assert(not view:IsBlocking() and not view.overlay:IsVisible(),"declining tip did not resume the world")
+            unchanged(state,n)
         end
         assert(Delivery.Accept()) -- 真实首单，不是虚构奖励的测试数据。
         session:Refresh()
@@ -409,6 +438,7 @@ function Checks.Run(session)
             and not testPool:Get("breakfast"),"real breakfast pickup did not reuse/respond existing owner")
         assert(Store.Get().cashCents==before.cashCents and writes==count+1,"pickup rewarded money or double-committed")
         at(tutorial.dropoffId)
+        ---@type CareerDeliveryPerson
         local recipient=assert(testPool:Get(tutorial.dropoffId),"real pickup did not sync recipient entity")
         testPool:Update(.1,nearActor(recipient),true)
         local recipientPoses=recipient.poseCount
@@ -419,8 +449,12 @@ function Checks.Run(session)
             and after.settledOrders[tutorial.id] and #after.ledger==#before.ledger+1
             and after.revision==before.revision+1 and writes==count+1,"delivery must settle exactly once")
         assert(recipient.poseCount>recipientPoses and testPool:Get(tutorial.dropoffId)==recipient
-            and recipient.hold>5.9 and not recipient.active and view.speech:IsVisible(),
-            "successful production deliver must respond same real recipient and retain it six seconds")
+            and recipient.hold>5.9 and not recipient.active
+            and view.speechText.props.text=="收餐人：收到了，谢谢你跑这一趟。",
+            string.format("successful production deliver must respond same real recipient and retain it six seconds: poses=%d/%d same=%s hold=%.3f active=%s speech=%s blocked=%s",
+                recipient.poseCount,recipientPoses,tostring(testPool:Get(tutorial.dropoffId)==recipient),
+                recipient.hold,tostring(recipient.active),tostring(view.speech:IsVisible()),tostring(view:IsBlocking())))
+        declineTip()
         trafficBlocker(recipient,city)
         pose(recipient,city)
         local delivered=after; count=writes
@@ -442,7 +476,10 @@ function Checks.Run(session)
         merchant=assert(testPool:Get("noodle"))
         testPool:Update(.1,nearActor(merchant),true)
         local function rejected(x,z,mounted,speed,height,failCommit)
-            actor.x,actor.z,actor.mounted,actor.speed,actor.walkHeight=x,z,mounted,speed,height
+            -- Only the explicit elevated case leaves the real ground. Other cases
+            -- must reach their own distance/riding/speed/commit guard independently.
+            actor.x,actor.z,actor.mounted,actor.speed,actor.walkHeight=
+                x,z,mounted,speed,height or city:Surface(x,z)
             local state=Store.Get(); local n=writes; local bones=frozen(merchant)
             local speech=view.speechText.props.text
             rejectWrite=failCommit
@@ -453,11 +490,11 @@ function Checks.Run(session)
             assert(view.speechText.props.text==speech,"failed pickup emitted success speech")
         end
         local p=Config.points.noodle
-        rejected(p.x+3,p.z,false,0,0,false)
-        rejected(p.x,p.z,true,0,0,false)
-        rejected(p.x,p.z,false,.36,0,false)
+        rejected(p.x+3,p.z,false,0,nil,false)
+        rejected(p.x,p.z,true,0,nil,false)
+        rejected(p.x,p.z,false,.36,nil,false)
         rejected(p.x,p.z,false,0,6,false)
-        rejected(p.x,p.z,false,0,0,true)
+        rejected(p.x,p.z,false,0,nil,true)
         at("noodle")
         before=Store.Get(); count=writes; beforePoses=merchant.poseCount
         session:Interact()
@@ -485,9 +522,10 @@ function Checks.Run(session)
         unchanged(state,count); samePose(recipient,bones,"mounted delivery responded")
         actor.speed=.36; session:Interact(); actor.speed=0
         unchanged(state,count); samePose(recipient,bones,"moving delivery responded")
-        actor.walkHeight=6; session:Interact(); actor.walkHeight=0
+        actor.walkHeight=6; session:Interact(); actor.walkHeight=city:Surface(actor.x,actor.z)
         unchanged(state,count); samePose(recipient,bones,"bridge-level delivery responded")
-        actor.x=p.x+15; actor.z=p.z+15; session:Interact()
+        actor.x=p.x+15; actor.z=p.z+15
+        actor.walkHeight=city:Surface(actor.x,actor.z); session:Interact()
         unchanged(state,count); samePose(recipient,bones,"remote delivery responded")
         at("office"); before=Store.Get(); count=writes; recipientPoses=recipient.poseCount
         local generic=assert(Delivery.GetActive())
@@ -495,6 +533,7 @@ function Checks.Run(session)
         assert(after.cashCents==before.cashCents+generic.feeCents and after.completedOrders==before.completedOrders+1
             and after.revision==before.revision+1 and #after.ledger==#before.ledger+1 and writes==count+1
             and recipient.poseCount>recipientPoses and recipient.hold>5.9,"generic delivery must respond only on committed single settlement")
+        declineTip()
         delivered=after; count=writes; recipientPoses=recipient.poseCount
         session:Interact()
         assert(not Delivery.Deliver(generic.id,actor.x,actor.z,{riding=false,speed=0}))
@@ -531,6 +570,7 @@ function Checks.Run(session)
             "first same-point delivery must settle only its own order")
         assert(testPool:Get("office")==shared and shared.active and shared.hold==0
             and shared.poseCount>recipientPoses,"first shared delivery started premature exit hold")
+        declineTip()
         local firstDelivered=Store.Get(); count=writes
         assert(not Delivery.Deliver(sharedOrders[1].id,actor.x,actor.z,{riding=false,speed=0}))
         unchanged(firstDelivered,count)
@@ -546,6 +586,7 @@ function Checks.Run(session)
         assert(testPool:Get("office")==shared and not shared.active and shared.hold>5.9
             and shared.visible and shared.poseCount>recipientPoses,
             "last shared delivery must start a NEW full six-second exit hold")
+        declineTip()
         testPool:Update(.7,nearActor(shared),true)
         local finalHold=shared.hold
         local finalPose=shared.poseCount
@@ -635,6 +676,7 @@ function Checks.Shot(session,view)
         assert(assert(session:Target()).distance<.01,"shot marker navigation must display actual zero-distance arrival")
     end
     at("noodle")
+    ---@type CareerDeliveryPerson
     local person=assert(pool:Get("noodle"),"shot merchant not placed")
     for _=1,20 do pool:Update(.05,actor,true) end
     if view~="pickup" then

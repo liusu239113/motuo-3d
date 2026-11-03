@@ -5,8 +5,32 @@ local F=require("Career.VehicleFootprints")
 local World=require("Career.WorldData")
 local Housing=require("Career.HousingData")
 local Environment=require("Career.CityEnvironment")
+local Motion=require("Career.TrafficMotion")
 local Q={}
-local function rect(o) return C.Box(o.x1,o.z1,o.x2,o.z2) end
+-- 16m格仅裁剪旧城静态候选，最终仍走原多边形/连续扫掠；不合并、不缩小障碍。
+function Q.Index(city)
+    local index={source=city.obstacles,count=#city.obstacles,cells={}}
+    for _,o in ipairs(city.obstacles) do
+        for ix=math.floor(o.x1/16),math.floor(o.x2/16) do
+            for iz=math.floor(o.z1/16),math.floor(o.z2/16) do
+                local id=ix..":"..iz
+                local list=index.cells[id] or {};list[#list+1]=o;index.cells[id]=list
+            end
+        end
+    end
+    city.collisionIndex=index
+    return index
+end
+-- 静态矩形的窄相多边形随描述复用；弱键不阻止WorldData的128块缓存淘汰。
+-- 核对四界，测试/室内若原地修改矩形也会失效；不缓存移动体或碰撞结果。
+local rectangles=setmetatable({},{__mode="k"})
+local function rect(o)
+    local saved=rectangles[o]
+    if saved and saved.x1==o.x1 and saved.x2==o.x2 and saved.z1==o.z1 and saved.z2==o.z2 then return saved end
+    local shape=C.Box(o.x1,o.z1,o.x2,o.z2)
+    rectangles[o]=shape
+    return shape
+end
 local function boundsOverlap(shape,o,dx,dz)
     return math.max(shape.x2,shape.x2+dx)+C.SKIN>o.x1 and math.min(shape.x1,shape.x1+dx)-C.SKIN<o.x2
         and math.max(shape.z2,shape.z2+dz)+C.SKIN>o.z1 and math.min(shape.z1,shape.z1+dz)-C.SKIN<o.z2
@@ -26,9 +50,20 @@ local function collect(city,shape,dx,dz,mode,height,ignoreId,staticOnly)
         add({z1=home.depth/2,z2=home.depth/2+10,x1=-home.width/2-10,x2=home.width/2+10})
         return result
     end
-    for _,o in ipairs(city.obstacles) do add(o) end
     local x1,x2=math.min(shape.x1,shape.x1+dx),math.max(shape.x2,shape.x2+dx)
     local z1,z2=math.min(shape.z1,shape.z1+dz),math.max(shape.z2,shape.z2+dz)
+    local index=rawget(city,"collisionIndex")
+    if index then
+        if index.source~=city.obstacles or index.count~=#city.obstacles then index=Q.Index(city) end
+        local seen={}
+        for ix=math.floor((x1-C.SKIN)/16),math.floor((x2+C.SKIN)/16) do
+            for iz=math.floor((z1-C.SKIN)/16),math.floor((z2+C.SKIN)/16) do
+                for _,o in ipairs(index.cells[ix..":"..iz] or {}) do
+                    if not seen[o] then seen[o]=true;add(o) end
+                end
+            end
+        end
+    else for _,o in ipairs(city.obstacles) do add(o) end end
     if x1< -World.OLD_LIMIT or x2>World.OLD_LIMIT or z1< -World.OLD_LIMIT or z2>World.OLD_LIMIT then
         for ix=math.floor((x1-32)/World.CELL),math.floor((x2+32)/World.CELL) do
             for iz=math.floor((z1-32)/World.CELL),math.floor((z2+32)/World.CELL) do
@@ -57,49 +92,136 @@ local function collect(city,shape,dx,dz,mode,height,ignoreId,staticOnly)
             if height<3 then for _,side in ipairs({-1,1}) do add({x1=bx+side*14-.6,x2=bx+side*14+.6,z1=bz-.6,z2=bz+.6}) end end
         end
     end end
-    local terrainY=Environment.Surface((shape.x1+shape.x2)/2,(shape.z1+shape.z2)/2)
-    if staticOnly or mode=="walk" and height>1 and terrainY==nil then return result end
-    if city.traffic and city.traffic.active then city.traffic:CollisionShapes(result,shape,dx,dz) end
+    if staticOnly then return result end
+    -- Dynamic bodies are vertical intervals at real terrain/support heights,
+    -- not an absolute-height early return (coastal ground can exceed 1m).
+    if city.traffic and city.traffic.active then city.traffic:CollisionShapes(result,shape,dx,dz,mode,height) end
+    local queryTop=height+1.8
+    local function overlaps(y1,y2) return Motion.VerticalOverlap(height,queryTop,y1,y2) end
     local actor=city.actor
+    local function circleMayTouch(x,z,r)
+        return x+r+C.SKIN>=x1 and x-r-C.SKIN<=x2
+            and z+r+C.SKIN>=z1 and z-r-C.SKIN<=z2
+    end
     if actor then
         local function park(id,x,z,yaw)
-            if id~=ignoreId then
-                local localShape=F.Get(id)
-                if math.abs(x-(shape.x1+shape.x2)/2)<localShape.reach+(shape.x2-shape.x1)/2+math.abs(dx)+1
-                    and math.abs(z-(shape.z1+shape.z2)/2)<localShape.reach+(shape.z2-shape.z1)/2+math.abs(dz)+1 then
-                    result[#result+1]=C.Pose(localShape,x,z,yaw)
-                end
-            end
+            if id==ignoreId then return end
+            local localShape=F.Get(id)
+            if not circleMayTouch(x,z,localShape.reach) then return end
+            local y1,y2=Motion.VehicleInterval(city,{vehicleId=id,x=x,z=z})
+            if overlaps(y1,y2) then result[#result+1]=C.Pose(localShape,x,z,yaw) end
         end
         if not actor.mounted then park(actor.vehicleId,actor.bikeX,actor.bikeZ,actor.bikeYaw) end
         for id,p in pairs(actor.parking) do if id~=actor.vehicleId then park(id,p.x,p.z,p.yaw) end end
     end
-    if city.crowd then
-        for _,p in ipairs(city.crowd:GetBlockers()) do
-            if math.abs((p.height or 0)-height)<1.8 then result[#result+1]=C.Circle(p.x,p.z,p.radius) end
+    local crowd=city.crowd
+    if crowd and not crowd.disposed and (not city.traffic or city.traffic.active) then
+        for _,p in ipairs(crowd.people) do
+            if p.active and circleMayTouch(p.x,p.z,p.radius) then
+                local y1,y2=Motion.PersonInterval(city,p)
+                if overlaps(y1,y2) then result[#result+1]=C.Circle(p.x,p.z,p.radius) end
+            end
         end
     end
     if city.deliveryPeople then
         for _,p in ipairs(city.deliveryPeople.people) do
-            if p.active or p.hold>0 then result[#result+1]=C.Circle(p.x,p.z,.4) end
+            if (p.active or p.hold>0) and circleMayTouch(p.x,p.z,.4) then
+                local y1,y2=Motion.PersonInterval(city,p)
+                if overlaps(y1,y2) then result[#result+1]=C.Circle(p.x,p.z,.4) end
+            end
         end
     end
     return result
 end
-function Q.ShapeFree(city,shape,x,z,yaw,mode,height,ignoreId,staticOnly)
-    local posed=C.Pose(shape,x,z,yaw)
+-- Broad-only proof for a not-yet-posed static vehicle query. Rotating the
+-- local total AABB encloses every source part, but is NEVER a collision shape:
+-- any candidate or world-edge uncertainty falls back to the exact posed shell.
+-- Walk queries deliberately do not use this proof: bridge onDeck/entry tests
+-- depend on the exact posed bounds centre and must retain their original path.
+function Q.StaticBoundsClear(city,shape,x,z,yaw,mode,height)
+    if mode~="vehicle" then return false end
+    local a=math.rad(yaw or 0)
+    local cs,sn=math.cos(a),math.sin(a)
+    local ax,bx=shape.x1*cs,shape.x2*cs
+    local az,bz=shape.z1*sn,shape.z2*sn
+    local cx,dx=-shape.x1*sn,-shape.x2*sn
+    local cz,dz=shape.z1*cs,shape.z2*cs
+    -- Outward roundoff allowance only broadens the proof. It cannot reject a
+    -- real gap: failing this proof still executes the unchanged exact query.
+    local pad=1e-9*(1+math.abs(x)+math.abs(z)+(shape.reach or 0))
+    local bounds={x1=x+math.min(ax,bx)+math.min(az,bz)-pad,x2=x+math.max(ax,bx)+math.max(az,bz)+pad,
+        z1=z+math.min(cx,dx)+math.min(cz,dz)-pad,z2=z+math.max(cx,dx)+math.max(cz,dz)+pad}
+    if bounds.x1< -World.LIMIT or bounds.x2>World.LIMIT or bounds.z1< -World.LIMIT or bounds.z2>World.LIMIT then return false end
+    -- Analytic bridge collection reads the bounds centre/extent as well as
+    -- overlap. Do not substitute even a conservative centre anywhere in that
+    -- support domain; exact original posed bridge candidates remain mandatory.
+    for _,d in ipairs(World.Districts) do
+        if d.bridge and bounds.x2>d.x-26 and bounds.x1<d.x+26
+            and bounds.z2>d.z+96-68 and bounds.z1<d.z+96+4 then return false end
+    end
+    local candidates=collect(city,bounds,0,0,mode,height,nil,true)
+    return #candidates==0,candidates
+end
+-- One synchronous turn has a fixed centre/support layer and no interleaved
+-- world updates. Collect the full rotation disc ONCE, including the original
+-- per-interval sagitta box padding. Never cache this across movement/frames.
+function Q.BeginTurn(city,x,z,shape,height,ignoreId)
+    local pad=shape.reach*(1-math.cos(math.rad(.25)*.5))+.000001
+    local envelope=C.Circle(x,z,shape.reach+math.sqrt(2)*pad)
+    local candidates=collect(city,envelope,0,0,"vehicle",height,ignoreId,false)
+    local disc=C.Circle(x,z,shape.reach)
+    local clear=disc.x1>=-World.LIMIT and disc.x2<=World.LIMIT
+        and disc.z1>=-World.LIMIT and disc.z2<=World.LIMIT
+    if clear then
+        for _,other in ipairs(candidates) do
+            if not C.Free(disc,other,C.SKIN) then clear=false;break end
+        end
+    end
+    return {x=x,z=z,candidates=candidates,clear=clear}
+end
+-- Each part's endpoint bounds + sagitta padding enclose the EXACT original
+-- convex hull. A disjoint bound can skip construction, never reject a gap.
+function Q.TurnFree(context,first,last,pad)
+    local x,z=context.x,context.z
+    for index,p in ipairs(first.parts) do
+        local q=last.parts[index]
+        local x1,x2=x+(math.min(p.x1,q.x1)-pad),x+(math.max(p.x2,q.x2)+pad)
+        local z1,z2=z+(math.min(p.z1,q.z1)-pad),z+(math.max(p.z2,q.z2)+pad)
+        if x1< -World.LIMIT or x2>World.LIMIT or z1< -World.LIMIT or z2>World.LIMIT then return false end
+        -- Build lazily at most once per potentially touching strip. Other
+        -- strips are a union, so their absence cannot affect this C.Free test.
+        local swept=false
+        for _,other in ipairs(context.candidates) do
+            if x2+C.SKIN>other.x1 and other.x2+C.SKIN>x1
+                and z2+C.SKIN>other.z1 and other.z2+C.SKIN>z1 then
+                if not swept then swept=C.Pose(C.RotationPart(p,q,pad),x,z,0) end
+                if not C.Free(swept,other,C.SKIN) then return false end
+            end
+        end
+    end
+    return true
+end
+-- 已经有当前坐标车壳的交通查询复用同一份只读姿态，不再次旋转相同顶点。
+function Q.PosedFree(city,posed,shape,x,z,mode,height,ignoreId,staticOnly,candidates)
+    if height==nil then height=city.space=="city" and city:Surface(x,z) or 0 end
     if posed.x1< -World.LIMIT or posed.x2>World.LIMIT or posed.z1< -World.LIMIT or posed.z2>World.LIMIT then return false end
     -- Preserve World bridge edge support / walk-height semantics, not its square
     -- expansion for ordinary walls. The walking footprint really is a circle.
-    if city.space=="city" and mode=="walk" and (height or 0)>.65 and Environment.Surface(x,z)==nil then
+    if city.space=="city" and mode=="walk" and World.NavigationLayer(x,z,height,mode)~="ground" then
         if not World.IsFree(x,z,shape.parts[1].radius or 0,mode,height) then return false end
     end
-    for _,other in ipairs(collect(city,posed,0,0,mode or "vehicle",height or 0,ignoreId,staticOnly)) do
+    -- 候选只能来自本次静态保守广相；动态查询始终重新收集。
+    local obstacles=staticOnly and candidates or collect(city,posed,0,0,mode or "vehicle",height or 0,ignoreId,staticOnly)
+    for _,other in ipairs(obstacles) do
         if not C.Free(posed,other,C.SKIN) then return false end
     end
     return true
 end
+function Q.ShapeFree(city,shape,x,z,yaw,mode,height,ignoreId,staticOnly)
+    return Q.PosedFree(city,C.Pose(shape,x,z,yaw),shape,x,z,mode,height,ignoreId,staticOnly)
+end
 function Q.Move(city,x,z,dx,dz,shape,yaw,mode,height,ignoreId,staticOnly)
+    if height==nil then height=city.space=="city" and city:Surface(x,z) or 0 end
     local blocked=false
     -- Continuous cast in each bounded displacement, followed by contact-normal
     -- sliding. No X/Z axis bias: oblique car flanks are smooth at any yaw.
@@ -121,7 +243,7 @@ function Q.Move(city,x,z,dx,dz,shape,yaw,mode,height,ignoreId,staticOnly)
             end
             local fraction=math.max(0,best-1e-7)
             local tx,tz=x+rx*fraction,z+rz*fraction
-            if city.space=="city" and mode=="walk" and (height or 0)>.65 and Environment.Surface(tx,tz)==nil
+            if city.space=="city" and mode=="walk" and World.NavigationLayer(x,z,height,mode)~="ground"
                 and not World.IsFree(tx,tz,shape.parts[1].radius or 0,mode,height) then blocked=true;break end
             x,z=tx,tz
             if best>=1 then break end
@@ -145,10 +267,54 @@ function Q.Find(city,x,z,shape,yaw,mode,height,ignoreId)
     end
     error("No collision-free nearby restore position; refusing invisible vehicle overlap")
 end
-function Q.SegmentFree(city,ax,az,bx,bz,r,mode,height)
+function Q.SegmentFreeExact(city,ax,az,bx,bz,r,mode,height)
     local shape=C.Circle(0,0,r)
     if not Q.ShapeFree(city,shape,ax,az,0,mode,height,nil,true) then return false end
     local x,z,blocked=Q.Move(city,ax,az,bx-ax,bz-az,shape,0,mode,height,nil,true)
     return not blocked and math.abs(x-bx)+math.abs(z-bz)<.0001
+end
+function Q.SegmentFree(city,ax,az,bx,bz,r,mode,height)
+    -- 静态直线只问能否完整通过，不做滑墙：一次完整连续扫掠与逐10cm扫掠等价。
+    -- 桥层边缘仍走原逐步支撑检查，不能用直线捷径跨过桥栏或中途换层。
+    for _,b in ipairs(World.Bridges) do
+        if math.max(ax,bx)+r>b.x-26 and math.min(ax,bx)-r<b.x+26
+            and math.max(az,bz)+r>b.z-68 and math.min(az,bz)-r<b.z+4 then
+            return Q.SegmentFreeExact(city,ax,az,bx,bz,r,mode,height)
+        end
+    end
+    local y=height or city:Surface(ax,az)
+    local shape=C.Circle(ax,az,r)
+    if math.min(ax,bx)-r< -World.LIMIT or math.max(ax,bx)+r>World.LIMIT
+        or math.min(az,bz)-r< -World.LIMIT or math.max(az,bz)+r>World.LIMIT then return false end
+    for _,other in ipairs(collect(city,shape,bx-ax,bz-az,mode or "vehicle",y,nil,true)) do
+        if not C.Free(shape,other,C.SKIN) or C.Sweep(shape,other,bx-ax,bz-az) then return false end
+    end
+    return true
+end
+function Q.StaticBoundsChecks()
+    local city={space="city",obstacles={},Surface=function() return 0 end}
+    local source=C.Box(-.7,-2,.9,2)
+    assert(Q.StaticBoundsClear(city,source,0,-30,37,"vehicle",0),"empty street failed bounds proof")
+    assert(not Q.StaticBoundsClear(city,source,0,-30,37,"walk",0),"walk layer entered static bounds shortcut")
+    assert(not Q.StaticBoundsClear(city,source,World.LIMIT,0,37,"vehicle",0),"world edge entered shortcut")
+    for _,d in ipairs(World.Districts) do if d.bridge then
+        assert(not Q.StaticBoundsClear(city,source,d.x,d.z+96,37,"vehicle",0),"bridge domain entered shortcut")
+    end end
+    local count,proved=0,0
+    for _,o in ipairs({{x1=-2,x2=-1,z1=-32,z2=-28},{x1=.5,x2=.51,z1=-32,z2=-28},
+        {x1=-.4,x2=.4,z1=-30.2,z2=-29.8}}) do
+        city.obstacles={o};Q.Index(city)
+        for _,x in ipairs({-3,-.75,0,.75,3}) do
+            for _,yaw in ipairs({0,17,45,90,137,180,271}) do
+                local old=Q.ShapeFree(city,source,x,-30,yaw,"vehicle",0,nil,true)
+                local empty,candidates=Q.StaticBoundsClear(city,source,x,-30,yaw,"vehicle",0)
+                local current=empty or Q.PosedFree(city,C.Pose(source,x,-30,yaw),source,x,-30,"vehicle",0,nil,true,candidates)
+                assert(current==old and (not empty or old),"static broad proof changed exact occupancy")
+                count=count+1;if empty then proved=proved+1 end
+            end
+        end
+    end
+    print(string.format("[静态懒姿态检查] PASS %d组精确原路径等价/%d空域证明/薄障碍/世界边/桥域回退/walk禁快路",count,proved))
+    return true
 end
 return Q

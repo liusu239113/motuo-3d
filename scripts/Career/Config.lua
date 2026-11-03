@@ -22,6 +22,18 @@ Config.STOP_SPEED = 0.35 -- m/s，不是 km/h
 Config.BATTERY_PER_METER = 100 / 35000
 Config.HUNGER_PER_HOUR = 8
 Config.ENERGY_PER_HOUR = 6
+-- 排班只模拟确认后的未来7天；亲送与活动时长是每次资格，不从未来单量扣除。
+-- 所有金额仍为整数分；不参与31份旧模板报价。
+Config.WORK_WEEK = {
+    days=7, requiredManualOrders=10, requiredActiveSeconds=900, unlockDay=10,
+    livingCents=17600, perOrderCostCents=30,
+    cityOrders=240, cityAverageCents=580,
+    skilledOrders=300, skilledAverageCents=600,
+    goldOrders=348, goldAverageCents=620,
+}
+Config.FIRST_MOTORCYCLE_TARGET_CENTS = 5000000
+-- 无额外奖金的连续攒车里程碑，只读展示钱包实际余额，不发钱、不自动购买。
+Config.SAVINGS_STEPS_CENTS = {100000,250000,500000,1000000,2000000,3500000,5000000}
 
 ---@class CareerPoint
 ---@field id string
@@ -51,6 +63,11 @@ for _, point in ipairs(World.Points) do
     Config.pointList[#Config.pointList+1]=cityPoint
 end
 for _,point in ipairs(require("Career.CityEnvironment").Points) do
+    Config.pointList[#Config.pointList+1]=point
+end
+---@type CareerHillDistrict
+local Hills=require("Career.HillDistrict")
+for _,point in ipairs(Hills.Points) do
     Config.pointList[#Config.pointList+1]=point
 end
 ---@type table<string, CareerPoint>

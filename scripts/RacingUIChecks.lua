@@ -16,17 +16,28 @@ local function visit(widget, fn)
 end
 -- 保留真实字体/真实 Yoga 测量，逐张卡检查所有文字与卡内祖先，不要求离屏卡落在滚动视口内。
 function Checks.Layout(hud, width, height)
-    local oldRoot, oldScreen = UI.GetRoot(), hud.screen
+    local oldRoot, oldScreen, oldFocus = UI.GetRoot(), hud.screen, UI.GetFocus()
     local panel = hud.trackSelection
     local saved = {width = panel.props.width or "auto", height = panel.props.height or "auto",
         left = panel.props.left, top = panel.props.top, right = panel.props.right, bottom = panel.props.bottom}
     hud:OpenTracks()
     local holder = UI.Panel {width = width, height = height, padding = 0}
     panel:Remove(); holder:AddChild(panel)
+    -- Pagination and hit testing require a live chain to UI.GetRoot(), not just
+    -- a detached Yoga tree with plausible dimensions. Mount the test viewport.
+    UI.SetRoot(holder)
     panel:SetStyle({width = width, height = height, left = 0, top = 0, right = 0, bottom = 0})
     hud:LayoutTracks(width, height)
+    hud.routeScroll:RestoreSource()
     YGNodeCalculateLayout(holder.node, width, height, YGDirectionLTR)
     local count = 0
+    local layout = UI.Layout
+    -- Keep every PhonePages measurement pass at the requested real Yoga size,
+    -- not only the first pass (UI.Layout otherwise resets to the device viewport).
+    UI.Layout = function()
+        layout()
+        YGNodeCalculateLayout(holder.node, width, height, YGDirectionLTR)
+    end
     local ok, failure = pcall(function()
         local metrics = Routes.Metrics(width, height)
         demand(metrics.columns <= 3 and metrics.cardWidth >= 300, "必须最多三列且每列不挤压正文")
@@ -47,21 +58,76 @@ function Checks.Layout(hud, width, height)
             end)
         end
         demand(count >= 42, "必须检查六张卡的真实文字节点")
+        local pages, seen = hud.routeScroll, {}
+        demand(UI.GetRoot() == holder and pages:IsActiveInTree(),
+            "路线测试必须挂载真实活动根，不能用离树Yoga测量冒充分页")
+        pages:Paginate()
+        demand(pages:GetPageCount() > 0, "路线必须经过真实分页，不得只测未分页自然树")
+        if height < 520 then
+            demand(metrics.columns == 1, "短高必须显式纵向卡片，不能让分页器拆超高多列横排")
+            for _, card in pairs(hud.trackCards) do demand(card.parent == hud.trackGrid, "单列不得保留空横排包装") end
+        end
+        local routeCount = 0
+        local function inspect(widget)
+            if not widget:IsVisible() then return end
+            seen[widget] = true
+            local r = widget:GetAbsoluteLayout()
+            demand(r.w > 0 and r.h > 0 and inside(r, pages:GetAbsoluteLayout(), 2),
+                "分页后可见路线节点不得越页：" .. tostring(widget.props.text or widget._className))
+            for _, child in ipairs(widget:GetChildren()) do inspect(child) end
+        end
+        for page = 1, pages:GetPageCount() do
+            pages:SetPage(page); UI.Layout()
+            for _, child in ipairs(pages:GetChildren()) do inspect(child) end
+            demand(pages.prevButton:GetAbsoluteLayout().h >= 44 and pages.nextButton:GetAbsoluteLayout().h >= 44,
+                "路线分页触摸高度不得以缩小掩盖")
+        end
+        for _, card in pairs(hud.trackCards) do
+            demand(seen[card], "六条路线必须全可达")
+            visit(card, function(child)
+                if child._className == "Label" then demand(seen[child], "每条路线全部正文/解锁条件必须分页可达") end
+            end)
+            routeCount = routeCount + 1
+        end
+        demand(routeCount == 6, "真实分页必须遍历全部六条路线")
+        pages:SetPage(1); UI.Layout()
     end)
+    UI.Layout = layout
+    hud.routeScroll:RestoreSource()
     panel:Remove(); holder:Destroy()
     hud.safeContent:AddChild(panel)
     panel:SetStyle(saved)
     UI.SetRoot(oldRoot)
     hud.layoutWidth, hud.layoutHeight = -1, -1
     hud:SetScreen(oldScreen)
-    hud:LayoutResponsive(); UI.Layout()
+    hud:LayoutResponsive(); UI.Layout(); UI.SetFocus(oldFocus)
+    demand(UI.GetRoot() == oldRoot and UI.GetFocus() == oldFocus and UI.Layout == layout,
+        "路线检查finally必须恢复原Root/Focus/Layout")
     demand(ok, tostring(failure))
     print(string.format("[RacingUIChecks] PASS %.0fx%.0f / %d文字节点包含性", width, height, count))
     return count
 end
 local function renderModal(modal)
     UI.Layout()
-    modal:RenderModalContent(UI.GetNVGContext())
+    local header, footer = modal.RenderHeader, modal.RenderFooter
+    local headers, footers = 0, 0
+    modal.RenderHeader = function(self, ...)
+        headers = headers + 1
+        return header(self, ...)
+    end
+    modal.RenderFooter = function(self, ...)
+        footers = footers + 1
+        return footer(self, ...)
+    end
+    local ok, failure = pcall(function() modal:RenderModalContent(UI.GetNVGContext()) end)
+    modal.RenderHeader, modal.RenderFooter = header, footer
+    demand(ok, tostring(failure))
+    demand(headers == 1 and footers == 1, "一次Modal渲染只能绘制一次标题与页脚，不能双绘测量")
+    demand(modal.racingPages:GetPageCount() > 0, "首帧绘制前必须已完成分页测量")
+    local content = modal.contentContainer_
+    demand(math.abs(content:GetLayout().w - content.renderWidth_) < 2
+        and math.abs(content:GetLayout().h - content.renderHeight_) < 2,
+        "分页测量必须使用与实际Modal渲染一致的有界内容尺寸")
 end
 local function clickAt(x, y)
     local scale = UI.GetScale()
@@ -414,7 +480,7 @@ function Checks.Run(hud)
     for _, size in ipairs({{854,480}, {640,360}, {568,320}, {640,280}, {748,400}, {1280,720}, {1568,705}}) do
         menuLabels = menuLabels + Checks.Menu(size[1], size[2])
     end
-    for _, size in ipairs({{854,480}, {1280,720}, {1568,705}}) do
+    for _, size in ipairs({{854,480}, {748,400}, {640,360}, {568,320}, {640,280}, {1000,400}, {1280,720}, {1568,705}}) do
         labels = labels + Checks.Layout(hud, size[1], size[2])
     end
     for _, size in ipairs({{854,480}, {748,400}, {640,360}, {1280,720}, {1568,705}}) do
@@ -424,6 +490,6 @@ function Checks.Run(hud)
     local controls = Checks.Controls(hud)
     Checks.Features(hud)
     print("[RacingUIChecks] 全部通过；ControlChecks请单独继续执行")
-    return {passed = true, labels = labels, resolutions = 3, controls = controls, menuLabels = menuLabels, menuResolutions = 7}
+    return {passed = true, labels = labels, resolutions = 8, controls = controls, menuLabels = menuLabels, menuResolutions = 7}
 end
 return Checks

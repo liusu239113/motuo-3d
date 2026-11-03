@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "ReviewHudChecks.lua",
+    "result": "FAIL",
+    "duration_ms": 11071,
+    "frames_completed": 120,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-11-01 04_52_03_464][102] ERROR: Execute Lua function failed: [ReviewHudChecks] FAILED [string \"Career/Store\"]:864: [string \"ReviewHudChecks\"]:70: [ReviewHudChecks] 多尺寸失败 1000x400: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 1000x400 scale=0.9129 / 真实字体高度被裁切 career-phone measured=48.459 content=44.913 bounds=44.913 padding=(0,0) font=26.291；640x360: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 640x360 scale=0.9129 / 真实字体高度被裁切 career-phone measured=48.459 content=44.913 bounds=44.913 padding=(0,0) font=26.291；800x600: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 800x600 scale=0.9129 / 真实字体高度被裁切 career-phone measured=48.459 content=44.913 bounds=44.913 padding=(0,0) font=26.291；390x844: [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] [string \"Career/HudLayoutChecks\"]:10: [HudLayoutChecks] 390x844 scale=0.9129 / 真实字体高度被裁切 career-phone measured=48.459 content=44.913 bounds=44.913 padding=(0,0) font=26.291\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"ReviewHudChecks\"]:79: in method 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:1657: in field 'Render'\n\t[string \"urhox-libs/UI/Core/UI\"]:790: in function <[string \"urhox-libs/UI/Core/UI\"]:789>",
+                    "frame": 0
+                }
+            ]
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 2301.423095703125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.999000549316408
+        },
+        {
+            "frame": 60,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.618999481201173
+        },
+        {
+            "frame": 120,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.621000289916993
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 215.57200622558595,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 1
+    }
+}

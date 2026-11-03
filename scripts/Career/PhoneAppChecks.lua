@@ -354,8 +354,6 @@ function Checks.Shot(session,page)
     isolated(session)
     local requestedPage=page
     local position="top"
-    local pageNumber=tonumber(page:match("%-page(%d+)$"))
-    if pageNumber then page=page:gsub("%-page%d+$","") end
     local base,suffix=page:match("^(.-)%-(middle)$")
     if not base then base,suffix=page:match("^(.-)%-(bottom)$") end
     if base then page,position=base,suffix end
@@ -416,7 +414,6 @@ function Checks.Shot(session,page)
         assert(view.phoneContent:ShowWidget(anchor),"实拍锚点不在真实分页中 "..anchor)
     elseif position=="middle" then
         view.phoneContent:SetPage(math.max(1,math.ceil(view.phoneContent:GetPageCount()/2)))
-    elseif pageNumber then view.phoneContent:SetPage(pageNumber)
     elseif position=="bottom" then view.phoneContent:SetPage(view.phoneContent:GetPageCount()) end
     layout(view)
     if app=="messages" and page~="messages" then visibleTextLayout(view,"career-chat-header-info") end
@@ -445,5 +442,165 @@ function Checks.Shot(session,page)
     local income,expense=Apps.Today(state)
     print(string.format("[手机应用实拍就绪] %s / 真实余额%.2f / %d笔真实流水 / 今日收入%.2f支出%.2f / completed=%d / story=%s / memory-only / 真组件与触摸可达",
         requestedPage,state.cashCents/100,#state.ledger,income/100,expense/100,state.completedOrders,tostring(state.flags.firstDeliveryStory)))
+end
+-- Verify task navigation against the REAL existing life tree. Never call its
+-- business actions; all original buttons remain reachable with exact identity.
+---@param view CareerView
+function Checks.LifeTasks(view)
+    assert(view.phonePage=="life","生活任务验收需先打开生活")
+    layout(view)
+    local pages=view.phoneContent
+    assert(pages:GetTask()=="" and #pages.tasks==6,"生活入口必须是6组任务目录")
+    local original={}
+    for _,task in ipairs(pages.tasks) do
+        local function collect(widget)
+            if widget._className=="Button" then original[widget]=true end
+            for _,child in ipairs(widget:GetChildren()) do collect(child) end
+        end
+        for _,section in ipairs(task.sections) do collect(section.widget) end
+    end
+    local visited={}
+    for _,id in ipairs({"today","food","home","supply","status","settings"}) do
+        tap(view,"career-life-task-"..id)
+        assert(pages:GetTask()==id,"生活快捷入口没有进入正确任务组 "..id)
+        Checks.Audit(view,"生活任务/"..id)
+        for _,unit in ipairs(pages.units) do
+            for widget in pairs(unit.members) do if original[widget] then visited[widget]=true end end
+        end
+        tap(view,"career-phone-back")
+        assert(pages:GetTask()=="" and view.phonePage=="life","组内工具栏返回应回目录，不应退出生活")
+    end
+    for widget in pairs(original) do assert(visited[widget],"生活业务按钮被分组遗漏 "..tostring(widget.props.id)) end
+    -- Programmatic search/shot anchors are still supported across hidden groups.
+    assert(pages:ShowWidget("career-life-charge") and pages:GetTask()=="supply","查找充电任务不能直接到达所属组")
+    tap(view,"career-life-task-back")
+    assert(pages:GetTask()=="","内容返回目录按钮无效")
+    Checks.Audit(view,"生活任务目录")
+    return true
+end
+-- Focused UI-only regressions. Call after UI.Init; no world/session/storage,
+-- no game ticks/build, and synthetic ledger data never enters Store.
+---@return table
+function Checks.BoundedUI()
+    local Kit=require("Career.PhoneKit")
+    local Pages=require("Career.PhonePages")
+    local savedRoot=UI.GetRoot()
+    local fixture=UI.Panel{width=320,height=500,padding=0}
+    local ancestor=UI.Panel{width=280,height=420,padding=0}
+    local pages=Pages{width="100%",height="100%",padding=0,overflow="hidden"}
+    ancestor:AddChild(pages);fixture:AddChild(ancestor)
+    local source=UI.Panel{width="100%",padding=8,gap=8}
+    local first=Kit.Text("隐藏页正文",11)
+    source:AddChild(first)
+    for i=1,8 do source:AddChild(Kit.Button("完整操作 "..i,function() end,"bounded-button-"..i,false)) end
+    pages:AddChild(source)
+    local savedLayout=UI.Layout
+    local detached={}
+    local report={hiddenFrames=0,ledgerEntries=1200,maxLedgerWidgets=0,batches=0}
+    local function settle()
+        for _=1,4 do UI.Layout();pages:Update(0) end
+        UI.Layout()
+    end
+    local function tapWidget(id)
+        assert(pages:ShowWidget(id),"bounded fixture missing page for "..id)
+        settle()
+        local widget=assert(pages:FindById(id))
+        local r=widget:GetAbsoluteLayoutForHitTest()
+        local bounds=pages:GetAbsoluteLayoutForHitTest()
+        assert(r.w>=44 and r.h>=44 and r.y>=bounds.y-1 and r.y+r.h<=bounds.y+bounds.h+1,
+            "bounded fixture clipped/small touch target "..id)
+        local scale=UI.GetScale()
+        local function event(kind)
+            return PointerEvent.new(kind,{pointerId=791214,pointerType="touch",isPrimary=false,
+                x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=PointerEvent.Button.Left})
+        end
+        local down,up=event("PointerDown"),event("PointerUp")
+        UI.HandlePointerEvent(down);UI.HandlePointerEvent(up)
+        assert(down.target==widget and up.target==widget,"bounded fixture actual hit mismatch "..id)
+    end
+    local ok,failure=pcall(function()
+        UI.SetRoot(fixture);settle()
+        assert(pages:GetPageCount()>1,"hidden regression needs multiple real pages")
+        local layouts,signatures=0,0
+        local originalSignature=pages.SourceSignature
+        pages.SourceSignature=function(self) signatures=signatures+1;return originalSignature(self) end
+        UI.Layout=function() layouts=layouts+1;savedLayout() end
+        ancestor:SetVisible(false)
+        first:SetText("隐藏期间修改，恢复显示必须重新分页并保留文字")
+        pages:SetPage(2)
+        for _=1,30 do pages:Update(0);pages:Paginate();report.hiddenFrames=report.hiddenFrames+1 end
+        assert(layouts==0 and signatures==0,"隐藏祖先不得扫描源树或调用UI.Layout/Paginate测量")
+        UI.Layout=savedLayout;pages.SourceSignature=originalSignature
+        ancestor:SetVisible(true);settle()
+        assert(pages:GetPage()==2 and pages.signature==pages:SourceSignature(),"显示后未应用隐藏期间页请求/源变化")
+        -- Render-hidden also retains layout, but must not do page work.
+        ancestor:SetStyle{visibility="hidden"}
+        layouts=0;UI.Layout=function() layouts=layouts+1;savedLayout() end
+        pages:SetPage(1);pages:Update(0);pages:Paginate()
+        assert(layouts==0,"visibility=hidden祖先仍触发分页布局")
+        UI.Layout=savedLayout;ancestor:SetStyle{visibility="visible"};settle()
+        Kit.Clear(pages)
+        local state={day=4,cashCents=12345,ledger={}}
+        for i=1,report.ledgerEntries do
+            state.ledger[i]={id=i==1 and "opening" or "bounded-ledger-"..i,kind=i==1 and "opening" or i%2==0 and "delivery" or "meal",
+                day=4,time=8+i/1000,deltaCents=i==1 and 5000 or i%2==0 and 500 or -1200,balanceCents=12345}
+        end
+        ---@type CareerView
+        local view=--[[@as CareerView]] {phoneContent=pages,phoneLedgerId="",phoneWalletFilter="all",
+            phoneTitle=Kit.Text("钱包",13),phoneBack=Kit.Button("返回",function() end,"bounded-back",false),
+            actions={saveStatus=function() return "隔离UI数据，不接存储" end,
+                save=function() error("UI回归禁止保存") end,loadCloud=function() error("UI回归禁止云读取") end}}
+        detached={view.phoneTitle,view.phoneBack}
+        view.BuildPhone=function(self)
+            Kit.Clear(pages)
+            local content=UI.Panel{width="100%",padding=8,gap=8}
+            pages:AddChild(content);Apps.Wallet(self,content,state);pages:Paginate()
+        end
+        view.phoneAppState=state
+        view:BuildPhone();settle()
+        local previousRows={}
+        for batch=1,4 do
+            local ledger=assert(pages:FindById("career-wallet-ledger"))
+            local children=ledger:GetChildren()
+            assert(#children==Apps.WalletBatchSize,"长流水必须只创建当前6笔Widget")
+            report.maxLedgerWidgets=math.max(report.maxLedgerWidgets,#children)
+            assert(Apps.WalletDataPage(view)==batch,"流水批次未推进")
+            for _,old in ipairs(previousRows) do assert(not old.node and not old.parent,"旧流水批次Widget未销毁") end
+            previousRows={}
+            for _,child in ipairs(children) do previousRows[#previousRows+1]=child end
+            report.batches=report.batches+1
+            if batch<4 then tapWidget("career-wallet-data-next");settle() end
+        end
+        local current=Apps.WalletBatch(state,"all",4)
+        local row=current.rows[1] --[[@as table]]
+        tapWidget("career-wallet-entry-"..row.index)
+        assert(view.phoneLedgerId==row.entry.id,"账单详情不是当前批真实编号")
+        tapWidget("career-wallet-detail-back");settle()
+        assert(Apps.WalletDataPage(view)==4 and view.phoneWalletFilter=="all","详情返回丢失流水批次/筛选")
+        tapWidget("career-wallet-filter-income");settle()
+        assert(Apps.WalletDataPage(view)==1,"切换筛选须重置流水批次")
+        local seen={}
+        for page=1,math.ceil(600/Apps.WalletBatchSize) do
+            local batch=Apps.WalletBatch(state,"income",page)
+            assert(batch.count==600 and #batch.rows<=Apps.WalletBatchSize,"收入筛选计数或数据批大小错误")
+            for _,item in ipairs(batch.rows) do
+                assert(item.entry.kind~="opening" and item.entry.deltaCents>0 and not seen[item.entry.id],"收入遗漏/重复/混入本金")
+                seen[item.entry.id]=true
+            end
+        end
+        local empty=Apps.WalletBatch({ledger={}},"expense",999)
+        local shortened=Apps.WalletBatch({ledger={state.ledger[1]}},"all",999)
+        assert(empty.page==1 and empty.count==0 and #empty.rows==0 and shortened.page==1 and #shortened.rows==1,
+            "空筛选或数据变短后没有夹紧数据批")
+        assert(#state.ledger==1200 and state.cashCents==12345,"UI分页不得修改流水与现金")
+    end)
+    UI.Layout=savedLayout
+    UI.SetRoot(savedRoot);fixture:Destroy()
+    for _,widget in ipairs(detached) do widget:Destroy() end
+    if savedRoot then UI.Layout() end
+    if not ok then error(failure,0) end
+    print(string.format("[手机有界UI验收] 隐藏%d帧无分页布局 / %d笔数据每批最多%d个账单Widget / 真触摸%d批与详情筛选",report.hiddenFrames,
+        report.ledgerEntries,report.maxLedgerWidgets,report.batches))
+    return report
 end
 return Checks

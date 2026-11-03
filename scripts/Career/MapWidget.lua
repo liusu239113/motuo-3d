@@ -8,8 +8,8 @@ local Environment = require("Career.CityEnvironment")
 local C = Theme.Colors
 local GRID = 32 -- metres; geometry/routing are cached between window cells.
 local MIN_SPAN = 120
-local ROAD_COLOR = {92, 111, 120, 150}
-local ARTERIAL_COLOR = {139, 161, 170, 210}
+local ROAD_COLOR = {158, 165, 168, 210}
+local ARTERIAL_COLOR = {212, 216, 218, 240}
 local ORDER_COLOR = {125, 145, 158, 140}
 
 ---@class CareerMapPosition
@@ -357,14 +357,69 @@ function MapWidget:GroundRect(x, z, width, depth, color)
         height = bottom - top, padding = 0, borderWidth = 0, backgroundColor = color, pointerEvents = "none"})
 end
 
+-- 普通雷达与全屏地图共用同一图层，避免只有某个入口能看到步行连接。
+function MapWidget:RebuildWalkGeometry()
+    if self.span>6000 then return end
+    local color={117,181,155,240}
+    local hills=require("Career.HillDistrict")
+    local river=hills.River
+    self:GroundRect((river.x1+river.x2)/2,(river.z1+river.z2)/2,river.x2-river.x1,river.z2-river.z1,{23,57,70,230})
+    for _,route in ipairs(hills.Routes) do
+        ---@type CareerMapPosition[]
+        local points=route.points
+        for i=2,#points do
+            self:Segment(self.roads,assert(points[i-1]),assert(points[i]),{205,183,118,255},clamp(16*self.scale,2,8))
+        end
+        if self.detailed then
+            local x,y=self:Project(0,1280)
+            if x>=0 and x<=self.width and y>=0 and y<=self.height then self:PlaceLabel("北岭跨谷公路",x,y,C.amber,10) end
+        end
+    end
+    for _,bridge in ipairs(World.Bridges) do
+        local b=bridge --[[@as {id:string,x:number,z:number,halfSpan:number,width:number}]]
+        self:Segment(self.roads,{x=b.x-b.halfSpan,z=b.z},{x=b.x+b.halfSpan,z=b.z},color,clamp(b.width*self.scale,2,6))
+        for _,side in ipairs({-1,1}) do
+            self:Segment(self.roads,{x=b.x+side*20,z=b.z-68},{x=b.x+side*20,z=b.z},color,clamp(b.width*self.scale,2,6))
+        end
+        local x,y=self:Project(b.x,b.z)
+        -- 小雷达只画连接，不堆长禁行文案；详细全图才显示步行层名称。
+        if self.detailed and self.span<=1800 and x>=0 and x<=self.width and y>=0 and y<=self.height then
+            self:PlaceLabel("步行连接",x,y,color,9)
+        end
+    end
+    for _,points in pairs(Environment.ApproachRoutes) do
+        ---@type CareerMapPosition[]
+        local route=points
+        for i=2,#route do self:Segment(self.roads,assert(route[i-1]),assert(route[i]),color,2) end
+    end
+    local deck=Environment.Boardwalk
+    self:Segment(self.roads,{x=(deck.x1+deck.x2)/2,z=deck.z1},{x=(deck.x1+deck.x2)/2,z=deck.z2},color,clamp(8*self.scale,2,7))
+end
+
+function MapWidget:RebuildFootprints()
+    -- 窄条雷达的长边可能覆盖数公里：建筑层按实际世界窗口做LOD，避免横宽比放大扫描量。
+    if self.span>1200 or math.max(self.width,self.height)/self.scale>1800 then return end
+    local padding=self.followActor and GRID or 0
+    local halfW,halfH=self.width/(2*self.scale)+padding,self.height/(2*self.scale)+padding
+    -- 只描述可见窗口及一格邻接，不扫描30公里全域；沿用WorldData自身有界缓存。
+    local minX,maxX=math.max(-World.LIMIT,self.centerX-halfW),math.min(World.LIMIT,self.centerX+halfW)
+    local minZ,maxZ=math.max(-World.LIMIT,self.centerZ-halfH),math.min(World.LIMIT,self.centerZ+halfH)
+    for ix=math.floor(minX/World.CELL)-1,math.floor(maxX/World.CELL)+1 do
+        for iz=math.floor(minZ/World.CELL)-1,math.floor(maxZ/World.CELL)+1 do
+            for _,o in ipairs(World.DescribeCell(ix,iz).obstacles) do
+                if o.kind=="building" then
+                    self:GroundRect((o.x1+o.x2)/2,(o.z1+o.z2)/2,o.x2-o.x1,o.z2-o.z1,{43,53,58,200})
+                end
+            end
+        end
+    end
+end
+
 function MapWidget:RebuildDetailGeometry()
     self.labelBoxes = {}
-    -- Actual neighbourhood footprints only, never invented city blocks/Chongqing art.
+    self:RebuildFootprints()
+    -- 建筑占地来自全部可见WorldData块，不再只显示开局邻里。
     if self.span <= 1800 then
-        for _, building in ipairs(Expansion.Buildings) do
-            self:GroundRect((building.x1 + building.x2) / 2, (building.z1 + building.z2) / 2,
-                building.x2 - building.x1, building.z2 - building.z1, {43, 53, 58, 200})
-        end
         for _, plaza in ipairs(Expansion.Plazas) do
             self:GroundRect(plaza.x, plaza.z, plaza.w, plaza.d, {45, 73, 65, 210})
         end
@@ -388,16 +443,8 @@ function MapWidget:RebuildDetailGeometry()
             self:Segment(self.roads, {x = road.x1, z = road.z1}, {x = road.x2, z = road.z2},
                 road.kind == "alley" and C.steel or ROAD_COLOR, clamp(road.width * self.scale, 1.5, 9))
         end
-        -- These are existing walkable approach paths/decks, not new drivable roads.
-        ---@type CareerMapPosition[]
-        local approach = Environment.ApproachRoutes.coast_pier
-        for i = 2, #approach do
-            self:Segment(self.roads, approach[i - 1], approach[i], {117, 138, 117, 220}, 2)
-        end
-        local deck = Environment.Boardwalk
-        self:Segment(self.roads, {x = (deck.x1 + deck.x2) / 2, z = deck.z1},
-            {x = (deck.x1 + deck.x2) / 2, z = deck.z2}, {117, 138, 117, 220}, clamp(8 * self.scale, 2, 7))
     end
+    self:RebuildWalkGeometry()
     -- District centres and names are sourced directly from WorldData.
     local districts = {World.District(0, 0)}
     for _, district in ipairs(World.Districts) do districts[#districts + 1] = district end
@@ -454,6 +501,8 @@ function MapWidget:RebuildGeometry()
     destroyChildren(self.roads)
     destroyChildren(self.points)
     if self.detailed then self:RebuildDetailGeometry(); return end
+    self.labelBoxes={}
+    if not self.overview then self:RebuildFootprints() end
     for _, road in ipairs(World.Roads) do
         if not self.overview or road.kind == "arterial" then
             local thickness = self.overview and 2 or clamp(road.width * self.scale, 2, 7)
@@ -466,6 +515,7 @@ function MapWidget:RebuildGeometry()
             local thickness=clamp(road.width*self.scale,2,7)
             self:Segment(self.roads,{x=road.x1,z=road.z1},{x=road.x2,z=road.z2},ROAD_COLOR,thickness)
         end
+        self:RebuildWalkGeometry()
     end
     local padding = self.overview and 0 or GRID * self.scale
     if not self.overview then

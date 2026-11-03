@@ -70,6 +70,7 @@ local RaceAI = require("RaceAI")
 ---@field closeHold number
 ---@field wrongWay boolean
 ---@field offCourse boolean
+---@field offCourseLast boolean
 ---@field invalidMoves number
 ---@field aggression number
 ---@field skill number
@@ -369,7 +370,7 @@ function Race:Start(laps)
             status = "racing", nitro = 100, boostTimer = 0, boostLock = false,
             immunity = 0, slipstream = 0, collisionGraceUntil = 0,
             graceDistance = s - 100, lastTime = 0, protectionUntil = 25, danger = 0, closeHold = 0,
-            wrongWay = false, offCourse = false, invalidMoves = 0,
+            wrongWay = false, offCourse = false, offCourseLast = false, invalidMoves = 0,
             aggression = 0.22 + self:Random() * 0.68, skill = 0.25 + self:Random() * 0.72,
             speedFactor = 0.74 + self:Random() * 0.12, acceleration = 6.5 + self:Random() * 2.5,
             decisionTimer = self:Random(), mistakeTimer = 10 + self:Random() * 15,
@@ -481,15 +482,11 @@ function Race:AdvanceGates(r, oldS, newS, dt, allowCatchUp)
         return gateS >= self.length - 0.01
             and abs(gateS / self.length - math.floor(gateS / self.length + 0.5)) < 1e-6
     end
-    -- 一次走宽漏站会把nextGate永久留在身后，此后循环不再进入，里程和完赛都被卡死。
-    -- 只在真实回到路面时补回，终点门也照样记圈，避免漏一个门导致永远无法结算。
-    while allowCatchUp and r.nextGate < oldS - window do
-        local gateS = r.nextGate
+    -- 只补相邻的一扇普通门；起点/终点必须真实穿越，不能在回到路面后补出整圈。
+    if allowCatchUp and r.started and r.nextGate > 0 and not isFinishGate(r.nextGate)
+        and oldS - r.nextGate > window and oldS - r.nextGate <= self.gateSpacing * .25 then
         r.missedGates = (r.missedGates or 0) + 1
-        r.nextGate = gateS + self.gateSpacing
-        if not r.started then r.started = true
-        elseif isFinishGate(gateS) then completeLap(0) end
-        if r.finished then break end
+        r.nextGate = r.nextGate + self.gateSpacing
     end
     while r.nextGate <= newS + window and r.nextGate >= oldS - window do
         local gateS = r.nextGate
@@ -540,7 +537,8 @@ function Race:TrackPlayer(dt)
         -- Only actual ordered plane crossings count. Going wide BETWEEN gates is allowed;
         -- missing one caps ranking at that gate until the rider turns back and crosses it.
         -- 真实驾驶回到路面时补回漏掉的站；抄近路/瞬移的physical=false分支不补。
-        self:AdvanceGates(r, oldS, r.s, dt, onCourse)
+        self:AdvanceGates(r, oldS, r.s, dt, onCourse and not r.offCourseLast
+            and abs(delta) <= traveled * 1.5 + .1)
         if not r.finished then r.progress = min(r.s, r.nextGate - 0.001) end
         if onCourse and abs(delta) <= traveled * 2 + 1 then
             r.safeS = min(r.s, r.nextGate - 0.5)
@@ -551,6 +549,7 @@ function Race:TrackPlayer(dt)
         if not recovered then r.invalidMoves = r.invalidMoves + 1 end
         r.progress = min(r.progress, r.s, r.nextGate - 0.001)
     end
+    r.offCourseLast = not onCourse or not physical
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
     self.lastPlayerSpeed = r.speed
 end
@@ -561,10 +560,12 @@ function Race:RecoverPlayer(grantGrace)
     if not r or r.finished or r.eliminated then return false end
     local before = r.progress
     sim:Recover(nil)
-    -- 复位锚点跟随真实道路位置。漏过检查点只封顶排名，不应把车送回数百米前，
-    -- 让玩家被迫从头再跑。非法位移/回退仍由safeS兜底。
+    -- 脱困保留当前绝对圈域，并回到尚未通过的检查点前，允许真实重过漏门。
     local projected = self:Project(sim.x, sim.z)
-    local anchor = max(r.safeS, projected)
+    local unwrapped = r.s + (projected - r.s % self.length + self.length * .5) % self.length - self.length * .5
+    -- 模长坐标必须先解到当前圈域；起跑的负s不能被当作首圈末尾。
+    -- 脱困回到最后可信门前，漏门不会因复位而自动获得进度。
+    local anchor = min(max(r.safeS, unwrapped), r.nextGate - .5)
     local p, yaw = self:Pose(anchor, 1.55)
     sim.x, sim.y, sim.z, sim.heading, sim.yaw = p.x, p.y, p.z, yaw, yaw
     sim.previousX, sim.previousY, sim.previousZ = p.x, p.y, p.z
@@ -1089,6 +1090,23 @@ function Race.Test()
         check(race.player.finished and race.player.completedLaps == requestedLaps,
             tostring(requestedLaps) .. "圈必须实际完整通过对应圈数")
     end
+    race:Start(1)
+    tick(3, {}, false)
+    for _, opponent in ipairs(race.racers) do
+        if not opponent.isPlayer then opponent.finished, opponent.finishTime = true, 10000 end
+    end
+    local startS = race.player.s
+    race:RecoverPlayer(false)
+    check(abs(race.player.s - startS) < 1 and race.player.s < 0, "起跑脱困保持负圈域，不跳到圈末")
+    local recoveredS = race.player.s
+    for _ = 1, 40 do recoveredS = recoveredS + 1.2; moveTo(recoveredS, 60) end
+    check(race.player.started and race.player.completedLaps == 0 and not race.player.finished,
+        "起跑脱困后短程前进不能凭空完成一圈")
+    for _ = 1, math.ceil(length / 1.2) do
+        if race.phase == "finished" then break end
+        recoveredS = recoveredS + 1.2; moveTo(recoveredS, 60)
+    end
+    check(race.player.finished and race.player.completedLaps == 1, "脱困后仍能真实完整完成比赛")
     race:Start(3)
     tick(3, {}, false)
     check(race.laps == 3 and race.player.completedLaps == 0, "支持3圈并重置圈数")
@@ -1138,6 +1156,149 @@ function Race.Test()
     local projected0 = fine:Project(p0.x, p0.z)
     local projected1 = fine:Project(p1.x, p1.z)
     check(abs(projected1 - projected0 - 0.6) < 0.05, "细分路线投影在车道偏置下连续")
+
+    -- Ordered-gate counterexamples are isolated from the long pursuit scenario above.
+    -- Fixture only seeds the precondition; every verdict calls production AdvanceGates.
+    -- Gate plane: old/new are both AFTER the missed plane, so only the bounded ordinary
+    -- catch-up branch can accept it. Never disguise a synthetic pose as real driving.
+    local gateSim = Sim.New(map)
+    local gates = Race.New(map, gateSim, {seed = 31, quiet = true, professional = true})
+    local function green(laps)
+        gates:Start(laps)
+        gates:BeforeStep(3, {})
+        gates:AfterStep(3)
+        check(gates.phase == "racing", "隔离门测试只消费冻结倒计时")
+    end
+    green(3)
+    local spacing = gates.gateSpacing
+    local window = min(8, spacing * .2)
+    local function missedGate(gateS, oldS, allow, started, laps)
+        local runner = gates.player
+        runner.nextGate, runner.started = gateS, started
+        runner.completedLaps, runner.finished, runner.missedGates = laps or 0, false, 0
+        local beforePose = gates:Pose(oldS, 1.55)
+        local afterPose = gates:Pose(oldS + .6, 1.55)
+        runner.lastX, runner.lastY, runner.lastZ = beforePose.x, beforePose.y, beforePose.z
+        runner.x, runner.y, runner.z = afterPose.x, afterPose.y, afterPose.z
+        gates:AdvanceGates(runner, oldS, oldS + .6, .02, allow)
+        return runner
+    end
+    local ordinary = missedGate(spacing, spacing + window + 2, true, true)
+    check(ordinary.nextGate == spacing * 2 and ordinary.missedGates == 1
+        and ordinary.completedLaps == 0, "相邻普通门在窗口外且四分之一站距内只追补一门")
+    for _,case in ipairs({
+        {gap = window - 1, allow = true, started = true, name = "窗口内尚未穿门"},
+        {gap = spacing * .25 + 2, allow = true, started = true, name = "超四分之一站距"},
+        {gap = spacing + window + 2, allow = true, started = true, name = "跨过相邻一整站"},
+        {gap = window + 2, allow = false, started = true, name = "非合法连续路面步骤"},
+        {gap = window + 2, allow = true, started = false, name = "尚未真实过起点"},
+    }) do
+        local rejected = missedGate(spacing, spacing + case.gap, case.allow, case.started)
+        check(rejected.nextGate == spacing and rejected.missedGates == 0
+            and rejected.completedLaps == 0, "普通门追补反证：" .. case.name)
+    end
+    local startMiss = missedGate(0, window + 2, true, false)
+    check(startMiss.nextGate == 0 and not startMiss.started and startMiss.missedGates == 0,
+        "起点不得通过普通门追补启动")
+    for lapIndex = 1, 3 do
+        local finishS = lapIndex * length
+        local finishMiss = missedGate(finishS, finishS + window + 2, true, true, lapIndex - 1)
+        check(finishMiss.nextGate == finishS and finishMiss.completedLaps == lapIndex - 1
+            and finishMiss.missedGates == 0 and not finishMiss.finished,
+            "绝对圈域终点不得追补：" .. lapIndex)
+    end
+
+    -- TrackPlayer integration: no gate fields are edited after seeding this missed-finish
+    -- precondition. Off-road and re-entry must not consume finish; reverse then REAL
+    -- forward crossing is the only way out. Poses are bounded explicit map fixtures,
+    -- not a claim about Simulation.Step's throttle/steering dynamics.
+    green(3)
+    local function seed(signedS, lane, nextGate, completed)
+        local runner = gates.player
+        local pose, yaw = gates:Pose(signedS, lane)
+        runner.s, runner.progress, runner.safeS = signedS, signedS, signedS
+        runner.nextGate, runner.started, runner.completedLaps = nextGate, true, completed
+        runner.lap, runner.finished, runner.eliminated = completed + 1, false, false
+        runner.lastX, runner.lastY, runner.lastZ = pose.x, pose.y, pose.z
+        runner.x, runner.y, runner.z = pose.x, pose.y, pose.z
+        runner.offCourseLast = abs(lane) > gates.corridor
+        gateSim.x, gateSim.y, gateSim.z, gateSim.yaw, gateSim.heading = pose.x, pose.y, pose.z, yaw, yaw
+        gateSim.speed = 60
+        gates.lastRecovery, gates.lastPlayerSpeed = gateSim.recoverySerial, 60
+    end
+    local function track(signedS, lane, dt)
+        local pose, yaw = gates:Pose(signedS, lane or 1.55)
+        gateSim.x, gateSim.y, gateSim.z, gateSim.yaw, gateSim.heading = pose.x, pose.y, pose.z, yaw, yaw
+        gateSim.speed = 60
+        gates.elapsed = gates.elapsed + (dt or .02)
+        gates:TrackPlayer(dt or .02)
+    end
+    seed(length - 2, gates.gateCorridor + 2, length, 0)
+    track(length + 2, gates.gateCorridor + 2, .1)
+    check(gates.player.offCourse and gates.player.nextGate == length
+        and gates.player.completedLaps == 0, "离轨越过终点外侧不吞终点门")
+    track(length + 2, 1.55, .15)
+    check(not gates.player.offCourse and gates.player.nextGate == length
+        and gates.player.completedLaps == 0, "终点后回轨首步不追补终点")
+    track(length + window + 2, 1.55, .2)
+    track(length + window + 2.6)
+    check(gates.player.nextGate == length and gates.player.completedLaps == 0
+        and not gates.player.finished and (gates.player.missedGates or 0) == 0,
+        "回轨后连续正常步骤也不能用相邻普通门追补吞掉终点")
+    local cursor = length + window + 2.6
+    while cursor > length - 2 do cursor = max(length - 2, cursor - .6); track(cursor) end
+    check(gates.player.wrongWay and gates.player.nextGate == length
+        and gates.player.completedLaps == 0, "逆向跨过未通过终点不授圈")
+    while cursor < length + 2 do cursor = min(length + 2, cursor + .6); track(cursor) end
+    check(gates.player.completedLaps == 1 and gates.player.nextGate > length
+        and not gates.player.finished, "漏终点必须折返后正向真实过线才记首圈")
+
+    -- Earn all laps from the negative grid domain. The second/third-lap recovery and
+    -- backwards line crossings never seed completedLaps/nextGate, so modulo unwrap
+    -- regressions cannot be hidden by repairing the fixture after each operation.
+    green(3)
+    local travelledS = gates.player.s
+    local trackSteps = 0
+    local function driveTo(goal)
+        local forward = goal >= travelledS
+        while abs(goal - travelledS) > .000001 and not gates.player.finished do
+            travelledS = forward and min(goal, travelledS + 1.2) or max(goal, travelledS - 1.2)
+            track(travelledS)
+            trackSteps = trackSteps + 1
+            assert(trackSteps < 2400, "[Race.Test] 多圈脱困反证超过有限步数预算")
+        end
+    end
+    for lapIndex = 2, 3 do
+        local lapStart = (lapIndex - 1) * length
+        driveTo(lapStart + spacing * .55)
+        check(gates.player.completedLaps == lapIndex - 1 and gates.player.started
+            and gates.player.nextGate > lapStart and gates.player.nextGate < lapStart + length,
+            "实际逐门行驶进入绝对第" .. lapIndex .. "圈")
+        for repeatIndex = 1, 3 do
+            local runner = gates.player
+            local beforeS, beforeProgress, beforeGate = runner.s, runner.progress, runner.nextGate
+            local serial = gateSim.recoverySerial
+            check(gates:RecoverPlayer(false), "第" .. lapIndex .. "圈允许真实RecoverPlayer")
+            check(gateSim.recoverySerial == serial + 1 and runner.completedLaps == lapIndex - 1
+                and runner.nextGate == beforeGate and runner.s >= lapStart and runner.s < lapStart + length
+                and abs(runner.s - beforeS) < 1 and runner.s <= beforeGate - .5
+                and runner.progress <= beforeProgress and not runner.finished,
+                "连续脱困保持圈域/未过门/可信进度：" .. lapIndex .. "/" .. repeatIndex)
+            travelledS = runner.s
+        end
+        local nextGate = gates.player.nextGate
+        driveTo(lapStart - 2)
+        check(gates.player.wrongWay and gates.player.completedLaps == lapIndex - 1
+            and gates.player.nextGate == nextGate and not gates.player.finished,
+            "脱困后反向跨上圈终点不能减圈/重记圈：" .. lapIndex)
+        driveTo(lapStart + 2)
+        check(not gates.player.wrongWay and gates.player.completedLaps == lapIndex - 1
+            and gates.player.nextGate == nextGate, "再次正向跨已通过线不得刷圈：" .. lapIndex)
+    end
+    driveTo(3 * length + 2)
+    check(gates.player.finished and gates.player.completedLaps == 3
+        and abs(gates.player.progress - 3 * length) < .000001,
+        "多圈连续脱困及反向过线后仍须逐门完成第三圈")
     print(string.format("[Race.Test] %d项纯Lua竞速断言通过", checks))
     return true
 end

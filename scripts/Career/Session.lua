@@ -30,6 +30,8 @@ local RewardedAds = require("RewardedAds")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
+---@field actor? CareerActor
+---@field city? CareerCity
 ---@field deliveryPeople? CareerDeliveryPeople
 ---@field deliveryMarkers? CareerDeliveryMarkers
 ---@field nightLighting? CareerNightLighting
@@ -205,7 +207,11 @@ function Session:Init(options)
         signTeam=function(id) self:SignTeam(id) end,
         claimTeam=function() self:ClaimTeam() end,
         loadCloud=function() self:LoadCloud() end,
-        saveStatus=function() local status=Store.GetSaveStatus(); return "账号云档状态："..status.cloud.."。网页版刷新前请等待confirmed。" end,
+        saveStatus=function()
+            local status=Store.GetSaveStatus()
+            return (status.pendingSave and "本地进度待保存，请勿退出。" or "")
+                .."账号云档状态："..status.cloud.."。网页版刷新前请等待confirmed。"
+        end,
     })
     self:Home()
 end
@@ -238,7 +244,7 @@ function Session:StartCareer(fresh,confirmed)
     for _,path in ipairs(require("Career.Phone").Resources) do resources[#resources+1]=path; types[path]="Texture2D" end
     local vehiclePaths,vehicleTypes=VehicleActions.Resources(Store.Get())
     for _,path in ipairs(vehiclePaths) do resources[#resources+1]=path; types[path]=vehicleTypes[path] end
-    self.loader=Loader.New(CareerAudio.Resources,function(title,detail,fraction) self.view:ShowLoading(title,detail,fraction) end,
+    self.loader=Loader.New(CareerAudio.Resources,function(title,detail,fraction,numbers) self.view:ShowLoading(title,detail,fraction,numbers) end,
         function() self.building=coroutine.create(function() self:BuildWorld() end) end,
         function(detail) self.loading=false; self.view:ShowDialog("资源未准备好",detail,{{text="返回主页",onClick=function() self:Home() end}}) end,
         resources,types)
@@ -295,9 +301,9 @@ function Session:BuildWorld()
     self.city.deliveryPeople=self.deliveryPeople
     self.deliveryPeople:Sync(Store.Get().activeOrders,self.actor)
     self.deliveryMarkers=DeliveryMarkers.New(self.city)
-    self.camera=ThirdPersonCamera.Create(self.scene,{
+    self.camera=ThirdPersonCamera.Create(require("Career.CameraCollision").New(self.scene,self.city,self.actor),{
         modes={normal={distance=5.8,offset=Vector3(0,1.35,0),fov=55},ride={distance=6.4,offset=Vector3(0,1.3,0),fov=60},indoor={distance=3.1,offset=Vector3(0,1.2,0),fov=65}},
-        transitionSpeed=8,farClip=450})
+        transitionSpeed=8,farClip=450,collisionApproachSpeed=1000000})
     renderer:SetNumViewports(1)
     renderer:SetViewport(0,Viewport:new(self.scene,self.camera:GetCamera()))
     renderer.dynamicInstancing=true; renderer:SetShadowMapSize(1024)
@@ -317,10 +323,11 @@ function Session:BuildWorld()
         local collisionPhase="all"
         local appShot,animShot,cityShot="","",""
         local collisionShot,environmentShot,crowdShot="","",""
-        local cityReview=false
+        local cityReview,reviewFast=false,false
         local lifeChecks,lifeShot=false,""
         for _,arg in ipairs(GetArguments()) do
             if arg=="-careercityreview" then cityReview=true end
+            if arg=="-careerreviewfast" then reviewFast=true end
             if arg=="-careerlifechecks" then lifeChecks=true end
             local life=arg:match("^%-careerlifeshot=(.+)$")
             if life then lifeShot=life end
@@ -364,7 +371,33 @@ function Session:BuildWorld()
             local district=arg:match("^%-careerworldshot=(.+)$")
             if district then worldShot=district end
         end
-        if cityReview then
+        local frameProbe,hillChecks,hillShot,turnChecks,perfChecks,trafficChecks=false,false,false,false,false,false
+        for _,arg in ipairs(GetArguments()) do
+            if arg=="-careerframeprobe" then frameProbe=true end
+            if arg=="-careerhillchecks" then hillChecks=true end
+            if arg=="-careerhillshot" then hillChecks,hillShot=true,true end
+            if arg=="-careerturnchecks" then turnChecks=true end
+            if arg=="-careerperfchecks" then perfChecks=true end
+            if arg=="-careertrafficchecks" then trafficChecks=true end
+        end
+        if perfChecks then
+            require("Career.TrafficChecks").FixedTicks()
+            require("Career.TrafficMotion").CacheChecks()
+            require("Career.OuterTraffic").CacheChecks()
+            require("Career.Crowd").CacheChecks()
+            require("Career.CameraCollision").CacheChecks()
+            require("Career.CameraCollision").Checks(self)
+            require("Career.VehicleContact").PerformanceChecks({city=assert(self.city)})
+            require("Career.TurningChecks").Run(self)
+            require("Career.TrafficChecks").Layers(self)
+            require("Career.SoundCrowdChecks").Layers(self)
+            print("[性能优化安全回归] PASS 缓存/相机/转向/上下层碰撞")
+        elseif trafficChecks then require("Career.TrafficChecks").Run(self)
+        elseif turnChecks then require("Career.TurningChecks").Run(self)
+        elseif hillChecks then require("Career.HillDistrictChecks").Run(self,hillShot)
+        elseif frameProbe then require("Career.FramePerformanceProbe").Install(self)
+        elseif reviewFast then require("Career.ReviewWorldChecks").Run(self)
+        elseif cityReview then
             require("Career.LifeChecks").Run(self,"")
             require("Career.LocomotionChecks").Run(self)
             require("Career.DeliveryMarkerChecks").Run(self)
@@ -454,9 +487,38 @@ end
 ---@class CareerSessionState: CareerProfile
 ---@field contactName? string
 ---@field trafficHint? string
+---@field nextGoal table
+-- Interaction support is relative to the actual terrain, never absolute sea level.
+-- A bridge layer (including its low ramp) or an unsupported/airborne pose cannot
+-- authorise ground services; the 5cm tolerance only covers surface float jitter.
+---@param self CareerSession
+---@return boolean
+local function groundSupported(self)
+    local actor,city=self.actor,self.city
+    if not actor or not city then return false end
+    return World.HasGroundSupport(actor.x,actor.z,actor.walkHeight,city:Surface(actor.x,actor.z))
+end
+-- State提示与Interact分派共用：nextPointId是导航建议，不是先后不限目标的授权集合。
+---@param item table
+---@param pointId string
+---@return boolean
+local function pendingVisit(item,pointId)
+    if item.status~="active" or pointId==item.returnPointId then return false end
+    if item.nextPointId==pointId then return true end
+    if item.id=="cousin_reply" then
+        for _,objective in ipairs(item.objectives) do
+            -- State.objectives尾项含return提示，不是访问授权；当前真源没有kind字段，
+            -- 用真实访问目标id限定两处，不把以后追加的展示条件当成可访问点。
+            if (objective.id=="park" or objective.id=="convenience")
+                and not objective.done and objective.pointId==pointId then return true end
+        end
+    end
+    return false
+end
 ---@return CareerSessionState
 function Session:State()
     local state=Store.Get(); state.online=self.online; state.currentSpace=self.space
+    state.nextGoal=Progress.NextGoal(state)
     -- 生活页展示今日补贴是否已领，避免玩家点开才发现重复。
     state.adSubsidyClaimed=Store.AdSubsidyClaimed(state.day)
     state.adSubsidyCents=Config.AD_SUBSIDY_CENTS
@@ -465,7 +527,7 @@ function Session:State()
     state.musicEnabled=self.audio and self.audio.musicEnabled
     state.effectsEnabled=self.audio and self.audio.effectsEnabled
     state.trafficHint=self.traffic and self.actor and self.space=="city" and self.traffic:Hint(self.actor.x,self.actor.z,self.actor.yaw) or nil
-    if self.city and self.actor and self.space=="city" and not self.actor.mounted and self.actor.walkHeight<=1
+    if self.city and self.actor and self.space=="city" and not self.actor.mounted and groundSupported(self)
         and math.abs(self.actor.speed)<=.35 and not Delivery.GetActive() then
         local person=self.city.contacts:Nearest(self.actor,3)
         if person then
@@ -478,7 +540,7 @@ function Session:State()
             if distance<=2 then
                 for _,item in ipairs(Engagements.State(state).list) do
                     if item.status=="ready" and item.returnPointId==nearest
-                        or item.status=="active" and item.nextPointId==nearest and nearest~=item.returnPointId then talk=false end
+                        or pendingVisit(item,nearest) then talk=false end
                 end
             end
             if talk then state.contactName=person.name end
@@ -495,7 +557,10 @@ function Session:Target()
     local navigatingOrder=order and id==orderPoint
     local point=Config.points[id]
     if not point then return nil end
-    local key=id..":"..math.floor(self.actor.x/16)..":"..math.floor(self.actor.z/16)
+    local mode=self.actor.mounted and "vehicle" or "walk"
+    local layer=World.NavigationLayer(self.actor.x,self.actor.z,self.actor.walkHeight,mode)
+    local grid=layer~="ground" and 1 or 16
+    local key=table.concat({id,mode,layer,math.floor(self.actor.x/grid),math.floor(self.actor.z/grid)},":")
     if self.navigation.key~=key then
         self.navigation.key=key
         local approach=Environment.ApproachRoute(id)
@@ -504,12 +569,12 @@ function Session:Target()
         elseif approach then
             local tail=Environment.CityApproachRoute()
             local entry=tail[1]
-            local route=World.Route(self.actor.x,self.actor.z,entry.x,entry.z) or {}
+            local route=World.NavigationRoute(self.actor.x,self.actor.z,entry.x,entry.z,self.actor.walkHeight,layer) or {}
             local function append(steps)
                 for _,step in ipairs(steps) do
                     local previous=route[#route]
                     if not previous or math.abs(previous.x-step.x)+math.abs(previous.z-step.z)>.001 then
-                        route[#route+1]={x=step.x,z=step.z}
+                        route[#route+1]={x=step.x,z=step.z,y=step.y,layer=step.layer}
                     end
                 end
             end
@@ -521,23 +586,23 @@ function Session:Target()
             if exit then
                 local route=exit
                 local entry=route[#route]
-                for _,step in ipairs(World.Route(entry.x,entry.z,point.x,point.z) or {}) do
+                for _,step in ipairs(World.NavigationRoute(entry.x,entry.z,point.x,point.z,entry.y,"ground") or {}) do
                     local previous=route[#route]
                     if not previous or math.abs(previous.x-step.x)+math.abs(previous.z-step.z)>.001 then
-                        route[#route+1]={x=step.x,z=step.z}
+                        route[#route+1]={x=step.x,z=step.z,y=step.y,layer=step.layer}
                     end
                 end
                 self.navigation.route=route
-            else self.navigation.route=World.Route(self.actor.x,self.actor.z,point.x,point.z) or {} end
+            else self.navigation.route=World.NavigationRoute(self.actor.x,self.actor.z,point.x,point.z,self.actor.walkHeight,layer) or {} end
         end
     end
     local route=self.navigation.route
     local directDistance=Config.DistanceTo(id,self.actor.x,self.actor.z)
     -- 交互圈保留精确距离；近门前有真实净空的步行接近段不再绕道路吸附点计距。
     -- 只改显示；锁定配送费、订单路线和2米交互授权不变，隔墙/车上/高层仍用路网。
-    local walkApproach=directDistance<=20 and not self.actor.mounted and self.actor.walkHeight<=1
-        and self.city and self.city:StaticSegmentFree(self.actor.x,self.actor.z,point.x,point.z,.32,"walk",0)
-    local distance=(directDistance<=Config.INTERACTION_RADIUS or walkApproach) and directDistance
+    local walkApproach=directDistance<=20 and not self.actor.mounted and layer=="ground" and groundSupported(self)
+        and self.city and self.city:StaticSegmentFree(self.actor.x,self.actor.z,point.x,point.z,.32,"walk",self.actor.walkHeight)
+    local distance=(layer=="ground" and groundSupported(self) and directDistance<=Config.INTERACTION_RADIUS or walkApproach) and directDistance
         or (#route>1 and Config.RouteDistance(route) or directDistance)
     return {name=point.label,x=point.x,z=point.z,pointId=point.id,kind=point.kind,route=route,
         distance=distance,
@@ -568,6 +633,7 @@ function Session:OpenPhone(page)
     if not self.running or not self.actor then return end
     if math.abs(self.actor.speed)>.35 then self.view:Notice("请先停车，再打开手机"); return end
     self.view:OpenPhone(page,self:State(),Delivery.GetOffer(),Delivery.GetActive())
+    if self.audio then self.audio:SetPaused(true) end
 end
 function Session:CallCustomer(id)
     if not self.running or not self.actor then return end
@@ -597,7 +663,10 @@ function Session:OfferAdTip(order,pointId)
     if Store.AdTipClaimed and Store.AdTipClaimed(order.id) then return end
     local cents=math.max(1,math.floor(order.feeCents))
     local orderId=order.id
-    self.view:ShowDialog("顾客追加了小费","顾客：「这一单准时又稳，给你加个小费。」\n看一段广告，即可领取与本次配送费等额的小费。\n\n不看也没关系，配送费已经到账，不影响任何进度。",{
+    local feedback=Life.DeliveryFeedback(order)
+    local tipText=feedback.late and "这单晚了一点，配送费仍按原报价到账；这次追加小费可自愿领取。"
+        or "顾客：「这一单准时又稳，给你加个小费。」"
+    self.view:ShowDialog("顾客追加了小费",tipText.."\n看一段广告，即可领取与本次配送费等额的小费。\n\n不看也没关系，配送费已经到账，不影响任何进度。",{
         {text="先不领",onClick=function() self.view:Notice("小费未领取，配送费已入账。") end},
         {text="看广告领小费",primary=true,onClick=function() self:ClaimAdTip(orderId,cents) end}})
 end
@@ -605,7 +674,9 @@ end
 ---@param orderId string
 ---@param cents integer
 function Session:ClaimAdTip(orderId,cents)
+    local scene=self.scene
     RewardedAds.Show {
+        isValid=function() return not self.disposed and self.running and self.scene==scene end,
         onReward = function()
             local ok,message=Store.ClaimAdTip(orderId,cents)
             self.view:Notice(ok and message or "小费已领取过，不再重复发放")
@@ -622,7 +693,9 @@ function Session:ClaimAdSubsidy()
     local state=Store.Get()
     if Store.AdSubsidyClaimed(state.day) then self.view:Notice("今日补贴已经领过了，明天再来"); return end
     local cents=Config.AD_SUBSIDY_CENTS
+    local scene,day=self.scene,state.day
     RewardedAds.Show {
+        isValid=function() return not self.disposed and self.running and self.scene==scene and Store.Get().day==day end,
         onReward = function()
             local ok,message=Store.ClaimAdSubsidy(cents)
             self.view:Notice(ok and message or "今日补贴已领取")
@@ -648,7 +721,7 @@ function Session:Allowed(id)
     if self.space~="city" then return false,"请先出门再使用城市服务" end
     if self.actor.mounted or math.abs(self.actor.speed)>.35 then return false,"请停稳下车后交互" end
     if not Config.points[id] then return false,"目的地不存在" end
-    if self.actor.walkHeight>1 then return false,"请先沿天桥坡道回到地面" end
+    if not groundSupported(self) then return false,"请先沿坡道回到地面并站稳" end
     if Config.DistanceTo(id,self.actor.x,self.actor.z)>Config.INTERACTION_RADIUS then return false,"请先前往"..Config.points[id].label.."（2米内）" end
     return true
 end
@@ -669,6 +742,7 @@ end
 function Session:Interact()
     if not self.actor then return end
     if self.space~="city" then self:InteractHousing(); return end
+    if not groundSupported(self) then self.view:Notice("请先沿坡道回到地面并站稳后交互"); return end
     for _,home in ipairs(Housing.List) do
         if home.width and Config.DistanceTo(home.point,self.actor.x,self.actor.z)<=2 then self:EnterHousing(home.id); return end
     end
@@ -688,7 +762,6 @@ function Session:Interact()
     end
     -- 当前取送点保持配送优先；其他现场补给允许带单使用，由 Store 扣除订单时间。
     if order and (not service or Config.DistanceTo(orderPoint,self.actor.x,self.actor.z)<=Config.INTERACTION_RADIUS) then
-        if self.actor.walkHeight>1 then self.view:Notice("请先回到地面再取送餐"); return end
         self:SavePosition()
         local context={riding=self.actor.mounted,speed=self.actor.speed}
         local ok,message
@@ -703,7 +776,7 @@ function Session:Interact()
         if ok and not Delivery.GetActive() then self.waypoint="breakfast" end
         return
     end
-    if not order and dist>2 and not self.actor.mounted and math.abs(self.actor.speed)<=.35 and self.actor.walkHeight<=1 then
+    if not order and dist>2 and not self.actor.mounted and math.abs(self.actor.speed)<=.35 and groundSupported(self) then
         local contact=self.city.contacts:Nearest(self.actor,3)
         if contact then self:TalkTo(contact.id); return end
     end
@@ -711,7 +784,7 @@ function Session:Interact()
     if self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请停稳下车后交互"); return end
     local eventState=Engagements.State(Store.Get())
     for _,item in ipairs(eventState.list) do
-        if item.status=="active" and item.nextPointId==nearest and nearest~=item.returnPointId then
+        if pendingVisit(item,nearest) then
             self:VisitEngagement(nearest); return
         end
         if item.status=="ready" and item.returnPointId==nearest then
@@ -735,9 +808,12 @@ function Session:Interact()
         local contact=self.city.contacts:Nearest(self.actor,3)
         if not contact or not self:TalkTo(contact.id) then self:OpenPhone("progression") end
     elseif Config.points[nearest].kind=="scenery" then
-        self.view:ShowDialog(Config.points[nearest].label,"海岸入口、沙滩与栈桥都可沿步道到达。\n可以下车步行看海；护栏外的深水不能通行。这里不会自动推进一天或收取费用。",{
+        local hill=nearest:match("^hills_")~=nil
+        self.view:ShowDialog(Config.points[nearest].label,hill
+            and "这里是山城滨江路。半山住宅街经缓坡与折线弯道接到江岸，中央公路桥通向北岸。\n请沿车道和护栏内步道通行；江水区域不能进入。这里只提供游览，不扣费、不推进一天。"
+            or "海岸入口、沙滩与栈桥都可沿步道到达。\n可以下车步行看海；护栏外的深水不能通行。这里不会自动推进一天或收取费用。",{
             {text="继续逛逛",primary=true},
-            {text="查看海滨地图",onClick=function() self:OpenPhone("map") end}})
+            {text="查看区域地图",onClick=function() self:OpenPhone("map") end}})
     elseif Config.points[nearest].kind=="charge" then self:Service(nearest,function() return Store.Charge() end)
     elseif Config.points[nearest].kind=="rest" then self:Service(nearest,function() return Store.Rest("park") end)
     elseif Config.points[nearest].kind=="merchant" then self:Service(nearest,function() return Store.Eat() end)
@@ -746,7 +822,8 @@ end
 function Session:WorkWeek()
     if self.space~="city" then self.view:Notice("请先出门再安排工作周"); return end
     if not self.actor or self.actor.mounted or math.abs(self.actor.speed)>.35 then self.view:Notice("请下车停稳后安排工作"); return end
-    self.view:ShowDialog("确认推进7个游戏日？","第10天起，每周需新的10份亲送及15分钟活动。\n模拟订单均价5.80～6.20元，扣除餐食、整备和7晚住宿。亲送收入不重复结算。",{
+    local preview=Progress.WorkWeekPreview(Store.Get())
+    self.view:ShowDialog("确认推进7个游戏日？",string.format("安排未来完整7天：%d份模拟单。\n收入 %.2f元，餐食、整备和住宿共 %.2f元，预计净存 %.2f元。\n每周资格需新的10份亲送及15分钟活动；过往亲送不抵扣未来模拟单，也不会重复发放亲送收入。",preview.simulatedOrders,preview.grossCents/100,preview.costsCents/100,preview.netCents/100),{
         {text="继续亲自跑单"},
         {text="确认7天排班",primary=true,onClick=function()
             self:SavePosition(); local _,message=Progress.WorkWeek(); self.view:Notice(message); self:RefreshPhone()
@@ -756,6 +833,7 @@ function Session:EnterRace(index)
     local allowed,message=self:Allowed("dealer")
     if not allowed then self.waypoint="dealer"; self.view:Notice(message); return end
     local p=Store.Get()
+    if #p.activeOrders>0 then self.view:Notice("请先完成配送订单，再继续已报名项目"); return end
     if not (p.career and p.career.pending) then
         local ok,detail=Progress.EnterSeries(index)
         if not ok then self.view:Notice(detail); return end
@@ -779,11 +857,17 @@ function Session:RestorePosition()
     local a=self.actor
     self.city:SetSpace("city")
     a:RestoreVehicles(p)
+    if self.traffic then self.traffic:ReconcileParking() end
     a.mounted=p.mounted; a.visuals:SetMounted(p.mounted)
     self.cityX,self.cityZ,self.cityYaw=p.cityX or p.x,p.cityZ or p.z,p.cityYaw or p.yaw
     self:ApplySpace(p.space or "city")
-    local x,z=self.city:FindShapeFree(p.x,p.z,a:Footprint(p.mounted),p.yaw,
-        p.mounted and "vehicle" or "walk",p.groundHeight,a.vehicleId)
+    local x,z
+    if p.mounted then
+        -- 已由RestoreVehicles静态规划的活动车位不可再被瞬时交通挪动。
+        x,z=a.bikeX,a.bikeZ
+    else
+        x,z=self.city:FindShapeFree(p.x,p.z,a:Footprint(false),p.yaw,"walk",p.groundHeight,a.vehicleId)
+    end
     assert(z,"存档恢复缺少Z坐标")
     a:Teleport(x,z,p.yaw,p.groundHeight); self.yaw=p.yaw
     if self.space=="city" then
@@ -810,15 +894,26 @@ function Session:LoadCloud()
 end
 function Session:Pause()
     if not self.running then return end
+    if self.audio then self.audio:SetPaused(true);CareerAudio.StopPhone(self.audio) end
     self:SavePosition()
     local _,message=Store.Save()
     self.view:ShowDialog("暂时歇一歇",message.."\n完整手机与暂停期间不推进时间和订单。",{
         {text="继续生活",primary=true},
         {text="保存到账号云端",onClick=function() self:SaveCloud() end},
-        {text="回到生涯主页",onClick=function() self:DisposeWorld(); self:Home() end}})
+        {text="回到生涯主页",onClick=function()
+            if not self:SaveBeforeLeave() then return end
+            self:DisposeWorld(); self:Home()
+        end}})
 end
 function Session:Update(dt)
     if self.disposed then return end
+    if self.traffic and (self.loading or not self.running or self.view:IsBlocking() or self.options.test) then
+        require("Career.RoadReactions").ResetWaiting(self.traffic)
+    end
+    if self.audio then
+        self.audio:SetPaused(self.loading or not self.running or self.view:IsBlocking() or self.options.test==true)
+        if self.loading or not self.running then CareerAudio.StopPhone(self.audio) end
+    end
     if self.loading then
         if self.building then
             local ok,message=coroutine.resume(self.building)
@@ -857,7 +952,7 @@ function Session:Update(dt)
         self.crowd:Update(dt,self.actor,false,self.camera and self.camera:GetCamera())
     end
     if self.audio and (blocked or self.options.test) then
-        self.audio:Update(dt,self.actor,true,self.space~="city",self.view:GetInput(),nil,
+        self.audio:Update(dt,self.actor,true,self.space~="city",self.view:GetInput(),self.audioOffer,
             Environment.AudioContext(self.actor.x,self.actor.z))
     end
     if input:GetKeyPress(KEY_ESCAPE) then
@@ -876,6 +971,7 @@ function Session:Update(dt)
         local story=self.storyTimer>=.5 and Progress.NextStory(Store.Get()) or nil
         if self.storyTimer>=.5 then self.storyTimer=0 end
         if story then
+            if self.audio then self.audio:SetPaused(true) end
             self.view:ShowDialog(story.title,story.text,{{text="记住这一刻 · 继续",primary=true,onClick=function()
                 local _,message=Progress.MarkStory(story.id); self.view:Notice(message)
             end}})
@@ -913,7 +1009,10 @@ function Session:Update(dt)
     if self.crowd and self.space=="city" then
         self.crowd:Update(dt,self.actor,true,self.camera and self.camera:GetCamera())
     end
-    if self.traffic then self.traffic:Update(dt) end
+    if self.traffic then
+        self.traffic:Update(dt)
+        require("Career.RoadReactions").Update(self.traffic,dt,self.audio)
+    end
     if self.audio then
         self.audio.musicHour=state.time
         self.audio:Update(dt,self.actor,false,self.space~="city",controls,self.audioOffer,
@@ -921,8 +1020,12 @@ function Session:Update(dt)
     end
     local distance=self.actor.mounted and math.sqrt((self.actor.x-x)^2+(self.actor.z-z)^2) or 0
     self:SavePosition()
+    local wasPending=Store.GetSaveStatus().pendingSave
     local ok,message=Delivery.Update(dt,distance)
-    if not ok and message~="存档忙" then self.view:Notice(message) end
+    if not ok and message~="存档忙" then self.view:Notice(message)
+    elseif ok and wasPending and not Store.GetSaveStatus().pendingSave then
+        self.view:Notice("本地进度已补存成功；账号云存档仍需单独确认")
+    end
     self.timer=self.timer+dt
     if self.timer>=.2 then
         self.timer=0; self:Refresh()
@@ -934,6 +1037,12 @@ function Session:Update(dt)
 end
 function Session:PostUpdate(dt)
     if not self.camera or not self.actor then return end
+    if self.options.test and self.shotRenderFrames then
+        self.shotRenderFrames=self.shotRenderFrames+1
+        if self.shotRenderFrames==10 then
+            print(string.format("[城市渲染采样] batches=%d primitives=%d；当前视口实测，非手机GPU耗时",renderer.numBatches,renderer.numPrimitives))
+        end
+    end
     if self.options.test and self.shotCameraTarget then
         self.camera:Update(dt,self.shotCameraTarget,self.yaw,self.pitch)
         return
@@ -945,12 +1054,23 @@ function Session:PostUpdate(dt)
         if self.nightLighting then NightLighting.Update(self.nightLighting,self.actor,self.atmosphere.state,self.space~="city") end
     end
 end
+function Session:SaveBeforeLeave()
+    if not self.running or self.options.test then return true end
+    self:SavePosition()
+    local ok,message=Store.Save()
+    if not ok then
+        self.view:ShowDialog("进度尚未保存",message.."\n未离开当前生涯；可继续生活，或稍后再次保存。",{
+            {text="留在当前生涯",primary=true}})
+    end
+    return ok
+end
 function Session:LeaveForLegacy()
-    if self.running and not self.options.test then self:SavePosition(); Store.Save() end
+    if not self:SaveBeforeLeave() then return end
     self:DisposeWorld()
     if self.options.legacy then self.options.legacy() end
 end
 function Session:DisposeWorld()
+    RewardedAds.Cancel()
     self:EndCustomerCall()
     self.running,self.loading=false,false
     self.view.controls:SetEnabled(false); self.view:ResetInput()

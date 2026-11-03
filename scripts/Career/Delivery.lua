@@ -18,6 +18,7 @@ end
 ---@param p CareerProfile
 ---@return CareerOrder?
 local function offerFor(p)
+    if p.career and p.career.pending then return nil end
     if #p.activeOrders >= Progress.Capacity(p) or p.time >= 23 then return nil end
     local template = Config.orderTemplates[1]
     if p.flags.tutorialCompleted then
@@ -59,6 +60,7 @@ function Delivery.GetActive() return Store.Get().activeOrders[1] end
 ---@return boolean, string
 function Delivery.Accept(offerId)
     return Store.Transaction(function(p)
+        if p.career and p.career.pending then return false,"请先完成已报名训练或赛事，再接配送订单" end
         if require("Career.VehicleData").Active(p)~="borrowed_ebike" then return false,"请到车行换回带保温箱的9号电动车再接单" end
         if #p.activeOrders >= Progress.Capacity(p) then return false, string.format("配送箱已满（%d份），请先完成一单",Progress.Capacity(p)) end
         local offer = offerFor(p)

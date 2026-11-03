@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "FAIL",
+    "duration_ms": 37358,
+    "frames_completed": 700,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-10-31 19_29_43_521][200] ERROR: Execute Lua function failed: [string \"Career/Session\"]:830: [string \"Career/DeliveryPeopleChecks\"]:421: successful production deliver must respond same real recipient and retain it six seconds: poses=108/107 same=true hold=6.000 active=false speech=false blocked=true\nstack traceback:\n\t[C]: in function 'error'\n\t[string \"Career/Session\"]:830: in method 'Update'\n\t[string \"main\"]:1043: in function 'HandleUpdate'",
+                    "frame": 130
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 1741.7060546875
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.67799949645996
+        },
+        {
+            "frame": 350,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.606000900268556
+        },
+        {
+            "frame": 700,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.61400032043457
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 9458.736328125,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 1
+    }
+}

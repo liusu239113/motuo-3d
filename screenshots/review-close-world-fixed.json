@@ -1,0 +1,69 @@
+{
+    "version": 2,
+    "script": "main.lua",
+    "result": "TIMEOUT",
+    "duration_ms": 300000,
+    "frames_completed": 0,
+    "phases": {
+        "load": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "[2026-11-01 02_08_22_994][1] ERROR: [Bootstrap/LoadProjectManifest] Local project manifest not found: /workspace/dist/1.0.18/manifest-3d97e476.json",
+                    "frame": 0
+                },
+                {
+                    "category": "engine",
+                    "message": "[2026-11-01 02_08_22_994][1] ERROR: [Bootstrap/LoadProjectManifest] Failed (3 ms): Local project manifest not found: /workspace/dist/1.0.18/manifest-3d97e476.json",
+                    "frame": 0
+                },
+                {
+                    "category": "engine",
+                    "message": "[2026-11-01 02_08_22_994][1] ERROR: BootstrapPipeline: step 'LoadProjectManifest' failed: Local project manifest not found: /workspace/dist/1.0.18/manifest-3d97e476.json",
+                    "frame": 0
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 0
+                }
+            ]
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [],
+    "scene_stalled": false,
+    "max_frame_time_ms": 0.0,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 4,
+        "total_errors": 4
+    }
+}

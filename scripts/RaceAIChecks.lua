@@ -456,6 +456,11 @@ function Checks.Feedback(visuals, audioModule)
     return true
 end
 
+-- 单独轻量入口，不触发Run里的多图长时域；fake音源，无实际试听。
+function Checks.Audio(audioModule)
+    return require("AudioChecks").Race(audioModule)
+end
+
 function Checks.Run()
     local result = {passed = false, assertions = 0, groups = {}}
     local function check(ok, message)

@@ -52,8 +52,8 @@ function Checks.RunProgression()
         local before=Store.Get()
         assert(Progress.WorkWeek())
         local after=Store.Get()
-        assert(after.day==before.day+7 and after.weeksWorked==1 and after.simulatedOrders==228)
-        assert(after.cashCents==before.cashCents+228*580-17600-228*30)
+        assert(after.day==before.day+7 and after.weeksWorked==1 and after.simulatedOrders==240)
+        assert(after.cashCents==before.cashCents+240*580-17600-240*30)
         assert(not Progress.WorkWeek(),"不能连续点击重复排班")
         assert(Store.Load() and Store.Get().weeksWorked==1)
         for _=1,28 do completeOrder() end
@@ -77,11 +77,13 @@ function Checks.RunProgression()
         assert(Store.Get().cashCents==400000 and Store.Get().ownedMotorcycles.sport)
         assert(Progress.Train() and Store.Get().cashCents==200000)
         assert(not Store.Get().flags.professional and Store.Get().career.pending.training)
+        assert(not Delivery.GetOffer() and not Delivery.Accept(),"报名训练后不得重新接配送")
         assert(not Progress.EnterSeries(1) and not Progress.CompleteTraining(false))
         assert(Progress.CompleteTraining(true) and Store.Get().flags.professional)
         assert(not Progress.CompleteTraining(true) and not Progress.Train())
         assert(Progress.EnterSeries(1))
         assert(Store.Get().cashCents==185000 and Store.Get().career.pending.laps==2)
+        assert(not Delivery.GetOffer() and not Delivery.Accept(),"已报名赛事必须与配送互斥")
         assert(not Progress.EnterSeries(1))
         assert(Store.Save() and Store.Load() and Store.Get().career.pending)
         assert(not Progress.SettleRace(0,true))
@@ -197,9 +199,165 @@ function Checks.RunLogic()
         local text=files[Config.SAVE_PATH]; files[Config.SAVE_PATH]="bad-json"
         assert(not Store.Load()); assert(files[Config.SAVE_PATH]=="bad-json")
         files[Config.SAVE_PATH]=text; assert(Store.Load())
+        assert(Delivery.Accept())
+        assert(Store.Transaction(function(state) state.time=24; return true end))
+        local midnight=Store.Get()
+        assert(Store.Advance(1,0))
+        local later=Store.Get()
+        assert(later.time==24 and later.hunger<midnight.hunger and later.energy<midnight.energy
+            and later.activeOrders[1].remainingHours<midnight.activeOrders[1].remainingHours,
+            "午夜身体与订单倒计时必须继续消耗")
+        assert(Store.Save() and Store.Load())
+        assert(not Store.Transaction(function(state)
+            local malformed=state --[[@as table]]
+            malformed.ledger={false}; return true
+        end),"损坏流水必须拒绝")
+        assert(Store.Pay(1,"test","review:after-invalid"),"拒绝损坏草稿后必须释放事务锁")
+        for _,template in ipairs(Config.orderTemplates) do
+            assert(Store.NewCareer())
+            local state=Store.Get()
+            local distance=Config.RouteDistance(template.route)
+            state.activeOrders={{id="career-v1-1",sequence=1,templateId=template.id,title=template.title,
+                pickupId=template.pickupId,dropoffId=template.dropoffId,route=template.route,
+                distanceMeters=distance,feeCents=template.tutorial and 500 or Config.FeeCents(distance),
+                tutorial=template.tutorial,status="accepted",acceptedDay=1,acceptedTime=8,
+                remainingHours=template.timeLimitHours,late=false}}
+            state.nextOrderSequence=2; state.phase="pickup"
+            local valid,detail=Store.Transaction(function(draft)
+                draft.activeOrders=state.activeOrders; draft.nextOrderSequence=2; draft.phase="pickup"
+                return true
+            end)
+            assert(valid,"订单保存失败 "..template.id.."："..tostring(detail))
+            local loaded,loadMessage=Store.Load()
+            assert(loaded,"订单JSON回环失败 "..template.id.."："..tostring(loadMessage))
+        end
+        print("[订单回环验收通过] 全部"..#Config.orderTemplates.."模板经真实cjson编解码后有效")
         print("[生涯逻辑验收通过] 50元开局/借车/171m教学5元/远程与骑乘拒绝/先取后送/结算幂等/读档/磁盘失败回滚/吃饭/次日/坏档保护")
     end)
+    Checks.RunSaveFailure()
     return true
+end
+function Checks.RunSaveFailure()
+    local files={}
+    local failWrite=false
+    local writes=0
+    local function same(a,b)
+        if type(a)~=type(b) then return false end
+        if type(a)~="table" then return a==b end
+        for key,value in pairs(a) do if not same(value,b[key]) then return false end end
+        for key in pairs(b) do if a[key]==nil then return false end end
+        return true
+    end
+    Store.WithTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text)
+            writes=writes+1
+            if failWrite then return false,"模拟活动快照写失败" end
+            files[path]=text; return true
+        end},function()
+        assert(Store.NewCareer() and Delivery.Accept())
+        local durable=files[Config.SAVE_PATH]
+        local before=Store.Get()
+        local position=before.position
+        position.x,position.z=3,-20
+        assert(Store.SetPosition(position))
+        failWrite=true
+        local ok,message=Store.Advance(Config.AUTOSAVE_SECONDS,15)
+        local live=Store.Get()
+        assert(not ok and tostring(message):find("请勿退出") and files[Config.SAVE_PATH]==durable)
+        assert(live.position.x==3 and live.revision==before.revision
+            and live.time>before.time and live.hunger<before.hunger and live.energy<before.energy
+            and live.battery<before.battery and live.activeOrders[1].remainingHours<before.activeOrders[1].remainingHours,
+            "自动保存失败必须保留位置/时间/电耗/订单完整内存快照，不得半回滚")
+        assert(Store.GetSaveStatus().pendingSave==true and Store.GetSaveStatus().localError~=nil)
+        local attempts=writes
+        assert(not Store.Load() and same(Store.Get(),live),"补存前不能被旧磁盘快照覆盖")
+        assert(Store.Advance(1,1) and writes==attempts,"失败后不可每帧重试写盘")
+        local advanced=Store.Get()
+        assert(advanced.time>live.time and advanced.battery<live.battery)
+        assert(not Store.Pay(100,"test","save-failure:payment"))
+        assert(same(Store.Get(),advanced) and files[Config.SAVE_PATH]==durable,
+            "活动待保存不能破坏经济事务失败原子性")
+        -- 嵌套测试必须恢复外层待保存状态和错误，而不是清掉补存标记。
+        Store.WithTestStorage({read=function() return nil,nil,true end,write=function() return true end},function()
+            assert(Store.NewCareer() and not Store.GetSaveStatus().pendingSave)
+        end)
+        assert(Store.GetSaveStatus().pendingSave and same(Store.Get(),advanced))
+        failWrite=false
+        assert(Store.Advance(Config.AUTOSAVE_SECONDS-1,14))
+        local saved=Store.Get()
+        assert(not Store.GetSaveStatus().pendingSave and not Store.GetSaveStatus().localError
+            and saved.revision==before.revision+1 and saved.position.x==3)
+        assert(Store.Load() and same(Store.Get(),saved),"补存后的完整快照必须真实JSON往返一致")
+        failWrite=true
+        assert(not Store.Save() and same(Store.Get(),saved))
+        failWrite=false
+        assert(Store.Pay(1,"test","save-failure:recovery"))
+        assert(not Store.GetSaveStatus().pendingSave and Store.Get().cashCents==saved.cashCents-1,
+            "成功经济事务应一并提交最新活动状态并清除待保存")
+        print("[活动快照故障验收通过] 自动保存失败保留完整世界状态/原磁盘不变/30秒节流重试/旧档拒覆盖/交易失败原子/嵌套隔离恢复/补存JSON往返")
+    end)
+    return true
+end
+function Checks.RunSaveExit(session)
+    assert(session.options.test and session.restoreTestStorage,"保存退出验收必须使用隔离会话")
+    local actor=assert(session.actor)
+    local view=session.view
+    local oldPosition=session:PositionSnapshot()
+    local oldTest,oldRunning=session.options.test,session.running
+    local files={}
+    local failWrite=false
+    local restore=Store.UseTestStorage({read=function(path) return files[path],nil,files[path]==nil end,
+        write=function(path,text)
+            if failWrite then return false,"模拟退出保存失败" end
+            files[path]=text; return true
+        end})
+    local ok,message=pcall(function()
+        assert(Store.NewCareer())
+        view:ClosePhone(); view:ShowGame()
+        actor.parking={};actor.mounted=false;actor.visuals:SetMounted(false)
+        actor.bikeX,actor.bikeZ,actor.bikeYaw=1.5,-20,0
+        actor:Teleport(0,-20,0)
+        -- 只解除本会话的测试短路；底层仍是内存存储，绝不访问玩家档。
+        session.options.test=false;session.running=true
+        assert(session:SaveBeforeLeave())
+        actor:Teleport(3,-20,0)
+        failWrite=true
+        session:Pause()
+        assert(view:IsBlocking() and Store.GetSaveStatus().pendingSave)
+        local UI=require("urhox-libs/UI")
+        local Pointer=require("urhox-libs/UI/Core/PointerEvent")
+        local function click(widget)
+            UI.Layout()
+            local r=widget:GetAbsoluteLayoutForHitTest()
+            assert(widget:IsVisible() and r.w>0 and r.h>0)
+            local scale=UI.GetScale()
+            local data={pointerId=780012,pointerType="touch",x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=Pointer.Button.Left}
+            UI.HandlePointerEvent(Pointer.new("PointerDown",data))
+            UI.HandlePointerEvent(Pointer.new("PointerUp",data))
+        end
+        local function find(widget,text)
+            if widget.props.text==text and widget.props.onClick then return widget end
+            for _,child in ipairs(widget:GetChildren()) do local found=find(child,text);if found then return found end end
+        end
+        local home=find(view.dialogBody,"回到生涯主页")
+        assert(home,"缺少真实回主页按钮")
+        click(home)
+        assert(session.running and session.actor==actor and view:IsBlocking() and Store.Get().position.x==3,
+            "退出写失败不能销毁场景、返回旧档或丢失当前人物位置")
+        assert(find(view.dialogBody,"留在当前生涯"),"退出失败应显示保留当前场景的提示")
+        failWrite=false
+        assert(session:SaveBeforeLeave() and not Store.GetSaveStatus().pendingSave)
+        assert(Store.Load() and Store.Get().position.x==3,"恢复写盘后退出快照必须保存最新位置")
+        print("[保存退出隔离验收通过] 真实暂停/触摸回主页/写失败留场/完整位置保留/恢复写盘后补存；禁玩家档")
+    end)
+    session.options.test=oldTest;session.running=oldRunning
+    restore()
+    session:ApplySpace("city");actor:RestoreVehicles(oldPosition)
+    session:ApplySpace(oldPosition.space or "city")
+    actor.mounted=oldPosition.mounted;actor.visuals:SetMounted(oldPosition.mounted)
+    actor:Teleport(oldPosition.x,oldPosition.z,oldPosition.yaw,oldPosition.groundHeight)
+    view:ClosePhone();view:ShowGame();session:Refresh()
+    if not ok then error(message) end
 end
 function Checks.RunDeliveryTrip(session)
     local files={}
@@ -262,7 +420,9 @@ function Checks.RunMobile(session)
     local function down(widget,id,fx)
         local r=widget:GetAbsoluteLayout()
         local x,y=r.x+r.w*(fx or .5),r.y+r.h*.5
-        assert(send("PointerDown",id,x,y).target==widget,"触屏未命中实际组件："..tostring(widget.props.id))
+        local e=send("PointerDown",id,x,y)
+        assert(e.target==widget,string.format("触屏未命中实际组件：%s target=%s bounds=%.1f,%.1f,%.1f,%.1f scale=%.3f",
+            tostring(widget.props.id),tostring(e.target and e.target.props.id),r.x,r.y,r.w,r.h,UI.GetScale()))
         return x,y
     end
     local function up(id,x,y) send("PointerUp",id,x,y) end
@@ -318,12 +478,12 @@ function Checks.RunMobile(session)
     assert(mapBounds.w>=44 and mapBounds.h>=44,"局部地图快捷入口不得过小")
     actor.speed=.36
     local qx,qy=down(mapEntry,760003);up(760003,qx,qy)
-    assert(view.phonePage=="","移动中点地图不得绕过停车限制")
+    assert(view.phonePage=="" and not view.worldMap:IsVisible(),"移动中点地图不得绕过停车限制")
     actor.speed=0
     qx,qy=down(mapEntry,760003);up(760003,qx,qy)
-    assert(view.phonePage=="map" and not c.enabled and view.walkStick.x==0 and view.walkStick.y==0,
-        "局部地图应通过生产actions直接打开全城地图并清输入")
-    view:ClosePhone(); UI.Layout()
+    assert(view.worldMap:IsVisible() and not c.enabled and view.walkStick.x==0 and view.walkStick.y==0,
+        "局部地图应打开实际全屏地图并清输入")
+    view:CloseWorldMap(); UI.Layout()
     assert(c.enabled and not c.gas,"收起快捷地图不可恢复残留油门")
     local lx,ly=down(view.lookArea,760005,.5)
     send("PointerMove",760005,lx+24,ly+12)
@@ -347,6 +507,13 @@ function Checks.RunWorld(session,options)
     Checks.RunLogic()
     Checks.RunProgression()
     Checks.RunCloudTimeout()
+    require("Career.ProgressionChecks").Run()
+    require("Career.WorldStreamChecks").Run()
+    require("Career.CityEnvironmentChecks").BoundaryCollision(session)
+    require("Career.SubjectVisualChecks").Run(session)
+    require("Career.TrafficChecks").Layers(session)
+    require("Career.TrafficChecks").ParkingRestore(session)
+    require("Career.SoundCrowdChecks").Layers(session)
     require("Career.TeamChecks").Run()
     require("Career.EngagementChecks").Run()
     require("Career.WorldChecks").Run(session)
@@ -393,6 +560,7 @@ function Checks.RunWorld(session,options)
     assert(Store.Get().time==time,"手机未冻结时间")
     session.view:ClosePhone()
     session:Refresh()
+    Checks.RunSaveExit(session)
     Checks.RunMobile(session)
     require("Career.HousingChecks").Run(session)
     require("Career.MediaChecks").Run(session)
@@ -403,7 +571,9 @@ function Checks.RunWorld(session,options)
     require("Career.StreetLifeChecks").Run(session)
     require("Career.StreetInteractionChecks").Run(session)
     require("Career.DeliveryPeopleChecks").Run(session)
+    require("Career.DeliveryMarkerChecks").Support(session)
     require("Career.DeliveryMarkerChecks").Run(session)
+    require("Career.EngagementWorldChecks").Run(session)
     require("Career.NavigationChecks").Run(session)
     require("Career.MapPhoneChecks").RunLayout(session.view,session:State(),Delivery.GetOffer(),Delivery.GetActive())
     -- 独立旧回归不重复长距离新专项；默认入口仍全覆盖，日志明确区分。

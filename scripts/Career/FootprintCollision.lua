@@ -43,12 +43,16 @@ end
 function C.Shape(parts)
     local s={parts=parts,x1=math.huge,x2=-math.huge,z1=math.huge,z2=-math.huge,reach=0}
     for _,p in ipairs(parts) do
+        p.x1,p.x2,p.z1,p.z2=math.huge,-math.huge,math.huge,-math.huge
         if p.radius then
+            p.x1,p.x2,p.z1,p.z2=p.x-p.radius,p.x+p.radius,p.z-p.radius,p.z+p.radius
             s.x1=math.min(s.x1,p.x-p.radius); s.x2=math.max(s.x2,p.x+p.radius)
             s.z1=math.min(s.z1,p.z-p.radius); s.z2=math.max(s.z2,p.z+p.radius)
             s.reach=math.max(s.reach,math.sqrt(p.x*p.x+p.z*p.z)+p.radius)
         else
             for _,v in ipairs(p.points) do
+                p.x1,p.x2=math.min(p.x1,v.x),math.max(p.x2,v.x)
+                p.z1,p.z2=math.min(p.z1,v.z),math.max(p.z2,v.z)
                 s.x1=math.min(s.x1,v.x); s.x2=math.max(s.x2,v.x)
                 s.z1=math.min(s.z1,v.z); s.z2=math.max(s.z2,v.z)
                 s.reach=math.max(s.reach,math.sqrt(v.x*v.x+v.z*v.z))
@@ -57,6 +61,21 @@ function C.Shape(parts)
     end
     return s
 end
+-- The same endpoint hull + sagitta padding used by Actor's continuous turn.
+-- Call only after its conservative AABB overlaps a collision candidate.
+function C.RotationPart(first,last,pad)
+    local points={}
+    local function append(part)
+        for _,v in ipairs(part.points) do
+            points[#points+1]={x=v.x+pad,z=v.z+pad}
+            points[#points+1]={x=v.x-pad,z=v.z+pad}
+            points[#points+1]={x=v.x+pad,z=v.z-pad}
+            points[#points+1]={x=v.x-pad,z=v.z-pad}
+        end
+    end
+    append(first);append(last)
+    return C.Shape({{points=C.Hull(points)}})
+end
 function C.Circle(x,z,r) return C.Shape({{x=x,z=z,radius=r}}) end
 function C.Box(x1,z1,x2,z2)
     return C.Shape({{points={{x=x1,z=z1},{x=x2,z=z1},{x=x2,z=z2},{x=x1,z=z2}}}})
@@ -64,18 +83,50 @@ end
 function C.Pose(shape,x,z,yaw)
     local a=math.rad(yaw or 0)
     local cs,sn=math.cos(a),math.sin(a)
-    local function point(p) return {x=x+p.x*cs+p.z*sn,z=z-p.x*sn+p.z*cs} end
+    -- Keep independent snapshots and vertex tables. Inline the two per-call
+    -- closures and avoid the temporary circle-centre table; arithmetic order
+    -- and the exact source geometry/bounds remain unchanged.
     local parts={}
+    local result={parts=parts,x1=math.huge,x2=-math.huge,z1=math.huge,z2=-math.huge,reach=0}
+    local reach2=0
     for _,p in ipairs(shape.parts) do
+        local part={x1=math.huge,x2=-math.huge,z1=math.huge,z2=-math.huge}
         if p.radius then
-            local q=point(p); q.radius=p.radius; parts[#parts+1]=q
+            local px,pz=x+p.x*cs+p.z*sn,z-p.x*sn+p.z*cs
+            part.x,part.z,part.radius=px,pz,p.radius
+            local lx,lz,hx,hz=px-p.radius,pz-p.radius,px+p.radius,pz+p.radius
+            if lx<part.x1 then part.x1=lx end
+            if lx>part.x2 then part.x2=lx end
+            if lz<part.z1 then part.z1=lz end
+            if lz>part.z2 then part.z2=lz end
+            if hx<part.x1 then part.x1=hx end
+            if hx>part.x2 then part.x2=hx end
+            if hz<part.z1 then part.z1=hz end
+            if hz>part.z2 then part.z2=hz end
+            local reach=math.sqrt(px*px+pz*pz)+p.radius
+            reach2=math.max(reach2,reach*reach)
         else
             local vertices={}
-            for _,v in ipairs(p.points) do vertices[#vertices+1]=point(v) end
-            parts[#parts+1]={points=vertices}
+            for _,v in ipairs(p.points) do
+                local px,pz=x+v.x*cs+v.z*sn,z-v.x*sn+v.z*cs
+                vertices[#vertices+1]={x=px,z=pz}
+                if px<part.x1 then part.x1=px end
+                if px>part.x2 then part.x2=px end
+                if pz<part.z1 then part.z1=pz end
+                if pz>part.z2 then part.z2=pz end
+                local squared=px*px+pz*pz
+                if squared>reach2 then reach2=squared end
+            end
+            part.points=vertices
         end
+        if part.x1<result.x1 then result.x1=part.x1 end
+        if part.x2>result.x2 then result.x2=part.x2 end
+        if part.z1<result.z1 then result.z1=part.z1 end
+        if part.z2>result.z2 then result.z2=part.z2 end
+        parts[#parts+1]=part
     end
-    return C.Shape(parts)
+    result.reach=math.sqrt(reach2)
+    return result
 end
 local function edges(poly,callback)
     for i,a in ipairs(poly.points) do
@@ -107,16 +158,28 @@ local function circlePoly(circle,poly,pad)
     return not inside and best>=(circle.radius+pad)^2-EPS
 end
 local function partFree(a,b,pad)
+    -- 复合车壳有许多窄条；只裁掉严格分离的部件对，最终SAT/圆算法保持原样。
+    if a.x1 and b.x1 and (a.x2+pad<b.x1 or b.x2+pad<a.x1
+        or a.z2+pad<b.z1 or b.z2+pad<a.z1) then return true end
     if a.radius and b.radius then return (a.x-b.x)^2+(a.z-b.z)^2>=(a.radius+b.radius+pad)^2-EPS end
     if a.radius then return circlePoly(a,b,pad) end
     if b.radius then return circlePoly(b,a,pad) end
-    local separate=false
-    local function axis(nx,nz)
-        local al,ah=project(a,nx,nz); local bl,bh=project(b,nx,nz)
-        if ah+pad<=bl+EPS or bh+pad<=al+EPS then separate=true end
+    -- SAT只需找到一条分离轴。原实现即使命中首轴仍投影其余所有轴；
+    -- 保留每条轴的运算顺序、退化边阈值和SKIN判定，只提前返回已确定的true。
+    for side=1,2 do
+        local poly=side==1 and a or b
+        for i,p in ipairs(poly.points) do
+            local q=poly.points[i%#poly.points+1]
+            local dx,dz=q.x-p.x,q.z-p.z
+            local length=math.sqrt(dx*dx+dz*dz)
+            if length>EPS then
+                local nx,nz=dz/length,-dx/length
+                local al,ah=project(a,nx,nz); local bl,bh=project(b,nx,nz)
+                if ah+pad<=bl+EPS or bh+pad<=al+EPS then return true end
+            end
+        end
     end
-    edges(a,axis); edges(b,axis)
-    return separate
+    return false
 end
 function C.Free(a,b,pad)
     pad=pad or 0
@@ -187,6 +250,10 @@ function C.Sweep(a,b,dx,dz,pad)
         or math.max(a.z2,a.z2+dz)+pad<b.z1 or math.min(a.z1,a.z1+dz)-pad>b.z2 then return nil end
     local best,nx,nz=2,0,0
     for _,pa in ipairs(a.parts) do for _,pb in ipairs(b.parts) do
+        local separated=pa.x1 and pb.x1 and
+            (math.max(pa.x2,pa.x2+dx)+pad<pb.x1 or math.min(pa.x1,pa.x1+dx)-pad>pb.x2
+            or math.max(pa.z2,pa.z2+dz)+pad<pb.z1 or math.min(pa.z1,pa.z1+dz)-pad>pb.z2)
+        if not separated then
         local t,vx,vz
         if pa.radius and pb.radius then t,vx,vz=circleCast(pa,pb,dx,dz,pa.radius+pb.radius+pad)
         elseif pa.radius then t,vx,vz=circlePolyCast(pa,pb,dx,dz,pad)
@@ -195,6 +262,7 @@ function C.Sweep(a,b,dx,dz,pad)
             t,vx,vz=hit,hx and -hx,hz and -hz
         else t,vx,vz=polyCast(pa,pb,dx,dz,pad) end
         if t and t<best then best,nx,nz=t,vx,vz end
+        end
     end end
     if best<=1 then return best,nx,nz end
     return nil

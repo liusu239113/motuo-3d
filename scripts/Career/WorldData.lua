@@ -40,6 +40,7 @@
 ---@field z1 number
 ---@field z2 number
 ---@field grounds table[]
+---@field hillGrounds? table[]
 ---@field buildings table[]
 ---@field trees table[]
 ---@field props table[]
@@ -49,6 +50,8 @@
 local World = {}
 local Expansion = require("Career.CityExpansion")
 local Environment = require("Career.CityEnvironment")
+---@type CareerHillDistrict
+local Hills = require("Career.HillDistrict")
 -- 仅用于渲染与地图的接续几何；不插入既有订单使用的固定导航图。
 ---@type table[]
 World.ExpansionRoads=Expansion.Roads
@@ -180,6 +183,7 @@ for _,r in ipairs((function()
     local all={}
     for _,v in ipairs(World.Roads) do all[#all+1]=v end
     for _,v in ipairs(Expansion.Roads) do all[#all+1]=v end
+    for _,v in ipairs(Hills.Roads) do all[#all+1]=v end
     return all
 end)()) do
     local rect=roadRect(r,r.sidewalk)
@@ -289,7 +293,28 @@ local function ground(cell,rect,material,y,cuts)
     end
     for _,p in ipairs(pieces) do
         p.material,p.y=material,y
-        cell.grounds[#cell.grounds+1]=p
+        -- 山区仍保留全部道路/人行道/铺装描述，按同源三角面投影，不删除横路。
+        if Hills.Reserved(p) then
+            cell.hillGrounds=cell.hillGrounds or {}
+            local inside={x1=math.max(p.x1,Hills.Bounds.x1),x2=math.min(p.x2,Hills.Bounds.x2),
+                z1=math.max(p.z1,Hills.Bounds.z1),z2=math.min(p.z2,Hills.Bounds.z2),material=material,y=material=="grass" and 0 or .055}
+            if material~="grass" then
+                -- 全部山区步行铺装与逻辑支撑同高：后铺的路/院地先裁掉旧片，避免共面闪烁。
+                local nextGrounds={}
+                for _,old in ipairs(cell.hillGrounds) do
+                    for _,piece in ipairs(subtract(old,inside)) do
+                        piece.material,piece.y=old.material,old.y
+                        nextGrounds[#nextGrounds+1]=piece
+                    end
+                end
+                nextGrounds[#nextGrounds+1]=inside
+                cell.hillGrounds=nextGrounds
+            end
+            for _,outside in ipairs(subtract(p,Hills.Bounds)) do
+                outside.material,outside.y=material,y
+                cell.grounds[#cell.grounds+1]=outside
+            end
+        else cell.grounds[#cell.grounds+1]=p end
     end
 end
 local function obstacle(cell,x,z,w,d,y1,y2,kind)
@@ -301,7 +326,8 @@ local function building(cell,b,cuts)
     local w,d=b.w,b.d
     if b.yaw%180~=0 then w,d=d,w end
     -- 包含地基15cm外扩；高于人物的屋檐不算地面碰撞。
-    obstacle(cell,b.x,b.z,w+(b.expansion and .1 or .3),d+(b.expansion and .1 or .3),0,b.h,"building")
+    obstacle(cell,b.x,b.z,w+(b.expansion and .1 or .3),d+(b.expansion and .1 or .3),
+        b.foundationY or 0,(b.baseY or 0)+b.h,"building")
     if b.expansion then
         -- 真正的门前/侧院铺装，不让每栋矗立在整片棕土地上；裁掉所有机动车道。
         ground(cell,{x1=b.x-w/2-2.1,x2=b.x+w/2+2.1,z1=b.z-d/2-2.1,z2=b.z+d/2+2.1},"concrete",.085,cuts)
@@ -311,6 +337,7 @@ local function building(cell,b,cuts)
 end
 local function owner(cell,x,z) return math.floor(x/256)==cell.ix and math.floor(z/256)==cell.iz end
 local function reserved(rect)
+    if Hills.Reserved(rect) and not Hills.Buildable(rect) then return true end
     if Environment.Reserved(rect) then return true end
     if overlap(rect,protected) then return true end
     for _,d in ipairs(World.Districts) do
@@ -347,6 +374,13 @@ function World.DescribeCell(ix,iz)
     local list=roadCells[k] or {}
     local cuts={}
     for _,r in ipairs(list) do if not r.old then cuts[#cuts+1]=roadRect(r,0) end end
+    -- 台地住宅的公共院地接纵街人行带；裁掉车道，避免同高铺装重叠闪烁。
+    for _,side in ipairs({-1,1}) do
+        for _,range in ipairs({{272,336},{432,480}}) do
+            ground(cell,{x1=side<0 and -range[2] or range[1],x2=side<0 and -range[1] or range[2],
+                z1=736,z2=928},"concrete",.055,cuts)
+        end
+    end
     for _,r in ipairs(list) do
         if not r.old then
             local outer,inner=roadRect(r,r.sidewalk),roadRect(r,0)
@@ -356,6 +390,7 @@ function World.DescribeCell(ix,iz)
     end
     -- 新楼障碍与可见地基共用实测、正交旋转后的AABB；视觉块卸载不删碰撞。
     for _,b in ipairs(Expansion.Buildings) do if owner(cell,b.x,b.z) then building(cell,b,cuts) end end
+    for _,b in ipairs(Hills.Buildings) do if owner(cell,b.x,b.z) then building(cell,b,cuts) end end
     for _,p in ipairs(Expansion.Plazas) do
         ground(cell,{x1=p.x-p.w/2,x2=p.x+p.w/2,z1=p.z-p.d/2,z2=p.z+p.d/2},"concrete",.085,cuts)
         -- 3m入口接到真实共享巷道，不生成孤立广场。
@@ -435,6 +470,7 @@ function World.DescribeCell(ix,iz)
         end
     end
     for _,o in ipairs(Environment.CollectObstacles(cell)) do cell.obstacles[#cell.obstacles+1]=o end
+    for _,o in ipairs(Hills.Obstacles(cell)) do cell.obstacles[#cell.obstacles+1]=o end
     if cacheCount>=World.CACHE_LIMIT then
         local oldestKey,oldestAge="",math.huge
         for ck,ca in pairs(cacheAge) do if ca<oldestAge then oldestKey,oldestAge=ck,ca end end
@@ -483,7 +519,8 @@ end
 function World.Surface(x,z,mode,height)
     local terrain=Environment.Surface(x,z)
     if terrain~=nil then return terrain end
-    local groundY=groundHeight(x,z)
+    local hill=Hills.Surface(x,z)
+    local groundY=hill or groundHeight(x,z)
     if mode~="walk" or height==nil then return groundY end
     for _,b in ipairs(bridges) do
         if math.abs(x-b.x)<=24 and z>=b.z-65 and z<=b.z+3 then
@@ -497,7 +534,8 @@ local function hit(o,x,z,r)
     return x>o.x1-r and x<o.x2+r and z>o.z1-r and z<o.z2+r
 end
 local function bridgeFree(x,z,r,mode,height)
-    local elevated=mode=="walk" and (height or 0)>.65
+    local elevated=mode=="walk" and (height or 0)>groundHeight(x,z)+.65
+    if Hills.Contains(x,z) then elevated=false end
     local supported=false
     for _,b in ipairs(bridges) do
         local dx,dz=x-b.x,z-b.z
@@ -698,6 +736,169 @@ function World.Route(x,z,tx,tz)
         else compact[#compact+1]=p end
     end
     return compact
+end
+
+-- 动态显示导航独立于 Route：Route 仍只服务既有31单模板/报价，绝不插入桥层边。
+-- 层判定只认本桥的实际支撑高度；海岸4m地面仍是ground，桥下同XZ也不吸到桥面。
+---@param x number
+---@param z number
+---@param height? number 当前脚底高度；省略时兼容旧地面导航
+---@param mode? string vehicle强制ground，其余按步行高度判断
+---@return string
+function World.NavigationLayer(x,z,height,mode)
+    if mode=="vehicle" or height==nil then return "ground" end
+    -- 绝大多数查询不在桥附近；先用常驻桥边界筛选，不为缓存key逐帧生成地块描述。
+    for _,b in ipairs(bridges) do
+        local top=bridgeHeight(b,x,z)
+        if top and math.abs(top-height)<=.65 then
+            local groundY=World.Surface(x,z,"vehicle",0)
+            -- 坡脚与地面同高时仍可从明确入口退出；不把桥下0m误投到低坡。
+            if height>groundY+.01 or math.abs(top-groundY)<=.01 and math.abs(top-height)<=.01 then
+                return "bridge:"..b.id
+            end
+        end
+    end
+    return "ground"
+end
+-- Shared interaction support, independent of absolute altitude. Callers supply
+-- their own city's Surface result (including interior .085 floors); bridge/ramp
+-- is never a ground-service layer, and unsupported poses cannot authorise actions.
+---@param x number
+---@param z number
+---@param height number
+---@param groundHeight number
+---@return boolean
+function World.HasGroundSupport(x,z,height,groundHeight)
+    return type(height)=="number" and type(groundHeight)=="number"
+        and height==height and groundHeight==groundHeight and math.abs(height-groundHeight)<=.05
+        and World.NavigationLayer(x,z,height,"walk")=="ground"
+end
+local function navigationAppend(route,p)
+    local last=route[#route]
+    if not last or last.x~=p.x or last.z~=p.z or last.y~=p.y or last.layer~=p.layer then
+        route[#route+1]={x=p.x,z=p.z,y=p.y,layer=p.layer}
+    end
+end
+local function navigationLength(route)
+    local total=0
+    for i=2,#route do
+        local a,b=route[i-1],route[i]
+        total=total+math.sqrt((b.x-a.x)^2+(b.z-a.z)^2+((b.y or 0)-(a.y or 0))^2)
+    end
+    return total
+end
+local function hillNavigation(x,z,tx,tz)
+    if not Hills.LocalRoute or not Hills.NavigationEntries
+        or not Hills.Contains(x,z) and not Hills.Contains(tx,tz) then return nil end
+    local direct=Hills.LocalRoute(x,z,tx,tz)
+    if direct then return direct end
+    local starts,finishes={},{}
+    for _,entry in ipairs(Hills.NavigationEntries) do
+        local outgoing=Hills.LocalRoute(x,z,entry.x,entry.z)
+        local incoming=Hills.LocalRoute(entry.x,entry.z,tx,tz)
+        if outgoing then starts[#starts+1]={entry=entry,path=outgoing} end
+        if incoming then finishes[#finishes+1]={entry=entry,path=incoming} end
+    end
+    if #starts==0 and #finishes==0 then return nil end
+    if #starts==0 then starts[1]={entry={x=x,z=z},path={}} end
+    if #finishes==0 then finishes[1]={entry={x=tx,z=tz},path={}} end
+    local best,bestLength=nil,math.huge
+    for _,a in ipairs(starts) do for _,b in ipairs(finishes) do
+        local middle=World.Route(a.entry.x,a.entry.z,b.entry.x,b.entry.z)
+        if middle then
+            local route={}
+            for _,p in ipairs(a.path) do navigationAppend(route,p) end
+            for _,p in ipairs(middle) do
+                navigationAppend(route,{x=p.x,z=p.z,y=World.Surface(p.x,p.z,"vehicle",0),layer="ground"})
+            end
+            for _,p in ipairs(b.path) do navigationAppend(route,p) end
+            local length=navigationLength(route)
+            if length<bestLength then best,bestLength=route,length end
+        end
+    end end
+    return best
+end
+-- 桥层有限连接图（米，与bridgeHeight/bridgeFree共用边界）：
+-- deck z=0:      (-20,6.085) =========== (+20,6.085)
+--                    |                       |
+-- ramp z=-2:     (-20,6.085)              (+20,6.085)
+-- ramp z=-64:    (-20,.085)               (+20,.085)
+-- ground z=-66:  (-20,.085)               (+20,.085) -> 原地面路网
+-- 只有两个坡脚能换层；不以同XZ地面投影作捷径。坡上起点可向上跨桥或原坡返回。
+---@param x number
+---@param z number
+---@param tx number
+---@param tz number
+---@param height? number 当前步行脚底高度，不是全局海拔阈值
+---@param layer? string ground或NavigationLayer返回的bridge:<id>；vehicle调用方显式ground
+---@return table[]|nil, string|nil
+function World.NavigationRoute(x,z,tx,tz,height,layer)
+    if type(x)~="number" or type(z)~="number" or type(tx)~="number" or type(tz)~="number"
+        or x~=x or z~=z or tx~=tx or tz~=tz or math.abs(x)>World.LIMIT or math.abs(z)>World.LIMIT
+        or math.abs(tx)>World.LIMIT or math.abs(tz)>World.LIMIT
+        or height~=nil and (type(height)~="number" or height~=height or math.abs(height)==math.huge) then return nil,"invalid navigation coordinates" end
+    local resolved=layer or World.NavigationLayer(x,z,height)
+    if resolved=="ground" then
+        -- 显式ground用于骑行；自动步行不能把一个无支撑的高处坐标静默降到地面。
+        if not layer and height and math.abs(height-World.Surface(x,z,"vehicle",0))>.65 then
+            return nil,"unsupported navigation height"
+        end
+        local hillsRoute=hillNavigation(x,z,tx,tz)
+        if hillsRoute then return hillsRoute end
+        local exit=Hills.ExitRoute(x,z)
+        if exit then
+            local entry=exit[#exit]
+            local tail=World.Route(entry.x,entry.z,tx,tz)
+            if not tail then return nil,"no terrace road access" end
+            for _,p in ipairs(tail) do
+                navigationAppend(exit,{x=p.x,z=p.z,y=World.Surface(p.x,p.z,"vehicle",0),layer="ground"})
+            end
+            return exit
+        end
+        return World.Route(x,z,tx,tz)
+    end
+    for _,b in ipairs(bridges) do if resolved=="bridge:"..b.id then
+        local top=bridgeHeight(b,x,z)
+        if not top or height and math.abs(top-height)>.65 or not World.IsFree(x,z,.32,"walk",top) then
+            return nil,"unsupported bridge start"
+        end
+        local bestRoute,bestLength={},math.huge
+        local startSide=x<b.x and -1 or 1
+        for _,side in ipairs({-1,1}) do
+            local footX,footZ=b.x+side*20,b.z-66
+            local groundRoute=World.Route(footX,footZ,tx,tz)
+            if groundRoute then
+                local route={}
+                local function bridgePoint(px,pz)
+                    navigationAppend(route,{x=px,z=pz,y=assert(bridgeHeight(b,px,pz)),layer=resolved})
+                end
+                bridgePoint(x,z)
+                if z<b.z-2 then
+                    bridgePoint(b.x+startSide*20,z)
+                    if side~=startSide then
+                        bridgePoint(b.x+startSide*20,b.z-2)
+                        bridgePoint(b.x+startSide*20,b.z)
+                        bridgePoint(footX,b.z)
+                        bridgePoint(footX,b.z-2)
+                    end
+                else
+                    -- 先在4m宽桥面中心线上横移，再转入坡道；不切内侧空角。
+                    bridgePoint(x,b.z)
+                    bridgePoint(footX,b.z)
+                    bridgePoint(footX,b.z-2)
+                end
+                bridgePoint(footX,b.z-64)
+                for _,p in ipairs(groundRoute) do
+                    navigationAppend(route,{x=p.x,z=p.z,y=World.Surface(p.x,p.z,"vehicle",0),layer="ground"})
+                end
+                local cost=navigationLength(route)
+                if cost<bestLength then bestRoute,bestLength=route,cost end
+            end
+        end
+        if #bestRoute==0 then return nil,"no unobstructed bridge ramp access" end
+        return bestRoute
+    end end
+    return nil,"unknown navigation layer"
 end
 
 -- 只追加新模板，不重排/重写旧单。1游戏小时450现实秒，

@@ -2,13 +2,16 @@
 local Config=require("Career.Config")
 local Store=require("Career.Store")
 local Events=require("Career.Engagements")
+local World=require("Career.WorldData")
 ---@class CareerStreetActions: CareerSession
 local Actions={}
 local function canTalk(self,person)
     local actor=self.actor
     if not actor or not self.running or self.space~="city" then return false,"请先回到街上" end
     if actor.mounted or math.abs(actor.speed)>.35 then return false,"请停稳下车再交谈" end
-    if actor.walkHeight>1 then return false,"请先回到地面" end
+    if not World.HasGroundSupport(actor.x,actor.z,actor.walkHeight,self.city:Surface(actor.x,actor.z)) then
+        return false,"请先回到地面并站稳"
+    end
     if (actor.x-person.x)^2+(actor.z-person.z)^2>9 then return false,"请靠近正在交谈的人（3米内）" end
     return true
 end

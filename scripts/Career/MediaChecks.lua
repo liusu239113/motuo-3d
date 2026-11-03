@@ -16,7 +16,9 @@ local function tap(widget)
     UI.HandlePointerEvent(event("PointerUp"))
 end
 function Checks.Run(session)
+    assert(require("AudioChecks").Career(),"独立无声混音契约检查失败")
     local view,actor,sound=session.view,assert(session.actor),assert(session.audio)
+    assert(require("AudioChecks").Loaded(nil,sound),"真实音频资源循环标记检查失败")
     for key,clip in pairs(sound.sounds) do assert(clip:GetLength()>0,"音频为空："..key) end
     assert(sound.sources.music and sound.sources.electric and sound.sources.steps and sound.sources.engine)
     local snapshot={speed=actor.speed,mounted=actor.mounted,vehicle=actor.vehicleId}

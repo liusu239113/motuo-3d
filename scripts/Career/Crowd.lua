@@ -3,7 +3,6 @@
 local World=require("Career.WorldData")
 local Routes=require("Career.TrafficRoutes")
 local C=require("Career.FootprintCollision")
-local Footprints=require("Career.VehicleFootprints")
 local TrafficMotion=require("Career.TrafficMotion")
 local Pedestrians=require("Career.Pedestrians")
 local Motion=require("Career.Locomotion")
@@ -269,54 +268,181 @@ function Crowd:Scan(actor)
         end
     end
 end
--- 车轮/后视镜/箱体用环境代理同一可见足迹；车辆缓存每次Update只建一次。
+-- Actor parking is independent of the moving traffic tables. Retain only one
+-- exact posed shell per owned vehicle; teleport/restore/switch/yaw edits all
+-- invalidate through Motion.Shape's full numeric pose + source-identity key.
+function Crowd:VehicleShape(id,x,z,yaw)
+    self.vehicleShapes=self.vehicleShapes or {}
+    local car=self.vehicleShapes[id]
+    if not car then car={vehicleId=id};self.vehicleShapes[id]=car end
+    car.x,car.z,car.yaw=x,z,yaw
+    return TrafficMotion.Shape(car),car
+end
+-- Moving traffic freezes source/pose/height inputs, never a mutable car pose.
+-- In XZ, rotate the WHOLE local source AABB (including mirrors/rider OBB):
+--       [local parts] --yaw--> [conservative bounds] <-- relative walker sweep
+-- Only rejection uses these bounds. A hit still needs the exact posed shell
+-- and its original AABB test before any support query or narrow collision.
+local function snapshotBounds(source,x,z,yaw)
+    local angle=math.rad(yaw or 0)
+    local cs,sn=math.cos(angle),math.sin(angle)
+    local ax,bx=source.x1*cs,source.x2*cs
+    local az,bz=source.z1*sn,source.z2*sn
+    local cx,dx=-source.x1*sn,-source.x2*sn
+    local cz,dz=source.z1*cs,source.z2*cs
+    -- Extremising each linear term encloses every polygon vertex. For circle
+    -- parts |cos|+|sin| >= 1, so the rotated enclosing square also encloses the
+    -- unchanged radius. Outward pad dwarfs double rounding at project scales
+    -- (including the tiny libm norm error at axis-aligned angles).
+    local pad=1e-9*(1+math.abs(x)+math.abs(z)+(source.reach or 0))
+    return {x1=x+math.min(ax,bx)+math.min(az,bz)-pad,
+        x2=x+math.max(ax,bx)+math.max(az,bz)+pad,
+        z1=z+math.min(cx,dx)+math.min(cz,dz)-pad,
+        z2=z+math.max(cx,dx)+math.max(cz,dz)+pad}
+end
+local function snapshotShape(entry)
+    if entry.shape then return entry.shape end -- explicit test/fixture shapes too
+    if entry.person then
+        local p=entry.person
+        entry.shape=C.Circle(p.x,p.z,p.radius)
+    else
+        entry.shape=C.Pose(entry.vehicleSource,entry.vehicle.x,entry.vehicle.z,entry.vehicleYaw)
+    end
+    return entry.shape
+end
+local function snapshotPose(car)
+    return {x=car.x,z=car.z,vehicleId=car.vehicleId,id=car.id,bodyHeight=car.bodyHeight,riding=car.riding}
+end
+-- 车轮/后视镜/箱体用环境代理同一可见足迹；车辆与停车姿态复用同源缓存。
 function Crowd:Snapshot(actor)
     self.shapes={}
+    local function add(shape,y1,y2,vx,vz,car,vehicle,bounds)
+        self.shapes[#self.shapes+1]={shape=shape,y1=y1,y2=y2,vx=vx or 0,vz=vz or 0,car=car,vehicle=vehicle,bounds=bounds}
+    end
     local traffic=self.city.traffic
     for _,group in ipairs({traffic and traffic.cars or {},traffic and traffic.outer and traffic.outer.cars or {}}) do
         for _,car in ipairs(group) do
             if d2(car.x,car.z,actor)<150^2 then
-                local shape=TrafficMotion.Shape(car)
                 local angle=math.rad(car.yaw)
-                self.shapes[#self.shapes+1]={shape=shape,vx=math.sin(angle)*(car.speed or 0),vz=math.cos(angle)*(car.speed or 0),car=true}
+                -- Freeze collision source and numeric state: later traffic movement
+                -- cannot mutate this frame's shell, height query, or relative sweep.
+                local source=TrafficMotion.Source(car)
+                local pose=snapshotPose(car)
+                -- Reuse only a fully valid immutable shell, with exactly the
+                -- same numeric/source/dimension key as TrafficMotion.Shape.
+                local cached=car.shapeX==car.x and car.shapeZ==car.z and car.shapeYaw==car.yaw
+                    and car.shapeSource==source and car.shapeWidth==car.width and car.shapeLength==car.length and car.shell
+                local bounds=not cached and snapshotBounds(source,pose.x,pose.z,car.yaw) or nil
+                add(cached or nil,nil,nil,math.sin(angle)*(car.speed or 0),math.cos(angle)*(car.speed or 0),true,pose,bounds)
+                local entry=self.shapes[#self.shapes]
+                entry.vehicleSource,entry.vehicleYaw=source,car.yaw
             end
         end
     end
-    if actor.ParkedShapes then
-        for _,shape in ipairs(actor:ParkedShapes()) do self.shapes[#self.shapes+1]={shape=shape,vx=0,vz=0} end
+    local function park(id,x,z,yaw)
+        local shape,car=self:VehicleShape(id,x,z,yaw)
+        add(shape,nil,nil,0,0,false,snapshotPose(car))
     end
-    self.shapes[#self.shapes+1]={shape=actor.mounted and Footprints.At(actor.vehicleId,actor.x,actor.z,actor.yaw) or C.Circle(actor.x,actor.z,.32),vx=0,vz=0}
+    if actor.ParkedShapes then
+        if not actor.mounted then park(actor.vehicleId,actor.bikeX,actor.bikeZ,actor.bikeYaw) end
+        for id,p in pairs(actor.parking or {}) do if id~=actor.vehicleId then park(id,p.x,p.z,p.yaw) end end
+    end
+    if actor.mounted then
+        local shape,car=self:VehicleShape(actor.vehicleId,actor.x,actor.z,actor.yaw)
+        add(shape,nil,nil,0,0,false,snapshotPose(car))
+    else
+        local y1=self.city:WalkSurface(actor.x,actor.z,actor.walkHeight or 0)
+        add(C.Circle(actor.x,actor.z,.32),y1,y1+1.8)
+    end
     for _,group in ipairs({traffic and traffic.pedestrians and traffic.pedestrians.people or {},traffic and traffic.outer and traffic.outer.people or {},self.city.deliveryPeople and self.city.deliveryPeople.people or {}}) do
         for _,p in ipairs(group) do
             if p.active~=false and p.inUse~=false and finite(p.x) and finite(p.z) and d2(p.x,p.z,actor)<125^2 then
-                self.shapes[#self.shapes+1]={shape=C.Circle(p.x,p.z,p.radius or .30),vx=0,vz=0}
+                -- 冻结原高度选择语义和圆的精确四界；宽相命中前不建圆、不查缺省地面。
+                -- 只延迟准备工作，不缓存通行结论，也不持有活人物作为求值来源。
+                local person={x=p.x,z=p.z,radius=p.radius or .30,height=p.height or p.y}
+                local y=person.height
+                local low=type(y)=="number" and y or nil
+                local bounds={x1=person.x-person.radius,x2=person.x+person.radius,
+                    z1=person.z-person.radius,z2=person.z+person.radius}
+                add(nil,low,low and low+1.8 or nil,0,0,false,nil,bounds)
+                self.shapes[#self.shapes].person=person
             end
         end
     end
 end
+-- One synchronous Move has immutable terrain but may test several local edges.
+-- Exact numeric keys include the incoming support seed: same XZ below a bridge
+-- is NOT the same query as on its deck. Never retain this across moves/frames.
+local function walkSurface(city,x,z,height,samples)
+    if not samples then return city:WalkSurface(x,z,height) end
+    local zs=samples[x]
+    if not zs then zs={};samples[x]=zs end
+    local hs=zs[z]
+    if not hs then hs={};zs[z]=hs end
+    local seed=height==nil and "nil" or height
+    local y=hs[seed]
+    if y==nil then y=city:WalkSurface(x,z,height);hs[seed]=y end
+    return y
+end
 ---@param p CareerCrowdPerson
-function Crowd:SegmentFree(p,ax,az,bx,bz,predict)
+function Crowd:SegmentFree(p,ax,az,bx,bz,predict,samples)
     if not self.city:StaticSegmentFree(ax,az,bx,bz,p.radius,"walk",p.height) then return false end
     local mx,mz=(ax+bx)*.5,(az+bz)*.5
-    local y1=self.city:WalkSurface(ax,az,p.height)
-    local ym=self.city:WalkSurface(mx,mz,y1)
-    local y2=self.city:WalkSurface(bx,bz,ym)
+    local y1=walkSurface(self.city,ax,az,p.height,samples)
+    local ym=walkSurface(self.city,mx,mz,y1,samples)
+    local y2=walkSurface(self.city,bx,bz,ym,samples)
     if math.abs(y2-y1)>.32+math.sqrt((bx-ax)^2+(bz-az)^2)*.18 then return false end
-    local shape=C.Circle(ax,az,p.radius)
+    local shape=false
+    local sx1,sx2,sz1,sz2=ax-p.radius,ax+p.radius,az-p.radius,az+p.radius
     local dx,dz=bx-ax,bz-az
+    -- Swept support envelope includes the middle of a ramp, not absolute Y tiers.
+    local low,high=math.min(y1,ym,y2),math.max(y1,ym,y2)+1.8
+    local function mayTouch(other,rx,rz,pad)
+        return math.max(sx2,sx2+rx)+pad>=other.x1
+            and math.min(sx1,sx1+rx)-pad<=other.x2
+            and math.max(sz2,sz2+rz)+pad>=other.z1
+            and math.min(sz1,sz1+rz)-pad<=other.z2
+    end
     for _,entry in ipairs(self.shapes) do
         local time=predict or .25
-        if not C.Free(shape,entry.shape,.025) or C.Sweep(shape,entry.shape,dx-entry.vx*time,dz-entry.vz*time,.025) then return false end
+        local rx,rz=dx-entry.vx*time,dz-entry.vz*time
+        -- Relative motion includes approaching vehicles, even on zero-length
+        -- spawn probes. A conservative hit is NOT yet an exact-AABB hit.
+        local candidate=entry.shape or entry.bounds
+        if mayTouch(candidate,rx,rz,.025) then
+            local other=snapshotShape(entry)
+            if other==candidate or mayTouch(other,rx,rz,.025) then
+                if entry.y1==nil then
+                    if entry.vehicle then
+                        entry.y1,entry.y2=TrafficMotion.VehicleInterval(self.city,entry.vehicle)
+                    elseif entry.person then
+                        entry.y1,entry.y2=TrafficMotion.PersonInterval(self.city,entry.person)
+                    end
+                end
+                local ey=entry.y1 or self.city:Surface((other.x1+other.x2)/2,(other.z1+other.z2)/2)
+                if TrafficMotion.VerticalOverlap(low,high,ey,entry.y2 or ey+1.8) then
+                    if not shape then shape=C.Circle(ax,az,p.radius) end
+                    if not C.Free(shape,other,.025) or C.Sweep(shape,other,rx,rz,.025) then return false end
+                end
+            end
+        end
     end
+    local x1,x2=math.min(ax,bx)-p.radius-.04,math.max(ax,bx)+p.radius+.04
+    local z1,z2=math.min(az,bz)-p.radius-.04,math.max(az,bz)+p.radius+.04
     for _,other in ipairs(self.people) do
-        if other~=p and other.active then
-            local body=C.Circle(other.x,other.z,other.radius)
-            if not C.Free(shape,body,.04) or C.Sweep(shape,body,dx,dz,.04) then return false end
+        if other~=p and other.active and other.x+other.radius>=x1 and other.x-other.radius<=x2
+            and other.z+other.radius>=z1 and other.z-other.radius<=z2 then
+            local oy1,oy2=TrafficMotion.PersonInterval(self.city,other)
+            if TrafficMotion.VerticalOverlap(low,high,oy1,oy2) then
+                if not shape then shape=C.Circle(ax,az,p.radius) end
+                local body=C.Circle(other.x,other.z,other.radius)
+                if not C.Free(shape,body,.04) or C.Sweep(shape,body,dx,dz,.04) then return false end
+            end
         end
     end
     return true
 end
-function Crowd:CanCross(p)
+function Crowd:CanCross(p,samples)
     local route=p.route
     if not route or not route.crossing then return true end
     local traffic=self.city.traffic
@@ -327,7 +453,7 @@ function Crowd:CanCross(p)
     if Routes.Signal(traffic.time,axis)~="green" or Routes.Signal(traffic.time+required,axis)~="green" then return false end
     local ax,az=point(route,p.direction==1 and crossing.enter or crossing.exit)
     local bx,bz=point(route,p.direction==1 and crossing.exit or crossing.enter)
-    return self:SegmentFree(p,ax,az,bx,bz,required)
+    return self:SegmentFree(p,ax,az,bx,bz,required,samples)
 end
 function Crowd:Acquire(actor,camera,prime)
     if #self.people>=self.budget or #self.routes==0 then return false end
@@ -366,6 +492,8 @@ end
 function Crowd:Prime(actor)
     if self.primed or self.disposed or self.elapsed>0 or self.city.space~="city" then return false end
     self.primed=true
+    -- 两套官动相位表均在加载遮罩内完成；不能等首次走出老街才同步建Rig/读蒙皮。
+    for index=1,#Pedestrians.Specs do poseBank(index,self.root) end
     self:Snapshot(actor); self:Scan(actor)
     for _=1,self.budget do if not self:Acquire(actor,nil,true) then break end end
     return #self.people>0
@@ -378,6 +506,7 @@ end
 function Crowd:Move(p,dt)
     local route=p.route
     if not route then return end
+    local samples={}
     local state=p.localWalk
     state.cooldown=math.max(0,state.cooldown-dt)
     local crossing=route.crossing
@@ -386,7 +515,7 @@ function Crowd:Move(p,dt)
     local target=state.points[state.index]
     local desired=math.max(0,math.min(route.length,p.s+p.direction*distance))
     if crossing and (p.direction==1 and p.s<=entry+.001 and desired>entry or p.direction==-1 and p.s>=entry-.001 and desired<entry) then
-        if not self:CanCross(p) then desired=entry; p.pending=true else p.pending=false end
+        if not self:CanCross(p,samples) then desired=entry; p.pending=true else p.pending=false end
     end
     local tx,tz=point(route,desired)
     if target then tx,tz=target.x,target.z end
@@ -413,13 +542,13 @@ function Crowd:Move(p,dt)
     end
     local step=math.min(distance,remaining)
     local nx,nz=p.x+dx/remaining*step,p.z+dz/remaining*step
-    if self:SegmentFree(p,p.x,p.z,nx,nz) then
+    if self:SegmentFree(p,p.x,p.z,nx,nz,nil,samples) then
         p.x,p.z=nx,nz
         local ux,uz=(route.path[3]-route.path[1])/route.length,(route.path[4]-route.path[2])/route.length
         p.s=math.max(0,math.min(route.length,(nx-route.path[1])*ux+(nz-route.path[2])*uz))
         local yaw=math.deg(math.atan(dx,dz))
         p.yaw=wrap(p.yaw+math.max(-150*dt,math.min(150*dt,wrap(yaw-p.yaw))))
-        p.height=self.city:WalkSurface(nx,nz,p.height)
+        p.height=walkSurface(self.city,nx,nz,p.height,samples)
         p.node.position=Vector3(nx,p.height,nz); p.node.rotation=Quaternion(0,p.yaw,0)
         p.moved=p.moved+step
         p.phase=(p.phase+step/(Motion.WalkSpeed*self.clips.walk.length))%1
@@ -436,7 +565,7 @@ function Crowd:Move(p,dt)
                 local ax,az=point(route,p.s,offset)
                 local bx,bz=point(route,finish,offset)
                 local cx,cz=point(route,finish)
-                if self:SegmentFree(p,p.x,p.z,ax,az) and self:SegmentFree(p,ax,az,bx,bz) and self:SegmentFree(p,bx,bz,cx,cz) then
+                if self:SegmentFree(p,p.x,p.z,ax,az,nil,samples) and self:SegmentFree(p,ax,az,bx,bz,nil,samples) and self:SegmentFree(p,bx,bz,cx,cz,nil,samples) then
                     state.points={{x=ax,z=az},{x=bx,z=bz},{x=cx,z=cz}}; break
                 end
             end
@@ -450,9 +579,10 @@ function Crowd:Update(dt,actor,enabled,camera)
         if self.root.enabledSelf then self.root:SetEnabledRecursive(false) end
         return
     end
-    if not self.root.enabledSelf then
-        self.root:SetEnabledRecursive(true)
-        for _,p in ipairs(self.pool) do if not p.active then p.node:SetEnabledRecursive(false) end end
+    if not self.root.enabledSelf then self.root:SetEnabledRecursive(true) end
+    -- City切回室外会递归启用整棵树；退休槽不属于活动people，必须重新隐藏。
+    for _,p in ipairs(self.pool) do
+        if not p.active and p.node.enabledSelf then p.node:SetEnabledRecursive(false) end
     end
     if not self.enabled or not finite(dt) or dt<=0 or dt>.25 or not actor or not finite(actor.x) or not finite(actor.z) then return end
     self.elapsed=self.elapsed+dt; self.scanElapsed=self.scanElapsed+dt
@@ -499,13 +629,25 @@ end
 function Crowd:GetBlockers()
     local list={}
     if self.disposed or self.city.space~="city" or self.city.traffic and not self.city.traffic.active then return list end
-    for _,p in ipairs(self.people) do if p.active then list[#list+1]={x=p.x,z=p.z,radius=p.radius,height=p.height} end end
+    for _,p in ipairs(self.people) do
+        if p.active then
+            local y1,y2=TrafficMotion.PersonInterval(self.city,p)
+            list[#list+1]={x=p.x,z=p.z,radius=p.radius,height=y1,y1=y1,y2=y2}
+        end
+    end
     return list
 end
 function Crowd:IsFree(x,z,r,height)
     if self.disposed or self.city.space~="city" or self.city.traffic and not self.city.traffic.active then return true end
+    -- Pure horizontal rejection first; preserve exact support-height intervals
+    -- for the handful of potentially overlapping people, including bridge decks.
+    local y=height
     for _,p in ipairs(self.people) do
-        if p.active and (not height or math.abs(height-p.height)<1.2) and d2(x,z,p)<(r+p.radius)^2 then return false end
+        if p.active and d2(x,z,p)<(r+p.radius)^2 then
+            if y==nil then y=self.city:WalkSurface(x,z,0) end
+            local y1,y2=TrafficMotion.PersonInterval(self.city,p)
+            if TrafficMotion.VerticalOverlap(y,y+1.8,y1,y2) then return false end
+        end
     end
     return true
 end
@@ -516,6 +658,325 @@ end
 function Crowd:Dispose()
     if self.disposed then return end
     self.disposed=true; self.enabled=false
-    self.root:Dispose(); self.pool,self.people,self.routes,self.shapes={},{},{},{}
+    self.root:Dispose(); self.pool,self.people,self.routes,self.shapes,self.vehicleShapes={},{},{},{},{}
+end
+-- Explicit plain-data fixture; no person pool/scene/save is created. The
+-- vehicle asset shell is the same immutable resource already used in gameplay.
+function Crowd.CacheChecks()
+    ---@type number
+    local calls=0
+    ---@type string[]
+    local queries={}
+    local city={space="city",Surface=function(_,x,z) calls=calls+1;queries[#queries+1]=string.format("S %.17g %.17g",x,z);return 0 end,
+        WalkSurface=function(_,x,z,height) calls=calls+1;queries[#queries+1]=string.format("W %.17g %.17g %.17g",x,z,height or 0);return height or 0 end,
+        StaticSegmentFree=function() return true end}
+    local crowd=setmetatable({city=city,people={},shapes={},disposed=false},Crowd)
+    local actor={x=0,z=0,mounted=false,walkHeight=0,vehicleId="borrowed_ebike",bikeX=30,bikeZ=30,bikeYaw=0,
+        ParkedShapes=true,parking={}}
+    crowd:Snapshot(actor)
+    local parked=crowd.shapes[1].shape
+    crowd:Snapshot(actor)
+    assert(crowd.shapes[1].shape==parked,"stationary parked shell rebuilt")
+    actor.bikeYaw=.01;crowd:Snapshot(actor)
+    assert(crowd.shapes[1].shape~=parked,"park yaw edit ignored")
+    local p={x=0,z=0,radius=.30,height=0,active=true} --[[@as CareerCrowdPerson]]
+    crowd.shapes={};crowd.people={{x=100,z=100,radius=.30,active=true} --[[@as CareerCrowdPerson]]}
+    calls=0
+    assert(crowd:IsFree(0,0,.32) and calls==0,"remote people queried support height")
+    crowd.people={p}
+    assert(crowd:IsFree(0,0,.32,6) and not crowd:IsFree(0,0,.32,0),"bridge occupancy interval lost")
+    -- Relative sweep must include an approaching vehicle even if its current
+    -- shell does not overlap the short pedestrian segment.
+    local vehicle={x=0,z=3,width=1,length=1,yaw=0}
+    local entry={shape=TrafficMotion.Shape(vehicle),vehicle=vehicle,vx=0,vz=-10}
+    crowd.shapes={entry}
+    assert(not crowd:SegmentFree(p,0,0,0,.1,.3),"approaching vehicle lost by broad phase")
+    assert(entry.y1==0 and entry.y2==1.85,"vehicle height was not resolved on broad hit")
+    p.height=6
+    assert(crowd:SegmentFree(p,0,0,0,.1,.3),"ground vehicle blocks bridge person")
+    -- Exact query memo includes the layer seed, including nil vs false/zero;
+    -- changing the world between calls must never see the prior Move's cache.
+    local supportCalls=0
+    local support={WalkSurface=function(_,x,z,height) supportCalls=supportCalls+1;return height or 0 end}
+    local samples={}
+    assert(walkSurface(support,1,2,0,samples)==0 and walkSurface(support,1,2,0,samples)==0 and supportCalls==1,"same-call support query rebuilt")
+    assert(walkSurface(support,1,2,6,samples)==6 and supportCalls==2,"same-XZ bridge seed aliased ground")
+    assert(walkSurface(support,1,2,6,{})==6 and supportCalls==3,"support memo survived call boundary")
+    -- Independent pre-lazy reference: eager TrafficMotion.Shape and the old
+    -- exact-AABB/height/narrow path. Neither calls snapshotBounds/Vehicle.
+    local function eagerSnapshot(target,who)
+        target.shapes={}
+        local function add(shape,y1,y2,vx,vz,car)
+            target.shapes[#target.shapes+1]={shape=shape,y1=y1,y2=y2,vx=vx or 0,vz=vz or 0,vehicle=car}
+        end
+        local traffic=target.city.traffic
+        for _,group in ipairs({traffic and traffic.cars or {},traffic and traffic.outer and traffic.outer.cars or {}}) do
+            for _,car in ipairs(group) do
+                if d2(car.x,car.z,who)<150^2 then
+                    local angle=math.rad(car.yaw)
+                    add(TrafficMotion.Shape(car),nil,nil,math.sin(angle)*(car.speed or 0),math.cos(angle)*(car.speed or 0),car)
+                end
+            end
+        end
+        local function park(id,x,z,yaw)
+            local shell,car=target:VehicleShape(id,x,z,yaw)
+            add(shell,nil,nil,0,0,car)
+        end
+        if who.ParkedShapes then
+            if not who.mounted then park(who.vehicleId,who.bikeX,who.bikeZ,who.bikeYaw) end
+            for id,pos in pairs(who.parking or {}) do if id~=who.vehicleId then park(id,pos.x,pos.z,pos.yaw) end end
+        end
+        if who.mounted then park(who.vehicleId,who.x,who.z,who.yaw)
+        else
+            local y=target.city:WalkSurface(who.x,who.z,who.walkHeight or 0)
+            add(C.Circle(who.x,who.z,.32),y,y+1.8)
+        end
+        for _,group in ipairs({traffic and traffic.pedestrians and traffic.pedestrians.people or {},traffic and traffic.outer and traffic.outer.people or {},target.city.deliveryPeople and target.city.deliveryPeople.people or {}}) do
+            for _,person in ipairs(group) do
+                if person.active~=false and person.inUse~=false and finite(person.x) and finite(person.z) and d2(person.x,person.z,who)<125^2 then
+                    local low,high=TrafficMotion.PersonInterval(target.city,person)
+                    add(C.Circle(person.x,person.z,person.radius or .30),low,high)
+                end
+            end
+        end
+    end
+    local function eagerSegment(target,person,ax,az,bx,bz,predict)
+        local town=target.city
+        if not town:StaticSegmentFree(ax,az,bx,bz,person.radius,"walk",person.height) then return false end
+        local y1=town:WalkSurface(ax,az,person.height)
+        local ym=town:WalkSurface((ax+bx)*.5,(az+bz)*.5,y1)
+        local y2=town:WalkSurface(bx,bz,ym)
+        if math.abs(y2-y1)>.32+math.sqrt((bx-ax)^2+(bz-az)^2)*.18 then return false end
+        local shape=false
+        local dx,dz=bx-ax,bz-az
+        local low,high=math.min(y1,ym,y2),math.max(y1,ym,y2)+1.8
+        for _,item in ipairs(target.shapes) do
+            local rx,rz=dx-item.vx*(predict or .25),dz-item.vz*(predict or .25)
+            local other=item.shape
+            if math.max(ax+person.radius,ax+person.radius+rx)+.025>=other.x1
+                and math.min(ax-person.radius,ax-person.radius+rx)-.025<=other.x2
+                and math.max(az+person.radius,az+person.radius+rz)+.025>=other.z1
+                and math.min(az-person.radius,az-person.radius+rz)-.025<=other.z2 then
+                if item.y1==nil and item.vehicle then item.y1,item.y2=TrafficMotion.VehicleInterval(town,item.vehicle) end
+                local ey=item.y1 or town:Surface((other.x1+other.x2)/2,(other.z1+other.z2)/2)
+                if TrafficMotion.VerticalOverlap(low,high,ey,item.y2 or ey+1.8) then
+                    if not shape then shape=C.Circle(ax,az,person.radius) end
+                    if not C.Free(shape,other,.025) or C.Sweep(shape,other,rx,rz,.025) then return false end
+                end
+            end
+        end
+        local x1,x2=math.min(ax,bx)-person.radius-.04,math.max(ax,bx)+person.radius+.04
+        local z1,z2=math.min(az,bz)-person.radius-.04,math.max(az,bz)+person.radius+.04
+        for _,other in ipairs(target.people) do
+            if other~=person and other.active and other.x+other.radius>=x1 and other.x-other.radius<=x2
+                and other.z+other.radius>=z1 and other.z-other.radius<=z2 then
+                local oy1,oy2=TrafficMotion.PersonInterval(town,other)
+                if TrafficMotion.VerticalOverlap(low,high,oy1,oy2) then
+                    if not shape then shape=C.Circle(ax,az,person.radius) end
+                    local body=C.Circle(other.x,other.z,other.radius)
+                    if not C.Free(shape,body,.04) or C.Sweep(shape,body,dx,dz,.04) then return false end
+                end
+            end
+        end
+        return true
+    end
+    local function encloses(bounds,shell)
+        assert(bounds.x1<=shell.x1 and bounds.x2>=shell.x2 and bounds.z1<=shell.z1 and bounds.z2>=shell.z2,
+            "lazy broad envelope omitted exact shell")
+    end
+    local function sameShell(a,b)
+        assert(a.x1==b.x1 and a.x2==b.x2 and a.z1==b.z1 and a.z2==b.z2 and #a.parts==#b.parts,"snapshot exact bounds changed")
+        for i,part in ipairs(a.parts) do
+            local ref=b.parts[i]
+            if part.radius then
+                assert(part.x==ref.x and part.z==ref.z and part.radius==ref.radius,"snapshot circle changed")
+            else
+                assert(#part.points==#ref.points,"snapshot vertex count changed")
+                for j,v in ipairs(part.points) do assert(v.x==ref.points[j].x and v.z==ref.points[j].z,"snapshot vertex changed") end
+            end
+        end
+    end
+    -- Every measured asset, both rider-composite OBB semantics and anonymous
+    -- boxes; axis/tiny/oblique/wrapped yaw, moving/zero sweep, both height tiers.
+    local ids={"borrowed_ebike"}
+    for id in pairs(require("VehicleAssets").Vehicles) do ids[#ids+1]=id end
+    ids[#ids+1]="rider";ids[#ids+1]="box"
+    local comparisons=0
+    for _,id in ipairs(ids) do
+        for _,yaw in ipairs({-540,-180,-90,-.000001,0,.01,37,89.999999,90,179.9,720.25}) do
+            local car={id=id~="rider" and id~="box" and id or nil,vehicleId=id=="rider" and "sport" or nil,
+                riding=id=="rider",x=-3,z=-31,yaw=yaw,width=2.7,length=5.8,speed=11,bodyHeight=2.3}
+            city.traffic={cars={car},outer={cars={{x=70,z=70,yaw=12,width=1,length=2,speed=0}},
+                people={{x=-1,z=-26,radius=.31,height=6,active=true}}},
+                pedestrians={people={{x=-4,z=-28,radius=.3,height=0,active=true}}}}
+            city.deliveryPeople={people={{x=-2,z=-25,radius=.32,height=0,active=true}}}
+            local who={x=80,z=0,mounted=false,walkHeight=0}
+            local lazy=setmetatable({city=city,people={},shapes={}},Crowd)
+            local old=setmetatable({city=city,people={},shapes={}},Crowd)
+            lazy:Snapshot(who)
+            assert(lazy.shapes[1].shape==nil,"Snapshot eagerly posed moving vehicle")
+            if id=="rider" then
+                assert(lazy.shapes[1].vehicleSource==car.boxSource and car.boxSource.x2==car.width/2,
+                    "resident rider lost measured composite OBB")
+            end
+            eagerSnapshot(old,who)
+            assert(#lazy.shapes==#old.shapes,"Snapshot omitted/reordered entities")
+            for i,item in ipairs(lazy.shapes) do
+                local ref=old.shapes[i]
+                encloses(item.shape or item.bounds,ref.shape)
+                assert(item.vx==ref.vx and item.vz==ref.vz and item.y1==ref.y1 and item.y2==ref.y2,"Snapshot numeric state changed")
+            end
+            for _,height in ipairs({0,6}) do
+                p.height=height
+                for _,prediction in ipairs({0,.25,3}) do
+                    for _,edge in ipairs({{-3,-31,-3,-31},{-10,-31,4,-31},{-3,-40,-3,-22},
+                        {-8,-35,1,-27},{-3,-36,-2.9,-35.9},{40,40,41,40},
+                        {-4,-28,-1,-26},{-2,-25,-2,-25}}) do
+                        calls=0;queries={}
+                        local actual=lazy:SegmentFree(p,edge[1],edge[2],edge[3],edge[4],prediction)
+                        local lazyCalls,lazyQueries=calls,table.concat(queries,"|")
+                        calls=0;queries={}
+                        local expected=eagerSegment(old,p,edge[1],edge[2],edge[3],edge[4],prediction)
+                        assert(actual==expected and calls==lazyCalls and table.concat(queries,"|")==lazyQueries,
+                            "lazy/eager result or support-query order differs")
+                        comparisons=comparisons+1
+                    end
+                end
+            end
+            for i,item in ipairs(lazy.shapes) do if item.shape then sameShell(item.shape,old.shapes[i].shape) end end
+        end
+    end
+    -- A remote sweep must allocate no shell or vehicle support query. Freeze
+    -- before/after materialisation and after a NEW Snapshot changes all poses.
+    local car={x=0,z=3,yaw=0,width=1,length=1,speed=-10,bodyHeight=1.85,riding=true,vehicleId="sport"}
+    city.traffic={cars={car}};city.deliveryPeople=nil
+    local who={x=80,z=0,mounted=false,walkHeight=0}
+    local lazy=setmetatable({city=city,people={},shapes={}},Crowd)
+    local old=setmetatable({city=city,people={},shapes={}},Crowd)
+    lazy:Snapshot(who);eagerSnapshot(old,who)
+    local saved=lazy.shapes
+    local exact=old.shapes[1].shape
+    local cached=setmetatable({city=city,people={},shapes={}},Crowd)
+    cached:Snapshot(who)
+    assert(cached.shapes[1].shape==exact,"valid traffic shell cache not reused")
+    car.width=1.1;cached:Snapshot(who)
+    assert(not cached.shapes[1].shape,"traffic dimension/source edit ignored")
+    car.width=1
+    local frozen={x=0,z=3,width=1,length=1,yaw=0,bodyHeight=1.85,riding=true,vehicleId="sport"}
+    old.shapes[1].vehicle=frozen
+    p.height=0;calls=0
+    assert(lazy:SegmentFree(p,40,40,41,40,.3) and calls==3 and not saved[1].shape,
+        "remote sweep posed shell/queried vehicle height")
+    car.x,car.z,car.yaw,car.width,car.length,car.bodyHeight,car.speed,car.riding=50,50,123,4,8,9,2,false
+    TrafficMotion.Shape(car) -- source/key replacement must not touch saved source
+    assert(not lazy:SegmentFree(p,0,0,0,.1,.3) and not eagerSegment(old,p,0,0,0,.1,.3),"frozen approaching vehicle lost")
+    assert(saved[1].y1==0 and saved[1].y2==1.85,"snapshot height read changed live vehicle")
+    sameShell(saved[1].shape,exact)
+    local materialised=saved[1].shape
+    lazy:SegmentFree(p,0,0,0,.1,.3)
+    assert(saved[1].shape==materialised,"lazy shell rebuilt on repeated query")
+    lazy:Snapshot(who)
+    assert(lazy.shapes~=saved,"snapshot storage reused")
+    sameShell(snapshotShape(saved[1]),exact)
+    -- Mutation BEFORE the first near query, including a subsequent Snapshot.
+    car.x,car.z,car.yaw,car.width,car.length,car.riding,car.vehicleId=0,3,17,1,2,true,"sport"
+    lazy:Snapshot(who);saved=lazy.shapes
+    local unposed=C.Pose(TrafficMotion.Source(car),car.x,car.z,car.yaw)
+    assert(not saved[1].shape,"uncached pose unexpectedly eager")
+    car.x,car.z,car.yaw,car.width=60,60,-90,7
+    lazy:Snapshot(who)
+    sameShell(snapshotShape(saved[1]),unposed)
+    -- Conservative false positives must not add a height lookup. Circle parts
+    -- also exercise the enclosure proof beyond today's polygon-only vehicles.
+    local triangle=C.Shape({{points={{x=0,z=0},{x=4,z=0},{x=0,z=4}}}})
+    local b=snapshotBounds(triangle,0,0,45)
+    local shell=C.Pose(triangle,0,0,45)
+    assert(b.x2>shell.x2+.3,"fixture requires a loose conservative corner")
+    lazy.shapes={{vehicleSource=triangle,vehicleYaw=45,vehicle={x=0,z=0},bounds=b,vx=0,vz=0}}
+    calls=0
+    assert(lazy:SegmentFree(p,shell.x2+.4,0,shell.x2+.4,0,0) and calls==3,
+        "conservative-only hit queried vehicle support")
+    for _,yaw in ipairs({0,.000001,45,90,137,180,270}) do
+        local circle=C.Circle(2,-3,.7)
+        encloses(snapshotBounds(circle,-100,400,yaw),C.Pose(circle,-100,400,yaw))
+    end
+    lazy.shapes={{shape=C.Box(-.6,1,.6,4),vx=0,vz=0}}
+    assert(not lazy:SegmentFree(p,0,0,0,3),"direct-shape fixture no longer supported")
+    -- 缺省高度懒求值有意改变查询时机；单独核对少查/只查一次，最终壳、
+    -- 区间和通行结果仍与独立eager参考逐项一致。地形在同步快照有效期内不变。
+    local personQueries=0
+    local personCity={space="city",StaticSegmentFree=function() return true end,
+        Surface=function() return 0 end,
+        WalkSurface=function(_,x,z,height)
+            if x==0 and z==2 and height==0 then personQueries=personQueries+1 end
+            if height and height~=0 then return height end
+            return x*.1+z*.02
+        end}
+    local personLazy=setmetatable({city=personCity,people={},shapes={}},Crowd)
+    local personOld=setmetatable({city=personCity,people={},shapes={}},Crowd)
+    local observer={x=80,z=0,mounted=false,walkHeight=0}
+    for _,input in ipairs({{}, {y=6}, {height=0,y=6}, {height=false,y=6},
+        {height="invalid",y=6}, {height=-2}, {y=false}, {height=12}}) do
+        local external={x=0,z=2,radius=.31,height=input.height,y=input.y,active=true}
+        personCity.traffic={pedestrians={people={external}}}
+        personQueries=0
+        personLazy:Snapshot(observer)
+        local item=personLazy.shapes[2]
+        assert(not item.shape and personQueries==0,"外部行人快照提前建圆或查缺省高度")
+        assert(personLazy:SegmentFree(p,40,40,41,40) and not item.shape and personQueries==0,
+            "远处行人被宽相排除后仍创建几何或查询地面")
+        eagerSnapshot(personOld,observer)
+        local ref=personOld.shapes[2]
+        local missing=type(external.height or external.y)~="number"
+        assert(personQueries==(missing and 1 or 0),"eager缺省高度测试前提改变")
+        local resolvedQueries=0
+        for _,height in ipairs({0,6,12}) do
+            p.height=height
+            for _,edge in ipairs({{0,0,0,3},{0,2,0,2},{-.5,2,.5,2},{0,0,0,1},{40,40,41,40}}) do
+                personQueries=0
+                local actual=personLazy:SegmentFree(p,edge[1],edge[2],edge[3],edge[4])
+                local lazyCount=personQueries
+                personQueries=0
+                local expected=eagerSegment(personOld,p,edge[1],edge[2],edge[3],edge[4])
+                -- 扣除两条路径相同的路点地表查询，只计外部行人的缺省高度准备。
+                resolvedQueries=resolvedQueries+lazyCount-personQueries
+                assert(actual==expected,"外部行人懒圆改变同层/跨层/坡面扫掠判定")
+                comparisons=comparisons+1
+            end
+        end
+        assert(item.shape and item.y1==ref.y1 and item.y2==ref.y2,"外部行人冻结区间改变")
+        sameShell(item.shape,ref.shape)
+        assert(resolvedQueries==(missing and 1 or 0),"同一快照多条边重复查询缺省地面")
+    end
+    -- 原人物在首次命中前修改，随后再建新快照；旧条目必须继续用冻结输入。
+    local external={x=0,z=2,radius=.31,active=true}
+    personCity.traffic={pedestrians={people={external}}}
+    personLazy:Snapshot(observer);eagerSnapshot(personOld,observer)
+    local frozenPeople=personLazy.shapes
+    local frozenRef=personOld.shapes[2]
+    external.x,external.z,external.height,external.y,external.radius=30,30,6,12,.8
+    personLazy:Snapshot(observer)
+    local freshPeople=personLazy.shapes
+    personLazy.shapes=frozenPeople
+    p.height=0;personQueries=0
+    assert(not personLazy:SegmentFree(p,0,0,0,3) and not eagerSegment(personOld,p,0,0,0,3),
+        "旧行人快照读取了后来修改的位置/半径/高度")
+    sameShell(frozenPeople[2].shape,frozenRef.shape)
+    assert(frozenPeople[2].y1==frozenRef.y1 and frozenPeople[2].y2==frozenRef.y2 and personQueries==1,
+        "旧行人快照缺省地面未使用冻结XZ")
+    personLazy.shapes=freshPeople
+    assert(personLazy:SegmentFree(p,0,0,0,3) and not freshPeople[2].shape,"新行人快照未看见新位置")
+    personLazy:Snapshot(observer);eagerSnapshot(personOld,observer)
+    assert(personLazy.shapes[2].y1==6 and personLazy.shapes[2].y2==7.8,"数值高度选择未保持height优先")
+    p.height=0
+    -- Live self.people order still matters within a frame (do not snapshot it).
+    lazy.shapes={};old.shapes={}
+    local person={x=0,z=2,radius=.3,height=0,active=true} --[[@as CareerCrowdPerson]]
+    lazy.people={person};old.people={person}
+    assert(not lazy:SegmentFree(p,0,0,0,3) and not eagerSegment(old,p,0,0,0,3),"same-frame person collision lost")
+    person.x=10
+    assert(lazy:SegmentFree(p,0,0,0,3) and eagerSegment(old,p,0,0,0,3),"same-frame person movement stale")
+    print(string.format("[人群缓存检查] PASS 原缓存检查 + %d eager对照/懒车壳/包络/旧快照/骑手OBB/直接shape/同帧顺序",comparisons))
+    return true
 end
 return Crowd

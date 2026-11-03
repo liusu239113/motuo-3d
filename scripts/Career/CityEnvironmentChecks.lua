@@ -24,7 +24,73 @@ local function clickText(view,text)
     local data={pointerId=790201,pointerType="touch",x=(r.x+r.w/2)*scale,y=(r.y+r.h/2)*scale,button=Pointer.Button.Left}
     UI.HandlePointerEvent(Pointer.new("PointerDown",data));UI.HandlePointerEvent(Pointer.new("PointerUp",data))
 end
+-- 单独纯数据入口：不创建Session、不访问Store；封边保留4m原地形，只把不可通边界做实。
+function Checks.BoundaryPlan()
+    assert(#Environment.BoundaryWalls==188,"两条752m边应有188节8m墙")
+    local water=0
+    for _,o in ipairs(Environment.StaticObstacles) do if o.kind=="water" then water=water+1 end end
+    assert(water==3,"不得删除水域保护")
+    local boxes={}
+    local recorder={Box=function(_,mat,x,y,z,w,h,d)
+        if mat=="concrete" then boxes[#boxes+1]={x1=x-w/2,x2=x+w/2,z1=z-d/2,z2=z+d/2,y1=y-h/2,y2=y+h/2} end
+    end}
+    assert(Environment.RenderBoundary(recorder,{x1=-1200,x2=-350,z1=-1200,z2=-350})==188)
+    assert(#boxes==188,"可见墙节数和静态碰撞不一致")
+    for i,wall in ipairs(Environment.BoundaryWalls) do
+        for _,field in ipairs({"x1","x2","z1","z2","y1","y2"}) do near(wall[field],boxes[i][field],"封边视觉/碰撞轮廓不同源") end
+        local cx,cz=(wall.x1+wall.x2)/2,(wall.z1+wall.z2)/2
+        local cell=World.DescribeCell(math.floor(cx/256),math.floor(cz/256))
+        local found=false
+        for _,o in ipairs(cell.obstacles) do if o==wall then found=true end end
+        assert(found,"逻辑碰撞不得依赖可见块加载")
+        assert(wall.y1<=-.2 and wall.y2>=1.1,"墙未封住外侧0m地面")
+        assert(not Environment.IsFree(cx,cz,.32,"walk",0),"墙内必须阻挡")
+        local a,b={x=cx-2,z=cz},{x=cx+2,z=cz}
+        if wall.z1< -1152 then a,b={x=cx,z=cz-2},{x=cx,z=cz+2} end
+        assert(not Environment.SegmentFree(a,b,.32) and not Environment.SegmentFree(b,a,.32),"远边封墙必须双向阻挡")
+    end
+    -- 覆盖两条远边的坡顶4m、坡中、坡脚、接缝、海床和拐角，不能从任一方向跨突变。
+    for _,s in ipairs({440,450,470,480,512,530,560,640,768,1024,1151.9}) do
+        for _,axis in ipairs({"x","z"}) do
+            local x,z=axis=="x" and -1152 or -s,axis=="z" and -1152 or -s
+            local y=Environment.Height(x,z)
+            assert(not World.IsFree(x,z,.32,"walk",y),"真实高度封边失效")
+            assert(not World.IsFree(x,z,1.2,"vehicle",y),"车辆不能越封边")
+        end
+    end
+    -- 靠城两边仍连续；仅允许5.5cm路缘，没有新增4m跳高或挡住原20m入口。
+    for _,p in ipairs({{-400,-450},{-450,-400},{-400,-400},{-384,-384}}) do
+        near(Environment.Surface(p[1],p[2]),.055,"入口地表必须平接")
+        assert(Environment.IsFree(p[1],p[2],1.2),"原入口不得新增阻挡")
+    end
+    local a,b={x=-384,z=-384},{x=-430,z=-430}
+    assert(Environment.SegmentFree(a,b,1.2) and Environment.SegmentFree(b,a,1.2),"保留入口双向可达")
+    near(Environment.Surface(-450,-450),4,"不能削平岸丘掩盖边界问题")
+    print("[海岸边界验收通过] 188节可见墙/逻辑AABB同源，4m岸丘及水域保护保留，双向封边与入口通行；未访问Store")
+    return true
+end
+-- 主会话可在test Session单独调用；真实City碰撞入口，有限位移，无人物/停车/档案修改。
+function Checks.BoundaryCollision(session)
+    isolated(session)
+    Checks.BoundaryPlan()
+    local city=assert(session.city)
+    assert(city.space=="city","边界碰撞检查要求city空间")
+    for _,axis in ipairs({"x","z"}) do for _,direction in ipairs({-1,1}) do
+        local x,z=axis=="x" and -1152+direction*2 or -450,axis=="z" and -1152+direction*2 or -450
+        local dx,dz=axis=="x" and -direction*4 or 0,axis=="z" and -direction*4 or 0
+        local height=Environment.Surface(x,z) or city:Surface(x,z)
+        for _,mode in ipairs({"walk","vehicle"}) do
+            local radius=mode=="walk" and .32 or 1.2
+            local px,pz,blocked=city:Move(x,z,dx,dz,radius,mode,height)
+            assert(blocked,"生产City.Move放行封边 "..mode)
+            assert((axis=="x" and px+1152 or pz+1152)*direction>.2,"生产碰撞越过可见墙外轮廓")
+        end
+    end end
+    print("[海岸边界真实碰撞通过] City.Move两轴双向、步行/车辆有限扫掠；未改人物/停车/存档")
+    return true
+end
 function Checks.Plan()
+    Checks.BoundaryPlan()
     local stats=require("Career.CityExpansionChecks").Plan()
     local triangles,maxCell=0,0
     for ix=-5,-2 do for iz=-5,-2 do
@@ -180,6 +246,14 @@ function Checks.Run(session)
         position.vehicleParking[active]={x=position.bikeX,z=position.bikeZ,yaw=position.bikeYaw}
         assert(Store.SetPosition(position));session:RestorePosition()
         near(actor.x,-450,"坡上恢复X");near(actor.z,-450,"坡上恢复Z");near(actor:GetPosition().y,4,"坡上读档高度丢失")
+        actor.parking={}
+        actor.bikeX,actor.bikeZ,actor.bikeYaw=-450,-450,0
+        actor:Teleport(-449,-450,0,4)
+        assert(actor:ToggleMount(),"地表海拔4m不应被误认成天桥禁止上车")
+        actor:SyncVisuals(.2)
+        actor.visuals:Update(.2,8,1,actor.bikeX,4,actor.bikeZ,actor.bikeYaw,0)
+        assert(actor.visuals.lean<0,"右转压弯必须朝弯内")
+        assert(actor:ToggleMount(),"高地车辆必须能正常下车")
         session.waypoint="coast_pier";session.manualWaypoint=true
         local target=assert(session:Target(),"生产海岸导航缺失") --[[@as EnvironmentCheckTarget]]
         local route=assert(target.route)
@@ -214,8 +288,9 @@ function Checks.Run(session)
     end)
     local clean,cleanup=pcall(function()
         city.traffic,city.deliveryPeople,city.crowd=old.traffic,old.people,old.crowd
-        view:ClosePhone();view:ShowGame();session:ApplySpace(old.space)
+        view:ClosePhone();view:ShowGame();session:ApplySpace("city")
         actor.mounted=old.position.mounted;actor:RestoreVehicles(old.position);actor.visuals:SetMounted(actor.mounted)
+        session:ApplySpace(old.space)
         actor:Teleport(old.position.x,old.position.z,old.position.yaw,old.position.groundHeight)
         actor.speed,actor.steer=old.speed,old.steer
         session.online,session.running=old.online,old.running

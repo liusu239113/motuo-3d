@@ -3,6 +3,7 @@
 local Assets=require("VehicleAssets")
 local Rider=require("Rider")
 local Rig=require("Career.Rig")
+local Pedestrians=require("Career.Pedestrians")
 local Bike=require("Bike")
 local F=require("Career.VehicleFootprints")
 local Parts=require("Parts")
@@ -154,9 +155,10 @@ function R.Add(parent,id)
         Parts.Add(node,"NPC右镜壳","Sphere",metal,F.MirrorCenter,F.MirrorSize,Quaternion(0,F.MirrorYaw,0),true)
         Parts.Add(node,"NPC右镜片","Sphere",mirror,V(.306,1.425,.169),V(.125,.082,.012),Quaternion(0,12,0),false)
         for _,side in ipairs({-1,1}) do Parts.Bar(node,metal,V(side*.2,.68,-.56),V(side*.2,.88,-.91),.015) end
-        -- Explicit existing adult delivery asset; never Rig.New's implicit default.
-        rider=Rig.New(node,{model=Rig.ModelPath,material=Rig.MaterialPath,diffuse=Rig.DiffusePath,
-            normal=Rig.NormalPath,height=1.76,name="NPC配送骑手"})
+        -- 配送NPC必须与主角使用不同的真实模型，不靠同模型换色伪装。
+        local asset=Pedestrians.Specs[2]
+        rider=Rig.New(node,{model=asset.model,material=asset.material,diffuse=asset.diffuse,
+            normal=asset.normal,height=asset.height,name="NPC配送骑手"})
         local courier=rider --[[@as CareerRig]]
         courier:PoseRide(0)
     end

@@ -480,7 +480,7 @@ end
 -- 保留后-下-外肘hint，不重转twist、不改共享Rig方法、不声称自然递物/采集动画。
 ---@param p CareerDeliveryPerson
 function People:Pose(p)
-    p.rig:PoseWalk(0,0)
+    p.rig:PoseStandingCached()
     local rig=p.rig
     local t=p.clock+p.phase
     rig:SetBodyRotation("Spine02",math.sin(t*1.6)*.55,math.sin(t*.31)*.6)
