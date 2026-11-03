@@ -83,6 +83,12 @@ function Props.MaterialFor(path)
         local paired = technique:Clone()
         local base = assert(paired:GetPass("base"))
         base:SetVertexShaderDefines(base.vertexShaderDefines .. " NORMALMAP")
+        -- DiffNormal原depth/shadow只排除PS packed；alpha PS需UV时会暴露两侧接口差异。
+        -- 主材质仍保留RG法线；深度/阴影不解码法线，两侧对称排除同一宏。
+        for _, name in ipairs({"depth", "shadow"}) do
+            local pass = assert(paired:GetPass(name))
+            pass:SetVertexShaderDefineExcludes(pass.vertexShaderDefineExcludes .. " PACKEDNORMAL")
+        end
         technique = paired
     end
     local material = original:Clone()

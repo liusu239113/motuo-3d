@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "ScenicEnvironmentCheckMain.lua",
+    "result": "PASS",
+    "duration_ms": 7848,
+    "frames_completed": 45,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 9,
+            "component_count": 6,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 9,
+            "components": 6,
+            "hash": 2882445172,
+            "frame_time_ms": 766.9180297851563
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 9,
+            "components": 6,
+            "hash": 2882445172,
+            "frame_time_ms": 39.763999938964847
+        },
+        {
+            "frame": 22,
+            "phase": "run",
+            "nodes": 9,
+            "components": 6,
+            "hash": 2882445172,
+            "frame_time_ms": 40.236000061035159
+        },
+        {
+            "frame": 45,
+            "phase": "run",
+            "nodes": 9,
+            "components": 6,
+            "hash": 2882445172,
+            "frame_time_ms": 40.305999755859378
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 339.2829895019531,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 1,
+        "StaticModel": 2,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 0
+    }
+}
