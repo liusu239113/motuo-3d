@@ -17,6 +17,7 @@ local Profile = require("Profile")
 local Race = require("Race")
 local RaceVisuals = require("RaceVisuals")
 local RaceAudio = require("RaceAudio")
+local Profile_ = require("RaceFrameProfile")
 local CareerSession = require("Career.Session")
 local CareerQuality = require("Career.AdaptiveQuality")
 ---@type CareerSession?
@@ -1244,12 +1245,20 @@ function HandleUpdate(eventType, eventData)
             rideInput_.skill = pendingActions_.skill or (autoTest_ and require("MixedVehicles").Get(selectedVehicle_)~=nil and (sim_.oddCooldown or 0)<=0)
             rideInput_.nitro = nitro or pendingActions_.nitro
             if pendingChallenge_ and race_ then
+                Profile_.Begin("raceBefore")
                 local drive = race_:BeforeStep(0.02, rideInput_)
+                Profile_.End()
                 if race_.phase == "racing" then
+                    Profile_.Begin("worldUpdate")
                     world_:Update(0.02, sim_.distance, race_.elapsed, sim_.x, sim_.z)
+                    Profile_.End()
+                    Profile_.Begin("simStep")
                     sim_:Step(0.02, drive, world_)
+                    Profile_.End()
                 end
+                Profile_.Begin("raceAfter")
                 race_:AfterStep(0.02)
+                Profile_.End()
             else
                 world_:Update(0.02, sim_.distance, clock_, sim_.x, sim_.z)
                 sim_:Step(0.02, rideInput_, world_)
@@ -1304,20 +1313,35 @@ function HandleUpdate(eventType, eventData)
             end
         end
     end
+    Profile_.Begin("bikeUpdate")
     bike_:UpdateState(screen_ == "ride" and dt or 0, sim_, CockpitActive(), clock_)
+    Profile_.End()
     if testPose_ and screen_ == "ride" then
         -- 改真实Bike父节点，保持握把和骑手一起变换；不是单独摆一张人物预览。
         bike_.visual.rotation = Quaternion(-testPitch_, 0, testLean_ * bike_.leanSign)
         bike_.steering.rotation = Quaternion(0, testSteer_, 0)
         bike_.riderRig:Update(testSteer_, true, testLean_)
     end
-    if pendingChallenge_ and raceVisuals_ then raceVisuals_:Update(screen_ == "ride" and dt or 0, sim_) end
-    if raceAudio_ then raceAudio_:Update(dt, sim_, pendingChallenge_ and race_ or nil, screen_ == "ride" or screen_ == "result") end
+    if pendingChallenge_ and raceVisuals_ then
+        Profile_.Begin("raceVisuals")
+        raceVisuals_:Update(screen_ == "ride" and dt or 0, sim_)
+        Profile_.End()
+    end
+    if raceAudio_ then
+        Profile_.Begin("raceAudio")
+        raceAudio_:Update(dt, sim_, pendingChallenge_ and race_ or nil, screen_ == "ride" or screen_ == "result")
+        Profile_.End()
+    end
     sound_.musicDuck=raceAudio_ and raceAudio_:GetMusicDuck() or 1
+    Profile_.Begin("sound")
     sound_:Update(dt, sim_ --[[@as RideAudioState]], screen_)
+    Profile_.End()
+    Profile_.Begin("hud")
     hud_:Update(dt, sim_, firstPerson_)
+    Profile_.End()
     CheckRaceFlow()
     CheckTrackFlow()
+    Profile_.Tick(dt)
 end
 
 ---@param eventType string
