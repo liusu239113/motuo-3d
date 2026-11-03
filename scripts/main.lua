@@ -928,15 +928,14 @@ function Start()
     if selfTest_ then
         StartRide(false)
         assert(screen_ == "garage" and loader_ == nil and preparation_ == nil, "打开车库不得开始下载")
-        -- 自测要切到的车必须先入库，否则购买门槛会正确拦住选择。
-        for _, id in ipairs({"cruiser", "rally"}) do
-            local item = Catalog.Get(id)
-            if item and not Profile.Owns(id) then Profile.Buy(id, item.price or 0) end
-        end
+        -- 未购买也允许浏览和预览；只有实际出发才校验权益，自测不能购买或改写玩家进度。
         hud_:SelectVehicle("cruiser", true)
         assert(selectedVehicle_ == "cruiser" and hud_.selectedVehicle == "cruiser"
             and loader_ == nil and preparation_ == nil and not ready_, "初选巡航不得开始下载或构建")
-        assert(hud_.vehicleBadges.cruiser:GetText() == "已选中", "巡航车型卡未开放选择")
+        local trials=Profile.Trials("cruiser")
+        local badge=trials>0 and ("试驾剩余 "..trials.." 局") or Profile.Owns("cruiser") and "已选中"
+            or ("未拥有 · "..tostring(Catalog.Get("cruiser").price or 0).." 金币")
+        assert(hud_.vehicleBadges.cruiser:GetText()==badge,"巡航预览必须显示实际购买/试驾权益")
         hud_:SelectVehicle("rally", true)
         assert(selectedVehicle_ == "rally" and loader_ == nil and preparation_ == nil, "切换车型卡不得开始下载")
         hud_:SelectVehicle(testVehicle_, true)
