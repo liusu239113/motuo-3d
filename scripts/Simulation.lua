@@ -113,6 +113,14 @@ function Sim:SetVehicle(id)
         if entry.offroadStat then vehicle.offroad = entry.offroadStat end
         if entry.handlingStat then vehicle.steering = entry.handlingStat end
         vehicle.durability = entry.durability or 64
+        if require("MixedVehicles").Get(id) then
+            -- 混合车不能沿用基础摩托的末挡速比上限，否则高极速坦克会被旧巡航档位卡在约208km/h。
+            -- 按本车极速留出技能/氮气余量，复制速比避免污染同类车辆共享表。
+            local ratios={}
+            local scale=vehicle.redline*.82/(vehicle.maxSpeed*1.35*vehicle.ratios[6])
+            for i,ratio in ipairs(vehicle.ratios) do ratios[i]=ratio*scale end
+            vehicle.ratios=ratios
+        end
     else
         ---@type table<string, any>
         local stats = {}
