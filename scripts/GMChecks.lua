@@ -150,8 +150,9 @@ function Checks.RunDrive(hud,storage,restore)
     end
     -- 不抢占主入口唯一的Update订阅；此验收不启用testShot的截图订阅。
     SubscribeToEvent("PostRenderUpdate",function()
+        if stage==2 then return end
         frames=frames+1
-        if frames>1600 then restore();error("GM真实发车流程超时") end
+        if frames>=1400 then restore();error("GM真实发车流程超时") end
         if hud.screen=="loading" and hud.enterRide:IsVisible() then hud.actions.enter() end
         if hud.screen=="ride" then
             verify()
@@ -165,7 +166,6 @@ function Checks.RunDrive(hud,storage,restore)
                 hud:SelectVehicle("helicopter",true)
                 verify();restore();stage=2
                 print("[GMChecks] 实际加载→发车→缓存重赛两次均不扣币/次数/写档 PASS")
-                engine:Exit()
             end
         end
     end)
