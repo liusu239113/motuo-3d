@@ -70,22 +70,16 @@ local function addArch(node,owner,pending,origin)
     return true
 end
 
-local function setSwingBounds(part,origin,yaw,angle)
-    local rotation=Quaternion(0,0,angle)
-    local low=V(math.huge,math.huge,math.huge)
-    local high=V(-math.huge,-math.huge,-math.huge)
-    for _,x in ipairs({part.low.x,part.high.x}) do
-        for _,y in ipairs({part.low.y,part.high.y}) do
-            for _,z in ipairs({part.low.z,part.high.z}) do
-                local point=rotation*V(x,y,z)+V(0,5.2,0)
-                low=V(math.min(low.x,point.x),math.min(low.y,point.y),math.min(low.z,point.z))
-                high=V(math.max(high.x,point.x),math.max(high.y,point.y),math.max(high.z,point.z))
-            end
-        end
-    end
+local function setSwingBounds(part,swing,c,s)
+    -- 绕Z轴旋转盒：中心随旋转，半尺寸用 |R|*extent；与八角点取极值等价。
     local record=part.record
     local previousX,previousY,previousZ=record.x,record.y,record.z
-    bounds(record,origin,yaw,low,high)
+    local cx,cy=part.cx*c-part.cy*s,part.cx*s+part.cy*c+5.2
+    local ex,ey=math.abs(c)*part.ex+math.abs(s)*part.ey,math.abs(s)*part.ex+math.abs(c)*part.ey
+    record.x=swing.origin.x+swing.cosYaw*cx+swing.sinYaw*part.cz
+    record.z=swing.origin.z-swing.sinYaw*cx+swing.cosYaw*part.cz
+    record.y=swing.origin.y+cy-ey
+    record.halfWidth,record.halfLength,record.height=ex,part.ez,ey*2
     record.previousX=previousX or record.x
     record.previousY=previousY or record.y
     record.previousZ=previousZ or record.z
@@ -128,7 +122,19 @@ function M.Build(world)
                         low=(V(chainMin.x,y0,chainMin.z)-pivot)*.75,
                         high=(V(chainMax.x,y1,chainMax.z)-pivot)*.75}
                 end
-                world.mixedSwings[#world.mixedSwings+1]={node=swing,origin=base,yaw=o.yaw,phase=o.phase or 0,parts=parts}
+                for _,part in ipairs(parts) do
+                    part.cx,part.cy,part.cz=(part.low.x+part.high.x)*.5,(part.low.y+part.high.y)*.5,(part.low.z+part.high.z)*.5
+                    part.ex,part.ey,part.ez=(part.high.x-part.low.x)*.5,(part.high.y-part.low.y)*.5,(part.high.z-part.low.z)*.5
+                    -- 完整摆幅内中心位移和盒对角半径的保守上界，空间索引一次建好。
+                    part.record.sweepX,part.record.sweepZ=base.x,base.z
+                    part.record.sweepRadius=math.sqrt(part.cx^2+part.cy^2)+math.abs(part.cz)
+                        +math.sqrt(part.ex^2+part.ey^2+part.ez^2)
+                end
+                local yaw=math.rad(o.yaw)
+                local project=world.landscape.CreateRoadProjector
+                    and world.landscape.CreateRoadProjector(base.x,base.z,4) or world.landscape.NearestRoad
+                world.mixedSwings[#world.mixedSwings+1]={node=swing,origin=base,yaw=o.yaw,project=project,
+                    cosYaw=math.cos(yaw),sinYaw=math.sin(yaw),phase=o.phase or 0,parts=parts}
                 o.breakable=false
                 ready=true
             end
@@ -188,6 +194,7 @@ function M.Build(world)
             record.previousX,record.previousY,record.previousZ=record.x,record.y,record.z
         end
     end
+    require("CourseSpatial").Build(world)
     print(string.format("[混合赛道] 正式机关%d / 支架链段%d / 实模金币%d；地形视觉未交付，特殊地形判定禁用",#obstacles-#pending,#pending,#world.mixedCoins))
 end
 
@@ -195,10 +202,12 @@ function M.Update(world,clock)
     for _,swing in ipairs(world.mixedSwings or {}) do
         local angle=math.sin(clock*1.7+swing.phase)*22
         swing.node.rotation=Quaternion(0,0,angle)
+        local radians=math.rad(angle)
+        local c,s=math.cos(radians),math.sin(radians)
         for _,part in ipairs(swing.parts) do
-            setSwingBounds(part,swing.origin,swing.yaw,angle)
+            setSwingBounds(part,swing,c,s)
             local record=part.record
-            record.s,record.lane=world.landscape.NearestRoad(record.x,record.z)
+            record.s,record.lane=swing.project(record.x,record.z)
         end
     end
 end

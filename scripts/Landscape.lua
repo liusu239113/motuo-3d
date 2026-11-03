@@ -278,6 +278,43 @@ function Landscape.NearestRoad(x, z)
     local seg, t, lateral = nearest(x, z, true)
     return seg.a.s + (seg.b.s - seg.a.s) * t, lateral
 end
+
+-- 固定机关在半径radius内摆动：初始化裁出所有可能最近的原道路段。
+-- 三角不等式保证候选完整；越界回到通用查询，交叉口仍逐段求真实最近点。
+---@param x number
+---@param z number
+---@param radius number
+---@return fun(px:number,pz:number):number,number
+function Landscape.CreateRoadProjector(x,z,radius)
+    local _,_,_,distance=nearest(x,z,true)
+    local limit=(distance+radius*2+.001)^2
+    local candidates={}
+    for _,seg in ipairs(segments) do
+        if seg.road.main then
+            local a,b=seg.a,seg.b
+            local dx,dz=b.x-a.x,b.z-a.z
+            local length2=dx*dx+dz*dz
+            local t=clamp(((x-a.x)*dx+(z-a.z)*dz)/length2,0,1)
+            if (x-a.x-dx*t)^2+(z-a.z-dz*t)^2<=limit then
+                candidates[#candidates+1]={a=a,b=b,dx=dx,dz=dz,length2=length2,length=sqrt(length2)}
+            end
+        end
+    end
+    return function(px,pz)
+        if (px-x)^2+(pz-z)^2>radius*radius then return Landscape.NearestRoad(px,pz) end
+        local bestD,bestS,bestLane=math.huge,0,0
+        for _,seg in ipairs(candidates) do
+            local a=seg.a
+            local t=clamp(((px-a.x)*seg.dx+(pz-a.z)*seg.dz)/seg.length2,0,1)
+            local ox,oz=px-(a.x+seg.dx*t),pz-(a.z+seg.dz*t)
+            local d=ox*ox+oz*oz
+            if d<bestD then
+                bestD,bestS,bestLane=d,a.s+(seg.b.s-a.s)*t,(ox*seg.dz-oz*seg.dx)/seg.length
+            end
+        end
+        return bestS,bestLane
+    end
+end
 local function setupFeatures()
 local bridgeS = Landscape.NearestRoad(-345, 468)
 bridgeStart, bridgeEnd = bridgeS - 52, bridgeS + 52

@@ -232,10 +232,11 @@ function M.Obstacles(sim,world,x0,y0,z0)
     local altitude=sim.oddAltitude or 0
     local bodyHeight=v and v.size[2] or 1.5
     local contacts={}
-    for _,o in ipairs(world.mixedObstacles) do
+    local ownRadius=math.sqrt(hw*hw+hl*hl)
+    local nearby=require("CourseSpatial").Query(world,"obstacles",x0,z0,sim.x,sim.z,ownRadius)
+    for _,o in ipairs(nearby) do
         -- 整段运动包围盒作粗筛，不能仅看帧末12米，否则高速一步越过窄障碍会漏撞。
-        local radius=math.sqrt(o.halfWidth*o.halfWidth+o.halfLength*o.halfLength)
-            +math.sqrt(hw*hw+hl*hl)
+        local radius=math.sqrt(o.halfWidth*o.halfWidth+o.halfLength*o.halfLength)+ownRadius
         local previousX,previousY,previousZ=o.previousX or o.x,o.previousY or o.y,o.previousZ or o.z
         if o.active and math.min(previousX,o.x)<=math.max(x0,sim.x)+radius
             and math.max(previousX,o.x)>=math.min(x0,sim.x)-radius
@@ -280,7 +281,7 @@ function M.Obstacles(sim,world,x0,y0,z0)
     end
     sim.oddContacts=contacts
     local pickupRadius=sim.vehicleId=="cart" and (sim.oddActive>0 and 14 or 3.5) or 1.5
-    for _,coin in ipairs(world.mixedCoins or {}) do
+    for _,coin in ipairs(require("CourseSpatial").Query(world,"coins",sim.x,sim.z,sim.x,sim.z,pickupRadius)) do
         local dx,dz=sim.x-coin.x,sim.z-coin.z
         if coin.active and dx*dx+dz*dz<pickupRadius*pickupRadius then
             coin.active=false;if coin.node then coin.node.enabled=false end

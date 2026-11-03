@@ -328,6 +328,20 @@ function VehicleAssets.Add(parent, id, length, detailTier)
     return root
 end
 
+-- 资源下载完成后、绿灯前预热近车材质分组；每车型完成后允许加载协程让帧。
+---@param ids string[]
+---@param progress? fun(id:string,index:integer,total:integer)
+function VehicleAssets.PrepareDetails(ids,progress)
+    for i,id in ipairs(ids) do
+        local c=assert(VehicleAssets.Vehicles[id])
+        if c.class=="sport" or c.class=="rally" or c.class=="cruiser" then
+            local source=assert(cache:GetResource("Model",c.model),c.model)
+            assert(VehicleFinish.Get(id,c,source,loadMaterial(c)),"正式车型细节预热失败："..id)
+        end
+        if progress then progress(id,i,#ids) end
+    end
+end
+
 -- 切换档位不逐帧分类、不上传新缓冲、不创建新材质。
 -- 相同档位重复调用直接返回，所有近车共享按id缓存的模型。
 ---@param root Node VehicleAssets.Add返回的根节点，不是Bike/Rider外层节点

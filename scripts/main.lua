@@ -680,7 +680,12 @@ local function BeginPreparation()
             raceAudio_ = RaceAudio.New(scene_)
             raceAudio_:SetEffectsEnabled(audioPreferences_.effects)
         end
-        if pendingChallenge_ then raceAssetsReady_ = true end
+        if pendingChallenge_ then
+            VehicleAssets.PrepareDetails(Catalog.AvailableIds(),function(id,i,total)
+                stage("准备对手车型",id.." · 提前完成轮胎与材质分区",i,total)
+            end)
+            raceAssetsReady_ = true
+        end
         loadedVehicle_, loadedTrack_, ready_, loadPhase_ = selectedVehicle_, selectedTrack_, true, "ready"
         print("[加载] 赛道与所选车型全部就绪：" .. loadedTrack_ .. " / " .. loadedVehicle_)
     end)

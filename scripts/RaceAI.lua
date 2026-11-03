@@ -435,6 +435,8 @@ function AI.TrafficContacts(race, r)
     local active = r.nextTrafficContacts
     for car in pairs(active) do active[car] = nil end
     for _, obstacle in ipairs(race.aiObstacles) do
+        -- 快照先放真实交通；后续mixed记录已有专用XYZ扫掠，不重复遍历全图机关。
+        if obstacle.mixed then break end
         local car = obstacle.source
         local dx, dz = r.x - car.x, r.z - car.z
         if not obstacle.mixed and dx * dx + dz * dz < 1600 then
