@@ -64,9 +64,52 @@ local function finite(x)
     return type(x)=="number" and x==x and math.abs(x)<math.huge
 end
 
+-- 低成本回归：真实Course.Build + 真MDL/材质，只有道路采样使用平直解析夹具。
+-- 不替换CreateCourse/Assets/Build，也不需要构建完整Landscape/交通/植被World。
+-- 可独立调用RunInitialization()，应在正式资源预热完成后执行。
+function M.RunInitialization()
+    local Course=require("MixedCourse")
+    local scene=Scene()
+    scene:CreateComponent("Octree")
+    local map={RouteLength=720,Roads={{width=8}},Ramps={},Track={theme="circuit"},
+        RoadPoint=function(s) return Vector3(0,0,s),0 end,
+        TrafficPose=function(s,lane) return Vector3(lane,0,s),0,0 end,
+        NearestRoad=function(x,z)
+            assert(finite(x) and finite(z),"[正式机关初始化] 生产Build不能在动态bounds初始化前投影")
+            return z,x
+        end}
+    local fixture={root=scene:CreateChild("CourseInitializationFixture"),landscape=map}
+    local count=0
+    local ok,message=pcall(function()
+        Course.Build(fixture)
+        assert(#fixture.mixedSwings>0,"[正式机关初始化] 必须由生产CreateCourse实际生成摆锤")
+        for _,record in ipairs(fixture.mixedObstacles) do
+            assert(finite(record.x) and finite(record.y) and finite(record.z),"[正式机关初始化] 真实记录缺坐标")
+            assert(finite(record.halfWidth) and finite(record.halfLength) and finite(record.height),
+                "[正式机关初始化] 真实记录缺bounds")
+            count=count+1
+        end
+        local chainCount=0
+        for _,swing in ipairs(fixture.mixedSwings) do
+            for _,part in ipairs(swing.parts) do
+                local record=part.record
+                assert(record.previousX==record.x and record.previousY==record.y and record.previousZ==record.z,
+                    "[正式机关初始化] previous必须初始化为当前真实坐标")
+                if tostring(record.id):find("_swingchain",1,true) then chainCount=chainCount+1 end
+            end
+        end
+        assert(chainCount>=12,"[正式机关初始化] 不能删除动态链段规避初始化回归")
+    end)
+    scene:Dispose()
+    assert(ok,tostring(message))
+    print(string.format("[正式机关初始化] PASS records=%d / 生产Build、真资源、动态链段先bounds后投影",count))
+    return count
+end
+
 ---@param world table
 ---@return table
 function M.Run(world)
+    M.RunInitialization()
     assert(world and world.landscape and world.mixedRoot,"[正式机关验收] 必须传入已构建真实World")
     ---@type CourseCheckRecord[]
     local source=assert(world.mixedObstacles)

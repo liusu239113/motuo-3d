@@ -177,10 +177,11 @@ function M.Build(world)
         end
     end
     for _,record in ipairs(pending) do obstacles[#obstacles+1]=record end
+    -- 动态链段创建时尚无坐标，必须先初始化真实bounds，再统一做道路投影。
+    M.Update(world,0)
     for _,record in ipairs(obstacles) do
         record.s,record.lane=world.landscape.NearestRoad(record.x,record.z)
     end
-    M.Update(world,0)
     for _,swing in ipairs(world.mixedSwings) do
         for _,part in ipairs(swing.parts) do
             local record=part.record

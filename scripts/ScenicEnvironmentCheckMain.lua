@@ -18,6 +18,74 @@ local view_ = "landscape"
 local shotPrefix_ = ""
 local renderFrames_ = 0
 local finished_ = false
+local probe_ = ""
+local probeMode_ = "compat"
+local probeInstances_ = 1
+
+local function materialProbe()
+    local paths = {
+        fern = "uuid://HQorYSe7jArWJex9O-ITEOoJ",
+        fernSmall = "uuid://Eqy3wSag5eJmQEQBqWnLcKwL",
+        rail = "uuid://EuEAqVcEvrhrHsZmdxoee6N6",
+        cone = "uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF",
+        sign = "uuid://BbhFaY-oq5NxPUutxC9s5YOQ",
+        arrow = "uuid://FjoMmROgqb4dDyqNZCf6eElx",
+    }
+    local path = assert(paths[probe_], "未知真实材质探针：" .. probe_)
+    assert(probeMode_ == "original" or probeMode_ == "compat" or probeMode_ == "paired", "未知探针材质模式")
+    assert(probeInstances_ == 1 or probeInstances_ == 2, "仅验单实例或双实例批次")
+    local original = assert(cache:GetResource("Material", path))
+    local material = probeMode_ == "original" and original or Props.MaterialFor(path)
+    if probeMode_ == "paired" then
+        material = material:Clone()
+        material:SetVertexShaderDefines(material.vertexShaderDefines .. " PACKEDNORMAL")
+        material:SetPixelShaderDefines(material.pixelShaderDefines .. " PACKEDNORMAL")
+    end
+    print(string.format("[环境材质探针] %s mode=%s instances=%d VSDEF=%s PSDEF=%s", probe_, probeMode_,
+        probeInstances_, material.vertexShaderDefines, material.pixelShaderDefines))
+    for i = 0, material:GetNumTechniques() - 1 do
+        for _, name in ipairs({"base", "litbase", "light", "shadow", "depth", "deferred"}) do
+            local pass = material:GetTechnique(i):GetPass(name)
+            if pass then print(string.format("[环境探针Pass] %s VS=%s PS=%s VD=%s PD=%s", name,
+                pass.vertexShader, pass.pixelShader, pass.vertexShaderDefines, pass.pixelShaderDefines)) end
+        end
+    end
+    scene_ = Scene()
+    scene_:CreateComponent("Octree")
+    local lightRoot = scene_:CreateChild("LightGroup")
+    lightRoot:LoadXML(assert(cache:GetResource("XMLFile", "LightGroup/Daytime.xml")):GetRoot())
+    renderer.hdrRendering = true
+    renderer.dynamicInstancing = true
+    renderer.minInstances = 2
+    print("[环境材质探针] renderer.dynamicInstancing=true minInstances=2；双实例是否合批以实际INSTANCED编译日志为准")
+    local parent = scene_:CreateChild("真实资产材质探针")
+    for i = 1, probeInstances_ do
+        local x = probeInstances_ == 1 and 0 or (i == 1 and -1.6 or 1.6)
+        if probe_ == "arrow" then
+            local node = parent:CreateChild("真实正式箭头")
+            local model = assert(cache:GetResource("Model", "uuid://D_WEUc5wpVo9pjy4U8VhVjVV"))
+            local scale = 2 / model.boundingBox.size.length
+            node:SetScale(scale)
+            node.position = Vector3(x, 0, 0) - model.boundingBox.center * scale
+            local draw = node:CreateComponent("StaticModel")
+            draw:SetModel(model)
+            draw:SetMaterial(0, material)
+            draw.castShadows = true
+        else
+            local _, draw = Props.Add(parent, probe_, Vector3(x, 0, 0), 2, 0, {shadow = true, distance = 60})
+            draw:SetMaterial(0, material)
+        end
+    end
+    cameraNode_ = scene_:CreateChild("MaterialProbeCamera")
+    cameraNode_.position = Vector3(6, 4.5, -8)
+    cameraNode_:LookAt(Vector3(0, 1, 0))
+    local camera = cameraNode_:CreateComponent("Camera")
+    camera.nearClip, camera.farClip = .1, 100
+    renderer:SetViewport(0, Viewport:new(scene_, camera))
+    SubscribeToEvent("PostRenderUpdate", "ScenicEnvironmentCheckPostRender")
+    finished_ = true
+    print("[环境材质探针] READY / 只检真实模型材质，不代表World通过")
+end
 
 local function checkEnvironment()
     local world = assert(world_)
@@ -96,8 +164,14 @@ function Start()
         trackId_ = arg:match("^%-environment%-track=(.+)$") or trackId_
         view_ = arg:match("^%-environment%-view=(.+)$") or view_
         shotPrefix_ = arg:match("^%-environment%-shots=(.+)$") or shotPrefix_
+        probe_ = arg:match("^%-environment%-material%-probe=(.+)$") or probe_
+        probeMode_ = arg:match("^%-environment%-probe%-mode=(.+)$") or probeMode_
+        probeInstances_ = tonumber(arg:match("^%-environment%-probe%-instances=(.+)$")) or probeInstances_
         if arg == "-environment-materials-only" then materialsOnly = true end
     end
+    assert(shotPrefix_ == "" or shotPrefix_:match("^screenshots/environment%-official/[%w_-]+$"),
+        "验收图片只写screenshots/environment-official下的显式前缀")
+    if probe_ ~= "" then materialProbe(); return end
     if materialsOnly then
         for _, path in ipairs(Props.Resources) do
             if Props.ResourceTypes[path] == "Material" then
@@ -156,7 +230,7 @@ end
 -- 完整真实World验收成功后才推进运动，固定1/30秒用于可重复的两个真实相位截图。
 -- 不依赖全局启动帧，不把初始化期间的默认相机画面当作环境通过证据。
 function ScenicEnvironmentCheckPostRender()
-    if not finished_ or not world_ then return end
+    if not finished_ or not scene_ then return end
     renderFrames_ = renderFrames_ + 1
     if shotPrefix_ ~= "" and (renderFrames_ == 4 or renderFrames_ == 28) then
         local image = Image()
@@ -167,7 +241,7 @@ function ScenicEnvironmentCheckPostRender()
         assert(saved, "真实环境完成后截图失败：" .. path)
         print("[正式环境验收] 正确阶段截图 " .. path .. " motion=" .. (renderFrames_ / 30))
     end
-    require("MixedCourse").Update(world_, renderFrames_ / 30)
+    if world_ then require("MixedCourse").Update(world_, renderFrames_ / 30) end
 end
 
 function ScenicEnvironmentCheckUpdate()
