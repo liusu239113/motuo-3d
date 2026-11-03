@@ -132,15 +132,16 @@ local function checkEnvironment()
         end
     end
     assert(treeCount == stats.high + stats.canopyInstances, "环境树数量与真实MDL实例失配")
-    -- 每144米合批成一块，draw数应等于赛道分块数，不是每段一个。
+    -- 每144米合批成一块；护栏关闭（性能对照）时允许为0。
     local decor=require("TrackDecor").LastBuild
-    assert(decor and railCount>0 and railCount<=math.ceil(9705/144)+1 and decor.rails>0
-        and decor.rails<=decor.railLimit, "护栏必须按144米合批且段数在预算内")
+    assert(decor and railCount<=math.ceil(9705/144)+1 and decor.rails<=decor.railLimit,
+        "护栏不得超出预算")
+    if decor.rails>0 then assert(railCount>0,"护栏有段数时必须存在合批实例") end
     for _,path in ipairs(World.Resources) do
         assert(path~="uuid://FV7oke6s9852a30jMsdkkcC3" and path~="uuid://EuEAqVcEvrhrHsZmdxoee6N6",
             "生产预载清单不得保留旧护栏模型或材质")
     end
-    assert(plantCount > 0 and rockCount > 0 and railCount > 0 and coneCount > 0, "草蕨/岩石/护栏/赛事标记不得缺失")
+    assert(plantCount > 0 and rockCount > 0 and coneCount > 0, "草蕨/岩石/赛事标记不得缺失")
     assert(world.root:GetChild("随路线贴地发车标线", true), "起终点棋盘线与发车格必须保留")
     assert(world.mats.terrain:GetSurfaceTexture("grass_color") and world.mats.terrain:GetSurfaceTexture("rock_color"),
         "真实地形颜色贴图必须绑定")

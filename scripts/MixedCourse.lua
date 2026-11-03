@@ -65,12 +65,21 @@ local function setSwingBounds(part,swing,c,s)
     record.previousZ=previousZ or record.z
 end
 
+-- 开关：true=完全关闭赛道机关（障碍/金币/预警）用于性能对照。
+local DISABLE_COURSE = true
+
 function M.Build(world)
     if world.mixedRoot then world.mixedRoot:Dispose() end
     local root=world.root:CreateChild("混合赛道轻量机关")
     world.mixedRoot=root
     world.mixedCoins={}
     world.mixedSwings={}
+    world.mixedObstacles={}
+    if DISABLE_COURSE then
+        print("[混合赛道] 机关系统已关闭（性能对照）：无障碍/金币/预警")
+        require("CourseSpatial").Build(world)
+        return
+    end
     world.mixedTerrainVisualsReady=false
     world.landscape.mixedTerrainVisualsReady=false
     local candidates=Rules.CreateCourse(world.landscape)

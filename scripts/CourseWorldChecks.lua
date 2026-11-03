@@ -126,6 +126,11 @@ function M.Run(world)
     assert(world and world.landscape and world.mixedRoot,"[正式机关验收] 必须传入已构建真实World")
     ---@type CourseCheckRecord[]
     local source=assert(world.mixedObstacles)
+    -- 机关系统关闭期间（性能对照）没有可验收的真实实例，明确跳过而不是谎报通过。
+    if #source==0 then
+        print("[正式机关验收] SKIP 机关系统当前关闭，未创建任何实例")
+        return
+    end
     local map=world.landscape
     local checks,owners,supports,airCount,coinCount=0,0,0,0,0
     local function check(ok,message)

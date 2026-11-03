@@ -91,6 +91,9 @@ end
 Decor.Resources = {"Techniques/PBR/PBRNoTexture.xml"}
 Decor.ResourceTypes = {["Techniques/PBR/PBRNoTexture.xml"] = "Technique"}
 
+-- 开关：true=关闭沿线护栏与反光锥标（性能对照）。
+local DISABLE_ROADSIDE = true
+
 -- 护栏沿道路间隔摆放，保留路外通行；全占地检查覆盖支路/坡台/水线。
 -- 每144米一个合批几何体：整条赛道护栏只占chunks次draw，不是每段一次。
 local function infrastructure(root, L, m, tick)
@@ -98,6 +101,11 @@ local function infrastructure(root, L, m, tick)
     local circuit, forest = L.activeId == "circuit", L.activeId == "forest"
     local chunks = math.ceil(length / 144)
     local rails, markers = 0, 0
+    if DISABLE_ROADSIDE then
+        Decor.LastBuild = {rails = 0, markers = 0, railLimit = 420, markerLimit = 180}
+        print("[轻量护栏] 已关闭（性能对照）：无护栏/反光锥标")
+        return
+    end
     local railSize=V(.14,.95,3)
     for chunk = 1, chunks do
         local lo, hi = (chunk - 1) * 144, math.min(length, chunk * 144)
