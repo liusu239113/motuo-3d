@@ -48,6 +48,25 @@ function Start()
         assert(rotor.rotation~=first,"主旋翼必须独立旋转")
         assert(body.rotation==initial,"禁止转动整架机身冒充旋翼动画")
     end
+    local originalOnly=false
+    for _,arg in ipairs(GetArguments()) do if arg=="-formal-original" then originalOnly=true end end
+    if originalOnly then
+        local config=assert(Assets.Vehicles[id])
+        local source=assert(cache:GetResource("Model",config.model))
+        local root=scene_:CreateChild("OriginalCompare")
+        local draw=root:CreateComponent("StaticModel")
+        draw:SetModel(source)
+        local mat=assert(cache:GetResource("Material",config.material)):Clone()
+        local diffuse=cache:GetResource("Texture2D",config.diffuse)
+        local normal=cache:GetResource("Texture2D",config.normal)
+        mat:SetTexture(TU_DIFFUSE,diffuse);mat:SetTexture(TU_NORMAL,normal)
+        mat:SetShaderParameter("Metallic",Variant(.18));mat:SetShaderParameter("Roughness",Variant(.52))
+        draw:SetMaterial(mat)
+        root.rotation=Quaternion(0,config.rotation,0)
+        root:SetScale(config.targetLength/source.boundingBox.size.x)
+        root.position=Vector3(0,1,0)
+        vehicle.enabled=false
+    end
     Visual.Animate(vehicle,id,pose,{oddActive=0})
     local cameraNode=scene_:CreateChild("Camera")
     cameraNode.position=Vector3(5.0,3.8,5.6)

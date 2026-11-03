@@ -2,7 +2,7 @@
     "version": 2,
     "script": "FormalVehicleCheckMain.lua",
     "result": "FAIL",
-    "duration_ms": 7328,
+    "duration_ms": 20052,
     "frames_completed": 140,
     "phases": {
         "load": {
@@ -13,62 +13,74 @@
             "result": "FAIL",
             "errors": [
                 {
-                    "category": "lua",
-                    "message": "[2026-11-03 16_29_45_696][67] ERROR: Execute Lua function failed: [string \"FormalVehicleCheckMain\"]:34: attempt to index a nil value (field 'material')\nstack traceback:\n\t[string \"FormalVehicleCheckMain\"]:34: in function 'Start'",
-                    "frame": 0
+                    "category": "engine",
+                    "message": "[2026-11-03 16_32_56_145][70] ERROR: bgfx invalid shader => /workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp:5555 errmsg:glLinkProgram error:0:error: fragment shader input `vTexCoord' has no matching output in the previous stage\nerror: fragment shader input `vTangent' has no matching output in the previous stage\nerror: fragment shader input `vNormal' has no matching output in the previous stage\nerror: fragment shader input `vWorldPos' has no matching output in the previous stage\n",
+                    "frame": 1
                 }
             ]
         },
         "run": {
-            "result": "PASS",
-            "errors": []
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1169.33ms (threshold: 1000ms)",
+                    "frame": 2
+                }
+            ]
         },
         "scene": {
             "result": "PASS",
             "errors": [],
-            "node_count": 0,
-            "component_count": 0,
-            "scene_exists": false
+            "node_count": 11,
+            "component_count": 7,
+            "scene_exists": true
         }
     },
     "state_snapshots": [
         {
             "frame": 1,
             "phase": "init",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 1334.2449951171876
+            "nodes": 9,
+            "components": 5,
+            "hash": 4166416692,
+            "frame_time_ms": 1530.001953125
         },
         {
             "frame": 10,
             "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.610000610351564
+            "nodes": 9,
+            "components": 5,
+            "hash": 4166416692,
+            "frame_time_ms": 94.60199737548828
         },
         {
             "frame": 70,
             "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.614999771118165
+            "nodes": 9,
+            "components": 5,
+            "hash": 4166416692,
+            "frame_time_ms": 95.46800231933594
         },
         {
             "frame": 140,
             "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.628000259399415
+            "nodes": 9,
+            "components": 5,
+            "hash": 4166416692,
+            "frame_time_ms": 96.16500091552735
         }
     ],
     "scene_stalled": true,
-    "max_frame_time_ms": 294.27899169921877,
+    "max_frame_time_ms": 1169.3310546875,
     "update_defined": false,
-    "component_census": {},
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 2,
+        "StaticModel": 2,
+        "Camera": 1
+    },
     "test_result": "NOT_RUN",
     "test_assertions": {
         "total": 0,
@@ -79,9 +91,9 @@
     "missing_resources": [],
     "missing_engine_resources": [],
     "summary": {
-        "lua_errors": 1,
+        "lua_errors": 0,
         "resource_errors": 0,
-        "engine_errors": 0,
-        "total_errors": 1
+        "engine_errors": 2,
+        "total_errors": 2
     }
 }
