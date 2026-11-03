@@ -2,7 +2,7 @@
     "version": 2,
     "script": "FormalVehicleCheckMain.lua",
     "result": "FAIL",
-    "duration_ms": 6948,
+    "duration_ms": 7328,
     "frames_completed": 140,
     "phases": {
         "load": {
@@ -14,7 +14,7 @@
             "errors": [
                 {
                     "category": "lua",
-                    "message": "[2026-11-03 16_27_07_059][75] ERROR: Execute Lua function failed: [string \"MixedVisuals\"]:11: error in function 'SetTexture'.\n     argument #4 is 'string'; '[no object]' expected.\n\nstack traceback:\n\t[C]: in method 'SetTexture'\n\t[string \"MixedVisuals\"]:11: in upvalue 'material'\n\t[string \"MixedVisuals\"]:50: in field 'Build'\n\t[string \"FormalVehicleCheckMain\"]:28: in function 'Start'",
+                    "message": "[2026-11-03 16_29_45_696][67] ERROR: Execute Lua function failed: [string \"FormalVehicleCheckMain\"]:34: attempt to index a nil value (field 'material')\nstack traceback:\n\t[string \"FormalVehicleCheckMain\"]:34: in function 'Start'",
                     "frame": 0
                 }
             ]
@@ -38,7 +38,7 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 889.7680053710938
+            "frame_time_ms": 1334.2449951171876
         },
         {
             "frame": 10,
@@ -54,7 +54,7 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 16.61199951171875
+            "frame_time_ms": 16.614999771118165
         },
         {
             "frame": 140,
@@ -62,11 +62,11 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 16.62299919128418
+            "frame_time_ms": 16.628000259399415
         }
     ],
     "scene_stalled": true,
-    "max_frame_time_ms": 220.26400756835938,
+    "max_frame_time_ms": 294.27899169921877,
     "update_defined": false,
     "component_census": {},
     "test_result": "NOT_RUN",

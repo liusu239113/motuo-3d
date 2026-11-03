@@ -31,8 +31,9 @@ function Start()
     local sourceVB=source:GetGeometry(0,0):GetVertexBuffer(0)
     local count = 0
     for _,draw in ipairs(vehicle:GetComponents("StaticModel",true)) do
-        assert(draw.material:GetTexture(TU_DIFFUSE) and draw.material:GetTexture(TU_NORMAL),"正式模型不能缺D/N贴图")
-        local geo=draw.model:GetGeometry(0,0)
+        local mat=assert(draw:GetMaterial(),"正式模型材质未绑定")
+        assert(mat:GetTexture(TU_DIFFUSE) and mat:GetTexture(TU_NORMAL),"正式模型不能缺D/N贴图")
+        local geo=draw:GetModel():GetGeometry(0,0)
         count=count+geo.indexCount
         assert(geo:GetVertexBuffer(0)==sourceVB,"拆件必须直接保留正式源顶点流和UV/法线/切线")
     end

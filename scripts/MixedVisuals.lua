@@ -62,13 +62,17 @@ function M.Build(parent, id)
                 mesh.position = -center
             end
             local draw = mesh:CreateComponent("StaticModel")
-            draw.model, draw.material, draw.castShadows = part.model, mat, true
+            draw:SetModel(part.model)
+            draw:SetMaterial(mat)
+            draw.castShadows = true
             draw.lodBias = 2
         end
     else
         local mesh = canonical:CreateChild("DetailedBody")
         local draw = mesh:CreateComponent("StaticModel")
-        draw.model, draw.material, draw.castShadows = source, mat, true
+        draw:SetModel(source)
+        draw:SetMaterial(mat)
+        draw.castShadows = true
         draw.lodBias = 2
     end
     local size = bounds.size*scale
