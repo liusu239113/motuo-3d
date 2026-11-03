@@ -13,7 +13,8 @@ local SAVE_VERSION = 2
 ---@field unlockedTracks table<string, boolean>
 
 -- 首发免费：一台入门仿赛 + 一台绿色车手配色 + 默认封闭赛道。
-Profile.FREE_VEHICLE = "sport"
+-- 玩家默认只有小电驴；其余载具都用金币解锁。
+Profile.FREE_VEHICLE = "ebike"
 Profile.FREE_RIDER = "green"
 Profile.FREE_TRACK = "circuit"
 
@@ -106,7 +107,7 @@ end
 local function defaults()
     return {
         coins = 0,
-        owned = {[Profile.FREE_VEHICLE] = true,ebike=true},
+        owned = {[Profile.FREE_VEHICLE] = true},
         trials = {},
         ownedRiders = {[Profile.FREE_RIDER] = true},
         unlockedTracks = {[Profile.FREE_TRACK] = true},

@@ -27,10 +27,14 @@ RaceAudio.Resources = {
     "audio/sfx/race_rider_curse_2.mp3",
     "audio/sfx/race_rider_curse_3.mp3",
     "audio/sfx/race_rider_curse_4.mp3",
+    -- 载具技能开火与命中爆炸。
+    "audio/sfx/race_weapon_launch.mp3",
+    "audio/sfx/race_weapon_explosion.mp3",
 }
 RaceAudio.Count = #RaceAudio.Resources
 local SIREN, COUNTDOWN, START, CONTACT, BOOST, FINISH = 1, 2, 3, 4, 5, 6
 local CURSE_FIRST, CURSE_COUNT = 7, 4
+local LAUNCH, EXPLOSION = 11, 12
 -- 冷却至少1.2秒且覆盖整段原速语音和尾部留白；playing再兜底音频线程延迟。
 local CURSE_COOLDOWN, CURSE_GAP = 1.2, 0.18
 local function finite(value) return type(value) == "number" and value == value and math.abs(value) < math.huge end
@@ -193,7 +197,31 @@ function RaceAudio:Update(dt, sim, race, active)
                             local dx, dz = speaker.x - sim.x, speaker.z - sim.z
                             if dx * dx + dz * dz < 60 * 60 then self:Curse(event, speaker) end
                         end
-                    elseif event.kind == "boost" and player then self:PlayOnce(BOOST, 0.43) end
+                    elseif event.kind == "boost" and player then self:PlayOnce(BOOST, 0.43)
+                    elseif event.kind == "weapon-fire" then
+                        -- 开火音效按距离衰减；玩家自己的技能一定听得到。
+                        local near = player
+                        if not near and sim and race then
+                            for _, racer in ipairs(race.racers or {}) do
+                                if racer.id == event.racerId then
+                                    local dx, dz = racer.x - sim.x, racer.z - sim.z
+                                    near = dx * dx + dz * dz < 80 * 80
+                                end
+                            end
+                        end
+                        if near then self:PlayOnce(LAUNCH, 0.55) end
+                    elseif event.kind == "weapon-hit" then
+                        local near = player
+                        if not near and sim and race then
+                            for _, racer in ipairs(race.racers or {}) do
+                                if racer.id == event.targetId then
+                                    local dx, dz = racer.x - sim.x, racer.z - sim.z
+                                    near = dx * dx + dz * dz < 90 * 90
+                                end
+                            end
+                        end
+                        if near then self:PlayOnce(EXPLOSION, 0.62) end
+                    end
                 end
             end
         end

@@ -319,10 +319,11 @@ function M.Attack(race,source,sim)
     if not sim.oddAttack then return end
     sim.oddAttack=false
     local v=Data.Get(source.vehicleId);if not v then return end
-    local range=({tank=10,beetle=14,centipede=6,loader=12,jellyfish=28,helicopter=32,office=6})[v.id]
+    local range=({tank=24,beetle=14,centipede=6,loader=12,jellyfish=28,helicopter=32,office=6})[v.id]
     if not range then return end
     local area=v.id=="centipede" or v.id=="office"
-    local ranged=v.id=="jellyfish" or v.id=="helicopter"
+    -- 坦克改为远程炮弹：有真实飞行轨迹和爆炸，才符合"能开炮"的直觉。
+    local ranged=v.id=="jellyfish" or v.id=="helicopter" or v.id=="tank"
     ---@type RaceRacer?
     local best=nil
     local bestD=range*range
@@ -364,8 +365,12 @@ function M.Attack(race,source,sim)
         local targetY=best.y+(targetSim and targetSim.oddAltitude or 0)+(targetSpec and targetSpec.size[2] or 1.5)*.5
         local dx,dy,dz=best.x-source.x,targetY-y,best.z-source.z
         local length=math.max(.01,math.sqrt(dx*dx+dy*dy+dz*dz))
+        -- 炮弹比导弹慢，飞行轨迹更清晰可见；导弹快但仍有明显曳光。
+        local speed=v.id=="tank" and 48 or 65
+        local ttl=v.id=="tank" and 1.2 or .8
         projectiles[#projectiles+1]={kind=v.id,x=source.x,z=source.z,y=y,
-            vx=dx/length*65,vy=dy/length*65,vz=dz/length*65,ttl=.8,source=source,target=best}
+            vx=dx/length*speed,vy=dy/length*speed,vz=dz/length*speed,ttl=ttl,source=source,target=best}
+        race:Emit("weapon-fire",source.id,best.id)
         return
     end
     M.Hit(race,source,best,v)
@@ -383,6 +388,14 @@ function M.Hit(race,source,best,v)
     end
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
     best.boostTimer=0
+    -- 命中表现：记录弹着点供爆炸特效使用，并让被击中的车短暂失控/翻车。
+    local targetSpec0=Data.Get(best.vehicleId)
+    race.mixedExplosions=race.mixedExplosions or {}
+    race.mixedExplosions[#race.mixedExplosions+1]={x=best.x,y=best.y+(targetSpec0 and targetSpec0.size[2] or 1.5)*.5,
+        z=best.z,age=0,scale=(v.id=="tank" or v.id=="helicopter") and 1.35 or 1.0}
+    if race.options and race.options.mixed then
+        best.tumble=(v.id=="tank" or v.id=="beetle" or v.id=="centipede") and 1.1 or 0.55
+    end
     local side=best.lane>=source.lane and 1 or -1
     local spec=Data.Get(best.vehicleId)
     local margin=(spec and spec.size[1]*.5 or .3)+.15
@@ -397,6 +410,7 @@ function M.Hit(race,source,best,v)
         race.sim.message,race.sim.messageTimer=v.name.."技能命中 · 注意修正方向",2
     end
     race:Collision(best);race:Emit("vehicle-skill",source.id,best.id)
+    race:Emit("weapon-hit",source.id,best.id)
     return true
 end
 function M.RaceStep(race,dt)

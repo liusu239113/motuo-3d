@@ -230,9 +230,10 @@ end
 function Adapter:Init(scene,id)
     self.vehicleId=id; self.node=scene:CreateChild("Bike_"..id)
     self.visual=self.node:CreateChild("VehicleMotion"); self.body=M.Build(self.visual,id)
-    -- 未单独标定的载具按真实模型高度推导眼位：高出车顶约12cm，避免相机嵌进车体。
+    -- 未单独标定的载具按真实模型高度推导眼位：略高于车顶并前移，
+    -- 保证第一视角能看清路面而不是被自身车体挡住。
     local size=self.body:GetVar("VehicleSize"):GetVector3()
-    local fallback={localOffset=V(0,math.max(1.0,size.y+0.12),-size.z*0.10),pitch=6,fov=72,
+    local fallback={localOffset=V(0,math.max(1.1,size.y+0.25),size.z*0.06),pitch=4,fov=74,
         seatHeight=math.max(0.8,size.y*0.55),grip=V(.3,1,.4),dash=V(0,size.y*0.85,size.z*0.10)}
     local cockpit=M.Cockpits[id] or fallback
     self.cockpit=self.visual:CreateChild("Cockpit"); self.steering=self.cockpit:CreateChild("Steering")
@@ -267,10 +268,16 @@ function Adapter:UpdateState(_,sim,firstPerson,clock)
     self.node.rotation=Quaternion(0,sim.heading or sim.yaw or 0,0)
     self.visual.position=V(0,sim.oddAltitude or 0,0)
     -- 空中旋转(spin180/spin360)必须真正体现在模型上，否则按键像"跳跃"。
-    -- 翘头/烧胎对混合载具没有物理意义，只有真实旋转与倾斜才表现。
+    -- 被击中时叠加翻滚(tumble)，让碰撞有可见后果。
     local spin=sim.airSpin or 0
     local pitch=(sim.pitch or 0)*.5
     local lean=(sim.lean or 0)*.25
+    local tumble=self.tumble or 0
+    if tumble>0 then
+        self.tumble=math.max(0,tumble-math.max(0.016,self.lastDt or 0.016))
+        pitch=pitch+math.sin(tumble*22)*34*math.min(1,tumble)
+        lean=lean+math.cos(tumble*19)*30*math.min(1,tumble)
+    end
     self.visual.rotation=Quaternion(pitch,spin,lean)
     M.Animate(self.body,self.vehicleId,sim.elapsed or clock,sim)
     self.riderRig:Update(0,false,lean)

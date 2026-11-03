@@ -986,19 +986,20 @@ function HUD:Update(dt, sim, firstPerson)
     self.rpmNumber:SetText(string.format("%.0f rpm", sim.rpm or 1200))
     self.region:SetText(sim.regionName or "环湖公路"); self.target:SetText(sim.goalName or "")
     self:RefreshRace()
-    -- 特技按钮按真实能力显示：混合载具没有翘头/烧胎仿真（会按了没反应），
-    -- 但空中旋转是真实起跳+旋转，保留按钮。
-    local mixedSpec = require("MixedVehicles").Get(sim.vehicleId or "")
-    local groundStunts = mixedSpec == nil
+    -- 特技按钮按真实能力显示：电动车是两轮车辆，可翘头/烧胎/空中旋转；
+    -- 坦克、直升机等非两轮载具没有这些地面特技，隐藏避免按了没反应。
+    local vehicleId = sim.vehicleId or ""
+    local mixedSpec = require("MixedVehicles").Get(vehicleId)
+    local twoWheeler = mixedSpec == nil or vehicleId == "ebike" or vehicleId == "skateboard"
     for _, key in ipairs({"wheelie", "burnout"}) do
         local widget = self.controlWidgets[key]
-        if widget then widget:SetVisible(groundStunts) end
+        if widget then widget:SetVisible(twoWheeler) end
     end
     for _, key in ipairs({"spin180", "spin360"}) do
         local widget = self.controlWidgets[key]
         if widget then widget:SetVisible(true) end
     end
-    if not groundStunts then
+    if not twoWheeler then
         self.controls:SetActionState("wheelie", {state = "ready", detail = ""})
         self.controls:SetActionState("burnout", {state = "ready", detail = ""})
     end

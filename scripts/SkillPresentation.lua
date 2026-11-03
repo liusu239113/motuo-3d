@@ -28,14 +28,15 @@ Skill.ResourceTypes = {[MODEL] = "Model", [MATERIAL] = "Material",
 ---@param parent Node
 ---@param shot SkillProjectilePresentation
 function Skill.UpdateShot(parent, shot)
-    -- 水母尚未开放，未交付正式水球资源时不展示，也不借用导弹冒充。
-    if shot.kind ~= "helicopter" then return end
+    -- 坦克炮弹与直升机导弹都使用正式导弹网格；水母仍不需要视觉弹体。
+    if shot.kind ~= "helicopter" and shot.kind ~= "tank" then return end
     if not shot.node then
         local model = assert(cache:GetResource("Model", MODEL), "正式导弹网格未预载")
         local material = assert(cache:GetResource("Material", MATERIAL), "正式导弹材质未预载")
         local bounds = model.boundingBox
         assert(bounds.size.z > .001, "正式导弹长轴无效")
-        local scale = 1.0 / bounds.size.z
+        -- 坦克炮弹比导弹粗短一些，仍是同一正式网格等比缩放。
+        local scale = (shot.kind == "tank" and 1.5 or 1.0) / bounds.size.z
         local root = parent:CreateChild("SkillProjectile_Missile", LOCAL)
         local mesh = root:CreateChild("正式导弹_含尾翼", LOCAL)
         mesh:SetScale(scale)
@@ -46,7 +47,7 @@ function Skill.UpdateShot(parent, shot)
         drawable.drawDistance, drawable.shadowDistance = 220, 0
         drawable.castShadows = false
         shot.node = root
-        print("[技能表现] 正式导弹生成 · 1米等比 · 使用仿真xyz/vxyz")
+        print("[技能表现] 正式导弹生成 · 等比缩放 · 使用仿真xyz/vxyz")
     end
     -- 玩家/AI共用同一shot；不积分位置，不增加视觉飞行时间，命中由MixedRace销毁shot.node。
     shot.node.position = Vector3(shot.x, shot.y, shot.z)

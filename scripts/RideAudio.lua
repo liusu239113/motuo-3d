@@ -57,6 +57,11 @@ RideAudio.Resources = {
     "audio/sfx/motorcycle_pass.mp3",
     "audio/radio_02.ogg",
     "audio/night_ride.ogg",
+    -- 三种独立发动机与电动车电机；混合载具按原型复用。
+    "audio/sfx/race_engine_sport_inline4.mp3",
+    "audio/sfx/race_engine_cruiser_vtwin.mp3",
+    "audio/sfx/race_engine_rally_twin.mp3",
+    "audio/sfx/career_ebike_motor.mp3",
 }
 RideAudio.Tracks = {
     {title = "骑行歌单 01", resource = 1},
@@ -69,6 +74,38 @@ RideAudio.EngineResources = {
     sport = "audio/sfx/race_engine_sport_inline4.mp3",
     cruiser = "audio/sfx/race_engine_cruiser_vtwin.mp3",
     rally = "audio/sfx/race_engine_rally_twin.mp3",
+    -- 电动车/机械载具复用真实录音，但按下表使用独立音高与音量包络区分音色。
+    electric = "audio/sfx/career_ebike_motor.mp3",
+    heavy = "audio/sfx/motorcycle_engine_loop.mp3",
+    turbine = "audio/sfx/race_engine_sport_inline4.mp3",
+}
+
+-- 每台载具 -> 声音原型 + 音高/音量个性。同一原型用不同基频和增益，听感可区分。
+RideAudio.MixedEngineResources = {
+    ebike      = "electric",
+    tank       = "heavy",
+    beetle     = "heavy",
+    hovercraft = "turbine",
+    centipede  = "heavy",
+    buggy      = "rally",
+    jellyfish  = "turbine",
+    loader     = "heavy",
+    cicada     = "rally",
+    jetboat    = "turbine",
+    frog       = "rally",
+    skateboard = "rally",
+    helicopter = "turbine",
+    sled       = "sport",
+    cart       = "rally",
+    bathtub    = "cruiser",
+    office     = "sport",
+    toilet     = "sport",
+}
+
+-- 原型基频倍率：低=沉厚机械，高=高转机械/涡轮。
+RideAudio.EnginePitch = {
+    sport = 1.00, cruiser = 0.72, rally = 0.86,
+    electric = 1.35, heavy = 0.55, turbine = 1.55,
 }
 
 local MUSIC, ENGINE, WIND, BRAKE, IMPACT, PASS = 1, 2, 3, 4, 5, 6
@@ -401,20 +438,31 @@ end
 function RideAudio:SetVehicle(vehicleId)
     -- 尚未LoadOne(ENGINE)时不可提前占用sounds[2]，否则旧Loader会误认为source也已就绪。
     if self.stopped or not self.sources[ENGINE] then return false end
-    local classId = vehicleId:match("^(%a+)") or vehicleId
-    if self.engineClass == classId then return true end
-    local path = RideAudio.EngineResources[classId]
+    -- 必须用真实车型而不是类别：否则18台混合载具都退回sport/cruiser/rally三种声音。
+    local key = RideAudio.EngineFor(vehicleId)
+    if self.engineClass == key then return true end
+    local path = RideAudio.EngineResources[key]
     if not path then return false end
-    local sound = self.engineSounds[classId] or cache:GetResource("Sound", path)
+    local sound = self.engineSounds[key] or cache:GetResource("Sound", path)
     if not sound or sound:GetFrequency() <= 0 or sound:GetLength() <= 0 then return false end
     sound.looped = true
-    self.engineSounds[classId] = sound
+    self.engineSounds[key] = sound
     self:SilenceTrack(ENGINE)
     self.sounds[ENGINE] = sound
     self.pitches[ENGINE] = 1
-    self.engineClass = classId
-    print("[车型音频] " .. classId .. " / " .. path .. " / 复用ENGINE音源")
+    self.engineClass = key
+    print("[车型音频] " .. key .. " / " .. path .. " / 复用ENGINE音源")
     return true
+end
+
+-- 车型到引擎声音的映射：每个载具有自己的音色，而不是按类别共用。
+---@param vehicleId string
+---@return string
+function RideAudio.EngineFor(vehicleId)
+    local mixed = RideAudio.MixedEngineResources[vehicleId]
+    if mixed then return mixed end
+    local classId = vehicleId:match("^(%a+)") or vehicleId
+    return classId
 end
 
 -- screen 使用主流程已有的 menu / ride / pause / result；未知界面按非驾驶处理。
@@ -442,7 +490,9 @@ function RideAudio:Update(dt, sim, screen)
     local windGain = effectsActive and speedRatio ^ 1.5 * 0.30 or 0
     local brakeGain = effectsActive and sim and
         (sim.burnout and 0.24 or (sim.braking and Unit(speed / 18) * 0.25 or 0)) or 0
-    self:UpdateLoop(ENGINE, engineGain, 0.68 + rpmRatio * 0.78 + throttle * 0.10, frameTime)
+    -- 各原型有独立基频；同一录音也能听出电动车的高转、重型机械的低沉、涡轮的尖啸。
+    local basePitch = RideAudio.EnginePitch[self.engineClass] or 1.0
+    self:UpdateLoop(ENGINE, engineGain, (0.68 + rpmRatio * 0.78 + throttle * 0.10) * basePitch, frameTime)
     self:UpdateLoop(WIND, windGain, 0.80 + speedRatio * 0.30, frameTime)
     self:UpdateLoop(BRAKE, brakeGain, 0.85 + speedRatio * 0.20, frameTime)
 

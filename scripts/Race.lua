@@ -92,6 +92,7 @@ local MixedVehicles = require("MixedVehicles")
 ---@field hitShake number
 ---@field hitYaw number
 ---@field hitTimer number
+---@field tumble number
 ---@field mistakeDuration number
 ---@field recoveryTimer number
 ---@field rubberBand number
@@ -369,6 +370,7 @@ function Race:Start(laps)
     self.runners, self.result = self.racers, nil
     for _,p in ipairs(self.mixedProjectiles or {}) do if p.node then p.node:Dispose() end end
     self.mixedProjectiles={}
+    self.mixedExplosions={}
     self.nitroHeld = false
     local names = {"凌风", "山猫", "霓虹", "白隼", "牧歌", "赤轮", "雾影", "雷鸟"}
     ---@type string[]
@@ -1098,6 +1100,8 @@ function Race:AfterStep(dt)
     for _, r in ipairs(self.racers) do
         r.hitTimer = max(0, (r.hitTimer or 0) - dt)
         if r.hitTimer <= 0 then r.hitShake, r.hitYaw = 0, 0 end
+        -- 命中翻滚计时递减，视觉层据此衰减。
+        r.tumble = max(0, (r.tumble or 0) - dt)
         r.boostTimer = max(0, r.boostTimer - dt)
         if r.boostTimer < 1e-8 then r.boostTimer = 0 end
     end

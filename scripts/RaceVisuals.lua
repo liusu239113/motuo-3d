@@ -4,6 +4,7 @@ local Assets = require("VehicleAssets")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
 local SkillPresentation = require("SkillPresentation")
+local ExplosionEffects = require("ExplosionEffects")
 local ScenicAssetProps = require("ScenicAssetProps")
 -- 官方资源库DLl_iWrIXFGnWp6MXMWm5rlt：连续直向金色箭头；BrMPQVbouuJ6tP9-opAx9Z5U：完整交通锥。
 -- 不使用搜索描述中实际为掉头/转弯的箭头，不用Box拼装路标或门架。
@@ -86,6 +87,11 @@ function RaceVisuals.GetResources()
     for _, path in ipairs(SkillPresentation.Resources) do
         paths[#paths + 1] = path
         Assets.ResourceTypes[path] = assert(SkillPresentation.ResourceTypes[path])
+    end
+    -- 命中爆炸贴图必须提前预载，否则首次爆炸会同步加载卡帧。
+    for _, path in ipairs(ExplosionEffects.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(ExplosionEffects.ResourceTypes[path])
     end
     for _, path in ipairs(COURSE_RESOURCES) do
         paths[#paths + 1] = path
@@ -529,7 +535,12 @@ function RaceVisuals:Update(dt, sim)
                 if require("MixedVehicles").Get(runner.vehicleId) then
                     local drive = data.driveSim or {}
                     runner.visual.position = V(0, drive.oddAltitude or 0, 0)
-                    runner.visual.rotation = Quaternion((data.pitch or 0)*.5, 0, runner.lean*.22+hitRoll)
+                    -- 被技能击中时叠加可见翻滚，让"被打中"有明确反馈。
+                    local tumble = (data.tumble or 0)
+                    local tumblePitch = tumble > 0 and math.sin(tumble * 24) * 38 * math.min(1, tumble) or 0
+                    local tumbleRoll = tumble > 0 and math.cos(tumble * 20) * 32 * math.min(1, tumble) or 0
+                    runner.visual.rotation = Quaternion((data.pitch or 0)*.5 + tumblePitch, data.airSpin or 0,
+                        runner.lean*.22 + hitRoll + tumbleRoll)
                     require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
@@ -564,6 +575,22 @@ function RaceVisuals:Update(dt, sim)
     if self.root and not (sim and sim.paused) then
         for _, shot in ipairs(self.race.mixedProjectiles or {}) do
             SkillPresentation.UpdateShot(self.root, shot)
+        end
+        -- 命中爆炸：MixedRace记录弹着点，这里生成真实贴图的爆炸并逐帧推进。
+        local explosions = self.race.mixedExplosions
+        if explosions then
+            self.activeExplosions = self.activeExplosions or {}
+            for index = #explosions, 1, -1 do
+                local entry = explosions[index]
+                self.activeExplosions[#self.activeExplosions + 1] = ExplosionEffects.Spawn(self.root, entry)
+                table.remove(explosions, index)
+            end
+            local cameraPosition = sim and V(sim.x, sim.y + 2, sim.z) or V.ZERO
+            for i = #self.activeExplosions, 1, -1 do
+                if not ExplosionEffects.Update(self.activeExplosions[i], frameTime, cameraPosition) then
+                    table.remove(self.activeExplosions, i)
+                end
+            end
         end
     end
     local police = self.race.pursuit or self.race.police
@@ -612,6 +639,8 @@ function RaceVisuals:Destroy()
         runner.rider:Dispose()
     end
     self.runners = {}
+    -- 爆炸节点挂在root下，root销毁时会一并释放；只需清空活动列表。
+    self.activeExplosions = {}
     SkillPresentation.Clear(self.race.mixedProjectiles or {})
     if self.root then self.root:Dispose() end
     for _, material in ipairs(self.materials) do material:Dispose() end
