@@ -38,6 +38,11 @@ function Checks.Run()
     local mainSource, profileSource, adSource = source("main.lua"), source("Profile.lua"), source("RewardedAds.lua")
     local Store, Progress = require("Career.Store"), require("Career.Progression")
     local Tracks, Config = require("Tracks"), require("Career.Config")
+    local lake = assert(Tracks.Get("lake"))
+    -- Independent champion oracle: full per-lap reward, NOT Profile.RaceReward.
+    local expectedReward = lake.laps * lake.reward
+    local startingCoins = 2300
+    local afterRace, afterAd = startingCoins + expectedReward, startingCoins + expectedReward * 2
     local assertions, sdkCalls, cloudCalls = 0, 0, 0
     local function check(value, message)
         assert(value, "[RaceSettlementChecks] " .. message)
@@ -144,17 +149,18 @@ function Checks.Run()
         local f = make()
         f.main.tick(0)
         local state = f.main.inspect()
-        check(state.shown and state.screen == "result" and state.earned == 102 and state.available,
-            "真实HandleUpdate按lake固定3圈34金币结算且提供广告")
-        check(f.profile.Coins() == 2402 and not f.profile.HasPendingSave(), "夺冠金币准确入账102且无待补存")
-        persisted(f, 2402)
+        check(state.shown and state.screen == "result" and state.earned == expectedReward and state.available,
+            "真实HandleUpdate按lake配置的圈数与基础奖励结算且提供广告")
+        check(f.profile.Coins() == afterRace and not f.profile.HasPendingSave(), "夺冠金币准确入账laps*base且无待补存")
+        persisted(f, afterRace)
         local writes, grants = f.counts()
         f.main.tick(0); f.main.tick(.1)
         local afterWrites, afterGrants = f.counts()
         check(grants == 1 and afterGrants == 1 and afterWrites == writes and f.hud.results == 1,
             "真实主循环resultShown门闩阻止重复金币、权益和结果展示")
         check(Store.Get().cashCents == initialCash, "独立赛事不得污染Career现金")
-        print("[主结算接线] lake夺冠 +102金币；alpine/coast同时持久化；重复Update仅一次")
+        print(string.format("[主结算接线] lake夺冠 +%d金币（%d圈*%d）；alpine/coast同时持久化；重复Update仅一次",
+            expectedReward, lake.laps, lake.reward))
 
         -- 实际WatchResultAdBonus -> 实际RewardedAds -> 实际Profile.AddCoins。
         local beforeCalls = sdkCalls
@@ -162,8 +168,8 @@ function Checks.Run()
         check(sdkCalls == beforeCalls + 1 and #f.callbacks == 1, "真实广告入口连点仅一次局部SDK请求")
         f.callbacks[1]({success = true}); f.callbacks[1]({success = true})
         state = f.main.inspect()
-        check(f.profile.Coins() == 2504 and state.claimed and not state.available, "主广告成功只补发本场102金币一次")
-        persisted(f, 2504)
+        check(f.profile.Coins() == afterAd and state.claimed and not state.available, "主广告成功只补发本场同额金币一次")
+        persisted(f, afterAd)
         local _, _, addCalls = f.counts()
         check(addCalls == 1, "重复SDK回调不能二次执行主方AddCoins")
         check(Store.Get().cashCents == initialCash, "独立广告金币不得流入生涯")
@@ -172,16 +178,16 @@ function Checks.Run()
         f = make(); f.main.tick(0); f.main.watch(); f.fail(true)
         f.callbacks[1]({success = true}); f.callbacks[1]({success = true})
         state = f.main.inspect()
-        check(state.claimed and not state.available and f.profile.HasPendingSave() and f.profile.Coins() == 2504,
+        check(state.claimed and not state.available and f.profile.HasPendingSave() and f.profile.Coins() == afterAd,
             "广告本次applied=true且写失败必须标记已领、保留待补存")
         f.fail(false)
         for _ = 1, 52 do f.main.tick(.1) end
         local _, _, adAdds = f.counts()
         check(adAdds == 1 and not f.profile.HasPendingSave(), "广告待补存由主循环重试，不再次发币或播放")
-        persisted(f, 2504)
+        persisted(f, afterAd)
 
         -- 旧pending绝不是本次已应用凭证：首奖刚好填满上限，广告新增必须永久拒发。
-        f = make(math.maxinteger - 102); f.fail(true); f.main.tick(0)
+        f = make(math.maxinteger - expectedReward); f.fail(true); f.main.tick(0)
         check(f.profile.Coins() == math.maxinteger and f.profile.HasPendingSave(), "先建立真实赛事旧pending且余额达到上限")
         f.main.watch(); f.callbacks[1]({success = true})
         state = f.main.inspect()
@@ -198,7 +204,7 @@ function Checks.Run()
         print("[主结算接线] 广告applied=true写失败仅补存；旧pending+上限applied=false不得标记已领")
 
         -- 跨赛事保留旧pending，再由真实主循环拒发新奖励；即时提示与旧补存完成都不能冒领。
-        f = make(math.maxinteger - 102); f.fail(true); f.main.tick(0)
+        f = make(math.maxinteger - expectedReward); f.fail(true); f.main.tick(0)
         check(f.profile.HasPendingSave() and f.profile.Coins()==math.maxinteger,"首场建立已应用待补存奖励")
         f.main.screen("menu")
         f.main.prepare(f.fixture);f.main.tick(0)
@@ -217,15 +223,15 @@ function Checks.Run()
         -- 写失败已应用：通过真实HandleUpdate的5秒补存分支，而非测试手工调用Retry。
         f = make(); f.fail(true); f.main.tick(0)
         state = f.main.inspect()
-        check(state.earned == 102 and f.profile.Coins() == 2402 and f.profile.HasPendingSave()
+        check(state.earned == expectedReward and f.profile.Coins() == afterRace and f.profile.HasPendingSave()
             and f.profile.TrackUnlocked("alpine") and f.profile.TrackUnlocked("coast"), "写失败applied=true仍同时保留金币权益")
         check(f.files["pursuit_profile.txt"] == f.initial and f.hud.resultText:find("待保存", 1, true), "写失败主档保留且主方提示待保存")
         f.fail(false)
         for _ = 1, 52 do f.main.tick(.1) end
         local _, countGrants = f.counts()
-        check(countGrants == 1 and f.profile.Coins() == 2402 and not f.profile.HasPendingSave(), "真实5秒补存不再次GrantRaceRewards")
+        check(countGrants == 1 and f.profile.Coins() == afterRace and not f.profile.HasPendingSave(), "真实5秒补存不再次GrantRaceRewards")
         check(f.hud.resultText:find("已保存", 1, true), "主方补存成功更新结果提示")
-        persisted(f, 2402)
+        persisted(f, afterRace)
         print("[主结算接线] 写失败applied=true保留双后继+金币；真实5秒补存仅保存、不双奖")
 
         -- 永久拒发：上限已满，不能伪造pending、双倍广告或新赛道。
@@ -273,7 +279,7 @@ function Checks.Run()
         local offers, notices = #f.hud.offers, #f.hud.notices
         f.main.screen("menu")
         f.callbacks[1]({success = true})
-        check(f.profile.Coins() == 2402 and #f.hud.offers == offers and #f.hud.notices == notices and not f.ads.IsBusy(),
+        check(f.profile.Coins() == afterRace and #f.hud.offers == offers and #f.hud.notices == notices and not f.ads.IsBusy(),
             "真实主方切页Cancel后迟到广告不发币、不操作旧UI")
         check(cloudCalls == 0, "全程零真实或桩云请求")
     end)

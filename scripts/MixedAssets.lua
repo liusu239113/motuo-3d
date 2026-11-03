@@ -7,7 +7,7 @@ M.Vehicles = {
         diffuse="model/513d518442be410b82afbc2726c8a43d/Textures/513d518442be410b82afbc2726c8a43d_00_D.jpg",
         normal="model/513d518442be410b82afbc2726c8a43d/Textures/513d518442be410b82afbc2726c8a43d_00_N.png",
         rotation=-90, targetLength=3.4, targetSize=Vector3(2.181,1.736,3.4),
-        measuredSize=Vector3(.999512,.510254,.641113), label="轻型突击坦克", class="mixed", resources={}, articulated=true, delivered=false,
+        measuredSize=Vector3(.999512,.510254,.641113), label="轻型突击坦克", class="mixed", resources={}, articulated=true, delivered=true,
     },
     beetle = {
         model="model/919dbe654dcc4020ba6bf82ee24f7d1c/Meshes/919dbe654dcc4020ba6bf82ee24f7d1c.mdl",
@@ -15,7 +15,7 @@ M.Vehicles = {
         diffuse="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_D.jpg",
         normal="model/919dbe654dcc4020ba6bf82ee24f7d1c/Textures/919dbe654dcc4020ba6bf82ee24f7d1c_00_N.png",
         rotation=-90, targetLength=3.2, targetSize=Vector3(3.2,2.028,3.2),
-        measuredSize=Vector3(.999512,.633301,.999512), label="蒸汽锹甲", class="mixed", resources={}, articulated=true, delivered=false,
+        measuredSize=Vector3(.999512,.633301,.999512), label="蒸汽锹甲", class="mixed", resources={}, articulated=true, delivered=true,
     },
     helicopter = {
         model="model/20a0a237-889c-51ee-8273-c8423e349994/Meshes/59dbd63b4cea40838063939717d5fbf8.mdl",
