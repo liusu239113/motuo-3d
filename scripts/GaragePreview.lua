@@ -186,18 +186,16 @@ function Preview:BuildScene(id)
     rim.lightType, rim.brightness, rim.color, rim.castShadows = LIGHT_DIRECTIONAL, 0.9, Color(0.76, 0.86, 1), false
     self.turntable = self.previewScene:CreateChild("VehicleTurntable")
     local vehicle = VehicleAssets.Add(self.turntable, id)
-    local drawable = vehicle:GetComponent("StaticModel", true)
-    assert(drawable, "Vehicle preview needs a real StaticModel")
-    -- Read actual transformed bounds, not a painted image position or guessed model size.
-    local bounds = drawable.worldBoundingBox
+    local drawables=vehicle:GetComponents("StaticModel",true)
+    assert(#drawables>0,"载具预览需要真实3D模型")
+    local bounds=BoundingBox()
+    for _,drawable in ipairs(drawables) do bounds:Merge(drawable.worldBoundingBox) end
     local size = bounds.size
     vehicle.position = Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z)
     self.vehicleHeight = size.y
     self.footprintWidth, self.footprintLength = size.x, size.z
     self.stageRadius = math.sqrt(size.x * size.x + size.z * size.z) * 0.5
-    -- Preview-specific detail bias, independent of the driving world's quality/LOD.
-    drawable.lodBias = 3.0
-    drawable:SetMaxLights(3)
+    for _,drawable in ipairs(drawables) do drawable.lodBias=3;drawable:SetMaxLights(3) end
     self.cameraNode = self.previewScene:CreateChild("ShowroomCamera")
     self.previewCamera = self.cameraNode:CreateComponent("Camera")
     -- The reference is a long-lens image: weak perspective and a 42/365 deck ellipse.

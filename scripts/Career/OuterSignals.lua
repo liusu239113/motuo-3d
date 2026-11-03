@@ -54,7 +54,7 @@ Signals.LINE_OFFSET,Signals.LINE_HALF,Signals.BUMPER_MARGIN=5.6,.15,.20
 Signals.EPSILON=.00001
 ---@type OuterSignalJunction[]
 Signals.Junctions={}
----@type table<string, OuterSignalJunction>
+---@type table<number, OuterSignalJunction>
 local junctionByPosition={}
 local function key(x,z) return x*131072+z end
 

@@ -29,6 +29,7 @@ Catalog.List = {
     {id="rally_2", class="rally", name="雪脊 Trail", tag="拉力 / 轻越野", description="独立灰白轻越野车体，细长高挡泥板与粗纹轮胎。", speed=234, acceleration=86, handling=94, available=true, price=8800, speedStat=240, accelStat=0.95, durability=78, offroadStat=0.95, handlingStat=1.14},
     {id="rally_3", class="rally", name="沙隼 Dakar", tag="拉力 / 沙漠竞技", description="独立沙黄深蓝拉力车体，直立头罩与高位短排气。", speed=234, acceleration=86, handling=94, available=true, price=11000, speedStat=247, accelStat=0.97, durability=82, offroadStat=0.97, handlingStat=1.15, preview="image/vehicle_reviews/rally_3_left.png"},
 }
+for _, entry in ipairs(require("MixedVehicles").CatalogEntries()) do Catalog.List[#Catalog.List+1]=entry end
 ---@param id string
 ---@return MotorcycleEntry?
 function Catalog.Get(id)

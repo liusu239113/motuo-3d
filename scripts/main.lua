@@ -90,7 +90,7 @@ local testFeatureFrame_ = 1
 local featureShotPhases_ = {"approach", "active", "late", "settled"}
 local testShotDelay_ = 18
 local captureFrames_, checkFrames_, checkStage_, preparationsStarted_ = 0, 0, 0, 0
-local pendingActions_ = {spin180 = false, spin360 = false, nitro = false}
+local pendingActions_ = {spin180 = false, spin360 = false, nitro = false, skill = false}
 -- 固定步复用输入快照，低帧率一帧多次子步也不重复分配临时表。
 local rideInput_ = {steer = 0.0, throttle = 0.0, brake = false,
     wheelie = false, burnout = false, spin180 = false, spin360 = false}
@@ -279,6 +279,10 @@ local function ResetRideState()
         local aiLevel = trackDef and trackDef.aiLevel or 0.72
         if not race_ then race_ = Race.New(Landscape, sim_, {laps = selectedLaps_, vehicleIds = Catalog.AvailableIds(), aiLevel = aiLevel}) end
         race_.options.vehicleIds = Catalog.AvailableIds()
+        race_.options.mixed = not raceTest_ and not careerRace_
+        race_.options.world = world_
+        race_.options.rosterOffset = (race_.options.rosterOffset or 0)+5
+        require("MixedRace").ResetCourse(world_)
         -- 换图时同步该赛道的AI强度，重赛不会沿用上一张图。
         race_.options.aiLevel = aiLevel
         race_.options.professional = careerRace_
@@ -356,6 +360,11 @@ local function FinishRidePreparation()
         LoadingError(tostring(message))
         return
     end
+    if not careerRace_ and not autoTest_ and testShot_=="" then
+        local allowed,trialMessage=Profile.ConsumeTrial(selectedVehicle_)
+        if not allowed then LoadingError(trialMessage or "车辆体验次数不足");return end
+        hud_:RefreshOwnership()
+    end
     sound_:Unlock()
     if raceAudio_ then raceAudio_:Unlock() end
     hud_:SyncRadio(sound_:GetTrackTitle(), sound_.musicEnabled)
@@ -402,6 +411,11 @@ local function ConfirmVehicle(id)
     local entry = Catalog.Get(id)
     if not entry or not entry.available or not VehicleAssets.Vehicles[id] then return end
     selectedVehicle_ = id
+    if require("MixedVehicles").Get(id) then firstPerson_=false end
+    if not careerRace_ and not autoTest_ and testShot_=="" and not Profile.CanDrive(id) then
+        hud_:ShowNotice("载具尚未解锁","使用金币永久购买，或完整观看一次广告获得该载具三局体验。")
+        return
+    end
     local track = assert(Tracks.Get(selectedTrack_))
     if not careerRace_ and not Profile.TrackUnlocked(track.id) and not autoTest_ and not trackTest_ and testShot_ == "" then
         hud_:ShowNotice("赛道尚未开放", "请在赛道选择中查看解锁条件，通关前置赛道或确认使用金币解锁后再出发。")
@@ -523,6 +537,9 @@ end
 
 local function ToggleCamera()
     if not ready_ or screen_ ~= "ride" then return end
+    if require("MixedVehicles").Get(selectedVehicle_) then
+        sim_.message,sim_.messageTimer="混合载具使用第三人称视角",2;return
+    end
     firstPerson_ = not firstPerson_
     bike_:UpdateState(0, sim_, CockpitActive(), clock_)
     SetCamera()
@@ -766,7 +783,7 @@ local function RetryLoading()
 end
 
 function Start()
-    graphics.windowTitle = "公路狂飙：从外卖骑手到职业车手"
+    graphics.windowTitle = "公路狂飙"
     input.mouseMode = MM_ABSOLUTE
     ---@type fun()?
     local restoreUnavailableProfile=nil
@@ -778,6 +795,20 @@ function Start()
     local hudCreated,hudOrError=pcall(function()
         return HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         watchResultAd = WatchResultAdBonus,
+        skill = function() if screen_=="ride" then pendingActions_.skill=true end end,
+        watchVehicleAd = function(id)
+            if screen_~="garage" or not RequireRaceProfile() or Profile.Owns(id) then return end
+            RewardedAds.Show{
+                isValid=function() return screen_=="garage" and selectedVehicle_==id end,
+                setBusy=function(busy) hud_.trialButton:SetDisabled(busy) end,
+                onReward=function()
+                    local saved,message,applied=Profile.GrantTrials(id)
+                    hud_:RefreshOwnership();hud_:SelectVehicle(id,false)
+                    hud_:ShowNotice(applied and "已获得三局试驾" or "奖励未入账",
+                        applied and (saved and "已保存。实际出发扣一次，重新比赛也会扣一次。" or "奖励已记入，存档待补存，请勿退出；不需要再看广告。") or (message or "请稍后重试"))
+                end,
+                onFailure=function(message) hud_:ShowNotice("广告未完成",(message or "广告暂不可用").."，未增加试驾次数。") end}
+        end,
         selectVehicle = function(id)
             if screen_ ~= "loading" and Catalog.Get(id) then selectedVehicle_ = id end
         end,
@@ -989,70 +1020,12 @@ function Start()
             end)
         end
     elseif autoStart then StartRide(challenge); ConfirmVehicle(testVehicle_) end
-    -- 旧验收参数仍走原入口；普通启动优先生涯，不给新生涯发放旧档免费摩托。
-    local legacyTest, careerStart, careerCheck = false, false, false
-    for _, arg in ipairs(GetArguments()) do
-        if arg == "-legacy" or arg == "-ride" or arg == "-race" or arg == "-challenge"
-            or arg:match("^%-test") or arg:match("checks$") or arg == "-selftest"
-            or arg == "-tracktest" or arg == "-racetest" or arg == "-raceautodrive" or arg == "-benchmark" then legacyTest = true end
-        if arg == "-career" then careerStart = true end
-        local readyShot=arg:match("^%-careerreadyshot=(.+)$")
-        if readyShot then careerReadyShot_=readyShot end
-        if arg == "-careerchecks" or arg=="-careertripchecks" or arg=="-careerlegacychecks" then
-            careerCheck,careerStart,legacyTest=true,true,false
-        end
-        -- 新专项/实拍参数本身即启用内存隔离，不能因漏带-careerchecks读到真实生涯。
-        if arg=="-careerframeprobe" or arg=="-careerperfchecks" or arg=="-careerturnchecks"
-            or arg=="-careertrafficchecks" or arg=="-careerhillchecks" or arg=="-careerhillshot" then
-            careerCheck,careerStart,legacyTest=true,true,false
-        end
-        if arg=="-careerappquality" or arg=="-careeranimquality" or arg=="-careercityquality"
-            or arg=="-careercollisionquality" or arg=="-careerenvironmentquality" or arg=="-careersoundcrowdquality"
-            or arg:match("^%-careerappshot=") or arg:match("^%-careeranimshot=") or arg:match("^%-careercityshot=")
-            or arg:match("^%-careercollisionshot=") or arg:match("^%-careerenvironmentshot=") or arg:match("^%-careercrowdshot=") then
-            careerCheck,careerStart,legacyTest=true,true,false
-        end
-        if arg=="-careercityreview" or arg=="-careerlifechecks" or arg:match("^%-careerlifeshot=") then
-            careerCheck,careerStart,legacyTest=true,true,false
-        end
-        if arg == "-careerracechecks" then careerRaceCheck_,careerCheck=true,true; legacyTest=false end
-    end
-    if careerCheck then legacyTest=false end
-    if careerReadyShot_~="" then
-        assert(careerCheck,"就绪实拍必须与显式隔离生涯测试参数组合")
-    end
-    if careerCheck then SubscribeToEvent("PostRenderUpdate","CaptureCareerReadyFrame") end
-    career_ = CareerSession.New({test=careerCheck, legacy=function()
-        ResetCareerPerf()
-        careerMode_,careerRace_=false,false
-        hud_:SetCareerRace(false)
-        hud_.root:SetVisible(true); UI.SetRoot(hud_.root); MainMenu()
-    end, race=function(pending)
-        ResetCareerPerf()
-        careerRaceId_=pending.id
-        careerMode_,careerRace_=false,true
-        hud_:SetCareerRace(true)
-        hud_.root:SetVisible(true); UI.SetRoot(hud_.root)
-        selectedTrack_,selectedVehicle_,selectedLaps_=pending.track,pending.vehicle,pending.laps
-        pendingChallenge_,firstPerson_=true,false
-        screen_="menu"
-        ConfirmVehicle(selectedVehicle_)
-    end})
-    -- 旧竞速页面提供返回入口，UI根只切换，不重复初始化字体或事件。
-    hud_.menu:AddChild(UI.Button{text="← 返回王二狗生涯",width=230,height=42,onClick=ReturnToCareer})
-    if legacyTest and not careerCheck then
-        hud_.root:SetVisible(true)
-        hud_:SetScreen(screen_)
-    end
-    if careerRaceCheck_ then
-        career_.options.race(require("Career.Checks").PrepareRace())
-    elseif legacyTest then
-        UI.SetRoot(hud_.root)
-    else
-        careerMode_=true; hud_.root:SetVisible(false); UI.SetRoot(career_.view.root)
-        if careerStart then career_:StartCareer(false) end
-    end
-    print("[公路狂飙] 生涯现金与旧竞速金币隔离；常规入口为王二狗生涯")
+    -- 剧情暂未开放：不创建外卖会话，不读取或覆盖旧剧情存档。
+    careerMode_,careerRace_=false,false
+    hud_:SetCareerRace(false)
+    hud_.root:SetVisible(true)
+    UI.SetRoot(hud_.root)
+    print("[公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留")
 end
 
 -- 仅显式-racetest启用，走真实页面入口验证暂停、缓存重赛和模式切换。
@@ -1300,6 +1273,7 @@ function HandleUpdate(eventType, eventData)
         local brake = touch_.brake or input:GetKeyDown(KEY_S) or input:GetKeyDown(KEY_DOWN) or input:GetKeyDown(KEY_SPACE)
         local pulses = touch_:ConsumeActions()
         for key in pairs(pendingActions_) do pendingActions_[key] = pendingActions_[key] or pulses[key] == true end
+        pendingActions_.skill = pendingActions_.skill or input:GetKeyPress(KEY_E)
         pendingActions_.nitro = pendingActions_.nitro or input:GetKeyPress(KEY_SHIFT)
         pendingActions_.spin180 = pendingActions_.spin180 or input:GetKeyPress(KEY_X)
         pendingActions_.spin360 = pendingActions_.spin360 or input:GetKeyPress(KEY_V)
@@ -1321,6 +1295,7 @@ function HandleUpdate(eventType, eventData)
             rideInput_.wheelie = touch_.wheelie or input:GetKeyDown(KEY_Q) or testTrick_ == "wheelie"
             rideInput_.burnout = touch_.burnout or input:GetKeyDown(KEY_Z) or testTrick_ == "burnout"
             rideInput_.spin180, rideInput_.spin360 = pendingActions_.spin180, pendingActions_.spin360
+            rideInput_.skill = pendingActions_.skill
             rideInput_.nitro = nitro or pendingActions_.nitro
             if pendingChallenge_ and race_ then
                 local drive = race_:BeforeStep(0.02, rideInput_)
@@ -1350,7 +1325,7 @@ function HandleUpdate(eventType, eventData)
                 -- 名次越高金币越多；被抓按末位结算，仍给参与奖励。
                 local place = race_.player.rank or 9
                 local track = Tracks.Get(selectedTrack_)
-                local reward = Profile.RaceReward(place, selectedLaps_, track and track.reward or 120)
+                local reward = Profile.RaceReward(place, selectedLaps_, track and track.reward or 120)+math.floor(sim_.oddPickups or 0)
                 local unlocks={}
                 if place==1 then
                     for _,item in ipairs(Tracks.List()) do

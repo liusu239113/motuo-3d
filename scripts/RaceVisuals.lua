@@ -16,7 +16,7 @@ local V = Vector3
 ---@field visual Node
 ---@field body Node
 ---@field models StaticModel[]
----@field rider Rider
+---@field rider Rider|table
 ---@field poseClock number
 ---@field lean number
 ---@field effects RideEffects
@@ -125,11 +125,15 @@ end
 function RaceVisuals:CreateRunner(data)
     local id, vehicleId = data.id, data.vehicleId
     assert(Assets.Vehicles[vehicleId], "Race rival asset unavailable: " .. tostring(vehicleId))
-    local cockpit = Bike.GetCockpit(vehicleId)
+    local odd = require("MixedVehicles").Get(vehicleId) ~= nil
+    local cockpit = odd and {grip=V(.3,1,.4),seatHeight=1} or Bike.GetCockpit(vehicleId)
     local node = self.rosterRoot:CreateChild("RaceRival_" .. id, LOCAL)
     local visual = node:CreateChild("RivalLean", LOCAL)
     local body = Assets.Add(visual, vehicleId, nil, "distant")
-    local rider = Rider.New(visual, vehicleId, cockpit.grip)
+    -- 混合模型自带适配座位的驾驶员，不套用摩托骨骼及其握把验证。
+    local rider = odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
+        drawDistance=260,shadowDistance=65,inView=true}, SetColor=function() end,
+        Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip)
     local colorId = data.colorId or "red"
     rider:SetColor(colorId)
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
@@ -158,6 +162,7 @@ end
 ---@param data table
 ---@param verify boolean
 function RaceVisuals:RefreshPose(runner, data, verify)
+    if require("MixedVehicles").Get(runner.vehicleId) then return end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
     if runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0
@@ -168,8 +173,9 @@ function RaceVisuals:RefreshPose(runner, data, verify)
     runner.poseClock = 0
     runner.poseRefreshes = runner.poseRefreshes + 1
     if verify then
-        local pose = runner.rider:ReadPose()
-        assert((pose.hip - runner.rider.config.hip):Length() < 0.002, "AI rider left saddle: " .. runner.id)
+        local rig=runner.rider --[[@as Rider]]
+        local pose = rig:ReadPose()
+        assert((pose.hip - rig.config.hip):Length() < 0.002, "AI rider left saddle: " .. runner.id)
         assert(pose.leftGripError < 0.008 and pose.rightGripError < 0.008, "AI rider lost handlebar: " .. runner.id)
         assert((pose.leftFoot - V(-runner.rider.config.foot.x, runner.rider.config.foot.y,
             runner.rider.config.foot.z)):Length() < 0.004, "AI rider stood up: " .. runner.id)
@@ -429,6 +435,12 @@ function RaceVisuals:Update(dt, sim)
                 runner.visual.rotation = Quaternion((data.pitch or 0) + runner.effects.pitch + hit * 4,
                     hitYaw, runner.lean * self.leanSign + hitRoll)
                 runner.visual.position = V(0, runner.effects.bob, 0)
+                if require("MixedVehicles").Get(runner.vehicleId) then
+                    local drive = data.driveSim or {}
+                    runner.visual.position = V(0, drive.oddAltitude or 0, 0)
+                    runner.visual.rotation = Quaternion((data.pitch or 0)*.5, 0, runner.lean*.22+hitRoll)
+                    require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
+                end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.rider:SetColor(data.colorId); runner.colorId = data.colorId
                 end

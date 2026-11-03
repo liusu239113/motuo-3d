@@ -309,7 +309,10 @@ function HUD:BuildRide()
         width = 250, padding = 6, gap = 1, visible = false, pointerEvents = "none",
         backgroundColor = {7, 26, 27, 210}, borderWidth = 1, borderColor = {83, 231, 196, 165},
         borderRadius = 3, children = {self.featureTitle, self.featureHint}}
+    self.skillButton = button("E · 专属技能",a.skill,true,154)
+    self.skillButton:SetStyle({position="absolute",right=76,top=70,height=48,fontSize=12})
     self.game = UI.Panel(fill({visible = false, pointerEvents = "box-none", children = {
+        self.skillButton,
         self.featureRush, self.rankPanel, self.trackMap, self.navPanel, self.instrumentPanel, self.rightTop, self.recoverPanel,
         self.dangerPanel, self.nitroPanel, self.countdownPanel, self.featurePanel,
         UI.Panel {position = "absolute", top = "56%", left = "25%", width = "50%", padding = 0, pointerEvents = "none", children = {self.message}},
@@ -333,7 +336,8 @@ function HUD:BuildMenu()
     self.menuPracticeButton = entry("自由练习", function() self:OpenGarage(false) end, false)
     self.menuSettingsButton = entry("操作设置", function() self:OpenSettings() end, false)
     -- main 的生涯入口会事后追加自己的返回按钮；这里只留固定槽，不复制业务回调。
-    self.menuReturnHost = UI.Panel {width = "100%", height = 56, padding = 0, flexShrink = 0}
+    self.menuReturnHost = UI.Panel {width = "100%", height = 56, padding = 0, flexShrink = 0,
+        children = {UI.Button{text="剧情模式 · 暂未开放",width="100%",height=56,disabled=true,fontSize=18}}}
     self.menuPrimaryRow = UI.Panel {width = "100%", padding = 0, gap = 10,
         children = {self.menuRaceButton, self.menuPracticeButton}}
     self.menuSecondaryRow = UI.Panel {width = "100%", padding = 0, gap = 10,
@@ -341,9 +345,9 @@ function HUD:BuildMenu()
     self.menuActions = UI.Column {width = "100%", padding = 0, gap = 10,
         children = {self.menuPrimaryRow, self.menuSecondaryRow}}
     self.menuCard = RacingTheme.Card {width = "100%", padding = 16, gap = 0, children = {self.menuActions}}
-    self.menuTitle = label("公路追逐", 36, WHITE, {width = "100%", height = 64,
+    self.menuTitle = label("公路狂飙", 36, WHITE, {width = "100%", height = 64,
         minFontSize = 36, fontWeight = "bold", lineHeight = 1, maxLines = 1})
-    self.menuSubtitle = label("选择赛事，或先练一圈", 16, MUTED, {width = "100%", height = 32,
+    self.menuSubtitle = label("我骑小电驴，对手竟开坦克", 16, MUTED, {width = "100%", height = 32,
         minFontSize = 16, maxLines = 1})
     self.menuHeading = UI.Column {width = "100%", padding = 0, gap = 4,
         children = {self.menuTitle, self.menuSubtitle}}
@@ -416,7 +420,7 @@ function HUD:BuildGarage()
     end
     self.selectionMode = label("竞速 / 2 圈", 9, AMBER)
     self.vehicleName = label("", 22, WHITE, {fontWeight = "bold", maxLines = 1})
-    self.vehicleDescription = label("", 10, MUTED, {width = "100%", whiteSpace = "normal", maxLines = 2})
+    self.vehicleDescription = label("", 11, MUTED, {width = "100%", whiteSpace = "normal", maxLines = 7})
     self.vehicleSpecs = label("", 9, MUTED, {maxLines = 1})
     -- Full-backdrop overlay, not a separate right-column viewport. This shares the
     -- photo's dimensions even when SafeAreaView adds asymmetric device insets.
@@ -455,7 +459,7 @@ function HUD:BuildGarage()
         end
         if item.available == false then
             self:ShowNotice("车型尚未开放", "「" .. (item.name or item.id) .. "」的独立驾驶资源尚未交付，请选择其他座驾。")
-        elseif not self.careerRace and not profile.owned[item.id] then
+        elseif not self.careerRace and not profile.owned[item.id] and (profile.trials[item.id] or 0)<=0 then
             if self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
         elseif self.actions.confirmVehicle then self.actions.confirmVehicle(self.selectedVehicle) end
     end, true, 228)
@@ -465,12 +469,16 @@ function HUD:BuildGarage()
         if item and self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
     end, false, 150)
     self.buyButton:SetHeight(34)
+    self.trialButton = button("看广告 · 体验三局",function()
+        if self.actions.watchVehicleAd then self.actions.watchVehicleAd(self.selectedVehicle) end
+    end,false,172)
+    self.trialButton:SetHeight(34)
     self.trackButton = button("赛道 · 环湖公路 ›", function() self:OpenTracks() end, false, 185)
     self.trackButton:SetHeight(36)
     self.garageFooter = RacingTheme.Card {width = "100%", padding = 12, gap = 12, flexDirection = "row", alignItems = "flex-end",
         justifyContent = "space-between", children = {self.riderOptions, self.lapOptions,
             UI.Column {padding = 0, gap = 6, alignItems = "flex-end", children = {
-                UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.coinLabel, self.buyButton}},
+                UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.coinLabel, self.buyButton, self.trialButton}},
                 self.confirmButton}}}}
     self.garage = UI.Panel(fill({visible = false, padding = 18, gap = 12, children = {
         UI.Row {padding = 0, alignItems = "center", justifyContent = "space-between", children = {
@@ -596,11 +604,14 @@ function HUD:SelectVehicle(id, notify)
         self.vehicleBadges[v.id]:SetFontColor(not owned and (selected and AMBER or MUTED) or (selected and AMBER or MUTED))
     end
     self.vehicleName:SetText(item.name or id)
-    self.vehicleDescription:SetText(item.description or item.tag or "")
+    self.vehicleDescription:SetText(item.odd and ("被动："..item.passiveDescription.."\n主动："..item.skillName.." · "..item.skillDescription.."\n短板："..item.weakness) or item.description or item.tag or "")
     self.vehicleSpecs:SetText(string.format("极速 %s km/h  /  加速 %d  /  操控 %d  /  耐久 %d",
         tostring(item.speedStat or item.speed or "—"), math.floor(item.acceleration or 0),
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
     local owned = profile.owned[id] == true
+    local trials = profile.trials[id] or 0
+    self.trialButton:SetVisible(not profileError and not owned)
+    self.trialButton:SetDisabled(require("RewardedAds").IsBusy())
     local price = item.price or 0
     self.coinLabel:SetText(profileError and "竞速进度不可用 · 原档已保留" or "金币 " .. tostring(profile.coins))
     self.buyButton:SetVisible(not profileError and not owned and price > 0)
@@ -608,7 +619,7 @@ function HUD:SelectVehicle(id, notify)
     self.buyButton:SetDisabled(profileError~=nil)
     self.confirmButton:SetDisabled(profileError~=nil and not self.careerRace)
     self.confirmButton:SetText(profileError and not self.careerRace and "进度读取失败 · 暂不可出发" or item.available == false and "独立车型准备中"
-        or (not owned and ("未拥有 · " .. tostring(price) .. " 金币")) or "确认座驾 · 出发 →")
+        or (not owned and trials<=0 and ("未拥有 · " .. tostring(price) .. " 金币")) or (not owned and ("试驾剩余 "..trials.." 局 · 出发 →")) or "确认座驾 · 出发 →")
     if self.screen == "garage" then self.preview:Select(id, item.available) end
     if notify and self.actions.selectVehicle then self.actions.selectVehicle(id) end
 end
@@ -869,6 +880,15 @@ end
 -- including before the driving scene exists; leaving garage disposes all render targets immediately.
 function HUD:Update(dt, sim, firstPerson)
     self.firstPerson = firstPerson == true
+    local odd = require("MixedVehicles").Get(sim.vehicleId)
+    self.skillButton:SetVisible(odd~=nil)
+    if odd then
+        local cd=sim.oddCooldown or 0
+        local resource=sim.vehicleId=="beetle" and string.format(" 蒸汽%.0f%%",(sim.oddSteam or 0)*100)
+            or (sim.vehicleId=="cicada" and string.format(" 发条%.0fs",sim.oddSpring or 0) or "")
+        self.skillButton:SetText(odd.skill..(cd>0 and string.format(" %.1fs",cd) or " · E")..resource)
+        self.skillButton:SetDisabled(cd>0 or (sim.oddDisrupt or 0)>0)
+    end
     self:UpdateFeatureFeedback(sim)
     self.controls:UpdateFeedback(dt)
     self.redline = (sim.vehicle and sim.vehicle.redline) or 12500

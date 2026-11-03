@@ -3,11 +3,12 @@
 local Profile = {}
 
 local SAVE_PATH = "pursuit_profile.txt"
-local SAVE_VERSION = 1
+local SAVE_VERSION = 2
 
 ---@class PursuitProfile
 ---@field coins integer
 ---@field owned table<string, boolean>
+---@field trials table<string, integer>
 ---@field ownedRiders table<string, boolean>
 ---@field unlockedTracks table<string, boolean>
 
@@ -29,6 +30,7 @@ local KNOWN_VEHICLES = {
     cruiser = true, cruiser_2 = true, cruiser_3 = true,
     rally = true, rally_2 = true, rally_3 = true,
 }
+for _,v in ipairs(require("MixedVehicles").List) do KNOWN_VEHICLES[v.id]=true end
 local KNOWN_RIDERS = {red = true, blue = true, yellow = true, white = true, green = true, violet = true}
 local KNOWN_TRACKS = {circuit = true, lake = true, alpine = true, coast = true, canyon = true, forest = true}
 
@@ -72,6 +74,10 @@ local function validProfile(p)
             if not validId(id) or type(owned) ~= "boolean" then return false end
         end
     end
+    if type(p.trials)~="table" or getmetatable(p.trials)~=nil then return false end
+    for id,count in pairs(p.trials) do
+        if not validId(id) or not validNonNegativeInteger(count) or count>9999 then return false end
+    end
     return type(p.owned) == "table" and type(p.ownedRiders) == "table" and type(p.unlockedTracks) == "table"
 end
 
@@ -100,7 +106,8 @@ end
 local function defaults()
     return {
         coins = 0,
-        owned = {[Profile.FREE_VEHICLE] = true},
+        owned = {[Profile.FREE_VEHICLE] = true,ebike=true},
+        trials = {},
         ownedRiders = {[Profile.FREE_RIDER] = true},
         unlockedTracks = {[Profile.FREE_TRACK] = true},
     }
@@ -120,7 +127,7 @@ local function parse(text)
     ---@type table<string, string>
     local fields = {}
     ---@type table<string, boolean>
-    local allowed = {version = true, coins = true, vehicle = true, rider = true, track = true}
+    local allowed = {version = true, coins = true, vehicle = true, rider = true, track = true, trials=true}
     for line in normalized:gmatch("[^\n]+") do
         if trim(line) ~= "" then
             local key, value = line:match("^([%w_]+)=(.*)$")
@@ -133,12 +140,21 @@ local function parse(text)
     for _, key in ipairs({"version", "coins", "vehicle", "rider", "track"}) do
         if fields[key] == nil then return nil, "竞速存档缺少字段：" .. key .. "；原档已保留" end
     end
-    if fields.version ~= tostring(SAVE_VERSION) then return nil, "不支持的竞速存档版本；原档已保留" end
+    if fields.version ~= "1" and fields.version ~= tostring(SAVE_VERSION) then return nil, "不支持的竞速存档版本；原档已保留" end
+    if fields.version=="2" and fields.trials==nil then return nil,"试驾存档字段缺失，原档已保留" end
     if not fields.coins:match("^%d+$") then return nil, "竞速存档金币无效；原档已保留" end
     local coins = math.tointeger(tonumber(fields.coins))
     if not coins or coins < 0 then return nil, "竞速存档金币超出范围；原档已保留" end
     local p = defaults()
     p.coins = coins
+    for token in ((fields.trials or "")..","):gmatch("(.-),") do
+        if token~="" then
+            local id,count=token:match("^([%w_-]+):(%d+)$")
+            local n=count and math.tointeger(tonumber(count))
+            if not id or not n or n<0 or n>9999 or p.trials[id]~=nil then return nil,"试驾次数无效，原档已保留" end
+            p.trials[id]=n
+        end
+    end
     for _, key in ipairs({"vehicle", "rider", "track"}) do
         local value = fields[key]
         local target = key == "vehicle" and p.owned or (key == "rider" and p.ownedRiders or p.unlockedTracks)
@@ -157,6 +173,9 @@ local function parse(text)
 end
 
 local function serialize(p)
+    local trials={}
+    for id,count in pairs(p.trials or {}) do trials[#trials+1]=id..":"..count end
+    table.sort(trials)
     local function join(set)
         local ids = {}
         for id, owned in pairs(set) do if owned then ids[#ids + 1] = id end end
@@ -169,6 +188,7 @@ local function serialize(p)
         "vehicle=" .. join(p.owned),
         "rider=" .. join(p.ownedRiders),
         "track=" .. join(p.unlockedTracks),
+        "trials="..table.concat(trials,","),
     }, "\n") .. "\n"
 end
 
@@ -212,6 +232,38 @@ function Profile.GetForDisplay()
     local ok, message = Profile.TryLoad()
     if not ok then return defaults(), message end
     return Profile.Get(), nil
+end
+
+-- 试驾只在实际发车前扣除，打开车库、下载失败和预览都不扣次数。
+function Profile.Trials(id)
+    if not validKnownId(id,KNOWN_VEHICLES) then return 0 end
+    return Profile.Get().trials[id] or 0
+end
+function Profile.CanDrive(id) return Profile.Owns(id) or Profile.Trials(id)>0 end
+function Profile.GrantTrials(id)
+    if not validKnownId(id,KNOWN_VEHICLES) then return false,"未知载具",false end
+    local loaded,message=Profile.TryLoad();if not loaded then return false,message,false end
+    local p=Profile.Get()
+    if not validProfile(p) then return false,"进度无效，未发放试驾",false end
+    if p.owned[id] then return false,"已永久拥有，无需观看广告",false end
+    if (p.trials[id] or 0)>9996 then return false,"试驾次数已达上限",false end
+    p.trials[id]=(p.trials[id] or 0)+3
+    pendingSave=true
+    local saved,err=Profile.Save()
+    return saved,err,true
+end
+function Profile.ConsumeTrial(id)
+    if not validKnownId(id,KNOWN_VEHICLES) then return false,"未知载具" end
+    local loaded,message=Profile.TryLoad();if not loaded then return false,message end
+    local p=Profile.Get()
+    if not validProfile(p) then return false,"竞速进度无效" end
+    if p.owned[id] then return true end
+    local count=p.trials[id] or 0
+    if count<=0 then return false,"请使用金币解锁，或完整观看广告获得三局体验" end
+    p.trials[id]=count-1
+    local saved,err=Profile.Save()
+    if not saved then p.trials[id]=count;return false,err or "试驾次数保存失败，未扣次" end
+    return true
 end
 
 ---@return PursuitProfile

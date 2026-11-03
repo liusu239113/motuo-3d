@@ -92,7 +92,7 @@ function Checks.Motion(session)
                     end
                     if w==1 and r==1 and airborne then
                         report.flight=report.flight+1
-                        assert(math.min(rig:SoleHeight("L_Foot"),rig:SoleHeight("R_Foot"))>0,"跑步腾空期两鞋底均应离地")
+                        assert(math.min((rig:SoleHeight("L_Foot")),(rig:SoleHeight("R_Foot")))>0,"跑步腾空期两鞋底均应离地")
                     end
                     report.poses=report.poses+1
                 end

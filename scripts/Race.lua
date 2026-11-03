@@ -5,6 +5,7 @@
 -- Based on the existing Simulation fixed-step separation and collision examples 04/18.
 
 local RaceAI = require("RaceAI")
+local MixedRace = require("MixedRace")
 
 ---@class ScenicRacePoint
 ---@field x number
@@ -350,7 +351,8 @@ function Race:Start(laps)
     self.runners, self.result = self.racers, nil
     self.nitroHeld = false
     local names = {"凌风", "山猫", "霓虹", "白隼", "牧歌", "赤轮", "雾影", "雷鸟"}
-    local cars = self.options.vehicleIds or {"sport", "cruiser", "rally"}
+    local cars = self.options.mixed and require("MixedVehicles").Ids() or self.options.vehicleIds or {"sport", "cruiser", "rally"}
+    local rosterOffset=self.options.rosterOffset or 0
     if #cars == 0 then cars = {"sport", "cruiser", "rally"} end
     for i = 1, 9 do
         local isPlayer = i == 5
@@ -360,7 +362,7 @@ function Race:Start(laps)
         ---@type RaceRacer
         local r = {id = isPlayer and "player" or "ai" .. aiIndex,
             name = isPlayer and "你" or names[aiIndex], isPlayer = isPlayer,
-            vehicleId = isPlayer and self.sim.vehicleId or cars[(aiIndex - 1) % #cars + 1],
+            vehicleId = isPlayer and self.sim.vehicleId or cars[(aiIndex - 1+rosterOffset) % #cars + 1],
             colorId = ({"red", "blue", "yellow", "white", "green", "violet", "blue", "yellow", "violet"})[i],
             index = i, x = 0, y = 0, z = 0, yaw = 0, pitch = 0, lean = 0, steer = 0,
             speed = 0, lane = lane, wantedLane = lane, s = s, roadS = s % self.length,
@@ -958,6 +960,7 @@ function Race:AfterStep(dt)
     end
     if self.player.boostTimer <= 0 then self.sim.raceBoost = 0 end
     self:Contacts(dt)
+    MixedRace.RaceStep(self,dt)
     self:Rank()
     self:Mirror()
     if self.player.eliminated then self:Settle("保持末位且近距离追逐连续6秒，已被公平截停")

@@ -10,6 +10,7 @@
 ---@field crashCooldown number
 local Sim = {}
 local TrackFeatures = require("TrackFeatures")
+local MixedRace = require("MixedRace")
 Sim.__index = Sim
 local RAD, DEG, GRAVITY = math.pi / 180, 180 / math.pi, 9.81
 -- 中心纠偏仍限制在原来的量级，外圈释放街机弯道舵权；不能把6.5的满舵上限乘遍整段行程。
@@ -153,6 +154,7 @@ function Sim:Reset(challenge)
     self.goalName, self.goalDistance, self.regionName = "探索山海", 0, "海岸公路"
     self.navHeading, self.targetYaw = self.heading, self.heading
     self.contacts, self.nextContacts, self.heldControls = {}, {}, {}
+    MixedRace.Reset(self)
     self.surfaceCacheEnabled, self.surfaceValid = false, false
     self.surfaceWorld = self.landscape
     self.surfaceX, self.surfaceZ, self.surfaceY, self.surfaceRoad, self.surfaceRegion = 0, 0, 0, false, ""
@@ -613,7 +615,7 @@ function Sim:Move(dt, controls, world, drive, steering)
         end
         if self.burnout then acceleration = math.min(acceleration, -6) end
         if self.wrecked then acceleration = -self.vehicle.braking end
-        local maximum = self.vehicle.maxSpeed * (1 + self.raceBoost * 0.25)
+        local maximum = self.vehicle.maxSpeed * (1 + self.raceBoost * 0.25)*(self.oddSpeedScale or 1)
             * (road and 1 or (0.44 + self.vehicle.offroad * 0.52))
         -- Nitro ending / touching gravel must not instantly clamp away20km/h. Excess
         -- momentum coasts down with finite drag; this never increases the speed cap.
@@ -829,7 +831,8 @@ function Sim:WorldLimits(dt, world)
     elseif map.IsWater and map.WaterLevel and map.IsWater(self.x, self.z) and not self.onRoad then
         self.waterDepth = math.max(0, map.WaterLevel - self.groundY)
     end
-    if self.waterDepth > 0.25 and not self.airborne then
+    if self.waterDepth > 0.25 and not self.airborne
+        and self.vehicleId~="hovercraft" and self.vehicleId~="jellyfish" and self.vehicleId~="helicopter" then
         self.speed = math.max(0, self.speed - dt * (5 + self.waterDepth * 14))
         self.message, self.messageTimer = "涉水失速 · 使用脱困返回公路", 1
         self.waterTimer = self.waterDepth > 1.2 and (self.waterTimer + dt) or 0
@@ -878,11 +881,13 @@ function Sim:Step(dt, controls, world)
         self.stuntTimer = math.max(0, self.stuntTimer - step)
         self.stuntCooldown = math.max(0, self.stuntCooldown - step)
         if self.stuntTimer == 0 and not self.airborne then self.stuntLabel, self.stuntAngle = "", 0 end
-        local steering = self:Steering(step, input.steer)
-        local drive = self:Powertrain(step, input)
+        MixedRace.Before(self,step,input,self:Map(world))
+        local steering = self:Steering(step, input.steer)*(self.oddGripScale or 1)
+        local drive = self:Powertrain(step, input)*(self.oddDriveScale or 1)
         self:GroundTricks(step, input, drive)
         local wasAirborne=self.airborne
         local x0, y0, z0 = self:Move(step, input, world, drive, steering)
+        MixedRace.After(self,step,input,world,x0,y0,z0,wasAirborne)
         local feature,gain=TrackFeatures.StepBoost(self,self:Map(world),step,x0,y0,z0,wasAirborne)
         if feature and gain>0 then
             self.message,self.messageTimer="方向加速带 · 免费提速",1.8

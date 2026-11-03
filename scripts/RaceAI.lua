@@ -1,6 +1,10 @@
 -- 确定性的道路空间车手；动力复用玩家的自动变速箱，路线与失误只影响自身表现。
 -- 不依赖玩家名次、油门或距离，不回收车手，不前向瞬移。
 local Simulation = require("Simulation")
+local Mixed = require("MixedRace")
+local function vehicleFor(race,r)
+    return race.options.mixed and r.driveSim and r.driveSim.vehicle or race.sim.vehicle
+end
 local AI = {}
 local abs, min, max, sqrt = math.abs, math.min, math.max, math.sqrt
 local RAD, DEG = math.pi / 180, 180 / math.pi
@@ -21,7 +25,7 @@ function AI.Configure(race, r, index)
     -- 同层分支用同一参数；强度只来自赛前地图/难度，绝不读取玩家表现。
     r.speedFactor = clamp(0.48 + level * 0.20 + r.skill * 0.25 + difficulty * 0.02, 0.6, 0.93)
     local efficiency = clamp(0.36 + level * 0.24 + r.skill * 0.38 + difficulty * 0.025, 0.58, 0.96)
-    r.acceleration = race.sim.vehicle.acceleration * efficiency
+    r.acceleration = vehicleFor(race,r).acceleration * efficiency
     -- 高级图仍有真实断油、走宽和恢复窗口，不能用满级技术消除失误。
     r.mistakeTimer = 6 + race:Random() * 10
     r.mistakeGrace = 6 + level * 4 + r.skill * 4
@@ -33,7 +37,11 @@ function AI.Configure(race, r, index)
     if not r.isPlayer then
         local drive = Simulation.New(race.map)
         drive.vehicle, drive.vehicleId, drive.raceMode = race.sim.vehicle, race.sim.vehicleId, true
-        drive.rpm = race.sim.vehicle.idle
+        drive.rpm = vehicleFor(race,r).idle
+        if race.options.mixed then
+            assert(drive:SetVehicle(r.vehicleId));drive:Reset(false)
+            r.acceleration=drive.vehicle.acceleration*efficiency
+        end
         r.driveSim = drive
         -- 预演使用独立变速箱，绝不推进实际挡位/RPM/换挡冷却。
         r.nitroPreview = {driveSim = Simulation.New(race.map)}
@@ -67,10 +75,11 @@ end
 
 function AI.CurveSpeed(race, r, boosting)
     -- 预演可请求喷射包络，不需要先扣氮或篡改实际boostTimer。
-    local top = race.sim.vehicle.maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
+    local top = vehicleFor(race,r).maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
+        *(r.driveSim and r.driveSim.oddSpeedScale or 1)
     local level = r.aiLevel or 0.72
     local budget = 12 + level * 6 + r.skill * 2
-    local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
+    local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
     -- 反应距离先从可用制动距离扣除；入弯前收油，不等到弯心突然锁速。
     local reaction = r.speed * r.reactionTime + 5
     local horizon = max(75, r.speed * r.speed / (2 * braking) + reaction + 15)
@@ -113,7 +122,7 @@ end
 -- 只复用玩家的动力入口，不跑第二套世界/碰撞/导航，更不会改动玩家的传动状态。
 function AI.Drive(race, r, target, dt)
     local drive = assert(r.driveSim)
-    drive.vehicle, drive.speed = race.sim.vehicle, r.speed
+    drive.vehicle, drive.speed = vehicleFor(race,r), r.speed
     local mistake = r.mistakeDuration > 0
     local recovery = r.recoveryTimer > 0 or (r.perception and r.perception.recovery > 0)
     local slowing = r.speed > target + 0.2
@@ -124,20 +133,20 @@ function AI.Drive(race, r, target, dt)
     local sample = race.aiProfile[index]
     local boosted = r.boostTimer > 0 and not slowing and not mistake and not recovery
         and sample.curvature <= 0.012 and abs(r.lane) <= race.roadHalfWidth - 0.65
-    local power = drive:Powertrain(dt, {throttle = throttle, boost = boosted and 1 or 0})
-    local efficiency = clamp(r.acceleration / race.sim.vehicle.acceleration, 0, 1)
+    local power = drive:Powertrain(dt, {throttle = throttle, boost = boosted and 1 or 0})*(drive.oddDriveScale or 1)
+    local efficiency = clamp(r.acceleration / vehicleFor(race,r).acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
-    local traction = onRoad and 1 or race.sim.vehicle.offroad
+    local traction = onRoad and 1 or vehicleFor(race,r).offroad
     local drag = 0.20 + r.speed * r.speed * 0.00115
-        + (onRoad and 0 or 4.6 * (1 - race.sim.vehicle.offroad * 0.55))
+        + (onRoad and 0 or 4.6 * (1 - vehicleFor(race,r).offroad * 0.55))
     local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
     local slope = sample.slope or 0
     local acceleration = power * efficiency * traction - drag - engineBrake
         - 9.81 * slope / sqrt(1 + slope * slope)
-    local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
+    local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
     if slowing then acceleration = min(acceleration, -min(braking, (r.speed - target) * 2 + 1)) end
-    local cap = race.sim.vehicle.maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
-        * (onRoad and 1 or 0.44 + race.sim.vehicle.offroad * 0.52)
+    local cap = vehicleFor(race,r).maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
+        * (onRoad and 1 or 0.44 + vehicleFor(race,r).offroad * 0.52)*(drive.oddSpeedScale or 1)
     if r.speed > cap then acceleration = min(acceleration, -3.5 - (r.speed - cap) * 0.45) end
     r.speed = clamp(r.speed + acceleration * dt, 0, max(r.speed, min(target, cap)))
     r.driveAcceleration = acceleration
@@ -230,7 +239,7 @@ function AI.NitroSafe(race, r)
         or abs(r.wantedLane - r.lane) > 0.6 or (r.hitTimer or 0) > 0 then return false end
     local clear = true
     local duration = 2.5
-    local reach = r.speed * duration + 0.5 * race.sim.vehicle.acceleration * 2.25 * duration^2
+    local reach = r.speed * duration + 0.5 * vehicleFor(race,r).acceleration * 2.25 * duration^2
     eachObstacle(race, r, function(o)
         local d = gap(o.s, r.s, race.length)
         local relativeEnd = d + o.speed * duration - reach
@@ -245,7 +254,7 @@ function AI.NitroSafe(race, r)
     if not clear then return false end
     local preview = assert(r.nitroPreview)
     local live, drive = assert(r.driveSim), assert(preview.driveSim)
-    drive.vehicle, drive.raceMode = race.sim.vehicle, true
+    drive.vehicle, drive.raceMode = vehicleFor(race,r), true
     drive.gear, drive.rpm = live.gear, live.rpm
     drive.shiftTimer, drive.clutchEngagement = live.shiftTimer, live.clutchEngagement
     preview.speed, preview.s, preview.lane = r.speed, r.s, r.lane
@@ -258,12 +267,12 @@ function AI.NitroSafe(race, r)
     for frame = 1, 25 do
         local sample = race.aiProfile[math.floor((preview.s % race.length) / race.aiProfileStep) + 1]
         local target = AI.CurveSpeed(race, preview, preview.boostTimer > 0)
-        local boostCap = race.sim.vehicle.maxSpeed * (r.speedFactor + 0.25)
+        local boostCap = vehicleFor(race,r).maxSpeed * (r.speedFactor + 0.25)
         local restricted = sample.curvature > 0.012 or target < min(boostCap, preview.speed - 0.2) - 1e-6
         if restricted then
             if frame <= 12 then return false end
             -- 制动包络仍按当前可用喷射上限计算，不能把“收油”误当瞬间掉到普通限速。
-            local braking = race.sim.vehicle.braking * (0.65 + r.skill * 0.12)
+            local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
             if preview.speed > target + braking * 0.1 + 1 then return false end
             target = min(target, preview.speed - 0.25)
         end
@@ -415,6 +424,15 @@ end
 function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
+    if race.options.mixed then
+        local drive=assert(r.driveSim)
+        drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
+        drive.roadS,drive.lateral,drive.speed,drive.steer=r.s,r.lane,r.speed,r.steer or 0
+        drive.elapsed=race.elapsed;drive.groundSlope=(race.aiProfile[math.floor((r.s%race.length)/race.aiProfileStep)+1] or {}).slope or 0
+        local useSkill=(drive.oddCooldown or 0)<=0 and (r.speed>10 or r.vehicleId=="cicada")
+            and (math.floor(race.elapsed*2+r.index)%7==0)
+        Mixed.Before(drive,dt,{skill=useSkill,steer=r.steer or 0},race.map)
+    end
     AI.Mistake(race, r, dt)
     local target = AI.Plan(race, r, dt)
     AI.Drive(race, r, target, dt)
@@ -433,6 +451,12 @@ function AI.Update(race, r, dt)
     r.steer = clamp((r.lane - oldLane) / max(dt, 0.00001) * 0.24, -1, 1)
     r.lean = -r.steer * min(28, r.speed * 0.5)
     AI.TrafficContacts(race, r)
+    if race.options.mixed then
+        local drive=assert(r.driveSim)
+        drive.x,drive.y,drive.z,drive.heading,drive.speed=r.x,r.y,r.z,r.yaw,r.speed
+        Mixed.After(drive,dt,{},race.options.world,r.lastX,r.lastY,r.lastZ,false)
+        r.speed=drive.speed
+    end
     race:AdvanceGates(r, oldS, r.s, dt)
     if not r.finished then r.progress = min(r.s, r.nextGate - 0.001) end
     r.safeS = r.progress

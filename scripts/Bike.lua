@@ -70,6 +70,7 @@ end
 ---@param vehicleId? string
 ---@return Bike
 function Bike.New(scene, vehicleId)
+    if require("MixedVehicles").Get(vehicleId) then return require("MixedVisuals").NewBike(scene,vehicleId) --[[@as Bike]] end
     local self = setmetatable({}, Bike)
     self:Init(scene, vehicleId or "sport")
     return self

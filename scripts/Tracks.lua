@@ -92,6 +92,14 @@ local definitions = {
             {190,18,300},{200,18,80},{155,18,-140},{220,18,-335},{100,18,-440},{-50,18,-400}}},
 }
 
+-- 混合组最宽2.7m、最长4.1m；弯道至少留两车并行及安全余量。
+-- 宽度在样条/网格/护栏/导航初始化前统一设定，不只放大视觉路面。
+for _,track in ipairs(definitions) do
+    track.width=math.max(track.width,16)
+    track.shoulder=math.max(track.shoulder,3.5)
+    track.reward=track.reward*4
+end
+
 local function clamp(v, a, b) return math.max(a, math.min(b, v)) end
 local function catmull(a, b, c, d, t, axis)
     return 0.5 * (2*b[axis] + (-a[axis]+c[axis])*t

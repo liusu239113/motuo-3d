@@ -38,6 +38,7 @@ local RewardedAds = require("RewardedAds")
 
 -- 所有模式切换都由主入口显式持有，避免场景被GC提前回收。
 ---@class CareerSession
+---@field streetTraffic CareerStreetTraffic?
 ---@field actor? CareerActor
 ---@field city? CareerCity
 ---@field deliveryPeople? CareerDeliveryPeople

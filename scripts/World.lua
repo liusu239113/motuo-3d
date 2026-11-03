@@ -132,6 +132,7 @@ function World:Init(scene, onProgress)
     self:BuildMeadow(); tick("桥梁与驿站", 6, 6)
     Decor.Build(self.root,Landscape,m,tick)
     self:CreateTraffic(tick)
+    require("MixedCourse").Build(self)
     self:SetQuality(false)
     self:ResetTraffic(0)
     print(string.format("[场景] 静态主线%.0f米，%d个导航目标，%d个跳台，%d辆交通车", Landscape.RouteLength, #self.Goals, #self.ramps, #self.traffic))
@@ -541,6 +542,7 @@ end
 ---@param playerZ? number
 function World:Update(dt, distance, clock, playerX, playerZ)
     self.clock = clock
+    require("MixedCourse").Update(self,clock)
     local route = Landscape.RouteLength
     local reference = distance
     if playerX ~= nil and playerZ ~= nil then reference = Landscape.NearestRoad(playerX, playerZ) end

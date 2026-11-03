@@ -4,6 +4,13 @@
 local Assets = require("VehicleAssets")
 local Expansion = require("Career.CityExpansion")
 
+---@class CareerStreetTraffic
+---@field city CareerCity
+---@field actor CareerActor?
+---@field root Node
+---@field cars table[]
+---@field Update fun(self:CareerStreetTraffic, dt:number)
+---@field Dispose fun(self:CareerStreetTraffic)
 local StreetTraffic = {}
 StreetTraffic.__index = StreetTraffic
 StreetTraffic.POOL = 36
