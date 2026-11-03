@@ -703,21 +703,21 @@ function Race:Contacts(dt)
                         local retained = clamp(0.92 - abs(a.speed - b.speed) * 0.006, 0.64, 0.92)
                         a.speed, b.speed = a.speed * retained, b.speed * retained
                         if self.options.mixed then
-                            local function response(r,spec,forward,sideDistance)
+                            local function response(r,forward,sideDistance)
                                 local drive=r.isPlayer and self.sim or r.driveSim
                                 if drive and (drive.oddShield or 0)>0 then return end
-                                local heavy=spec and (spec.id=="tank" or spec.id=="loader")
-                                if heavy and abs(forward)>abs(sideDistance)*1.2 then r.speed=r.speed/retained*.98
-                                elseif spec and spec.armor<55 then
-                                    r.speed=r.speed*.88
-                                    r.wantedLane=clamp(r.lane+(sideDistance>0 and -1 or 1)*1.1,-self.roadHalfWidth+1,self.roadHalfWidth-1)
-                                    if drive then drive.oddDisrupt=1.4 end
-                                elseif spec and spec.id=="tank" then
-                                    r.speed=r.speed*.82
-                                    if drive then drive.oddDisrupt=1.8 end
+                                local scale,disrupt,offset=MixedRace.ContactResponse(r.vehicleId,retained,forward,sideDistance)
+                                r.speed=r.speed*scale
+                                if offset~=0 then
+                                    local spec=require("MixedVehicles").Get(r.vehicleId)
+                                    local margin=(spec and spec.size[1]*.5 or .3)+.15
+                                    r.wantedLane=clamp(r.lane+offset,-self.roadHalfWidth+margin,self.roadHalfWidth-margin)
                                 end
+                                if drive then drive.oddDisrupt=max(drive.oddDisrupt or 0,disrupt) end
                             end
-                            response(a,va,f1,lx1);response(b,vb,-f1,-lx1)
+                            local bs,bc=math.sin(b.yaw*RAD),math.cos(b.yaw*RAD)
+                            response(a,f1,lx1)
+                            response(b,-dx1*bs-dz1*bc,-dx1*bc+dz1*bs)
                         end
                         a.immunity, b.immunity = 2, 2
                         -- 撞车表现：按相对位置分左右，给出车身猛晃/偏航，而不是只掉速度。

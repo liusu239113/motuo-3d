@@ -183,7 +183,18 @@ local function swept(ax,az,bx,bz,hw,hl)
             if low>high then return false end
         end
     end
-    return true
+    return true,low,high
+end
+-- 车头沿本车 +Z；正面推挤、侧撞和追尾分别响应，不能用绝对值把尾部当车头。
+function M.ContactResponse(id,retained,forward,side)
+    local v=Data.Get(id)
+    if not v then return 1,0,0 end
+    if (id=="tank" or id=="loader") and forward>math.abs(side)*1.2 then
+        return .98/retained,0,0
+    end
+    if v.armor<55 then return .88,1.4,side>0 and -1.1 or 1.1 end
+    if id=="tank" and math.abs(side)>math.abs(forward)*.6 then return .82,1.8,0 end
+    return 1,0,0
 end
 function M.Obstacles(sim,world,x0,y0,z0)
     if not world or not world.mixedObstacles then return end
@@ -250,69 +261,102 @@ function M.After(sim,dt,controls,world,x0,y0,z0,wasAirborne)
     end
     M.Obstacles(sim,world,x0,y0,z0)
 end
+-- 近战按真实车体高度相交；铁尾覆盖后方及两侧，转椅覆盖周围，同一次释放可命中多个对手。
+-- 空战弹体沿发射瞬间确定的三维方向直飞，不追踪；扫掠判定与画面使用同一坐标。
 function M.Attack(race,source,sim)
     if not sim.oddAttack then return end
     sim.oddAttack=false
     local v=Data.Get(source.vehicleId);if not v then return end
-    local range=({tank=10,beetle=14,centipede=7,loader=12,jellyfish=28,helicopter=32,office=6})[v.id]
+    local range=({tank=10,beetle=14,centipede=6,loader=12,jellyfish=28,helicopter=32,office=6})[v.id]
     if not range then return end
-    local best,bestD=nil,range*range
+    local area=v.id=="centipede" or v.id=="office"
+    local ranged=v.id=="jellyfish" or v.id=="helicopter"
+    ---@type RaceRacer?
+    local best=nil
+    local bestD=range*range
+    local sourceBottom=source.y+(sim.oddAltitude or 0)
     for _,target in ipairs(race.racers) do
         if target~=source and not target.finished and not target.eliminated then
             local dx,dz=target.x-source.x,target.z-source.z
             local yaw=math.rad(source.yaw or 0)
             local forward=dx*math.sin(yaw)+dz*math.cos(yaw)
             local side=math.abs(dx*math.cos(yaw)-dz*math.sin(yaw))
-            local area=v.id=="centipede" or v.id=="office"
             local d=dx*dx+dz*dz
-            if d<bestD and (area or (forward>0 and side<3.1)) then best,bestD=target,d end
+            local targetSim=target.isPlayer and race.sim or target.driveSim
+            local spec=Data.Get(target.vehicleId)
+            local bottom=target.y+(targetSim and targetSim.oddAltitude or 0)
+            local height=spec and spec.size[2] or 1.5
+            local vertical=ranged or (bottom<sourceBottom+v.size[2] and bottom+height>sourceBottom)
+            local direction=area and (v.id=="office" or forward<=1.2) or (not area and forward>0 and side<3.1)
+            if d<=range*range and vertical and direction then
+                if area then M.Hit(race,source,target,v)
+                elseif d<bestD then best,bestD=target,d end
+            end
         end
     end
-    if not best then return end
-    if v.id=="jellyfish" or v.id=="helicopter" then
+    if area or not best then return end
+    if ranged then
         local projectiles=race.mixedProjectiles or {};race.mixedProjectiles=projectiles
         local targetSim=best.isPlayer and race.sim or best.driveSim
-        local dx,dz=best.x-source.x,best.z-source.z
-        local length=math.max(.01,math.sqrt(dx*dx+dz*dz))
-        projectiles[#projectiles+1]={kind=v.id,x=source.x,z=source.z,y=source.y+(sim.oddAltitude or 0)+1,
-            vx=dx/length*65,vz=dz/length*65,ttl=.8,source=source,target=best,
-            targetHeight=best.y+(targetSim and targetSim.oddAltitude or 0)+1}
+        local targetSpec=Data.Get(best.vehicleId)
+        local y=sourceBottom+v.size[2]*.5
+        local targetY=best.y+(targetSim and targetSim.oddAltitude or 0)+(targetSpec and targetSpec.size[2] or 1.5)*.5
+        local dx,dy,dz=best.x-source.x,targetY-y,best.z-source.z
+        local length=math.max(.01,math.sqrt(dx*dx+dy*dy+dz*dz))
+        projectiles[#projectiles+1]={kind=v.id,x=source.x,z=source.z,y=y,
+            vx=dx/length*65,vy=dy/length*65,vz=dz/length*65,ttl=.8,source=source,target=best}
         return
     end
     M.Hit(race,source,best,v)
 end
 function M.Hit(race,source,best,v)
     local targetSim=best.isPlayer and race.sim or best.driveSim
-    if targetSim and (targetSim.oddShield or 0)>0 then return end
+    if targetSim and (targetSim.oddShield or 0)>0 then return false end
     best.speed=best.speed*.8;best.hitTimer,best.hitShake=1,.65
+    best.boostTimer=0
     local side=best.lane>=source.lane and 1 or -1
-    best.wantedLane=clamp(best.lane+side*1.4,-race.roadHalfWidth+.8,race.roadHalfWidth-.8)
+    local spec=Data.Get(best.vehicleId)
+    local margin=(spec and spec.size[1]*.5 or .3)+.15
+    best.wantedLane=clamp(best.lane+side*1.4,-race.roadHalfWidth+margin,race.roadHalfWidth-margin)
     best.oddDisrupt=3
     if targetSim then
-        targetSim.oddDisrupt=3
+        targetSim.speed=best.speed;targetSim.oddDisrupt=3
         if v.id=="loader" or v.id=="beetle" then targetSim.oddLaunch=1.2 end
     end
     if best.isPlayer then
-        race.sim.speed=best.speed
         race.sim.heading=(race.sim.heading+side*5)%360
         race.sim.message,race.sim.messageTimer=v.name.."技能命中 · 注意修正方向",2
     end
     race:Collision(best);race:Emit("vehicle-skill",source.id,best.id)
+    return true
 end
 function M.RaceStep(race,dt)
     if race.phase~="racing" then return end
     local shots=race.mixedProjectiles or {}
     for i=#shots,1,-1 do
-        local p=shots[i];local x0,z0=p.x,p.z
-        p.x,p.z=p.x+p.vx*dt,p.z+p.vz*dt
+        local p=shots[i];local x0,y0,z0=p.x,p.y,p.z
+        p.x,p.y,p.z=p.x+p.vx*dt,p.y+p.vy*dt,p.z+p.vz*dt
         p.ttl=p.ttl-dt
         local target=p.target
-        local dx,dz=p.x-x0,p.z-z0
-        local t=clamp(((target.x-x0)*dx+(target.z-z0)*dz)/math.max(.001,dx*dx+dz*dz),0,1)
-        local ex,ez=x0+dx*t-target.x,z0+dz*t-target.z
-        local hit=ex*ex+ez*ez<2.2*2.2 and not target.finished and not target.eliminated
+        local targetSim=target.isPlayer and race.sim or target.driveSim
+        local spec=Data.Get(target.vehicleId)
+        local radius=p.kind=="jellyfish" and .325 or .18
+        local halfWidth=(spec and spec.size[1] or .6)*.5+radius
+        local halfLength=(spec and spec.size[3] or 2)*.5+radius
+        local halfHeight=(spec and spec.size[2] or 1.5)*.5
+        local lift=(targetSim and targetSim.oddAltitude or 0)+halfHeight
+        local ax,az=x0-(target.contactX or target.x),z0-(target.contactZ or target.z)
+        local bx,bz=p.x-target.x,p.z-target.z
+        local angle=math.rad(target.yaw or 0);local sx,sz=math.sin(angle),math.cos(angle)
+        local hit,enter,leave=swept(ax*sz-az*sx,ax*sx+az*sz,bx*sz-bz*sx,bx*sx+bz*sz,halfWidth,halfLength)
+        if hit then
+            local ay,by=y0-(target.contactY or target.y)-lift,p.y-target.y-lift
+            local overlap,low,high=swept(ay,0,by,0,halfHeight+radius,1)
+            hit=overlap and math.max(enter,low)<=math.min(leave,high)
+        end
+        hit=hit and not target.finished and not target.eliminated
         if hit then M.Hit(race,p.source,target,Data.Get(p.kind)) end
-        if hit or p.ttl<=0 then
+        if hit or p.ttl<=0 or target.finished or target.eliminated or p.source.eliminated then
             if p.node then p.node:Dispose() end
             table.remove(shots,i)
         end

@@ -81,6 +81,47 @@ function Checks.Run()
         end
     end
     race:Stop()
+    local front=Rules.ContactResponse("tank",.8,3,.1)
+    local rear=Rules.ContactResponse("tank",.8,-3,.1)
+    local side,disrupt=Rules.ContactResponse("tank",.8,0,2)
+    check(math.abs(front*.8-.98)<.001 and rear==1,"坦克正面压制不误用于尾撞")
+    check(side<1 and disrupt>0,"坦克侧面受击失衡")
+    local function racer(id,x,z)
+        local drive=terrain(id);drive.x,drive.y,drive.z=x,0,z
+        return {id=id..x..z,vehicleId=id,x=x,y=0,z=z,contactX=x,contactY=0,contactZ=z,
+            lane=x,wantedLane=x,yaw=0,speed=25,boostTimer=2,isPlayer=false,driveSim=drive}
+    end
+    local function arena(source,targets)
+        local rs={source};for _,r in ipairs(targets) do rs[#rs+1]=r end
+        return {phase="racing",sim=source.driveSim,player=source,racers=rs,roadHalfWidth=8,
+            events=0,Collision=function() end,Emit=function(self) self.events=self.events+1 end}
+    end
+    local tail=racer("centipede",0,0)
+    local left,right,ahead,high=racer("ebike",-3,0),racer("ebike",3,-2),racer("ebike",0,4),racer("helicopter",0,-3)
+    local field=arena(tail,{left,right,ahead,high})
+    tail.driveSim.oddAttack=true;Rules.Attack(field,tail,tail.driveSim)
+    check(left.speed<25 and right.speed<25 and field.events==2,"铁尾横扫同时击退两侧多个对手")
+    check(ahead.speed==25 and high.speed==25,"铁尾不命中正前方和高空对手")
+    check(left.boostTimer==0 and left.driveSim.speed==left.speed,"技能打断氮气并同步AI真实动力")
+    local chair=racer("office",0,0);local a,b=racer("ebike",0,4),racer("ebike",0,-4)
+    local spin=arena(chair,{a,b});chair.driveSim.oddAttack=true;Rules.Attack(spin,chair,chair.driveSim)
+    check(a.speed<25 and b.speed<25,"转椅范围弹开前后多个对手")
+    for _,kind in ipairs({"jellyfish","helicopter"}) do
+        for _,mode in ipairs({"hit","dodge","height","shield","expired"}) do
+            local source,target=racer(kind,0,0),racer("ebike",0,20)
+            local test=arena(source,{target});source.driveSim.oddAttack=true
+            Rules.Attack(test,source,source.driveSim)
+            check(#test.mixedProjectiles==1 and target.speed==25,kind.."发射而非瞬间命中")
+            if mode=="dodge" then target.x,target.contactX=7,7
+            elseif mode=="height" then target.driveSim.oddAltitude=10
+            elseif mode=="shield" then target.driveSim.oddShield=3
+            elseif mode=="expired" then target.z,target.contactZ=100,100 end
+            for _=1,50 do Rules.RaceStep(test,.02) end
+            check(#test.mixedProjectiles==0,kind.."弹体命中或超时后释放")
+            check(mode=="hit" and target.speed<25 or mode~="hit" and target.speed==25,
+                kind.."三维弹道/横移躲避/高度分离/护盾/超时："..mode)
+        end
+    end
     check(require("ProfileChecks").Run().passed,"旧档和三局试驾事务")
     check(require("RewardedAdsChecks").Run().passed,"广告完成/关闭/拒绝/超时/重复回调")
     print(string.format("[混合验收] PASS %d项 / %d种独立3D载具 / 技能、地形、破障、存档和广告隔离回归",count,#Data.List))
