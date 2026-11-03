@@ -54,6 +54,14 @@ function Start()
     Skill.UpdateShot(parent, shot)
     local water = {kind="jellyfish",x=0,y=0,z=0,vx=0,vy=0,vz=1}
     Skill.UpdateShot(parent,water); assert(not water.node,"水母不允许球占位")
+    -- 爆炸必须使用真实美术贴图，且能在生命周期内放大淡出后自行释放。
+    local ExplosionEffects = require("ExplosionEffects")
+    assert(cache:GetResource("Texture2D", ExplosionEffects.Resources[1]), "爆炸贴图必须可加载")
+    local explosion = ExplosionEffects.Spawn(parent, {x=0, y=1, z=0, scale=1})
+    local alive = ExplosionEffects.Update(explosion, 0.2, Vector3(0, 2, -4))
+    assert(alive and explosion.node.scale.x > 1.4, "爆炸必须在生命周期内放大")
+    local died = ExplosionEffects.Update(explosion, 0.5, Vector3(0, 2, -4))
+    assert(not died, "爆炸必须超时释放")
     local camNode=scene_:CreateChild("Camera")
     camNode.position=Vector3(1.2,.72,-1.55);camNode:LookAt(Vector3.ZERO)
     local camera=camNode:CreateComponent("Camera");camera.fov,camera.farClip=32,30
