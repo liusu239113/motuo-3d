@@ -35,6 +35,28 @@ M.Vehicles = {
         measuredSize=Vector3(.966796875,.998046875,.951171875), label="疾风电动车", class="mixed", resources={}, articulated=true,
     },
 }
+-- 五款独立生成整车；交付开关在原网格关节与座舱验收通过后开放。
+local newModels={
+    {id="hovercraft",hash="4fcb25f68ece49be8eea75f0dc346718",mat="c570ae21-28e0-4520-a7c5-9dfa790a94b0",label="旱地气垫艇",length=3.1,size=Vector3(.999512,.644043,.887207),orientedSize=Vector3(.760220,.644043,.980876),rotation=-107.7},
+    {id="centipede",hash="a70e6cc64480458486a5635205e3a4ab",mat="d2b35ec5-caa7-495c-98a3-0111372e8f57",label="齿轮蜈蚣",length=4.1,size=Vector3(.999512,.482910,.756348),orientedSize=Vector3(.756348,.482910,.999512),rotation=-90},
+    {id="buggy",hash="88412bc9434f4f4faa8c418e873ce557",mat="425b3405-0571-40af-a816-a128a33d3172",label="越野蹦蹦",length=2.8,size=Vector3(.999512,.703613,.905762),orientedSize=Vector3(.905762,.703613,.999512),rotation=-90},
+    {id="loader",hash="87758016d43e4308a546ea464a9b39fb",mat="4d0c185a-23ed-457d-a776-eeed17282334",label="轮式铲车",length=3.3,size=Vector3(.999512,.647949,.480957),orientedSize=Vector3(.480957,.647949,.999512),rotation=-90},
+    {id="cicada",hash="19fe86ecf0b34b2fb7d3dd067fd84160",mat="39dce6b3-01a5-46b0-93c8-1fa338a05762",label="发条木蝉",length=2.8,size=Vector3(.999512,.815918,.957520),orientedSize=Vector3(.957520,.815918,.999512),rotation=-90},
+}
+---@type string[]
+M.NewIds={"hovercraft","centipede","buggy","loader","cicada"}
+for _,entry in ipairs(newModels) do
+    local base="model/"..entry.hash.."/"
+    M.Vehicles[entry.id]={
+        model=base.."Meshes/"..entry.hash..".mdl",
+        material=base.."Materials/"..entry.hash.."_00_tripo_material_"..entry.mat..".xml",
+        diffuse=base.."Textures/"..entry.hash.."_00_D.jpg",
+        normal=base.."Textures/"..entry.hash.."_00_N.png",
+        rotation=entry.rotation,targetLength=entry.length,
+        targetSize=entry.orientedSize*(entry.length/entry.orientedSize.z),
+        measuredSize=entry.size,label=entry.label,class="mixed",resources={},articulated=true,delivered=false,
+    }
+end
 function M.IsReady(id)
     local config=M.Vehicles[id]
     return config~=nil and config.delivered~=false

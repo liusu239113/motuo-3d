@@ -1,6 +1,7 @@
 -- 基于3D场景脚手架：九车竞速追逐、真实车库、手机多指与骑行电台。
 local UI = require("urhox-libs/UI")
-require "urhox-libs.Camera.ThirdPersonCamera"
+local DrivingCamera = require("DrivingCamera")
+local drivingCamera_ = DrivingCamera.New()
 local World = require("World")
 local Landscape = require("Landscape")
 local Tracks = require("Tracks")
@@ -36,7 +37,6 @@ local careerRaceCheck_,careerRaceCheckStage_,careerRaceCheckFrames_=false,0,0
 local CareerProgress = require("Career.Progression")
 local CareerStore = require("Career.Store")
 local RewardedAds = require("RewardedAds")
-
 ---@type RideRace?
 local race_ = nil
 ---@type RaceVisuals?
@@ -55,7 +55,6 @@ local previousTrackWorld_ = nil
 local previousTrackAudio_ = nil
 local raceCheckStage_, raceCheckFrames_, raceCheckElapsed_ = 0, 0, 0.0
 local raceCheckCountdown_, raceCheckAI_, raceCheckPolice_ = 0.0, 0.0, 0.0
-
 ---@type Scene
 local scene_ = nil
 ---@type ThirdPersonCameraInstance
@@ -118,7 +117,6 @@ local testAudio_ = nil
 ---@type table<number, SoundSource>
 local testSources_ = {}
 local testedRiderTransforms_ = {sport = false, rally = false, cruiser = false}
-
 local function ApplyQuality()
     renderer.dynamicInstancing = true
     -- 机关/锥标/护栏共608个共享网格实例；minInstances=1让它们全部走INSTANCED合批，
@@ -142,19 +140,16 @@ local function ApplyQuality()
     if chase_ then chase_:GetCamera().lodBias = highQuality_ and 1 or 0.7 end
     if hud_ then hud_:SetQuality(highQuality_ and "画质" or "流畅") end
 end
-
 local function ToggleQuality()
     highQuality_ = not highQuality_
     ApplyQuality()
     print("[画质] " .. (highQuality_ and "画质：远景细节与高精阴影" or "流畅：缩短阴影、植被LOD与低频后视画面"))
     return highQuality_ and "画质" or "流畅"
 end
-
 local function ClearActions()
     accumulator_ = 0
     for key in pairs(pendingActions_) do pendingActions_[key] = false end
 end
-
 local function SetScreen(screen)
     if screen~=screen_ then
         RewardedAds.Cancel()
@@ -165,31 +160,29 @@ local function SetScreen(screen)
         hud_.pausedCockpitVisible = hud_.cockpit:IsVisible()
     end
     screen_ = screen
+    drivingCamera_:CancelInput()
     ClearActions()
     hud_:SetScreen(screen)
     print("[流程] " .. screen)
 end
-
 local function CockpitActive()
     return firstPerson_ and (screen_ == "ride" or screen_ == "pause" or screen_ == "result"
         or (screen_ == "settings" and hud_ and hud_.settingsReturn == "pause"))
 end
-
--- 相机与车型共用同一份本地米制眼位；点击和PostUpdate都从这里同步，
--- 不把驾驶相机误放回追尾位置，也支持视觉层按车型调整眼位。
+local function ResetLook()
+    drivingCamera_:Reset(sim_.heading)
+    touch_:ResetLook()
+end
+-- 相机偏移与视线统一从车型Cockpit读取；环视不改驾驶员或车辆变换。
 local function UpdateDrivingCamera()
     if not bike_ or not helmetNode_ or not helmetCamera_ then return end
-    helmetNode_.position = bike_.Cockpit.localOffset
-    helmetNode_.rotation = Quaternion(bike_.Cockpit.pitch, 0, 0)
-    helmetCamera_.fov = bike_.Cockpit.fov + math.min(6, math.abs(sim_.speed) * 0.1) + boostFov_
+    drivingCamera_:UpdateHelmet(bike_, helmetNode_, helmetCamera_, sim_.speed, boostFov_)
 end
-
 ---@return Camera?
 local function CurrentCamera()
     if CockpitActive() or (screen_ == "loading" and firstPerson_) then return helmetCamera_ end
     return chase_ and chase_:GetCamera() or nil
 end
-
 local function SetCamera()
     if not chase_ or not helmetCamera_ then return end
     UpdateDrivingCamera()
@@ -200,7 +193,6 @@ local function SetCamera()
     -- 加载遮罩仍可见时就渲染实际驾驶视角，把首次材质编译留在准备阶段。
     renderer:SetViewport(0, Viewport:new(scene_, camera))
 end
-
 -- 换地图必须释放整套世界；不能把新道路投影接到旧Race采样或旧交通上。
 -- UI、触摸管理器和主事件订阅继续保留，音频偏好在重建后恢复。
 local audioPreferences_ = {music = true, effects = true, track = 1}
@@ -209,6 +201,7 @@ local function DisposeRideWorld()
     preparation_ = nil
     ClearActions()
     touch_:Reset()
+    ResetLook()
     hud_:SetRace(nil)
     renderer:SetNumViewports(0)
     if sound_ then
@@ -225,13 +218,11 @@ local function DisposeRideWorld()
     world_, helmetNode_, helmetCamera_, zone_, sunlight_ = nil, nil, nil, nil, nil
     loadedVehicle_, loadedTrack_, raceAssetsReady_, boostFov_ = "", "", false, 0
 end
-
 local function LoadingError(message)
     loadPhase_ = "failed"
     print("[加载失败] " .. message)
     hud_:SetLoading("资源准备未完成", message, 0, "未进入驾驶 · 可重试", true)
 end
-
 local function ResetRideState()
     if raceAudio_ then raceAudio_:Reset(race_) end
     if race_ then race_:Stop() end
@@ -300,16 +291,17 @@ local function ResetRideState()
     if careerRace_ then world_.traffic={}; race_:SetTraffic(world_.traffic) end
     world_:Update(0, sim_.distance, clock_, sim_.x, sim_.z)
     if testTrick_ ~= "" then sim_.speed = 8 end
-    accumulator_, resultShown_, lastYaw_, boostFov_ = 0.0, false, sim_.heading, 0.0
+    accumulator_, resultShown_ = 0.0, false
+    ResetLook()
+    lastYaw_, boostFov_ = sim_.heading, 0.0
     resultAdAvailable_, resultAdClaimed_ = false, false
     if hud_ then hud_:SetResultAdOffer(false, false) end
     bike_:SetRiderColor(selectedRider_)
     sound_:SetVehicle(selectedVehicle_)
     bike_:UpdateState(0, sim_, firstPerson_, clock_)
     chase_:SetMode("normal")
-    chase_:Update(1, bike_.node, lastYaw_, 9)
+    chase_:Update(1, bike_.node, sim_.heading, 9)
 end
-
 local function FinishRidePreparation()
     local ok, message = pcall(ResetRideState)
     if not ok then
@@ -350,7 +342,6 @@ local function FinishRidePreparation()
         hud_:ShowResult(sim_)
     end
 end
-
 local function RequireRaceProfile(allowCareer)
     if allowCareer and careerRace_ then return true end
     local ok,message=Profile.TryLoad(true)
@@ -359,7 +350,6 @@ local function RequireRaceProfile(allowCareer)
         .."\n原档已保留。已暂停独立竞速、购买和金币奖励，王二狗生涯不受影响。")
     return false
 end
-
 local function StartRide(challenge)
     if screen_ == "loading" or not RequireRaceProfile(true) then return end
     -- 圈数由赛道固定；进入车库时就同步，不保留玩家自选。
@@ -374,7 +364,6 @@ local function StartRide(challenge)
     hud_:SelectVehicle(selectedVehicle_, false)
     SetCamera()
 end
-
 local function ConfirmVehicle(id)
     if screen_ == "loading" or not RequireRaceProfile(true) then return end
     local entry = Catalog.Get(id)
@@ -406,7 +395,6 @@ local function ConfirmVehicle(id)
             or (track.name .. " · 检查路线、场景、车辆和声音依赖。"),
         0, loadPhase_ == "reuse" and "无需重复下载或构建" or "开始后选车，再下载资源")
 end
-
 local function SettleCareerResult()
     if not careerRace_ or not race_ or race_.phase ~= "finished" then return true,"赛事报名已保留，可在车行继续" end
     local profile=CareerStore.Get()
@@ -419,7 +407,6 @@ local function SettleCareerResult()
     if ok then sim_.coinsEarned=0 else print("[生涯赛事保存失败] "..message) end
     return ok,message
 end
-
 ---竞速结算双倍金币：只在自由竞速结算展示；生涯奖金走生涯现金，不并入金币。
 ---@param earned integer 本场已结算金币
 local function OfferResultAdBonus(earned)
@@ -427,14 +414,12 @@ local function OfferResultAdBonus(earned)
     resultAdClaimed_ = false
     if hud_ then hud_:SetResultAdOffer(resultAdAvailable_, false, "看广告 · 双倍金币") end
 end
-
 local function WatchResultAdBonus()
     if not resultAdAvailable_ or resultAdClaimed_ then return end
     if not hud_ or hud_.screen ~= "result" then return end
     if not RequireRaceProfile() then return end
     local earned = math.floor(sim_ and sim_.coinsEarned or 0)
     if earned <= 0 then return end
-
     local bonusSim,bonusRace=sim_,race_
     RewardedAds.Show {
         isValid=function() return sim_==bonusSim and race_==bonusRace and not careerMode_ and screen_=="result" end,
@@ -467,7 +452,6 @@ local function WatchResultAdBonus()
         end,
     }
 end
-
 local function ReturnToCareer()
     local ok,message=SettleCareerResult()
     if not ok then hud_:ShowNotice("结算尚未保存",message.."\n请稍后再次点击返回生涯，未重复扣报名费。"); return end
@@ -478,21 +462,19 @@ local function ReturnToCareer()
     hud_:SetCareerRace(false)
     career_:Home(message)
 end
-
 local function RestartRide()
     -- 生涯每次报名只结算一次；结果页回生涯再报名，不能复用已结算门票刷奖金。
     if careerRace_ then ReturnToCareer(); return end
     if not ready_ or screen_ == "loading" then return end
     ConfirmVehicle(selectedVehicle_)
 end
-
 local function PauseRide()
     if screen_ == "ride" then SetScreen("pause")
     elseif screen_ == "pause" and not portrait_ then SetScreen("ride") end
     SetCamera()
 end
-
 local function MainMenu()
+    ResetLook()
     if careerRace_ then ReturnToCareer(); return end
     if sound_ then sound_:Unlock() end
     if raceAudio_ then raceAudio_:Silence() end
@@ -503,16 +485,15 @@ local function MainMenu()
     if chase_ then chase_:SetMode("showroom") end
     SetCamera()
 end
-
 local function ToggleCamera()
     if not ready_ or screen_ ~= "ride" then return end
     firstPerson_ = not firstPerson_
+    ResetLook()
     SetCamera()
     -- 触摸回调发生在UI更新阶段，也要当帧刷新状态提示。
     hud_.camera:SetText(firstPerson_ and "头盔视角" or "追尾视角")
     print("[相机] " .. selectedVehicle_ .. " / " .. (firstPerson_ and "第一视角" or "追尾视角"))
 end
-
 -- 三车型共用同一套实骨骼、相机与复用验收，防止新增车型漏测。
 ---@param id string
 local function ValidateSelectedVehicle(id)
@@ -566,20 +547,17 @@ local function ValidateSelectedVehicle(id)
     if not originalFirstPerson then ToggleCamera() end
     print("[骑手验收] " .. id .. "：-22/0/+22度实骨骼ValidatePose与头盔/追尾切换通过")
 end
-
 local function ToggleRadio()
     if not sound_ then return false end
     local enabled = sound_:ToggleMusic()
     hud_:SyncRadio(sound_:GetTrackTitle(), enabled)
     return enabled
 end
-
 local function ChangeRadio(direction)
     if not sound_ then return end
     local title = sound_:ChangeTrack(direction)
     hud_:SyncRadio(title, sound_.musicEnabled)
 end
-
 function CreateScene()
     scene_ = Scene()
     -- 骑手骨骼每帧由脚本在主线程手动改写；关闭场景线程更新，避免
@@ -623,28 +601,17 @@ function CreateScene()
     ApplyQuality()
     print("[场景] 照片天空与匹配IBL，移动前向渲染／默认流畅档")
 end
-
 function SetupCameraAndViewport()
     renderer:SetNumViewports(1)
-    if not chase_ then
-        chase_ = ThirdPersonCamera.Create(scene_, {
-            modes = {
-                normal = {distance = 5.4, offset = Vector3(0, 1.45, 0), fov = 66},
-                fast = {distance = 6.1, offset = Vector3(0, 1.45, 0), fov = 74},
-                showroom = {distance = 4.8, offset = Vector3(-0.8, 1.0, 0), fov = 48},
-                profile = {distance = 3.5, offset = Vector3(0, 1.0, 0), fov = 42},
-            }, initialMode = "normal", transitionSpeed = 5, farClip = 2600, nearClip = 0.07})
-    end
-    helmetNode_ = bike_.visual:CreateChild("骑手眼位")
-    helmetCamera_ = helmetNode_:CreateComponent("Camera")
-    helmetCamera_.nearClip, helmetCamera_.farClip = 0.025, 2600
+    if not chase_ then chase_ = DrivingCamera.CreateChase(scene_) end
+    helmetNode_, helmetCamera_ = DrivingCamera.AttachHelmet(bike_)
     bike_:UpdateState(0, sim_, firstPerson_, clock_)
+    drivingCamera_:Reset(sim_.heading)
     UpdateDrivingCamera()
     chase_:Update(1, bike_.node, sim_.heading, 9)
     ApplyQuality()
     SetCamera()
 end
-
 local function BeginPreparation()
     local fullBuild = not ready_ or loadedTrack_ ~= selectedTrack_
     if fullBuild then
@@ -716,7 +683,6 @@ local function BeginPreparation()
         print("[加载] 赛道与所选车型全部就绪：" .. loadedTrack_ .. " / " .. loadedVehicle_)
     end)
 end
-
 local function BeginDownload()
     loadPhase_ = "downloading"
     if loader_ then loader_:Cancel() end
@@ -744,7 +710,6 @@ local function BeginDownload()
         BeginPreparation, LoadingError, resources, types)
     loader_:Start()
 end
-
 local function RetryLoading()
     if loadPhase_ ~= "failed" then return end
     if not ready_ then DisposeRideWorld() end
@@ -752,7 +717,6 @@ local function RetryLoading()
     loadPhase_, loadingFrames_ = "download-pending", 0
     hud_:SetLoading("重新检查资源", "已有下载缓存继续复用，失败项将重新校验。", 0, "正在重试")
 end
-
 function Start()
     graphics.windowTitle = "公路狂飙"
     input.mouseMode = MM_ABSOLUTE;Catalog.SetGMFreeExperience(false)
@@ -872,6 +836,7 @@ function Start()
         error(hudOrError)
     end
     hud_=hudOrError --[[@as HUD]]
+    touch_:MountLook(hud_.controlLayer)
     if restoreUnavailableProfile then
         local ok,message=pcall(function() require("ProfileChecks").RunUnavailableUI(hud_) end)
         restoreUnavailableProfile()
@@ -1010,7 +975,6 @@ function Start()
     end
     print("[公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留")
 end
-
 -- 仅显式-racetest启用，走真实页面入口验证暂停、缓存重赛和模式切换。
 local function CheckRaceFlow()
     if not raceTest_ or not race_ or not raceVisuals_ then return end
@@ -1062,7 +1026,6 @@ local function CheckRaceFlow()
         print("[竞速流程验收] 实际停驶追捕与九人结算通过")
     end
 end
-
 -- 六图验收走真实选图/加载/发车入口，不直接给现有世界替换路线表。
 local function CheckTrackFlow()
     if not trackTest_ or screen_ ~= "ride" or not race_ then return end
@@ -1096,7 +1059,6 @@ local function CheckTrackFlow()
     ConfirmVehicle(selectedVehicle_)
     assert(loadPhase_ == "download-pending", "同车换图不得误用旧世界缓存")
 end
-
 ---@param eventType string
 ---@param eventData UpdateEventData
 function HandleUpdate(eventType, eventData)
@@ -1156,6 +1118,7 @@ function HandleUpdate(eventType, eventData)
         return
     end
     hud_:UpdateLayout()
+    drivingCamera_:ApplyLookInput(touch_, screen_ == "ride" and not hud_:IsModalOpen())
     if careerRaceCheck_ and ready_ and race_ then
         if careerRaceCheckStage_==0 and screen_=="ride" then
             careerRaceCheckFrames_=careerRaceCheckFrames_+1
@@ -1371,7 +1334,6 @@ function HandleUpdate(eventType, eventData)
     CheckTrackFlow()
     Profile_.Tick(dt)
 end
-
 ---@param eventType string
 ---@param eventData InputFocusEventData
 function HandleInputFocus(eventType, eventData)
@@ -1381,12 +1343,11 @@ function HandleInputFocus(eventType, eventData)
             if career_.running and not career_.view:IsBlocking() then career_:Pause() end
             return
         end
-        touch_:Reset(); ClearActions()
+        touch_:Reset(); ClearActions(); drivingCamera_:CancelInput()
         if screen_ == "ride" then SetScreen("pause") end
         print("[手机操作] 失去焦点，清空所有持续操作与特技脉冲")
     end
 end
-
 ---@param eventType string
 ---@param eventData PostUpdateEventData
 function HandlePostUpdate(eventType, eventData)
@@ -1416,27 +1377,7 @@ function HandlePostUpdate(eventType, eventData)
             end
         end
     end
-    if testProfile_ then
-        chase_:SetMode("profile")
-        chase_:Update(1, bike_.node, sim_.heading - 90, 3)
-    elseif screen_ == "menu" or screen_ == "garage" then
-        chase_:Update(dt, bike_.node, sim_.heading - 145 + math.sin(clock_ * 0.1) * 3, 7)
-    else
-        local delta = (sim_.heading - lastYaw_ + 180) % 360 - 180
-        lastYaw_ = lastYaw_ + delta * math.min(1, dt * 5)
-        chase_:SetMode(sim_.speed > 38 and "fast" or "normal")
-        chase_:Update(dt, bike_.node, lastYaw_, 9)
-        -- 两种来源独立授权表现：氮气真实推力、加速带真实增益脉冲；不回写仿真。
-        if screen_ == "ride" then
-            local padPower = sim_.featureState and sim_.featureState.feedbackPower or 0
-            local targetBoost = math.max(math.max(0, math.min(1, sim_.raceBoost or 0)) * 9,
-                math.max(0, math.min(1, padPower)) * 7)
-            boostFov_ = boostFov_ + (targetBoost - boostFov_) * (1 - math.exp(-dt * 12))
-        end
-        local chaseCamera = chase_:GetCamera()
-        chaseCamera.fov = chaseCamera.fov + boostFov_
-        UpdateDrivingCamera()
-    end
+    boostFov_, lastYaw_ = drivingCamera_:Update(dt, chase_, bike_, helmetNode_, helmetCamera_, sim_, screen_, clock_, testProfile_)
     if hud_ and hud_.UpdateWeaponTarget then
         hud_:UpdateWeaponTarget(sim_, CurrentCamera())
     end
@@ -1447,7 +1388,6 @@ function HandlePostUpdate(eventType, eventData)
     hud_:UpdateCockpit(position.x * graphics:GetWidth() / scale, position.y * graphics:GetHeight() / scale,
         visible, sim_.speed * 3.6, sim_.gear, sim_.rpm)
 end
-
 -- 只对显式隔离验收启用。资源下载/校验帧数不定，必须等场景真正就绪再拍，
 -- 不能用固定全局帧号把加载页当作动作或应用截图。
 function CaptureCareerReadyFrame()
@@ -1467,7 +1407,6 @@ function CaptureCareerReadyFrame()
     print("[生涯就绪实拍完成] "..careerReadyShot_.." / ready后"..required.."渲染帧 / 内存档")
     engine:Exit()
 end
-
 function CaptureTestFrame()
     -- 完整选车自测优先；全部通过后才开始截图计帧，避免首车型截图提前退出。
     if selfTest_ and checkStage_ ~= 7 then return end
@@ -1539,7 +1478,6 @@ function CaptureTestFrame()
     end
     engine:Exit()
 end
-
 function Stop()
     RewardedAds.Cancel();Catalog.SetGMFreeExperience(false)
     if career_ then career_:Dispose(); career_=nil end

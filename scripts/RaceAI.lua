@@ -4,6 +4,7 @@ local Simulation = require("Simulation")
 local Mixed = require("MixedRace")
 local MixedData = require("MixedVehicles")
 local MotorcycleSkills = require("MotorcycleSkills")
+local Features = require("TrackFeatures")
 ---@class MixedRaceSkillRules
 ---@field ShouldUseSkill fun(race:table, source:table):boolean
 local MixedRaceRules = Mixed
@@ -66,6 +67,7 @@ function AI.Configure(race, r, index)
     r.mistakeLane, r.mistakeBias = r.lane, 0
     r.paceTarget, r.paceTimer, r.nitroCooldown = 0, 0, 0
     r.skillDecisionTimer, r.skillRequest, r.skillUses = 0, false, 0
+    r.airborne=false
     -- 每辆车只持有独立的传动状态；使用玩家选定车型，不按外观偷偷换更强引擎。
     if not r.isPlayer then
         local drive = Simulation.New(race.map)
@@ -244,12 +246,17 @@ local function eachObstacle(race, r, visit, sensed)
     -- 可选坡是静态可见路障；不模拟AI飞跃，不准免费穿过或领取玩家加速带。
     for _, ramp in ipairs(race.map.Ramps or {}) do
         if ramp.optional and ramp.s then
+            local own=MixedData.Get(r.vehicleId)
+            local entry=gap(ramp.s,r.s,race.length)
+            local buggyEntry=r.vehicleId=="buggy" and own and ramp.width>=own.size[1]+.3
+                and entry>-((ramp.length or 12)+5) and entry<math.max(75,r.speed*2.8)
+                and math.abs(angle(r.yaw or 0,ramp.yaw or 0))<35 and r.speed>=8
             local reserved=max(ramp.length or 12,(ramp.landingEndS or (ramp.s+(ramp.length or 12)))-ramp.s)
             -- 整段坡/落地车道保留；只取当前附近的局部截面，避免174m长障碍的
             -- 中点离车太远而晚避让，或越过中点后误以为已可回线。
             local start=gap(ramp.s,r.s,race.length)
             local first,last=max(start,-8),min(start+reserved,max(75,r.speed*2.8))
-            if last>=first then
+            if last>=first and not buggyEntry then
                 visit({source=ramp,s=r.s+(first+last)*0.5,lane=ramp.lateral or 0,
                     speed=0,halfWidth=(ramp.width or 2.8)*0.5,halfLength=(last-first)*0.5,
                     y=ramp.y or r.y,bike=false,ramp=true})
@@ -569,10 +576,41 @@ function AI.TrafficContacts(race, r)
     r.nextTrafficContacts, r.trafficContacts = r.trafficContacts, active
 end
 
+-- Buggy alone may deliberately take an optional ramp. The authored entry/lip
+-- geometry is shared with the player; height, flight and landing remain physical.
+function AI.BuggyFlight(race,r,dt,wasAirborne,oldY)
+    if r.vehicleId~="buggy" then return end
+    local drive=assert(r.driveSim)
+    local ground=race.map.Height(r.x,r.z)
+    if wasAirborne then
+        drive.y=oldY+(drive.vY or 0)*dt-9.81*dt*dt*.5
+        drive.vY=(drive.vY or 0)-9.81*dt
+        drive.airTime=(drive.airTime or 0)+dt
+        if drive.y<=ground+.002 and drive.vY<=0 then drive:Land(ground) end
+    else
+        local ramp,t=Features.CrossLip(race.map.Ramps or {},r.lastX,r.lastZ,r.x,r.z,r.yaw,r.speed)
+        if ramp and (drive.rampCooldown or 0)<=0 then
+            local grade=ramp.exitGrade or (ramp.height or 2)/(ramp.length or 10)
+            drive:TakeOff(r.speed*grade/sqrt(1+grade*grade))
+            local x,z=r.lastX+(r.x-r.lastX)*t,r.lastZ+(r.z-r.lastZ)*t
+            local lip=Features.RampHeight(ramp,x,z) or (ramp.y or ground)+(ramp.height or 2)
+            local left=dt*(1-t)
+            drive.y=lip+drive.vY*left-9.81*left*left*.5
+            drive.vY=drive.vY-9.81*left
+            drive.airTime=left
+        end
+    end
+    drive.rampCooldown=max(0,(drive.rampCooldown or 0)-dt)
+    r.airborne=drive.airborne==true
+    if drive.airborne then r.y=drive.y end
+end
+
 function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
     local previousSpeed = r.speed
+    local wasAirborne = r.driveSim and r.driveSim.airborne == true or false
+    local oldY=r.y
     do
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
@@ -588,6 +626,7 @@ function AI.Update(race, r, dt)
         local skillControls=r.skillControls
         if not skillControls then skillControls={}; r.skillControls=skillControls end
         skillControls.skill, skillControls.steer = useSkill, r.steer or 0
+        if useSkill and drive.oddAIJetSide then skillControls.steer=drive.oddAIJetSide end
         skillControls.brake,skillControls.burnout,skillControls.throttle=drive.braking,drive.burnout,drive.throttle
         local oldCooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
         Mixed.Before(drive,dt,skillControls,race.map)
@@ -628,9 +667,11 @@ function AI.Update(race, r, dt)
     if race.options.mixed then
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading,drive.speed=r.x,r.y,r.z,r.yaw,r.speed
+        AI.BuggyFlight(race,r,dt,wasAirborne,oldY)
         local afterControls=r.afterControls
         if not afterControls then afterControls={}; r.afterControls=afterControls end
-        Mixed.After(drive,dt,afterControls,race.options.world,r.lastX,r.lastY,r.lastZ,false)
+        Mixed.After(drive,dt,afterControls,race.options.world,r.lastX,r.lastY,r.lastZ,wasAirborne)
+        r.airborne=drive.airborne == true
         local _,lane=race:Project(drive.x,drive.z)
         r.lane=clamp(lane,-race.corridor+1,race.corridor-1)
         r.x,r.y,r.z=drive.x,drive.y,drive.z

@@ -100,7 +100,7 @@ M.List = {
     {id="loader", name="轮式铲车", class="cruiser", price=6800, top=208, accel=1.03, grip=.86, armor=91, rough=.98,
         skill="铲斗挑飞", passive="前铲破障；正面推挤不被轻型载具拖慢", active="挑起前方12米内的对手并使其弹起，打断其路线", weakness="极速偏低，飞坡落地不稳时恢复更慢", cooldown=12, duration=1.8, size={2.05,2.1,3.3}},
     {id="cicada", name="发条木蝉", class="sport", price=9200, top=236, accel=1.02, grip=1.16, armor=60, rough=.87,
-        skill="快速上弦", passive="发条充足时极速提升14%，匀速抓地稳定", active="立即补满发条；上弦1秒内动力×0.65、极速上限+18%", weakness="发条耗尽速度降低18%；需规划上弦时机", cooldown=13, duration=1, size={1.7,1.5,2.8}},
+        skill="快速上弦", passive="发条充足时极速提升14%，匀速抓地稳定", active="用1秒逐步补满发条，上弦期间动力×0.65；发条充足时极速+14%", weakness="发条耗尽速度降低18%；需规划上弦时机", cooldown=13, duration=1, size={1.7,1.5,2.8}},
     {id="jetboat", name="旱地喷气快艇", class="sport", price=10500, top=250, accel=.96, grip=1.05, armor=64, rough=.84,
         skill="尾流强喷", passive="下坡滑行极速提升18%，坡底保持动量", active="强力喷流4秒：动力×1.7、极速上限+18%", weakness="上坡动力降低，低速重启略慢", cooldown=14, duration=4, size={1.6,1.25,3.2}},
     {id="frog", name="棘刺弹跳蛙", class="rally", price=5400, top=220, accel=1.08, grip=1.08, armor=63, rough=.98,
@@ -141,7 +141,13 @@ M.List = {
 ---@field size number[]
 ---@type table<string, MixedVehicle>
 local byId = {}
-for _, v in ipairs(M.List) do byId[v.id] = v end
+for _, v in ipairs(M.List) do
+    local asset=require("MixedAssets").Vehicles[v.id]
+    if asset and asset.class=="mixed" then
+        v.size={asset.targetSize.x,asset.targetSize.y,asset.targetSize.z}
+    end
+    byId[v.id] = v
+end
 function M.Get(id) return byId[id] end
 function M.Ids()
     local ids = {}

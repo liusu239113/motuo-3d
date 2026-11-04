@@ -3,6 +3,14 @@ local Assets = require("MixedAssets")
 local Rider = require("Rider")
 local V = Vector3
 local M = {}
+local newVehicleIds={hovercraft=true,centipede=true,buggy=true,loader=true,cicada=true}
+local cockpitSources={
+    hovercraft={seat=V(-.04,.075,-.01),control=V(.12,.10,-.15),accent=Color(.12,.55,.72)},
+    centipede={seat=V(.16,.08,.02),control=V(.22,.10,-.08),accent=Color(.65,.12,.035)},
+    buggy={seat=V(-.10,.11,0),control=V(-.02,.14,0),accent=Color(.04,.65,.72)},
+    loader={seat=V(-.08,.16,0),control=V(.01,.27,0),accent=Color(.85,.43,.035)},
+    cicada={seat=V(-.03,.12,0),control=V(.16,.04,0),accent=Color(.45,.65,.15)},
+}
 
 -- 混合车的首视角只在这里配置；source模型本身保持一整套正式三角面。
 -- 电动车的前后轮心、轮半径和左右握把来自正式MDL/上传图复核后的归一化测量。
@@ -77,7 +85,7 @@ local function buildGenericControls(self,id)
         P.Add(knob,"MandibleGrip","Cylinder",self.materials.chrome,V(0,.02,.05),V(.045,.30,.045),Quaternion(0,0,90))
         P.Add(knob,"SteamValve","Sphere",self.materials.gold,V(.20,.12,.10),V(.09,.09,.09))
         P.Add(knob,"ClampButton","Box",self.materials.warning,V(-.20,.10,.12),V(.08,.035,.025),nil,false)
-    else
+    elseif not newVehicleIds[id] then
         P.Add(knob,"CyclicStick","Cylinder",self.materials.chrome,V(0,-.03,.06),V(.035,.28,.035))
         P.Add(knob,"CyclicGrip","Sphere",self.materials.rubber,V(0,.13,.06),V(.10,.08,.10))
         P.Add(knob,"CollectiveLever","Box",self.materials.control,V(.23,.03,.08),V(.08,.25,.06))
@@ -213,6 +221,8 @@ function M.Build(parent, id)
     local mat = material(c)
     if id == "tank" or id == "beetle" then
         require("MixedArticulation").Build(canonical,id,source,mat)
+    elseif newVehicleIds[id] then
+        require("NewVehicleArticulation").Build(canonical,id,source,mat)
     elseif id == "helicopter" or id == "ebike" then
         local offset=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)
         ---@param p Vector3
@@ -265,6 +275,20 @@ function M.Build(parent, id)
         draw.lodBias = 2
     end
     local size = bounds.size*scale
+    if newVehicleIds[id] then
+        assert((size-c.targetSize):Length()<.005,"新车实测范围与碰撞配置不一致："..id)
+    end
+    local cockpitSource=cockpitSources[id]
+    if cockpitSource then
+        local seat=canonical:LocalToWorld(cockpitSource.seat)
+        local controls=canonical:LocalToWorld(cockpitSource.control)
+        local seatLocal=root:WorldToLocal(seat)
+        local controlLocal=root:WorldToLocal(controls)
+        M.Cockpits[id]={localOffset=seatLocal+V(0,.62,-.08),pitch=5,fov=76,
+            seatHeight=seatLocal.y,grip=controlLocal,
+            dash=V(0,seatLocal.y+.22,seatLocal.z+.48),dashSize=Vector2(.50,.16),
+            dashboardAngle=-12,accent=cockpitSource.accent,cameraCalibrated=true}
+    end
     root:SetVar("VehicleId",Variant(id))
     root:SetVar("VehicleSize",Variant(size))
     root:SetVar("FormalModel",Variant(c.model))
@@ -292,6 +316,10 @@ local ebikeWheelAxis = Quaternion(0, Assets.Vehicles.ebike.rotation, 0):Inverse(
 function M.Animate(root, id, time, state)
     if id=="tank" or id=="beetle" then
         require("MixedArticulation").Animate(root,id,time,state)
+        return
+    end
+    if newVehicleIds[id] then
+        require("NewVehicleArticulation").Animate(root,id,time,state)
         return
     end
     if id=="ebike" then
@@ -368,6 +396,11 @@ function Adapter:Init(scene,id)
         buildGenericControls(self,id)
         self.mirrors=require("RearMirrors").New(scene,self.node,self.Cockpit.localOffset.y)
         self.effects={pitch=0,bob=0,Dispose=function() end}
+    end
+    self.skillEffects=require("NewVehicleSkillEffects").New(self.visual,id,self.Cockpit.localOffset.y,size.z)
+    if self.skillEffects then
+        -- 首视角边缘效果按真实座舱眼位放置，不能假定车心原点。
+        self.skillEffects:SetEyePosition(self.Cockpit.localOffset)
     end
     local riderRig=M.CreateRider(self.visual,id)
     self.riderRig=riderRig
@@ -448,6 +481,7 @@ function Adapter:UpdateState(dt,sim,firstPerson,clock)
     end
     self.visual.position=V(0,(sim.oddAltitude or 0)+lift,0)
     M.Animate(self.body,self.vehicleId,sim.elapsed or clock or self.visualClock,sim)
+    if self.skillEffects then self.skillEffects:Update(step,sim) end
     if self.vehicleId=="ebike" then
         -- 里程只驱动滚动；烧胎只额外驱动后轮，刹住的前轮保持原角。
         self.rearSpin=((self.rearSpin or 0)+(sim.burnout and 1900 or 0)*step)%360
@@ -478,6 +512,7 @@ function Adapter:Dispose()
     self.disposed=true
     self.mirrors:Dispose()
     self.effects:Dispose()
+    if self.skillEffects then self.skillEffects:Dispose() end
     self.riderRig:Dispose()
     for _,particle in ipairs(self.smoke or {}) do particle.node:Dispose();particle.mat:Dispose() end
     self.node:Dispose()

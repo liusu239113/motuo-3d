@@ -5,6 +5,56 @@
 ---@field oddSkillResultTimer number
 ---@field oddPreviousAltitude number
 local Checks={}
+-- 五车型状态机契约：只用内存驱动和纯规则函数，不建Scene、不读存档、不调用SDK。
+function Checks.RunOddVehicleActions()
+    local Rules=require("MixedRace")
+    local Data=require("MixedVehicles")
+    local map={RouteLength=2400,Roads={{width=8}},Track={theme="circuit"},Height=function() return 0,true end}
+    local count=0
+    local function check(v,msg) assert(v,"[五车技能契约] "..msg);count=count+1 end
+    local function sim(id)
+        local s={vehicleId=id,speed=20,x=0,y=0,z=0,heading=0,lateral=0,roadS=0,impactSerial=0,health=100,
+            raceMode=true,airborne=false,landingStable=true,vehicle={maxSpeed=80},message="",messageTimer=0}
+        Rules.Reset(s);return s
+    end
+    local function tick(s,dt,controls)
+        Rules.Before(s,dt,controls or {},map)
+    end
+    local hover=sim("hovercraft");tick(hover,.02,{skill=true,steer=1})
+    local x0,z0=hover.x,hover.z; Rules.After(hover,.02,{},nil,0,0,0,false)
+    check(hover.oddPhase=="side_jet" and hover.oddSerial==1 and hover.oddJetSide==1,
+        "气垫艇发动阶段/serial/方向")
+    check((hover.x~=x0 or hover.z~=z0) and hover.oddJetDistance>0 and math.abs(hover.oddJetLateralSpeed)>0,
+        "气垫艇实际侧移而非文案")
+    local cent=sim("centipede");local target={id="target",vehicleId="ebike",x=3,y=0,z=-2,lane=3,yaw=0,speed=25,
+        finished=false,eliminated=false,driveSim=sim("ebike")}
+    local race={phase="racing",sim=cent,player={isPlayer=true},racers={{id="cent",vehicleId="centipede",x=0,y=0,z=0,yaw=0,lane=0,finished=false,eliminated=false,isPlayer=true,driveSim=cent},target},roadHalfWidth=8,options={mixed=true},
+        Collision=function() end,Emit=function() end}
+    local source=race.racers[1];tick(cent,.02,{skill=true});Rules.RaceStep(race,.02)
+    check(cent.oddPhase=="tail_windup" and cent.oddAttack and cent.oddHitSerial==0,"蜈蚣发动先进入蓄力不提前命中")
+    for _=1,21 do tick(cent,.02,{});Rules.RaceStep(race,.02) end
+    check(cent.oddHitAge>=.42 and cent.oddHitSerial==1 and (cent.oddPhase=="tail_sweep" or cent.oddPhase=="tail_recover"),"蜈蚣关键帧阶段与实际命中")
+    local loader=sim("loader");local loadTarget={id="loadTarget",vehicleId="ebike",x=0,y=0,z=5,lane=0,yaw=0,speed=25,finished=false,eliminated=false,driveSim=sim("ebike")}
+    local loadRace={phase="racing",sim=loader,player={isPlayer=true},racers={{id="loader",vehicleId="loader",x=0,y=0,z=0,yaw=0,lane=0,finished=false,eliminated=false,isPlayer=true,driveSim=loader},loadTarget},roadHalfWidth=8,options={mixed=true},Collision=function() end,Emit=function() end}
+    tick(loader,.02,{skill=true});Rules.RaceStep(loadRace,.02)
+    check(loader.oddPhase=="scoop_windup" and loader.oddHitSerial==0,"铲车先抬斗不提前命中")
+    for _=1,19 do tick(loader,.02,{});Rules.RaceStep(loadRace,.02) end
+    check(loader.oddHitAge>=.36 and loader.oddPhase~="scoop_windup","铲车挑飞命中时刻与阶段同步")
+    local buggy=sim("buggy");buggy.oddActive=0;buggy.airborne=true;buggy.landingStable=true
+    buggy.airborne=false
+    Rules.After(buggy,.02,{},nil,0,0,0,true)
+    check(buggy.oddLandingSerial==1 and buggy.oddLandingBoost==8 and buggy.oddPhase=="landing_boost","蹦蹦真实落地被动")
+    local cicada=sim("cicada");cicada.oddSpring=0;tick(cicada,.02,{})
+    check(cicada.oddPhase=="exhausted" and cicada.oddSpeedScale<1,"木蝉发条耗尽减速")
+    tick(cicada,.02,{skill=true});local first=cicada.oddSpring
+    check(first==0 and cicada.oddPhase=="wound_release","木蝉上弦开始不瞬间满弦")
+    for _=1,25 do tick(cicada,.02,{}) end
+    check(cicada.oddSpring>0 and cicada.oddSpring<22 and cicada.oddPhase=="wound_release","木蝉上弦有限恢复窗口")
+    for _=1,50 do tick(cicada,.02,{}) end
+    check(cicada.oddPhase=="wound" and cicada.oddSpring>0,"木蝉恢复后进入有弦状态")
+    check(Data.Get("tank")~=nil and Data.Get("helicopter")~=nil,"坦克与直升机目录仍保留")
+    return {passed=true,assertions=count}
+end
 -- 快速纯规则专项：不创建Scene、不加载Simulation/Profile、不读写玩家存档。
 function Checks.RunWeapons()
     local Rules=require("MixedRace")
@@ -285,7 +335,9 @@ function Checks.Run()
     local cicada=terrain("cicada");cicada.oddSpring=0;Rules.Before(cicada,.02,{},map)
     local exhausted=cicada.oddSpeedScale
     Rules.Before(cicada,.02,{skill=true},map)
-    check(cicada.oddSpring>21 and cicada.oddSpeedScale>exhausted,"木蝉耗尽与上弦有真实差异")
+    check(cicada.oddSpring==0 and cicada.oddDriveScale==.65,"木蝉上弦开始付出动力代价，不瞬间补满")
+    for _=1,50 do Rules.Before(cicada,.02,{},map) end
+    check(cicada.oddSpring>21 and cicada.oddSpeedScale>exhausted,"木蝉完成上弦后恢复真实极速")
     -- 高度扫掠（米）：车体[bottom,bottom+H]；交通[carY,carY+1.8]。
     -- 水平从z=-10扫到+10穿过交通中心；垂直相切计接触，±.01m分别验证重叠/分离。
     -- 上方交通底面在自身顶面附近，避免旧固定1.45m高度把高/矮车型误判。
@@ -573,7 +625,9 @@ function Checks.Run()
     local tail=racer("centipede",0,0)
     local left,right,ahead,high=racer("ebike",-3,0),racer("ebike",3,-2),racer("ebike",0,4),racer("helicopter",0,-3)
     local field=arena(tail,{left,right,ahead,high})
-    tail.driveSim.oddAttack=true;Rules.Attack(field,tail,tail.driveSim)
+    Rules.Before(tail.driveSim,.02,{skill=true},map);Rules.Attack(field,tail,tail.driveSim)
+    check(left.speed==25 and right.speed==25,"铁尾蓄力阶段不能提前命中")
+    Rules.Before(tail.driveSim,.42,{},map);Rules.Attack(field,tail,tail.driveSim)
     check(left.speed<25 and right.speed<25 and field.events==2,"铁尾横扫同时击退两侧多个对手")
     check(ahead.speed==25 and high.speed==25,"铁尾不命中正前方和高空对手")
     check(left.boostTimer==0 and left.driveSim.speed==left.speed,"技能打断氮气并同步AI真实动力")
