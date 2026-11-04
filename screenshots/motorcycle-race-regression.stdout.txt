@@ -1,0 +1,75 @@
+[2026-11-04 21_12_58_225][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_225][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_226][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_226][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_539][19] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_539][19] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_58_539][19] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 21_12_57_879][0] INFO: DownloadManager initialized
+[2026-11-04 21_12_57_882][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 21_12_57_883][0] INFO: Engine construct finish.
+[2026-11-04 21_12_58_192][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-11-04 21_12_58_207][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 21_12_58_207][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_12_58_523][19] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_12_59_104][37]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 21_12_59_108][37]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 21_12_59_108][37]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 21_12_59_109][37] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_12_59_536][63] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_12_59_540][63][Script] IsNetworkMode:    false
+[2026-11-04 21_12_59_557][63][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 21_12_59_557][63][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 21_12_59_557][63][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 21_12_59_557][63][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 21_12_59_560][63][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 21_12_59_615][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_12_59_616][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_12_59_616][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_12_59_617][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_12_59_618][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_12_59_642][63][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_12_59_851][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_12_59_882][63][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_12_59_888][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_12_59_946][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_12_59_969][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_13_00_022][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_13_00_051][63][Script] [驾驶] 测试轻撞，车况 93
+[2026-11-04 21_13_00_130][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_13_00_154][63][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_13_00_172][63][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_13_00_222][63][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_13_00_834][63][Script] [Race.Test] 68项纯Lua竞速断言通过
+[2026-11-04 21_13_00_942][63][Script] [驾驶] helicopter 108km/h 档2 10030rpm 世界(240,-2) 目标自由探索
+[2026-11-04 21_13_01_016][63][Script] [Race.RunChecks] real-lap helicopter 27.54s laps=1 invalid=0
+[2026-11-04 21_13_01_110][63][Script] [驾驶] ebike 108km/h 档2 7916rpm 世界(240,-8) 目标自由探索
+[2026-11-04 21_13_01_181][63][Script] [Race.RunChecks] real-lap ebike 27.34s laps=1 invalid=0
+[2026-11-04 21_13_01_276][63][Script] [驾驶] sport 108km/h 档2 10542rpm 世界(240,-8) 目标自由探索
+[2026-11-04 21_13_01_348][63][Script] [Race.RunChecks] real-lap sport 27.33s laps=1 invalid=0
+[2026-11-04 21_13_01_735][63][Script] [Race.RunChecks] ramp-state helicopter flew=true crossed=true missed=false invalid=0 peak=3.763 s=193.325 gate=254.724
+[2026-11-04 21_13_01_735][63][Script] [Race.RunChecks] ramp helicopter peak=3.763m grade=0.05644 crossed=true
+[2026-11-04 21_13_01_865][63][Script] [Race.RunChecks] ramp-state ebike flew=true crossed=true missed=false invalid=0 peak=3.770 s=193.646 gate=254.724
+[2026-11-04 21_13_01_865][63][Script] [Race.RunChecks] ramp ebike peak=3.770m grade=0.05644 crossed=true
+[2026-11-04 21_13_01_983][63][Script] [Race.RunChecks] ramp-state sport flew=true crossed=true missed=false invalid=0 peak=3.818 s=197.873 gate=254.724
+[2026-11-04 21_13_01_983][63][Script] [Race.RunChecks] ramp sport peak=3.818m grade=0.05644 crossed=true
+[2026-11-04 21_13_02_330][63][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 21_13_02_382][63][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-11-04 21_13_03_032][63][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 21_13_03_210][63][Script] [导航] 已到达 翡翠湖观景湾 +350
+[2026-11-04 21_13_03_525][63][Script] [Tracks] alpine selected: 7502.5m / 16.0m full width / 1 roads
+[2026-11-04 21_13_03_913][63][Script] [Tracks] coast selected: 6167.5m / 16.0m full width / 1 roads
+[2026-11-04 21_13_04_431][63][Script] [Tracks] canyon selected: 7466.0m / 17.0m full width / 1 roads
+[2026-11-04 21_13_04_856][63][Script] [Tracks] forest selected: 6790.8m / 16.0m full width / 1 roads
+[2026-11-04 21_13_05_564][63][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 21_13_05_564][63][Script] [Race.RunChecks] actual-map ramp audit 60 cases maximum road-relative altitude 3.875m
+[2026-11-04 21_13_05_564][63][Script] [Race.RunChecks] PASS 172 assertions / 3 real laps / 18 boundary cases / 3 real ramp flights
+[2026-11-04 21_13_05_564][63][Script] [RaceSettlementCheckMain] 全部断言通过
+[2026-11-04 21_13_05_614][67]INFO__VALIDATE_UPDATE__:false

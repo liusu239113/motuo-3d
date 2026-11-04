@@ -1,0 +1,87 @@
+{
+    "version": 2,
+    "script": "MotorcycleSkillCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 5973,
+    "frames_completed": 130,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "lua",
+                    "message": "[2026-11-04 21_13_15_051][94] ERROR: Execute Lua function failed: [string \"Race\"]:755: attempt to compare number with nil\nstack traceback:\n\t[string \"Race\"]:755: in method 'Collision'\n\t[string \"RaceAI\"]:561: in field 'TrafficContacts'\n\t[string \"RaceAIChecks\"]:571: in local 'traffic'\n\t[string \"RaceAIChecks\"]:574: in field 'MotorcycleSkills'\n\t[string \"MotorcycleSkillCheckMain\"]:17: in function 'Start'",
+                    "frame": 0
+                }
+            ]
+        },
+        "run": {
+            "result": "PASS",
+            "errors": []
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 0,
+            "component_count": 0,
+            "scene_exists": false
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 345.33599853515627
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.610000610351564
+        },
+        {
+            "frame": 65,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.615999221801759
+        },
+        {
+            "frame": 130,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 16.645000457763673
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 326.75799560546877,
+    "update_defined": false,
+    "component_census": {},
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 1,
+        "resource_errors": 0,
+        "engine_errors": 0,
+        "total_errors": 1
+    }
+}

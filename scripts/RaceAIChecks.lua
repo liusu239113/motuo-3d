@@ -564,6 +564,7 @@ function Checks.MotorcycleSkills()
     do
         local function traffic(id,active)
             local race,r=fixture(31,id,1,"hard")
+            race.Collision=function(self) self.collisions=(self.collisions or 0)+1 end
             r.speed=20
             if active then Skills.Before(r.driveSim,DT,{skill=true}) end
             local car={x=0,y=0,z=0,yaw=0,speed=0,height=1.8}
