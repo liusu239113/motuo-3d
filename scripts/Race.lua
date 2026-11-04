@@ -1091,20 +1091,35 @@ function Race:AfterStep(dt)
     prof.Begin("snapshot")
     RaceAI.Snapshot(self)
     prof.End()
-    -- 对手AI基于dt而不是固定物理步：每帧只跑一次。
-    -- 原来慢帧会被拆成最多4个内部步，每步都重跑8车完整决策，
-    -- 使aiUpdate从14ms膨胀到56ms——这正是帧越卡越卡的主因。
-    local aiDt = min(dt, 0.08)
-    self.elapsed = frameStart + aiDt
-    prof.Begin("aiUpdate")
-    for _, r in ipairs(self.racers) do self:UpdateAI(r, aiDt) end
-    prof.End()
-    prof.Begin("rank")
-    self:Rank()
-    prof.End()
-    prof.Begin("pursuit")
-    self:UpdatePursuit(aiDt)
-    prof.End()
+    -- 单帧只推进一次完整AI决策：低帧率拆出的后续固定子步只累计时间，
+    -- 否则8车完整决策会被同帧重复执行5遍（现场aiUpdate 10-15ms×5）。
+    if self.aiFrameOpen == true then
+        local aiDt = min((self.aiAccum or 0) + dt, 0.08)
+        self.aiAccum, self.aiFrameOpen = 0, false
+        prof.Begin("aiUpdate")
+        for _, r in ipairs(self.racers) do self:UpdateAI(r, aiDt) end
+        prof.End()
+        prof.Begin("rank")
+        self:Rank()
+        prof.End()
+        prof.Begin("pursuit")
+        self:UpdatePursuit(aiDt)
+        prof.End()
+    elseif self.aiFrameOpen == nil then
+        -- 纯规则测试直接调用AfterStep：保持原先每次调用推进一次的语义。
+        local aiDt = min(dt, 0.08)
+        prof.Begin("aiUpdate")
+        for _, r in ipairs(self.racers) do self:UpdateAI(r, aiDt) end
+        prof.End()
+        prof.Begin("rank")
+        self:Rank()
+        prof.End()
+        prof.Begin("pursuit")
+        self:UpdatePursuit(aiDt)
+        prof.End()
+    else
+        self.aiAccum = (self.aiAccum or 0) + dt
+    end
     for _, r in ipairs(self.racers) do
         r.hitTimer = max(0, (r.hitTimer or 0) - dt)
         if r.hitTimer <= 0 then r.hitShake, r.hitYaw = 0, 0 end

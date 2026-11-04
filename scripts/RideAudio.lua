@@ -313,6 +313,8 @@ function RideAudio:Init(scene)
     self.engineClass, self.engineSounds = "", {}
     self.engineProfile, self.engineSoundFailures = nil, {}
     self.engineLayerClass, self.engineLayerSound = "", nil
+    -- 生成失败后必须记住，否则SetVehicle每帧都会重试合成，单帧白白烧掉10ms以上。
+    self.engineLayerFailed = {}
     self.outputWarningShown = false
     self.engineLayerSource = self.node:CreateChild("VehicleMechanicalLayer", LOCAL):CreateComponent("SoundSource", LOCAL)
     self.engineLayerSource.soundType, self.engineLayerSource.gain, self.engineLayerSource.declickEnabled = SOUND_EFFECT, 0, true
@@ -576,12 +578,19 @@ function RideAudio:UpdateEngineLayer(profile)
         return
     end
     if self.engineLayerClass ~= kind or not self.engineLayerSound then
+        if self.engineLayerFailed and self.engineLayerFailed[kind] then
+            -- 同一车型本局已确认无法生成，不再每帧重试。
+            self:SilenceEngineLayer()
+            self.engineLayerClass, self.engineLayerSound = "", nil
+            return
+        end
         self:SilenceEngineLayer()
         local old = self.engineLayerSound
         if old then old:Dispose() end
         local ok, generated = pcall(MechanicalLoop, kind)
         if not ok or not generated or generated:GetFrequency() <= 0 or generated:GetLength() <= 0 then
             self.engineLayerClass, self.engineLayerSound = "", nil
+            self.engineLayerFailed[kind] = true
             print("[车型音频] 机械层生成失败：" .. kind .. "，保留主发动机")
             return
         end

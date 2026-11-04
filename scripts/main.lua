@@ -1263,6 +1263,8 @@ function HandleUpdate(eventType, eventData)
         -- dt已在上面钳到0.1秒，最多5步；不会出现一帧跑几十步的死循环。
         accumulator_ = accumulator_ + dt * (testMode_ == "race-result" and 20 or 1)
         accumulator_ = math.min(accumulator_, 0.1)
+        -- 一帧只让AI完整决策一次；同帧后续固定子步只累计时间，避免低帧率下AI成本成倍放大。
+        if pendingChallenge_ and race_ then race_.aiFrameOpen = true end
         while accumulator_ >= 0.02 do
             rideInput_.steer, rideInput_.throttle, rideInput_.brake = steer, throttle, brake
             rideInput_.wheelie = touch_.wheelie or input:GetKeyDown(KEY_Q) or testTrick_ == "wheelie"

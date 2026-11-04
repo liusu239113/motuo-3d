@@ -235,7 +235,8 @@ function Checks.Pool(scene,city)
         crowd.shapes={}
         crowd.Hidden=function() return true end
         assert(crowd:Acquire(actor,nil,false),"释放槽不能复用")
-        assert(crowd.people[1].node==originalNode and crowd.created<=12,"复用偷偷新建骨骼")
+        local firstPerson = crowd.people[1]
+        assert(firstPerson.node==originalNode and crowd.created<=12,"复用偷偷新建骨骼")
         fixture.traffic.active=false
         assert(#crowd:GetBlockers()==0 and crowd:IsFree(p.x,p.z,1),"旧测试禁用交通后残留隐形新行人墙")
     end)
