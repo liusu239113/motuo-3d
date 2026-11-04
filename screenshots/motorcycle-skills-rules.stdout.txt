@@ -1,0 +1,85 @@
+[2026-11-04 21_15_54_925][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_54_925][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_54_925][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_54_925][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_55_305][22] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_55_305][22] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_55_305][22] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 21_15_54_500][0] INFO: DownloadManager initialized
+[2026-11-04 21_15_54_502][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 21_15_54_503][0] INFO: Engine construct finish.
+[2026-11-04 21_15_54_834][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-11-04 21_15_54_853][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 21_15_54_854][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_15_55_276][22] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_15_55_903][41]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 21_15_55_907][41]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 21_15_55_907][41]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 21_15_55_911][41] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_15_57_463][67] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_15_57_467][67][Script] IsNetworkMode:    false
+[2026-11-04 21_15_57_486][67][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 21_15_57_486][67][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 21_15_57_486][67][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 21_15_57_486][67][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 21_15_57_489][67][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 21_15_57_784][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_784][67][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_15_57_784][67][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_15_57_784][67][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_15_57_785][67][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_15_57_785][67][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_15_57_785][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_785][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_786][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_786][67][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_15_57_786][67][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_15_57_786][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_788][67][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_15_57_791][67][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_15_57_793][67][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_15_57_795][67][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_15_57_798][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_800][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_802][67][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_15_57_805][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_806][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_806][67][Script] [驾驶] test，车况 84
+[2026-11-04 21_15_57_806][67][Script] [驾驶] test，车况 91
+[2026-11-04 21_15_57_806][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_806][67][Script] [驾驶] test，车况 85
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_807][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_808][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_808][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_808][67][Script] [载具技能] tank / 助推喷射
+[2026-11-04 21_15_57_808][67][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_15_57_808][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_808][67][Script] [普通摩托技能验收] PASS 148项 / 九车型独立 / 动力实效 / 蓄力 / 越野 / 爬坡 / 收油 / 减伤保速 / 单次护盾
+[2026-11-04 21_15_57_868][67][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_15_57_869][67][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_15_57_870][67][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_15_57_871][67][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_15_57_872][67][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_15_57_873][67][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_15_57_874][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_875][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_876][67][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_15_57_886][67][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_15_57_886][67][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_15_57_886][67][Script] [摩托AI技能] PASS / 50项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演
+[2026-11-04 21_15_57_886][67][Script] [普通摩托总验收] PASS rules + AI，无存档/SDK调用
+[2026-11-04 21_15_57_936][71]INFO__VALIDATE_UPDATE__:false

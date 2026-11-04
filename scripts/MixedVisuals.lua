@@ -1,8 +1,35 @@
 -- 正式MDL表现适配器；源模型、贴图和原始三角面共用于玩家、AI和车库。
 local Assets = require("MixedAssets")
 local Rider = require("Rider")
+local MixedDriver = require("MixedDriver")
 local V = Vector3
 local M = {}
+local newVehicleIds={hovercraft=true,centipede=true,buggy=true,loader=true,cicada=true}
+local remainingArticulation={
+    (require("RemainingOrganicArticulation")),
+    (require("RemainingWheeledArticulation")),
+    (require("RemainingNoveltyArticulation")),
+}
+local function articulationFor(id)
+    for _,library in ipairs(remainingArticulation) do
+        if library.Has(id) then return library end
+    end
+    return nil
+end
+local cockpitSources={
+    hovercraft={seat=V(-.04,.075,-.01),control=V(.12,.10,-.15),accent=Color(.12,.55,.72)},
+    centipede={seat=V(.16,.08,.02),control=V(.22,.10,-.08),accent=Color(.65,.12,.035)},
+    buggy={seat=V(-.10,.11,0),control=V(-.02,.14,0),accent=Color(.04,.65,.72)},
+    loader={seat=V(-.08,.16,0),control=V(.01,.27,0),accent=Color(.85,.43,.035)},
+    cicada={seat=V(-.03,.12,0),control=V(.16,.04,0),accent=Color(.45,.65,.15)},
+}
+-- 座舱锚点来自原车源坐标；个别车型有原厂防滚架/铲臂横杆，需要额外抬高或后移眼位。
+local cockpitEyeAdjust={
+    -- 铲车原始驾驶位在横杆后方，正对防滚架；后移并抬到杆上方才看得到前铲。
+    loader=V(0,.52,-.34),
+    -- 蜈蚣源座位落在头节，原网格大颚紧贴镜头；后移到身躯中前段并略抬高。
+    centipede=V(0,.86,-.86),
+}
 
 -- 混合车的首视角只在这里配置；source模型本身保持一整套正式三角面。
 -- 电动车的前后轮心、轮半径和左右握把来自正式MDL/上传图复核后的归一化测量。
@@ -77,7 +104,7 @@ local function buildGenericControls(self,id)
         P.Add(knob,"MandibleGrip","Cylinder",self.materials.chrome,V(0,.02,.05),V(.045,.30,.045),Quaternion(0,0,90))
         P.Add(knob,"SteamValve","Sphere",self.materials.gold,V(.20,.12,.10),V(.09,.09,.09))
         P.Add(knob,"ClampButton","Box",self.materials.warning,V(-.20,.10,.12),V(.08,.035,.025),nil,false)
-    else
+    elseif id=="helicopter" then
         P.Add(knob,"CyclicStick","Cylinder",self.materials.chrome,V(0,-.03,.06),V(.035,.28,.035))
         P.Add(knob,"CyclicGrip","Sphere",self.materials.rubber,V(0,.13,.06),V(.10,.08,.10))
         P.Add(knob,"CollectiveLever","Box",self.materials.control,V(.23,.03,.08),V(.08,.25,.06))
@@ -92,10 +119,17 @@ local function buildGenericControls(self,id)
     end
 end
 
+---@param id string
+---@return boolean
+function M.HasRider(id)
+    return M.RiderBindings[id] ~= nil or MixedDriver.Has(id)
+end
+
 ---@param parent Node 归一化车辆本地米坐标；不得传SourceTransform
 ---@param id string
----@return Rider?
+---@return Rider|MixedDriver?
 function M.CreateRider(parent,id)
+    if MixedDriver.Has(id) then return MixedDriver.New(parent,id) end
     local binding=M.RiderBindings[id]
     if not binding then return nil end
     return Rider.New(parent,id,binding.right,binding)
@@ -106,6 +140,11 @@ end
 ---@param lean? number
 function M.UpdateRiderBinding(rig,lean)
     if rig and not rig.disposed then rig:Update(0,false,lean or 0) end
+end
+
+---@param rig table?
+function M.SyncRiderJoint(rig)
+    if rig and rig.SyncJoint then rig:SyncJoint() end
 end
 
 ---@param rig Rider?
@@ -200,10 +239,10 @@ end
 ---@param id string
 ---@return Node
 function M.Build(parent, id)
-    local c = assert(Assets.Vehicles[id], "正式模型尚未交付："..tostring(id))
+    local c = assert(Assets.Vehicles[id], "正式模型尚未交付："..tostring(id)) --[[@as VehicleAssetConfig]]
     local source = assert(cache:GetResource("Model", c.model), c.model)
-    local rotation = Quaternion(0, c.rotation, 0)
-    local bounds = sourceBounds(source,id,rotation)
+    local rotation = c.orientation or Quaternion(0, c.rotation, 0)
+    local bounds = c.sourceBounds or sourceBounds(source,id,rotation)
     local scale = c.targetLength / bounds.size.z
     local root = parent:CreateChild("Vehicle_"..id)
     local canonical = root:CreateChild("SourceTransform")
@@ -211,8 +250,13 @@ function M.Build(parent, id)
     canonical:SetScale(scale)
     canonical.position = V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
     local mat = material(c)
+    local remaining=articulationFor(id)
     if id == "tank" or id == "beetle" then
         require("MixedArticulation").Build(canonical,id,source,mat)
+    elseif newVehicleIds[id] then
+        require("NewVehicleArticulation").Build(canonical,id,source,mat)
+    elseif remaining then
+        remaining.Build(canonical,id,source,mat)
     elseif id == "helicopter" or id == "ebike" then
         local offset=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)
         ---@param p Vector3
@@ -265,6 +309,34 @@ function M.Build(parent, id)
         draw.lodBias = 2
     end
     local size = bounds.size*scale
+    if newVehicleIds[id] or remaining then
+        assert((size-c.targetSize):Length()<.005,"新车实测范围与碰撞配置不一致："..id)
+    end
+    if c.cockpit then M.Cockpits[id]=c.cockpit end
+    local cockpitSource=cockpitSources[id]
+    if cockpitSource then
+        local seat=canonical:LocalToWorld(cockpitSource.seat)
+        local controls=canonical:LocalToWorld(cockpitSource.control)
+        local seatLocal=root:WorldToLocal(seat)
+        local controlLocal=root:WorldToLocal(controls)
+        local eyeAdjust=cockpitEyeAdjust[id] or V.ZERO
+        local eye=seatLocal+V(0,.62,-.08)+eyeAdjust
+        M.Cockpits[id]={localOffset=eye,pitch=5,fov=76,
+            seatHeight=eye.y,grip=controlLocal,
+            -- 与坦克/锹甲同一观感比例：仪表低于眼位约0.2m、前伸约1m，避免贴近镜头遮满视野。
+            dash=V(0,eye.y-.21,eye.z+math.min(1.02,c.targetLength*.33)),
+            dashSize=Vector2(.46,.14),
+            dashboardAngle=-12,accent=cockpitSource.accent,cameraCalibrated=true}
+    end
+    local driverProfile=MixedDriver.Profiles[id]
+    if id=="skateboard" and driverProfile and M.Cockpits[id] then
+        local cockpit={}
+        for key,value in pairs(M.Cockpits[id]) do cockpit[key]=value end
+        local eyeDelta=driverProfile.eye-cockpit.localOffset
+        cockpit.dash=cockpit.dash+eyeDelta
+        cockpit.localOffset=driverProfile.eye
+        M.Cockpits[id]=cockpit
+    end
     root:SetVar("VehicleId",Variant(id))
     root:SetVar("VehicleSize",Variant(size))
     root:SetVar("FormalModel",Variant(c.model))
@@ -292,6 +364,15 @@ local ebikeWheelAxis = Quaternion(0, Assets.Vehicles.ebike.rotation, 0):Inverse(
 function M.Animate(root, id, time, state)
     if id=="tank" or id=="beetle" then
         require("MixedArticulation").Animate(root,id,time,state)
+        return
+    end
+    if newVehicleIds[id] then
+        require("NewVehicleArticulation").Animate(root,id,time,state)
+        return
+    end
+    local remaining=articulationFor(id)
+    if remaining then
+        remaining.Animate(root,id,time,state)
         return
     end
     if id=="ebike" then
@@ -368,6 +449,11 @@ function Adapter:Init(scene,id)
         buildGenericControls(self,id)
         self.mirrors=require("RearMirrors").New(scene,self.node,self.Cockpit.localOffset.y)
         self.effects={pitch=0,bob=0,Dispose=function() end}
+    end
+    self.skillEffects=require("NewVehicleSkillEffects").New(self.visual,id,self.Cockpit.localOffset.y,size.z)
+    if self.skillEffects then
+        -- 首视角边缘效果按真实座舱眼位放置，不能假定车心原点。
+        self.skillEffects:SetEyePosition(self.Cockpit.localOffset)
     end
     local riderRig=M.CreateRider(self.visual,id)
     self.riderRig=riderRig
@@ -448,6 +534,7 @@ function Adapter:UpdateState(dt,sim,firstPerson,clock)
     end
     self.visual.position=V(0,(sim.oddAltitude or 0)+lift,0)
     M.Animate(self.body,self.vehicleId,sim.elapsed or clock or self.visualClock,sim)
+    if self.skillEffects then self.skillEffects:Update(step,sim) end
     if self.vehicleId=="ebike" then
         -- 里程只驱动滚动；烧胎只额外驱动后轮，刹住的前轮保持原角。
         self.rearSpin=((self.rearSpin or 0)+(sim.burnout and 1900 or 0)*step)%360
@@ -478,6 +565,7 @@ function Adapter:Dispose()
     self.disposed=true
     self.mirrors:Dispose()
     self.effects:Dispose()
+    if self.skillEffects then self.skillEffects:Dispose() end
     self.riderRig:Dispose()
     for _,particle in ipairs(self.smoke or {}) do particle.node:Dispose();particle.mat:Dispose() end
     self.node:Dispose()

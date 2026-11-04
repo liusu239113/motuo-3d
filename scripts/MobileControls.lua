@@ -2,7 +2,10 @@
 -- clutch/shift 字段只保留给旧入口过渡，不再创建对应可见控件。
 local UI = require("urhox-libs/UI")
 local RacingTheme = require("RacingTheme")
+local SkillNames = require("SkillNames")
 ---@class MobileControls
+---@field ResetLook fun(self:MobileControls)
+---@field ConsumeLook fun(self:MobileControls):number,number
 local Controls = {}
 Controls.__index = Controls
 local HOLDS = {"gas", "brake", "nitro", "clutch", "wheelie", "burnout"}
@@ -50,16 +53,53 @@ function Controls:Init()
     self.lineStyle = false
     self.flashes, self.visualKeys = {}, {}
     self.nitroQueued = false
+    self.lookDx, self.lookDy, self.lookPointer = 0.0, 0.0, -1
+    self.lookLastX, self.lookLastY = 0.0, 0.0
 end
 
 function Controls:Reset()
     self.steer, self.throttle = 0.0, 0.0
     self.flashes, self.nitroQueued = {}, false
+    self:ResetLook()
     for key in pairs(self.pointers) do
         self.pointers[key] = -1
         if key ~= "steer" then self[key] = false end
     end
     self:Refresh()
+end
+
+-- LOOK只记录逻辑像素增量；相机模块决定角度和俯仰限制。
+function Controls:ResetLook()
+    self.lookDx, self.lookDy, self.lookPointer = 0.0, 0.0, -1
+    self.lookLastX, self.lookLastY = 0.0, 0.0
+end
+
+function Controls:BeginLook(pointerId, x, y)
+    if not self.enabled or pointerId < 0 or self.lookPointer ~= -1 then return false end
+    for key, owner in pairs(self.pointers) do
+        if owner == pointerId then return false end
+    end
+    self.lookPointer, self.lookLastX, self.lookLastY = pointerId, x, y
+    return true
+end
+
+function Controls:MoveLook(pointerId, x, y)
+    if pointerId ~= self.lookPointer then return end
+    self.lookDx = self.lookDx + x - self.lookLastX
+    self.lookDy = self.lookDy + y - self.lookLastY
+    self.lookLastX, self.lookLastY = x, y
+end
+
+function Controls:EndLook(pointerId, cancelled)
+    if pointerId ~= self.lookPointer then return end
+    self.lookPointer = -1
+    if cancelled then self.lookDx, self.lookDy = 0.0, 0.0 end
+end
+
+function Controls:ConsumeLook()
+    local dx, dy = self.lookDx, self.lookDy
+    self.lookDx, self.lookDy = 0.0, 0.0
+    return dx, dy
 end
 
 -- 应用玩家保存的灵敏度与死区；保存值本身已做上下限约束。
@@ -108,13 +148,47 @@ function Controls:ApplyScheme(scheme, width, height)
     self:Refresh()
 end
 
+-- 挂入HUD现有安全区驾驶页；首子项优先级最低，原有技能/方向/踏板始终先命中。
+-- 不使用全屏手势监听，只有明确标出的LOOK矩形可以取得环视手指。
+---@param parent Widget
+function Controls:MountLook(parent)
+    local zone = UI.Panel {
+        id = "drivingLook", position = "absolute", left = "64%", top = "26%",
+        width = "16%", height = "13%", maxWidth = 138, maxHeight = 74,
+        minWidth = 66, minHeight = 48, padding = 2, borderRadius = 8,
+        -- 半透明小区域放在车头右侧空档，不能压住中央道路与车辆本体。
+        backgroundColor = {9, 17, 24, 26}, borderWidth = 1, borderColor = {149, 174, 189, 45},
+        pointerEvents = "box-only", visible = self.enabled,
+        justifyContent = "center", alignItems = "center",
+        onPointerDown = function(event)
+            if event:IsTouch() then self:BeginLook(event.pointerId, event.x, event.y) end
+        end,
+        onPointerMove = function(event)
+            if self.enabled and event:IsTouch() then self:MoveLook(event.pointerId, event.x, event.y) end
+        end,
+        onPointerUp = function(event) if event:IsTouch() then self:EndLook(event.pointerId, false) end end,
+        onPointerCancel = function(event) if event:IsTouch() then self:EndLook(event.pointerId, true) end end,
+        children = {
+            UI.Label {text = "LOOK · 360°", fontSize = 11, fontWeight = "bold", fontColor = {224, 164, 75, 225},
+                textAlign = "center", pointerEvents = "none"},
+            UI.Label {text = "拖动环视 · 松手保持", fontSize = 7, fontColor = {214, 225, 231, 165},
+                textAlign = "center", pointerEvents = "none"},
+        },
+    }
+    self.lookWidget = zone
+    parent:InsertChild(zone, 1)
+    return zone
+end
+
 function Controls:SetEnabled(enabled)
     self.enabled = enabled
     self:Reset()
+    if self.lookWidget then self.lookWidget:SetVisible(enabled) end
 end
 
 function Controls:Press(key, pointerId, x, width)
-    if not self.enabled or pointerId < 0 or self.pointers[key] == nil or self.pointers[key] ~= -1 then return false end
+    if not self.enabled or pointerId < 0 or self.lookPointer == pointerId
+        or self.pointers[key] == nil or self.pointers[key] ~= -1 then return false end
     -- 同一手指只能持有一个操作，其他手指彼此独立。
     for _, owner in pairs(self.pointers) do
         if owner == pointerId then return false end
@@ -199,7 +273,7 @@ end
 function Controls:SetActionState(key, state)
     -- Display-only contract. Never gate ownership or change the gameplay resource here.
     self.actionStates[key] = state or {}
-    if self.captions[key] and state.label then self.captions[key]:SetText(state.label) end
+    if self.captions[key] and state.label then self.captions[key]:SetText(SkillNames.Label(state.label)) end
     if self.details[key] and state.detail then self.details[key]:SetText(shortDetail(state.detail)) end
     self:Refresh()
 end
@@ -330,7 +404,7 @@ function Controls:CreateHold(key, text, width, height)
     end
     -- 明确给出宽度，禁止 Label 把长状态当作 autoWidth 自动换行并向上顶住标题。
     local caption = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 19, height = 17,
-        paddingHorizontal = 3, text = CAPTIONS[key] or (text ~= "" and text or key),
+        paddingHorizontal = 3, text = SkillNames.Label(CAPTIONS[key] or (text ~= "" and text or key)),
         fontSize = 10, fontWeight = "bold", lineHeight = 1, maxLines = 1, whiteSpace = "nowrap",
         fontColor = {239, 245, 247, 255}, textAlign = "center", pointerEvents = "none"}
     local detail = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 2, height = 15,

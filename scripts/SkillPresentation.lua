@@ -9,9 +9,39 @@ local DIFFUSE_IMAGE = "model/b68c50c6-9177-5315-b53c-3080ad11b4aa/Textures/3e646
 local NORMAL_IMAGE = "model/b68c50c6-9177-5315-b53c-3080ad11b4aa/Textures/3e646daa3cdc44148f0153b1fb5bd7b9_00_N.jpg"
 local TECHNIQUE = "Techniques/PBR/PBRDiffNormal.xml"
 local TRAIL_TECHNIQUE = "Techniques/NoTextureUnlit.xml"
-Skill.Resources = {MODEL, MATERIAL, DIFFUSE_IMAGE, NORMAL_IMAGE, TECHNIQUE, TRAIL_TECHNIQUE}
+local WATER_TECHNIQUE = "Techniques/PBR/PBRNoTextureAlpha.xml"
+Skill.Resources = {MODEL, MATERIAL, DIFFUSE_IMAGE, NORMAL_IMAGE, TECHNIQUE, TRAIL_TECHNIQUE, WATER_TECHNIQUE}
 Skill.ResourceTypes = {[MODEL] = "Model", [MATERIAL] = "Material",
-    [DIFFUSE_IMAGE] = "Texture2D", [NORMAL_IMAGE] = "Texture2D", [TECHNIQUE] = "Technique", [TRAIL_TECHNIQUE] = "Technique"}
+    [DIFFUSE_IMAGE] = "Texture2D", [NORMAL_IMAGE] = "Texture2D", [TECHNIQUE] = "Technique", [TRAIL_TECHNIQUE] = "Technique",
+    [WATER_TECHNIQUE] = "Technique"}
+---@type Model?
+local waterModel = nil
+---@type Material?
+local waterMaterial = nil
+-- 仅水球特效使用共享球面；载具本体仍是正式MDL，位置和命中完全由原仿真决定。
+---@param parent Node
+---@param shot SkillProjectilePresentation
+local function updateWaterShot(parent,shot)
+    if not shot.node then
+        if not waterModel then waterModel=SphereGeometry(.22,16,10):ToModel() end
+        if not waterMaterial then
+            waterMaterial=Material:new()
+            waterMaterial:SetTechnique(0,assert(cache:GetResource("Technique",WATER_TECHNIQUE)))
+            waterMaterial:SetShaderParameter("MatDiffColor",Variant(Color(.18,.72,1,.72)))
+            waterMaterial:SetShaderParameter("MatEmissiveColor",Variant(Vector3(.06,.27,.42)))
+            waterMaterial:SetShaderParameter("Roughness",Variant(.16))
+            waterMaterial.cullMode=CULL_NONE
+        end
+        local root=parent:CreateChild("SkillProjectile_Water",LOCAL)
+        local draw=root:CreateComponent("StaticModel")
+        draw:SetModel(waterModel)
+        draw:SetMaterial(waterMaterial)
+        draw.castShadows=false
+        draw.drawDistance=120
+        shot.node=root
+    end
+    shot.node.position=Vector3(shot.x,shot.y,shot.z)
+end
 ---@type Material?
 local trailMaterial = nil
 local function getTrailMaterial()
@@ -41,7 +71,8 @@ end
 ---@param parent Node
 ---@param shot SkillProjectilePresentation
 function Skill.UpdateShot(parent, shot)
-    -- 坦克炮弹与直升机导弹都使用正式导弹网格；水母仍不需要视觉弹体。
+    if shot.kind=="jellyfish" then updateWaterShot(parent,shot);return end
+    -- 坦克与直升机的正式导弹和尾迹保持原样。
     if shot.kind ~= "helicopter" and shot.kind ~= "tank" then return end
     if not shot.node then
         local model = assert(cache:GetResource("Model", MODEL), "正式导弹网格未预载")

@@ -1,9 +1,10 @@
 -- Independent showroom, based on scaffold-3d-scene + scene-to-nanovg recipe.
--- Ebike reuses the formal Rider skeleton; no Bike, World, physics, or global viewport is created.
--- Contract: New(props), Select(id, available), Update(dt), Dispose(); widget may reopen.
+-- 车库只展示载具；比赛中的玩家和AI人物由MixedVisuals独立创建。
+-- Contract: New(props), Select(id, available), Prewarm(ids), Update(dt), Dispose(); widget may reopen.
 local UI = require("urhox-libs/UI")
 local VehicleAssets = require("VehicleAssets")
 local MixedVisuals = require("MixedVisuals")
+local PreviewCache = require("PreviewCache")
 
 ---@class GaragePreview : Widget
 local Preview = UI.Widget:Extend("GaragePreview")
@@ -22,7 +23,12 @@ function Preview:Init(props)
     props.padding = 0
     UI.Widget.Init(self, props)
     self.active, self.generation, self.angle, self.frameTimer = false, 0, 28.0, 0.0
-    self.vehicleId, self.state, self.downloadGroup = "", "idle", 0
+    self.vehicleId, self.state = "", "idle"
+    ---@type table?
+    self.previewCache = nil
+    ---@type GaragePreviewEntry?
+    self.displayEntry = nil
+    self.presentGeneration, self.renderGeneration, self.presentFrame = -1, -1, -1
     ---@type Scene?
     self.previewScene = nil
     ---@type Node?
@@ -75,8 +81,9 @@ function Preview:Dispose()
     -- Invalidate all pending asynchronous callbacks before releasing native objects.
     self.active = false
     self.generation = self.generation + 1
-    if self.downloadGroup > 0 then cache:CancelDownloadGroup(self.downloadGroup) end
-    self.downloadGroup = 0
+    if self.previewCache then self.previewCache:Dispose() end
+    self.previewCache, self.displayEntry = nil, nil
+    self.presentGeneration, self.renderGeneration, self.presentFrame = -1, -1, -1
     self:ReleaseImage()
     if self.previewSurface then self.previewSurface:SetNumViewports(0) end
     if self.previewTexture then self.previewTexture:Dispose() end
@@ -94,79 +101,124 @@ function Preview:Destroy()
     UI.Widget.Destroy(self)
 end
 
+function Preview:EnsureCache()
+    if self.previewCache then return end
+    self.previewCache = PreviewCache.New {
+        limit = 12, commonPaths = Preview.Resources, commonTypes = Preview.ResourceTypes,
+        build = function(entry) self:BuildVehicle(entry) end,
+        ready = function(entry, token)
+            if self.active and self.vehicleId == entry.id and token == self.generation then self:Activate(entry) end
+        end,
+        failed = function(entry, token)
+            if not self.active or self.vehicleId ~= entry.id or token ~= self.generation then return end
+            self:ChangeStatus("failed", "实车准备中 · 资源未就绪，重新选择可重试")
+            print("[车库预览] " .. entry.id .. " " .. tostring(entry.error))
+        end,
+    }
+end
+
+---@param entry GaragePreviewEntry
+---@param visible boolean
+function Preview:SetEntryVisible(entry, visible)
+    -- Parent Node.enabled did not suppress descendant meshes in the real CLI RT.
+    -- Gate the actual drawables, never recursively enable the whole articulation:
+    -- source-disabled pieces stay disabled, and joint node rest states stay untouched.
+    for _, snapshot in ipairs(entry.visibility or {}) do
+        snapshot.drawable.enabled = visible and snapshot.enabled or false
+        snapshot.drawable.viewMask = visible and snapshot.viewMask or 0
+    end
+    if entry.content then entry.content.enabled = visible end
+end
+
 ---@param id string
 ---@param available? boolean
 function Preview:Select(id, available)
     if self.active and self.vehicleId == id and (self.state == "ready" or self.state == "preparing") then return end
-    self:Dispose()
+    -- Switching does not destroy the showroom or any resident vehicle. Hide the OLD
+    -- node/image immediately; only a generation-matched selection may become visible.
+    self.generation = self.generation + 1
+    if self.displayEntry then self:SetEntryVisible(self.displayEntry, false) end
+    self.displayEntry = nil
     self.vehicleId, self.active = id, true
-    local config = VehicleAssets.Vehicles[id]
-    -- Never silently substitute a class/base vehicle for an unprepared variant.
-    if available == false or not config then
+    self.presentGeneration, self.renderGeneration = -1, -1
+    if available == false or not VehicleAssets.Vehicles[id] then
+        if self.previewCache then self.previewCache.selected = "" end
         self:ChangeStatus("unavailable", "车型资源准备中 · 暂不可驾驶")
-        print("[车库预览] 独立车型尚未到货：" .. id)
         return
     end
+    self:EnsureCache()
     self:ChangeStatus("preparing", "正在准备真实车型…")
-    local token = self.generation
-    local paths = VehicleAssets.ResourcesFor({id})
-    if id=="ebike" then
-        local rider=require("Rider")
-        for _,path in ipairs(rider.Resources) do
-            -- 纹理导入XML不作为DWP运行时根；Model/Material/Texture/Technique需要提前准备。
-            local kind=rider.ResourceTypes[path]
-            if kind~="XMLFile" then paths[#paths+1]=path;VehicleAssets.ResourceTypes[path]=kind end
-        end
-    end
-    for _, path in ipairs(Preview.Resources) do paths[#paths + 1] = path end
-    print("[车库预览] 按需准备 " .. id .. "，不构建驾驶世界")
-    local function onDownloaded(success, failedCount)
-        if not self.active or token ~= self.generation then return end
-        self.downloadGroup = 0
-        if not success then
-            self:ChangeStatus("failed", "实车准备中 · 网络加载失败，重新选择可重试")
-            print("[车库预览] 下载失败 " .. id .. ": " .. tostring(failedCount))
-            return
-        end
-        -- Async loads wait for real DWP media rather than displaying placeholders.
-        local pending, failed = #paths, false
-        for _, path in ipairs(paths) do
-            local kind = Preview.ResourceTypes[path] or VehicleAssets.ResourceTypes[path] or "XMLFile"
-            cache:GetResourceAsync(kind, path, function(resource)
-                if not self.active or token ~= self.generation then return end
-                if resource then self.loadedResources[#self.loadedResources + 1] = resource else failed = true end
-                pending = pending - 1
-                if pending ~= 0 then return end
-                if failed then
-                    self:ChangeStatus("failed", "实车准备中 · 资源未就绪，重新选择可重试")
-                    print("[车库预览] 存在未就绪资源：" .. id)
-                    return
-                end
-                local ok, err = pcall(function() self:BuildScene(id) end)
-                if not ok then
-                    self:Dispose()
-                    self:ChangeStatus("failed", "实车准备中 · 预览暂不可用")
-                    print("[车库预览] 构建失败 " .. id .. ": " .. tostring(err))
-                end
-            end)
-        end
-    end
-    local pendingPaths = {}
-    for _, path in ipairs(paths) do
-        if not cache:Exists(path) then pendingPaths[#pendingPaths + 1] = path end
-    end
-    if #pendingPaths == 0 then onDownloaded(true, 0); return end
-    local group = cache:DownloadResources(pendingPaths, onDownloaded)
-    -- Cache hits can complete synchronously. Do not retain an already completed group.
-    if self.state == "preparing" and token == self.generation then self.downloadGroup = group end
+    local entry = self.previewCache:Request(id, self.generation)
+    if entry and entry.state == "ready" then self:Activate(entry) end
 end
 
+-- HUD supplies ordered current-page + next-page IDs. No rider assets, synchronous
+-- downloads, model construction or resource loads happen in this call.
+---@param ids string[]
+function Preview:Prewarm(ids)
+    if not self.active then return end
+    self:EnsureCache()
+    self.previewCache:Prewarm(ids)
+end
+
+-- Compatibility only: the vehicle-only showroom never creates or loads a rider.
 function Preview:SetRiderColor(color)
-    -- 车库不显示驾驶员，配色只记录选择，由比赛中的真实骑手使用。
     self.riderColor_ = color or self.riderColor_
 end
 
-function Preview:BuildScene(id)
+---@param entry GaragePreviewEntry
+function Preview:BuildVehicle(entry)
+    self:BuildScene()
+    local content = assert(self.previewScene):CreateChild("Preview_" .. entry.id)
+    entry.content = content
+    -- Build at identity in the original world frame, NOT underneath the rotating
+    -- turntable. MixedVisuals source seat/bounds transforms assume that frame.
+    local vehicle = VehicleAssets.Add(content, entry.id)
+    entry.vehicle = vehicle
+    local drawables = vehicle:GetComponents("StaticModel", true)
+    assert(#drawables > 0, "载具预览需要真实3D模型")
+    local bounds = BoundingBox()
+    for _, drawable in ipairs(drawables) do bounds:Merge(drawable.worldBoundingBox) end
+    -- SourceTransform already normalizes the actual retained triangles to y=0.
+    -- Rotated part AABBs are conservative and MUST NOT lift a mixed vehicle.
+    local groundY = require("MixedVehicles").Get(entry.id) and 0 or bounds.min.y
+    local size = Vector3(bounds.size.x, bounds.max.y - groundY, bounds.size.z)
+    content.position = Vector3(-bounds.center.x, -groundY, -bounds.center.z)
+    entry.size = size
+    entry.radius = math.sqrt(size.x * size.x + size.z * size.z) * 0.5
+    entry.visibility = {}
+    for _, drawable in ipairs(drawables) do
+        drawable.lodBias = 3
+        drawable:SetMaxLights(3)
+        entry.visibility[#entry.visibility + 1] = {drawable=drawable, enabled=drawable.enabled, viewMask=drawable.viewMask}
+    end
+    self:SetEntryVisible(entry, false)
+    content:SetParent(assert(self.turntable))
+end
+
+---@param entry GaragePreviewEntry
+function Preview:Activate(entry)
+    if not self.active or self.vehicleId ~= entry.id or not entry.alive then return end
+    if self.displayEntry then self:SetEntryVisible(self.displayEntry, false) end
+    local size = assert(entry.size)
+    if self.imageFailed then self:ReleaseImage() end
+    self.displayEntry = entry
+    self:SetEntryVisible(entry, true)
+    self.vehicleHeight, self.footprintWidth, self.footprintLength = size.y, size.x, size.z
+    self.stageRadius = assert(entry.radius)
+    self.angle, self.frameTimer = 20.0, 0.0
+    assert(self.turntable).rotation = Quaternion(0, self.angle, 0)
+    -- ready means the new source node is active; drawing is gated until its RT
+    -- has passed a render frame, so a shared RT never flashes the previous car.
+    self.presentGeneration, self.renderGeneration = self.generation, -1
+    self.presentFrame = GetTime():GetFrameNumber()
+    self:ResizeTarget()
+    if self.previewSurface then self.previewSurface:QueueUpdate() end
+    self:ChangeStatus("ready", "")
+end
+
+function Preview:BuildScene()
+    if self.previewScene then return end
     -- Based on scaffold-3d-scene: independent Octree + LightGroup + camera.
     -- Vehicle-only transparent layer; the authored backdrop owns the entire showroom.
     self.previewScene = Scene()
@@ -201,19 +253,6 @@ function Preview:BuildScene(id)
     rim.range=14
     rimNode.position=Vector3(2,3,-4)
     self.turntable = self.previewScene:CreateChild("VehicleTurntable")
-    local vehicle = VehicleAssets.Add(self.turntable, id)
-    -- 车库预览一律只展示载具本体，不显示驾驶员。
-    self.riderRig = nil
-    local drawables=vehicle:GetComponents("StaticModel",true)
-    assert(#drawables>0,"载具预览需要真实3D模型")
-    local bounds=BoundingBox()
-    for _,drawable in ipairs(drawables) do bounds:Merge(drawable.worldBoundingBox) end
-    local size = bounds.size
-    vehicle.position = Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z)
-    self.vehicleHeight = size.y
-    self.footprintWidth, self.footprintLength = size.x, size.z
-    self.stageRadius = math.sqrt(size.x * size.x + size.z * size.z) * 0.5
-    for _,drawable in ipairs(drawables) do drawable.lodBias=3;drawable:SetMaxLights(3) end
     self.cameraNode = self.previewScene:CreateChild("ShowroomCamera")
     self.previewCamera = self.cameraNode:CreateComponent("Camera")
     -- The reference is a long-lens image: weak perspective and a 42/365 deck ellipse.
@@ -232,11 +271,7 @@ function Preview:BuildScene(id)
             command.useFogColor, command.clearColor = false, Color(0, 0, 0, 0)
         end
     end
-    self.angle, self.frameTimer = 20.0, 0.0
-    self.turntable.rotation = Quaternion(0, self.angle, 0)
-    self:ResizeTarget()
-    self:ChangeStatus("ready", "")
-    print(string.format("[车库预览] %s 透明实车 bbox=%.3f/%.3f/%.3f，盘面俯角=%.2f°，接地=0m", id, size.x, size.y, size.z, math.deg(ELEVATION)))
+
 end
 
 function Preview:ResizeTarget()
@@ -257,9 +292,15 @@ function Preview:ResizeTarget()
     self.viewWidth = (self.stageRadius * self.pixelsPerMeter * 1.12 + 4) * 2
     self.viewHeight = (projectedHeight * self.pixelsPerMeter * 1.12 + 4) * 2
     local aspect = self.viewWidth / self.viewHeight
-    local density = math.min(UI.GetScale() * 2, 1536 / math.max(self.viewWidth, self.viewHeight))
-    local targetW = math.max(128, math.ceil(self.viewWidth * density / 8) * 8)
-    local targetH = math.max(128, math.ceil(self.viewHeight * density / 8) * 8)
+    -- RT allocation depends on the layout's maximum transparent ROI, not car
+    -- dimensions. The projection limits above bound EVERY car inside this envelope.
+    -- Explicit camera aspect + ROI mapping preserve metres/pixel even when the
+    -- resident RT's pixel aspect differs from a particular vehicle's compact ROI.
+    local maxWidth = (self.deckRX * 0.70 * 1.12 + 4) * 2
+    local maxHeight = (math.max(1, self.deckY - l.y - l.h * 0.25) * 1.12 + 4) * 2
+    local density = math.min(UI.GetScale() * 2, 1536 / math.max(maxWidth, maxHeight))
+    local targetW = math.max(128, math.ceil(maxWidth * density / 8) * 8)
+    local targetH = math.max(128, math.ceil(maxHeight * density / 8) * 8)
     local projectionChanged = self.layoutAspect ~= aspect
         or math.abs(self.previewCamera.orthoSize - self.viewHeight / self.pixelsPerMeter) > 0.000001
     local targetChanged = self.renderWidth ~= targetW or self.renderHeight ~= targetH
@@ -289,17 +330,21 @@ function Preview:ResizeTarget()
 end
 
 function Preview:Update(dt)
-    if not self.active or self.state ~= "ready" then return end
+    if not self.active then return end
+    if self.previewCache then self.previewCache:Update() end
+    if self.state ~= "ready" then return end
     self:ResizeTarget()
+    if self.presentGeneration == self.generation and GetTime():GetFrameNumber() > self.presentFrame + 1 then
+        self.renderGeneration = self.generation
+    end
     if not self.turntable or not self.previewSurface then return end
     self.frameTimer = self.frameTimer + dt
     if self.frameTimer < 1 / 24 then return end
     self.angle = (self.angle + self.frameTimer * 9) % 360
     self.frameTimer = 0
     self.turntable.rotation = Quaternion(0, self.angle, 0)
-    if require("MixedVehicles").Get(self.vehicleId or "") then
-        local body=self.turntable:GetChild("Vehicle_"..self.vehicleId)
-        if body then require("MixedVisuals").Animate(body,self.vehicleId,self.angle/9,{oddActive=0}) end
+    if require("MixedVehicles").Get(self.vehicleId or "") and self.displayEntry and self.displayEntry.vehicle then
+        MixedVisuals.Animate(self.displayEntry.vehicle, self.vehicleId, self.angle / 9, {oddActive=0})
     end
     self.previewSurface:QueueUpdate()
 end
@@ -325,7 +370,8 @@ function Preview:DrawContactShadow(nvg)
 end
 
 function Preview:Render(nvg)
-    if not self.active or self.state ~= "ready" or not self.previewTexture or self.imageFailed then return end
+    if not self.active or self.state ~= "ready" or self.renderGeneration ~= self.generation
+        or not self.previewTexture or self.imageFailed then return end
     local l = self:GetAbsoluteLayout()
     if l.w <= 0 or l.h <= 0 then return end
     if self.imageContext and self.imageContext ~= nvg then self:ReleaseImage() end

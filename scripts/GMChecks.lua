@@ -154,7 +154,9 @@ function Checks.RunDrive(hud,storage,restore)
     for _,arg in ipairs(GetArguments()) do
         local selected=arg:match("^%-gmdrivevehicle=(.+)$")
         if selected then
-            assert(selected=="tank" or selected=="beetle" or selected=="helicopter","GM流程车型参数无效")
+            assert(selected=="tank" or selected=="beetle" or selected=="helicopter"
+                or selected=="hovercraft" or selected=="centipede" or selected=="buggy"
+                or selected=="loader" or selected=="cicada","GM流程车型参数无效")
             vehicleId=selected
         end
         local prefix=arg:match("^%-gmdrivescreenshot=(.+)$")

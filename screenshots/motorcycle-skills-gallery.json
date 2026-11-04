@@ -1,0 +1,90 @@
+{
+    "version": 2,
+    "script": "MotorcycleSkillCheckMain.lua",
+    "result": "TIMEOUT",
+    "duration_ms": 75586,
+    "frames_completed": 94,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6594.85ms (threshold: 3000ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 94
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 81,
+            "component_count": 45,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 5806.64892578125
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 453.1940002441406
+        },
+        {
+            "frame": 65,
+            "phase": "run",
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 582.9500122070313
+        }
+    ],
+    "scene_stalled": true,
+    "max_frame_time_ms": 6594.85107421875,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 1,
+        "StaticModel": 41,
+        "Camera": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 2,
+        "total_errors": 2
+    }
+}

@@ -55,7 +55,12 @@ function Start()
     Skill.Clear({shot}); assert(shot.node==nil, "退出清理不得留下已释放Node引用")
     Skill.UpdateShot(parent, shot)
     local water = {kind="jellyfish",x=0,y=0,z=0,vx=0,vy=0,vz=1}
-    Skill.UpdateShot(parent,water); assert(not water.node,"水母不允许球占位")
+    Skill.UpdateShot(parent,water)
+    assert(water.node and water.node.name=="SkillProjectile_Water","水母必须显示独立水球而非导弹")
+    water.x,water.y,water.z=2,1,3
+    Skill.UpdateShot(parent,water)
+    assert(water.node.position==Vector3(2,1,3),"水球表现只跟随真实弹道")
+    Skill.Clear({water});assert(not water.node,"水球退出清理")
     -- 爆炸必须使用真实美术贴图，且能在生命周期内放大淡出后自行释放。
     local ExplosionEffects = require("ExplosionEffects")
     assert(cache:GetResource("Texture2D", ExplosionEffects.Resources[1]), "爆炸贴图必须可加载")
@@ -92,7 +97,7 @@ function Start()
             UI.Label{text="正式导弹 · 1m / 原始尾翼 / 无基础几何",fontSize=16,fontColor=Theme.Colors.white},
             UI.Label{text="生产HUD绑定验收 · "..selected,fontSize=13,fontColor=Theme.Colors.muted},skillButton}},
         UI.Panel{position="absolute",bottom=24,left="50%",marginLeft=-240,children={panel}}}})
-    print("[技能专项验收] PASS 正式D/N / 1m等比 / xyz+vxyz / 暂停冻结 / 释放 / 水母无占位 / HUD就绪发动无目标命中护盾失误冷却")
+    print("[技能专项验收] PASS 正式D/N / 1m等比 / xyz+vxyz / 暂停冻结 / 释放 / 水母真实水球 / HUD就绪发动无目标命中护盾失误冷却")
 end
 
 function Stop()

@@ -1,0 +1,60 @@
+[2026-11-04 20_06_52_666][0] INFO: DownloadManager initialized
+[2026-11-04 20_06_52_717][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 20_06_52_761][0] INFO: Engine construct finish.
+[2026-11-04 20_06_52_775][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-11-04 20_06_54_439][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 20_06_55_062][21] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_06_57_459][54]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 20_06_57_463][54]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 20_06_57_463][54]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 20_06_57_467][54] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_07_06_462][248][Script] IsNetworkMode:    false
+[2026-11-04 20_07_06_627][248][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 20_07_06_627][248][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 20_07_06_627][248][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 20_07_06_627][248][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 20_07_06_688][248][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 20_07_08_022][248][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 20_07_09_131][248][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_07_09_134][248][Script] [赛道排版] 1145x644 / 3列 / 固定按钮分页
+[2026-11-04 20_07_09_183][248][Script] [竞速界面] 钢黑琥珀 / 27款载具 / 独立3D车库 / 混合技能竞速
+[2026-11-04 20_07_09_183][248][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_07_09_184][248][Script] [公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留
+[2026-11-04 20_07_09_184][248][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_07_09_185][248][Script] [车库预览] 按需准备 ebike，不构建驾驶世界
+[2026-11-04 20_07_12_455][248][Script] [正式模型拆件] ebike/Body：15156原始三角面
+[2026-11-04 20_07_12_455][248][Script] [正式模型拆件] ebike/RearWheel：1961原始三角面
+[2026-11-04 20_07_12_455][248][Script] [正式模型拆件] ebike/FrontWheel：1572原始三角面
+[2026-11-04 20_07_13_076][248][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_07_13_078][248][Script] [车库预览] ebike 透明实车 bbox=2.092/1.609/2.180，盘面俯角=6.61°，接地=0m
+[2026-11-04 20_07_13_078][248][Script] [流程] garage
+[2026-11-04 20_07_13_079][248][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_07_13_080][248][Script] [流程] loading
+[2026-11-04 20_07_14_692][251][Script] [加载] 首场景资源清单 17 项，优先复用本地缓存
+[2026-11-04 20_07_15_403][265][Script] [加载] 资源下载/缓存检查完成，开始逐项确认可载入
+[2026-11-04 20_07_19_224][295] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_19_224][295] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_19_224][295] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_19_224][295] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_19_224][295] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_19_253][296] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_19_253][296] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-11-04 20_07_19_277][297] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_19_277][297] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_19_277][297] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_19_298][298] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-f41337ca.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_19_298][298] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-f41337ca.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_07_21_268][322] WARNING: SurfaceShader assets/BoqZqTZCAJ9j-C95906ouRdn-1b9279e9.shader: Warning: hint_normal on 'arrow_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_07_36_080][446][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-11-04 20_07_36_081][446][Script] [地图] 重建世界 circuit；路线、交通、仿真和比赛采样一并更新
+[2026-11-04 20_07_36_082][446][Script] [场景] 照片天空与匹配IBL，移动前向渲染／默认流畅档
+[2026-11-04 20_07_36_085][447][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-11-04 20_07_36_085][447][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-11-04 20_07_36_085][447][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-11-04 20_07_36_085][447][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-11-04 20_07_36_085][447][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-11-04 20_07_36_085][447][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_b37a07ad_0A70821E.glsl
+[2026-11-04 20_07_36_085][447][Script] [风景] 主线9705.3米，主支路1条，近地形8米采样
+[2026-11-04 20_07_38_951][548]INFO__VALIDATE_UPDATE__:false

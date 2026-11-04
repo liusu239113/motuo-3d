@@ -40,6 +40,8 @@ end
 ---@field weakness? string
 ---@field skillCooldown? number
 ---@field skillDuration? number
+---@field skillVisual? string
+---@field skillTactic? string
 ---@field skill? string
 ---@field skillActive? string
 ---@field id string
@@ -77,6 +79,8 @@ for _, entry in ipairs(Catalog.List) do
         entry.skillDescription = skill.description
         entry.skillCooldown = skill.cooldown
         entry.skillDuration = skill.duration
+        entry.skillVisual = skill.visual
+        entry.skillTactic = skill.tactic
         entry.skill = skill.name
         entry.skillActive = skill.active
     end

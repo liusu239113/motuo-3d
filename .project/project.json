@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/project.schema.json",
-  "project_id": "m_dttf",
+  "project_id": "m_dcaj",
   "author": {
     "id": "293533708",
     "name": "流苏水寒工作室"
@@ -8,44 +8,23 @@
   "entry": "main.lua",
   "version": "1.0.46",
   "taptap_publish": {
-    "title": "公路狂飙",
+    "title": "公路狂飙:我骑小电驴他竟然开坦克",
     "category": "racing",
     "screen_orientation": "landscape",
     "collection_type": "racing",
     "app_platforms": "1,2",
-    "developer_id": 377480,
-    "app_id": 1013102,
-    "miniapp_id": "tapmcakcfxnohtqqmk",
-    "description": "《公路狂飙》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能和地形优势争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。"
+    "description": "《公路狂飙:我骑小电驴他竟然开坦克》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
+    "app_id": 1029368,
+    "developer_id": 403436,
+    "miniapp_id": "tapmcv5zuqrcmr80sp"
   },
   "assets": {
-    "icon": "./assets/image/racing_original_icon.png",
-    "icon_url": "https://img-tc.tapimg.com/market/images/FiVwwXyZtmr7bBe83IzLyVUrfote.png"
-  },
-  "dc_publish_sync": {
-    "synced": true,
-    "dcVersion": "V-20261031",
-    "dcStatus": "INIT",
-    "baseFields": {
-      "title": "公路狂飙",
-      "description": "《公路狂飙》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能和地形优势争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
-      "category": "racing",
-      "trial_note": null,
-      "icon_url": "https://img-tc.tapimg.com/market/images/FiVwwXyZtmr7bBe83IzLyVUrfote.png",
-      "banner_url": null,
-      "square_promo_url": null,
-      "cover_horizontal_url": null,
-      "cover_vertical_url": null,
-      "screenshot_urls": null
-    },
-    "pending": {},
-    "baseGameplayDemoVideoId": 0
+    "icon": "./assets/image/vehicle_brawl_icon_20261104212809.png",
+    "icon_url": "https://img-tc.tapimg.com/market/images/Fmolb5RpumiLIpNCzGY6VFZvKUJK.png",
+    "promotional_image": "./assets/image/vehicle_brawl_promo_1920.png",
+    "promotional_image_url": "https://img-tc.tapimg.com/market/images/Fu3-ctb3_Jb1W0lup6F69KCalFvj.png"
   },
   "metadata": {
-    "updated_at": "2026-11-04T12:28:32.624Z"
-  },
-  "test_qrcode": {
-    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793795312400.png",
-    "generated_at": "2026-11-04T12:28:32.624Z"
+    "updated_at": "2026-11-04T22:25:21.648Z"
   }
 }

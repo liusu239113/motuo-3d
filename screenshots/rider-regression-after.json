@@ -1,0 +1,104 @@
+{
+    "version": 2,
+    "script": "MainPerformanceCheckMain.lua",
+    "result": "FAIL",
+    "duration_ms": 61254,
+    "frames_completed": 2000,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1799.54ms (threshold: 1000ms)",
+                    "frame": 944
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6795.74ms (threshold: 1000ms)",
+                    "frame": 955
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 3136,
+            "component_count": 1566,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 4556.23388671875
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 17.72599983215332
+        },
+        {
+            "frame": 1000,
+            "phase": "run",
+            "nodes": 107,
+            "components": 66,
+            "hash": 1722963525,
+            "frame_time_ms": 28.027000427246095
+        },
+        {
+            "frame": 2000,
+            "phase": "run",
+            "nodes": 107,
+            "components": 66,
+            "hash": 3361344386,
+            "frame_time_ms": 16.6200008392334
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 6795.7421875,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 1,
+        "Skybox": 1,
+        "StaticModel": 1256,
+        "CustomGeometry": 278,
+        "AnimatedModel": 7,
+        "Camera": 2,
+        "SoundSource": 17,
+        "RibbonTrail": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 2,
+        "total_errors": 2
+    }
+}

@@ -1,0 +1,141 @@
+{
+    "version": 2,
+    "script": "MainPerformanceCheckMain.lua",
+    "result": "TIMEOUT",
+    "duration_ms": 190114,
+    "frames_completed": 1159,
+    "phases": {
+        "load": {
+            "result": "PASS",
+            "errors": []
+        },
+        "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
+            "result": "FAIL",
+            "errors": [
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 3028.85ms (threshold: 1000ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 4085.62ms (threshold: 1000ms)",
+                    "frame": 8
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2819.22ms (threshold: 1000ms)",
+                    "frame": 11
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1297.27ms (threshold: 1000ms)",
+                    "frame": 123
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 8508.66ms (threshold: 1000ms)",
+                    "frame": 929
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 2312.72ms (threshold: 1000ms)",
+                    "frame": 944
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 1524.45ms (threshold: 1000ms)",
+                    "frame": 946
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 6697.84ms (threshold: 1000ms)",
+                    "frame": 948
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 5679.04ms (threshold: 1000ms)",
+                    "frame": 955
+                },
+                {
+                    "category": "engine",
+                    "message": "Frame time spike: 3314.38ms (threshold: 1000ms)",
+                    "frame": 956
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 1159
+                }
+            ]
+        },
+        "scene": {
+            "result": "PASS",
+            "errors": [],
+            "node_count": 3136,
+            "component_count": 1566,
+            "scene_exists": true
+        }
+    },
+    "state_snapshots": [
+        {
+            "frame": 1,
+            "phase": "init",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 11068.0693359375
+        },
+        {
+            "frame": 10,
+            "phase": "run",
+            "nodes": 0,
+            "components": 0,
+            "hash": 0,
+            "frame_time_ms": 55.08300018310547
+        },
+        {
+            "frame": 1100,
+            "phase": "run",
+            "nodes": 107,
+            "components": 66,
+            "hash": 3361344386,
+            "frame_time_ms": 397.47698974609377
+        }
+    ],
+    "scene_stalled": false,
+    "max_frame_time_ms": 8508.6630859375,
+    "update_defined": false,
+    "component_census": {
+        "Octree": 1,
+        "SkinTextureBuffer": 1,
+        "Zone": 1,
+        "Light": 1,
+        "Skybox": 1,
+        "StaticModel": 1256,
+        "CustomGeometry": 278,
+        "AnimatedModel": 7,
+        "Camera": 2,
+        "SoundSource": 17,
+        "RibbonTrail": 1
+    },
+    "test_result": "NOT_RUN",
+    "test_assertions": {
+        "total": 0,
+        "passed": 0,
+        "failed": 0
+    },
+    "test_issues": [],
+    "missing_resources": [],
+    "missing_engine_resources": [],
+    "summary": {
+        "lua_errors": 0,
+        "resource_errors": 0,
+        "engine_errors": 11,
+        "total_errors": 11
+    }
+}

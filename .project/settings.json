@@ -24,6 +24,7 @@
     "asset_ignores": [
       "../assets/image/formal_vehicle_motion",
       "../assets/image/formal_vehicle_review",
+      "../assets/image/vehicle-review",
       "../assets/model/course-official"
     ]
   },

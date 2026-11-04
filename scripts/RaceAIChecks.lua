@@ -461,7 +461,135 @@ function Checks.Audio(audioModule)
     return require("AudioChecks").Race(audioModule)
 end
 
+-- 普通技能专项只运行真实动力、弯道和预演，不触发多图长时域测试。
+function Checks.MotorcycleSkills()
+    local Skills=require("MotorcycleSkills")
+    local Data=require("MixedVehicles")
+    local count=0
+    local function check(ok,message)
+        assert(ok,"[摩托AI技能] "..message);count=count+1
+    end
+    local function pair()
+        local race,r=fixture(31,"sport",1,"hard")
+        local other,b=fixture(31,"sport",1,"hard")
+        r.speed,b.speed=20,20
+        return race,r,other,b
+    end
+    do
+        local race,r,other,b=pair()
+        r.driveSim.motorcycleDriveScale=1.25
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(r.speed>b.speed and r.driveAcceleration>b.driveAcceleration,"动力倍率必须增加真实加速度")
+        r.driveSim.motorcycleDriveScale=1
+        r.speed,b.speed=20,20
+        r.driveSim.rpm,r.driveSim.gear,r.driveSim.shiftTimer=b.driveSim.rpm,b.driveSim.gear,b.driveSim.shiftTimer
+        r.driveSim.clutchEngagement=b.driveSim.clutchEngagement
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(math.abs(r.speed-b.speed)<1e-8,"倍率复位后恢复相同动力")
+    end
+    do
+        local race,r,other,b=pair()
+        local base=AI.CurveSpeed(race,r)
+        r.driveSim.motorcycleSpeedScale=1.10
+        check(math.abs(AI.CurveSpeed(race,r)-base*1.10)<1e-8,"直道限速必须读取技能倍率")
+        r.speed,b.speed=base+.5,base+.5
+        r.driveSim.gear,b.driveSim.gear=6,6
+        r.driveSim.rpm,b.driveSim.rpm=10000,10000
+        r.driveSim.clutchEngagement,b.driveSim.clutchEngagement=1,1
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(r.speed>b.speed,"真实动力上限不能仍用技能前速度")
+        race.aiProfile[1]={curvature=.06,turn=.06,slope=0}
+        r.driveSim.motorcycleSpeedScale=1
+        local corner=AI.CurveSpeed(race,r)
+        r.driveSim.motorcycleGripScale=1.28
+        check(AI.CurveSpeed(race,r)>corner,"抓地技能必须影响弯道制动包络")
+    end
+    do
+        local race,r,other,b=pair()
+        r.lane,b.lane=5.2,5.2
+        r.driveSim.motorcycleOffroadScale=1.20
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(r.speed>b.speed,"越野倍率必须影响路肩实际动力")
+        r.driveSim.motorcycleOffroadScale=10
+        r.speed,b.speed=20,20
+        b.driveSim.motorcycleOffroadScale=1/b.driveSim.vehicle.offroad
+        r.driveSim.rpm,r.driveSim.gear,r.driveSim.shiftTimer=b.driveSim.rpm,b.driveSim.gear,b.driveSim.shiftTimer
+        r.driveSim.clutchEngagement=b.driveSim.clutchEngagement
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(math.abs(r.speed-b.speed)<1e-8,"越野有效通过性不得超过100%")
+    end
+    do
+        local race,r,other,b=pair()
+        r.mistakeDuration,b.mistakeDuration=1,1
+        r.driveSim.motorcycleCoastDragScale=.65
+        AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
+        check(r.speed>b.speed and r.speed<20,"惯行减少收油损失但不能凭空加速")
+    end
+    do
+        local race,r=fixture(39,"sport",1,"hard")
+        r.speed=35
+        local drive=r.driveSim
+        drive.motorcycleDriveScale,drive.motorcycleSpeedScale=1.25,1.08
+        drive.motorcycleGripScale,drive.motorcycleOffroadScale=1.12,1.1
+        drive.motorcycleCoastDragScale=.65
+        local gear,rpm,active,cooldown=drive.gear,drive.rpm,drive.motorcycleActive,drive.motorcycleCooldown
+        AI.NitroSafe(race,r)
+        local preview=r.nitroPreview.driveSim --[[@as RideSimulation]]
+        check(preview~=drive and preview.motorcycleDriveScale==1.25 and preview.motorcycleSpeedScale==1.08
+            and preview.motorcycleGripScale==1.12 and preview.motorcycleOffroadScale==1.1
+            and preview.motorcycleCoastDragScale==.65,"氮气预演必须使用独立状态与同一倍率")
+        check(drive.gear==gear and drive.rpm==rpm and drive.motorcycleActive==active
+            and drive.motorcycleCooldown==cooldown,"预演不得推进真实挡位或消费技能")
+    end
+    for _,id in ipairs({"sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}) do
+        local race,r=fixture(31,id,1,"hard")
+        local drive=r.driveSim
+        local spec=assert(Data.GetMotorcycleSkill(id))
+        drive.speed,drive.groundSlope=20,.06
+        Skills.Before(drive,DT,{skill=true})
+        check(drive.motorcycleActive==spec.duration and drive.motorcycleCooldown==spec.cooldown,id.." AI状态必须可发动独立技能")
+        Skills.Before(drive,(spec.chargeTime or DT)+.00001,{skill=false})
+        check(drive.motorcycleDriveScale==spec.driveScale and drive.motorcycleGripScale==spec.gripScale,
+            id.."实际状态必须输出该车型倍率")
+        AI.Drive(race,r,1000,DT)
+        check(r.speed>0 and drive.motorcycleCooldown>0,id.."技能与真实传动必须共存")
+        local active,cooldown=drive.motorcycleActive,drive.motorcycleCooldown
+        r.speed=20
+        AI.Drive(race,r,8,DT)
+        check(drive.motorcyclePhase=="suppressed" and drive.motorcycleDriveScale==1
+            and drive.motorcycleGripScale==1 and drive.motorcycleDamageScale==1
+            and drive.motorcycleActive==active and drive.motorcycleCooldown==cooldown,
+            id.."本步刹车必须抑制收益且不重复消费计时")
+    end
+    do
+        local function traffic(id,active)
+            local race,r=fixture(31,id,1,"hard")
+            race.Collision=function(self) self.collisions=(self.collisions or 0)+1 end
+            r.speed=20
+            if active then Skills.Before(r.driveSim,DT,{skill=true}) end
+            local car={x=0,y=0,z=0,yaw=0,speed=0,height=1.8}
+            race.aiObstacles={{source=car,halfWidth=1,halfLength=2}}
+            AI.TrafficContacts(race,r)
+            return race,r
+        end
+        local _,base=traffic("cruiser",false)
+        local _,armor=traffic("cruiser",true)
+        check(armor.speed>base.speed,"AI交通接触必须消费减伤保速技能")
+        local race,guard=traffic("cruiser_2",true)
+        check(guard.speed==20 and guard.perception.recovery==0 and guard.driveSim.motorcycleGuardBlocks==1,
+            "AI交通接触必须消费单次护盾并免失稳")
+        AI.TrafficContacts(race,guard)
+        check(guard.speed==20 and guard.driveSim.motorcycleGuardBlocks==1,"持续接触不能重复扣速或消费护盾")
+        guard.trafficContacts={}
+        AI.TrafficContacts(race,guard)
+        check(guard.speed<20 and guard.perception.recovery>0,"再次交通撞击不能保留已消耗护盾")
+    end
+    print(string.format("[摩托AI技能] PASS / %d项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演",count))
+    return count
+end
+
 function Checks.Run()
+    Checks.MotorcycleSkills()
     local result = {passed = false, assertions = 0, groups = {}}
     local function check(ok, message)
         assert(ok, "[RaceAIChecks] " .. message)

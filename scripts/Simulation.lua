@@ -3,6 +3,7 @@
 -- 主流程先 World:Update(dt, sim, clock)，再 Step；本模块不更新/移动世界。
 ---@class RideSimulation
 ---@field oddAltitude number
+---@field oddHopHeight? number 街机主动跳的最高离地偏移（米），不改世界里程或地面种类。
 ---@field oddActive number
 ---@field oddCooldown number
 ---@field oddSteam number
@@ -25,6 +26,14 @@
 ---@field motorcycleSkillName string
 ---@field motorcycleSkillResult string
 ---@field motorcycleSkillResultTimer number
+---@field motorcyclePhase string
+---@field motorcycleSkillAge number
+---@field motorcycleSkillSerial number
+---@field motorcycleGuard number
+---@field motorcycleGuardFlash number
+---@field motorcycleGuardBlocks number
+---@field motorcycleDisruptScale number
+---@field motorcycleCoastDragScale number
 ---@field speed number 以米每秒计，不能由Reset的0推断为integer。
 ---@field raceMode boolean 比赛仅接管规则，不改自由驾驶输入和转向。
 ---@field impactSerial number 每次有效碰撞递增，Race用于一次性宽限。
@@ -34,6 +43,7 @@
 local Sim = {}
 local TrackFeatures = require("TrackFeatures")
 local MixedRace = require("MixedRace")
+local MotorcycleSkills = require("MotorcycleSkills")
 Sim.__index = Sim
 local RAD, DEG, GRAVITY = math.pi / 180, 180 / math.pi, 9.81
 -- 中心纠偏仍限制在原来的量级，外圈释放街机弯道舵权；不能把6.5的满舵上限乘遍整段行程。
@@ -265,6 +275,7 @@ end
 
 function Sim:Impact(reason, damage)
     if self.crashCooldown > 0 then return false end
+    if MotorcycleSkills.Absorb(self, "撞击") then return false end
     local severity = damage or math.max(16, self.speed * 0.62)
     -- 耐久高的车更抗撞：同一次撞击掉的车况更少，撞后保留的动量也更多。
     local durability = (self.vehicle and self.vehicle.durability) or 64
@@ -644,10 +655,12 @@ function Sim:Move(dt, controls, world, drive, steering)
         self.vY, self.airTime = self.vY - GRAVITY * dt, self.airTime + dt
     else
         -- 出公路必须明显掉速：仿赛/巡航在草地上严重打滑，拉力车保留大部分通过性。
-        local traction = road and 1 or (self.vehicle.offroad * (self.motorcycleOffroadScale or 1))
-        local drag = 0.20 + self.speed * self.speed * 0.00115
-            + (road and 0 or (4.6 * (1 - self.vehicle.offroad * 0.55)))
-        local engineBrake = self.throttle < 0.05 and self.clutchEngagement * math.min(1.8, self.speed * 0.12) or 0
+        local offroad = math.min(1, self.vehicle.offroad * (self.motorcycleOffroadScale or 1))
+        local traction = road and 1 or offroad
+        local coast = self.throttle < 0.05 and (self.motorcycleCoastDragScale or 1) or 1
+        local drag = (0.20 + self.speed * self.speed * 0.00115
+            + (road and 0 or (4.6 * (1 - offroad * 0.55)))) * coast
+        local engineBrake = self.throttle < 0.05 and self.clutchEngagement * math.min(1.8, self.speed * 0.12) * coast or 0
         local brake = (self.braking or self.burnout) and self.vehicle.braking or 0
         local acceleration = drive * traction - drag - brake - engineBrake
             - GRAVITY * slope / math.sqrt(1 + slope * slope)
@@ -661,12 +674,12 @@ function Sim:Move(dt, controls, world, drive, steering)
         if self.wrecked then acceleration = -self.vehicle.braking end
         local maximum = self.vehicle.maxSpeed * (1 + self.raceBoost * 0.25)
             * (self.oddSpeedScale or 1) * (self.motorcycleSpeedScale or 1)
-            * (road and 1 or (0.44 + self.vehicle.offroad * 0.52))
+            * (road and 1 or (0.44 + offroad * 0.52))
         -- Nitro ending / touching gravel must not instantly clamp away20km/h. Excess
         -- momentum coasts down with finite drag; this never increases the speed cap.
         if self.speed > maximum then acceleration = math.min(acceleration, -3.5 - (self.speed - maximum) * 0.45) end
         self.speed = clamp(self.speed + acceleration * dt, 0, math.max(maximum, self.speed))
-        local grip = road and 1 or (0.50 + self.vehicle.offroad * 0.42)
+        local grip = road and 1 or (0.50 + offroad * 0.42)
         local turn = self:TurnRate(steering or self.steer) * grip
         self.heading = wrap(self.heading + turn * dt * (1 - self.wheelie * 0.65))
         local fx, fz = direction(self.heading)
@@ -914,6 +927,7 @@ function Sim:Step(dt, controls, world)
     held.throttle, held.steer, held.brake = controls.throttle, controls.steer, controls.brake
     held.clutch, held.wheelie = controls.clutch, controls.wheelie
     held.burnout, held.manual, held.boost = controls.burnout, controls.manual, controls.boost
+    held.skill = controls.skill
     local count = math.max(1, math.ceil(dt / 0.02))
     local step = dt / count
     self.previousX, self.previousY, self.previousZ = self.x, self.y, self.z

@@ -3,6 +3,8 @@
 local Assets = require("VehicleAssets")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
+local MotorcycleSkillEffects = require("MotorcycleSkillEffects")
+local NewVehicleSkillEffects = require("NewVehicleSkillEffects")
 local SkillPresentation = require("SkillPresentation")
 local ExplosionEffects = require("ExplosionEffects")
 local ScenicAssetProps = require("ScenicAssetProps")
@@ -18,8 +20,18 @@ local COURSE_TYPES = {[COURSE_ARROW] = "Model", [COURSE_ARROW_MATERIAL] = "Mater
 local Bike = require("Bike") -- 只取Cockpits配置，不调用Bike.New。
 local MixedVisuals = require("MixedVisuals")
 local MixedData = require("MixedVehicles")
+---@type fun(root:Node,id:string,time:number,state:table)
 local MixedAnimate = MixedVisuals.Animate
 local MixedGet = MixedData.Get
+-- 结构化生命周期接口：允许原五车与剩余九车各自的实现，不按类元表误分派。
+---@param effect table
+local function resetSkill(effect) effect:Reset() end
+---@param effect table
+local function disposeSkill(effect) effect:Dispose() end
+---@param effect table
+---@param dt number
+---@param state table
+local function updateSkill(effect,dt,state) effect:Update(dt,state) end
 local Landscape = require("Landscape")
 local P = require("Parts")
 local V = Vector3
@@ -34,11 +46,11 @@ local V = Vector3
 ---@field models StaticModel[]
 ---@field rider Rider|table
 ---@field fullRider? Rider
----@field stubRider table
 ---@field data? table
 ---@field poseClock number
 ---@field lean number
 ---@field effects RideEffects
+---@field skillEffects? MotorcycleSkillEffects|NewVehicleSkillEffects|RemainingVehicleSkillEffects
 ---@field active boolean
 ---@field wasInView boolean
 ---@field poseRefreshes number
@@ -101,6 +113,14 @@ function RaceVisuals.GetResources()
         paths[#paths + 1] = path
         Assets.ResourceTypes[path] = assert(COURSE_TYPES[path])
     end
+    for _, path in ipairs(MotorcycleSkillEffects.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(MotorcycleSkillEffects.ResourceTypes[path])
+    end
+    for _, path in ipairs(NewVehicleSkillEffects.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(NewVehicleSkillEffects.ResourceTypes[path])
+    end
     -- 保留普通氮气已有表现，与载具专属技能没有关系。
     for _, path in ipairs(RideEffects.Resources) do
         paths[#paths + 1] = path
@@ -153,21 +173,21 @@ function RaceVisuals:CreateRunner(data)
     local id, vehicleId = data.id, data.vehicleId
     assert(Assets.Vehicles[vehicleId], "Race rival asset unavailable: " .. tostring(vehicleId))
     local odd = require("MixedVehicles").Get(vehicleId) ~= nil
-    local isRiderBoundMixed = vehicleId == "ebike"
-    local cockpit = isRiderBoundMixed and MixedVisuals.Cockpits.ebike
-        or (odd and {grip=V(.3,1,.4),seatHeight=1} or Bike.GetCockpit(vehicleId))
+    local isRiderBoundMixed = odd and MixedVisuals.HasRider(vehicleId)
     local node = self.rosterRoot:CreateChild("RaceRival_" .. id, LOCAL)
     local visual = node:CreateChild("RivalLean", LOCAL)
     local body = Assets.Add(visual, vehicleId, nil, "distant")
-    -- 电动车使用正式整车与同一套41骨Rider；其它混合车保持轻量无驾驶员表现。
+    local cockpit = odd and assert(MixedVisuals.Cockpits[vehicleId], "缺少正式车型眼位："..vehicleId)
+        or Bike.GetCockpit(vehicleId)
+    -- 敞开载具复用正式骨骼人物，各自采用站板/推车/坐姿；封闭及机械生物不造假人物。
     local rider = isRiderBoundMixed and assert(MixedVisuals.CreateRider(visual, vehicleId),
-        "AI ebike formal rider creation failed")
+        "AI formal driver creation failed: "..vehicleId)
         or (odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
         drawDistance=260,shadowDistance=65,inView=true}, SetColor=function() end,
         Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip))
     local colorId = data.colorId or "red"
     rider:SetColor(colorId)
-    -- Formal Rider is the only rider-bound mixed visual; it inherits RivalLean lean/pitch.
+    -- 正式人物统一继承RivalLean的转向、侧倾和腾空。
     if odd and not isRiderBoundMixed then MixedVisuals.SetRiderColor(body,colorId) end
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
     -- inView是上一渲染帧结果，不能作为首次提交/重新启用的前置条件。
@@ -187,20 +207,25 @@ function RaceVisuals:CreateRunner(data)
     end
     Assets.SetDetail(body, "distant")
     local effects = RideEffects.New(visual, Assets.Vehicles[vehicleId].targetSize, cockpit.seatHeight, true)
+    ---@type MotorcycleSkillEffects|NewVehicleSkillEffects|RemainingVehicleSkillEffects?
+    local skillEffects = nil
+    if not odd then
+        skillEffects = MotorcycleSkillEffects.New(visual, vehicleId,
+            cockpit.localOffset and cockpit.localOffset.y or cockpit.seatHeight+.6,
+            Assets.Vehicles[vehicleId].targetSize.z, true)
+    else
+        skillEffects = NewVehicleSkillEffects.New(visual, vehicleId,
+            cockpit.localOffset.y, Assets.Vehicles[vehicleId].targetSize.z, true)
+    end
+    if odd and skillEffects then skillEffects:SetEyePosition(cockpit.localOffset) end
     local runner = {id = id, vehicleId = vehicleId, colorId = colorId, node = node,
         visual = visual, body = body, rider = rider, models = models, poseClock = 0, lean = 0,
-        effects = effects, active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
-    -- 完整骑手保留引用；远处时换成空壳，切回近处再恢复，绝不重复创建骨骼。
-    -- 封闭座舱车型本来就是空壳，没有可切换的完整骑手。
+        effects = effects, skillEffects = skillEffects,
+        active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
+    -- 只登记真实模型；封闭座舱车型没有独立骑手。
     if rider ~= nil and rider.model ~= nil and rider.node ~= nil then
         runner.fullRider = rider --[[@as Rider]]
     end
-    runner.stubRider = {poseFailures = 0, disposed = false, colorId = colorId,
-        model = {updateInvisible = true, animationLodBias = 0, drawDistance = 260,
-            shadowDistance = 0, inView = false},
-        SetColor = function(self, color) self.colorId = color or self.colorId; return true end,
-        SetVisible = function() end, Update = function() end,
-        Dispose = function() end}
     self:RefreshPose(runner, data, true)
     return runner
 end
@@ -211,7 +236,14 @@ end
 ---@param data table
 ---@param verify boolean
 function RaceVisuals:RefreshPose(runner, data, verify)
-    if MixedGet(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
+    if MixedGet(runner.vehicleId) and runner.vehicleId ~= "ebike" then
+        if not runner.fullRider then return end
+        runner.fullRider:Update(0, true, runner.lean)
+        runner.poseClock = 0
+        runner.poseRefreshes = runner.poseRefreshes + 1
+        if verify then runner.fullRider:ValidatePose() end
+        return
+    end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
     if runner.vehicleId == "ebike" or runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0
@@ -354,6 +386,7 @@ function RaceVisuals:Reset(race)
             local runner = self.runners[data.id]
             if runner and runner.vehicleId ~= data.vehicleId then
                 if runner.fullRider then runner.fullRider:Dispose() end
+                if runner.skillEffects then disposeSkill(runner.skillEffects) end
                 runner.effects:Dispose(); runner.node:Dispose()
                 self.runners[data.id] = nil
                 runner = nil
@@ -364,27 +397,23 @@ function RaceVisuals:Reset(race)
             end
             runner.poseClock, runner.lean, runner.active, runner.wasInView = 0, 0, false, false
             runner.colorId = data.colorId or "red"
-            -- 颜色只作用于当前生效的骑手，避免恢复远景时丢掉配色。
-            if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
             runner.rider:SetColor(runner.colorId)
             runner.node:SetEnabledRecursive(true)
             runner.effects:Reset()
+            if runner.skillEffects then resetSkill(runner.skillEffects) end
             runner.node.position = V(data.x, data.y + 0.015, data.z)
             runner.node.rotation = Quaternion(0, data.heading or data.yaw or 0, 0)
             runner.visual.rotation = Quaternion(data.pitch or 0, 0, 0)
             runner.visual.position = V.ZERO
             runner.data = data
-            -- 重赛时先恢复真实fullRider再验收；远景stub没有ReadPose契约。
-            if runner.fullRider and runner.rider ~= runner.fullRider then
-                runner.rider = runner.fullRider
-                runner.fullRider:SetVisible(true)
-            end
+            if runner.fullRider then runner.fullRider:SetVisible(true) end
             self:RefreshPose(runner, data, true)
         end
     end
     for id, runner in pairs(self.runners) do
         if not present[id] then
             if runner.fullRider then runner.fullRider:Dispose() end
+            if runner.skillEffects then disposeSkill(runner.skillEffects) end
             runner.effects:Dispose(); runner.node:Dispose()
             self.runners[id] = nil
         end
@@ -417,9 +446,9 @@ function RaceVisuals:ReportBudget()
     end
     for _, runner in pairs(self.runners) do
         rivals = rivals + 1
-        if runner.rider and runner.rider.model then
+        if runner.fullRider then
             riders = riders + 1
-            measure(runner.rider.model)
+            measure(runner.fullRider.model)
         end
         for _, draw in ipairs(runner.body:GetComponents("StaticModel", true)) do measure(draw) end
         if runner.effects and runner.effects.root then
@@ -451,6 +480,7 @@ function RaceVisuals:SetVisible(visible)
         runner.node:SetEnabledRecursive(false)
         runner.active, runner.wasInView = false, false
         runner.effects:Reset()
+        if runner.skillEffects then resetSkill(runner.skillEffects) end
     end
     if self.policeNode then self.policeNode:SetEnabledRecursive(false) end
     if self.visible then self.visibilityClock = 1; self:Update(0, self.race.sim) end
@@ -497,25 +527,7 @@ function RaceVisuals:UpdateVehicleDetail(px, pz)
             runner.detailTier = tier
         end
     end
-    -- 骑手是8个41骨蒙皮模型，是赛事模式最大的固定开销。
-    -- 只有近处少数对手重建骑手，远处只留车体；按0.25秒节拍切换，不逐帧增删。
-    local riderLimit = self.highQuality and 3 or 2
-    local riderSelected = {}
-    for index = 1, math.min(#candidates, riderLimit) do
-        riderSelected[candidates[index].runner.id] = true
-    end
-    for id, runner in pairs(self.runners) do
-        local needRider = riderSelected[id] == true
-        if not needRider and runner.rider == runner.fullRider then
-            -- 交出骑手：隐藏完整骨骼骑手，用同名空壳占位，避免逐帧判断nil。
-            runner.fullRider.node:SetEnabledRecursive(false)
-            runner.rider = runner.stubRider
-        elseif needRider and runner.fullRider and runner.rider ~= runner.fullRider then
-            runner.rider = runner.fullRider
-            runner.fullRider:SetVisible(true)
-            self:RefreshPose(runner, runner.data or {}, true)
-        end
-    end
+    -- 细节名额只控制车体材质；骑手随整车显示，远处通过模型LOD和骑姿降频节省开销。
 end
 
 ---@param dt number
@@ -540,7 +552,10 @@ function RaceVisuals:Update(dt, sim, camera)
             local reactivated = visible and not runner.active
             if visible ~= runner.active or reactivated then
                 runner.node:SetEnabledRecursive(visible)
-                if visible then runner.effects:Reset() end
+                if visible then
+                    runner.effects:Reset()
+                    if runner.skillEffects then resetSkill(runner.skillEffects) end
+                end
             end
             if visible then
                 runner.node.position = position
@@ -549,13 +564,17 @@ function RaceVisuals:Update(dt, sim, camera)
                 runner.lean = runner.lean + (target - runner.lean) * (1 - math.exp(-frameTime * 10))
                 local boostPower = data.driveSim and data.driveSim.raceBoost or 0
                 runner.effects:Update(frameTime, boostPower, data.speed or 0)
+                if runner.skillEffects then
+                    if data.finished then resetSkill(runner.skillEffects)
+                    else updateSkill(runner.skillEffects,frameTime,data.driveSim or {}) end
+                end
                 -- AI被撞时车身猛晃并短暂偏航，恢复后由正常线路接管。
                 local hit = (data.hitShake or 0) * (data.hitTimer or 0)
                 local hitYaw = (data.hitYaw or 0) * (data.hitTimer or 0) * 0.12
                 local hitRoll = math.sin(self.clock * 46 + (data.index or 0)) * 9 * hit
                 runner.visual.rotation = Quaternion((data.pitch or 0) + runner.effects.pitch + hit * 4,
                     hitYaw, runner.lean * self.leanSign + hitRoll)
-                runner.visual.position = V(0, runner.effects.bob, 0)
+                runner.visual.position = V(0, runner.effects.bob + (data.driveSim and data.driveSim.oddAltitude or 0), 0)
                 if MixedGet(runner.vehicleId) then
                     local drive = data.driveSim or {}
                     runner.visual.position = V(0, drive.oddAltitude or 0, 0)
@@ -568,15 +587,16 @@ function RaceVisuals:Update(dt, sim, camera)
                     -- 关节动画必须逐帧：降频会让车轮/履带/钳口一抽一抽。
                     -- 开销改由MixedVisuals内部缓存节点引用解决。
                     MixedAnimate(runner.body,runner.vehicleId,self.clock,drive)
+                    -- 座椅技能关节逐帧同步，IK降频不能让驾驶员落后旋转的座垫。
+                    MixedVisuals.SyncRiderJoint(runner.fullRider)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.colorId = data.colorId
-                    if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
                     runner.rider:SetColor(runner.colorId)
                 end
                 runner.poseClock = runner.poseClock + frameTime
-                -- 只有当前持完整骑手的对手才解算骨骼；远景车体仍照常移动。
-                if runner.rider == runner.fullRider then
+                -- 仅有独立骑手的车型解算骨骼；封闭座舱不创建占位人物。
+                if runner.fullRider then
                     local inView = runner.rider.model.inView
                     local enteredView = inView and not runner.wasInView
                     -- 近距30Hz/中距10Hz/远距4Hz只影响手动IK成本，不依赖inView启动。
@@ -592,6 +612,7 @@ function RaceVisuals:Update(dt, sim, camera)
             else
                 runner.wasInView = false
                 runner.effects:Reset()
+                if runner.skillEffects then resetSkill(runner.skillEffects) end
             end
             runner.active = visible
         end
@@ -644,14 +665,19 @@ end
 
 ---@return table
 function RaceVisuals:GetStats()
-    local rivals, rigs = 0, 0
+    local rivals, rigs, activeRigs = 0, 0, 0
     for _, runner in pairs(self.runners) do
-        rivals, rigs = rivals + 1, rigs + 1
+        rivals = rivals + 1
+        if runner.fullRider then
+            rigs = rigs + 1
+            if runner.fullRider.model.enabledEffective then activeRigs = activeRigs + 1 end
+        end
         assert(not runner.node.name:match("^Bike_"), "Lightweight rival cannot be named Bike_")
         assert(not runner.node:GetChild("HelmetCockpit", true), "Rival cannot allocate cockpit")
         assert(not runner.node:GetChild("BurnoutSmokePool", true), "Rival cannot allocate smoke")
     end
-    return {rivals = rivals, riders = rigs, police = self.policeNode ~= nil, routeMarkers = #self.markers}
+    return {rivals = rivals, riders = rigs, activeRiders = activeRigs,
+        police = self.policeNode ~= nil, routeMarkers = #self.markers}
 end
 
 function RaceVisuals:Destroy()
@@ -659,8 +685,7 @@ function RaceVisuals:Destroy()
     self.disposed = true
     for _, runner in pairs(self.runners) do
         runner.effects:Dispose()
-        -- 远景时 runner.rider 是空壳，完整骑手必须单独释放，否则换图会泄漏骨骼模型。
-        if runner.fullRider then runner.fullRider:Dispose() end
+        if runner.skillEffects then disposeSkill(runner.skillEffects) end
         runner.rider:Dispose()
     end
     self.runners = {}

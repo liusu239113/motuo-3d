@@ -3,6 +3,8 @@
 local Simulation = require("Simulation")
 local Mixed = require("MixedRace")
 local MixedData = require("MixedVehicles")
+local MotorcycleSkills = require("MotorcycleSkills")
+local Features = require("TrackFeatures")
 ---@class MixedRaceSkillRules
 ---@field ShouldUseSkill fun(race:table, source:table):boolean
 local MixedRaceRules = Mixed
@@ -26,6 +28,12 @@ local function overlapsHeight(race,r,o)
 end
 local function vehicleFor(race,r)
     return r.driveSim and r.driveSim.vehicle or race.sim.vehicle
+end
+local function offroadGrip(race,r)
+    if math.abs(r.lane)<=race.roadHalfWidth then return 1 end
+    local spec=vehicleFor(race,r)
+    local scale=r.driveSim and r.driveSim.motorcycleOffroadScale or 1
+    return .50+math.min(1,spec.offroad*scale)*.42
 end
 local AI = {}
 local abs, min, max, sqrt = math.abs, math.min, math.max, math.sqrt
@@ -59,6 +67,7 @@ function AI.Configure(race, r, index)
     r.mistakeLane, r.mistakeBias = r.lane, 0
     r.paceTarget, r.paceTimer, r.nitroCooldown = 0, 0, 0
     r.skillDecisionTimer, r.skillRequest, r.skillUses = 0, false, 0
+    r.airborne=false
     -- 每辆车只持有独立的传动状态；使用玩家选定车型，不按外观偷偷换更强引擎。
     if not r.isPlayer then
         local drive = Simulation.New(race.map)
@@ -103,9 +112,11 @@ function AI.CurveSpeed(race, r, boosting)
     -- 预演可请求喷射包络，不需要先扣氮或篡改实际boostTimer。
     local top = vehicleFor(race,r).maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
         *(r.driveSim and r.driveSim.oddSpeedScale or 1)
+        *(r.driveSim and r.driveSim.motorcycleSpeedScale or 1)
     local level = r.aiLevel or 0.72
     local budget = (12 + level * 6 + r.skill * 2)*(race.options.mixed and vehicleFor(race,r).steering or 1)
         *(r.driveSim and r.driveSim.oddGripScale or 1)
+        *(r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
     -- 反应距离先从可用制动距离扣除；入弯前收油，不等到弯心突然锁速。
     local reaction = r.speed * r.reactionTime + 5
@@ -166,21 +177,29 @@ function AI.Drive(race, r, target, dt)
     -- 复用每车控制表：预演25帧×8车，每帧新建表会产生大量GC。
     local controls = r.driveControls
     if not controls then controls = {}; r.driveControls = controls end
-    controls.throttle, controls.boost = throttle, boosted and 1 or 0
-    local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)
+    controls.throttle, controls.boost, controls.brake = throttle, boosted and 1 or 0, slowing
+    if slowing and (drive.motorcycleActive or 0)>0 then
+        -- 与玩家相同：刹车期间暂停全部技能收益，计时仍由Before正常消耗。
+        drive.motorcycleSpeedScale,drive.motorcycleDriveScale,drive.motorcycleGripScale,drive.motorcycleOffroadScale=1,1,1,1
+        drive.motorcycleDamageScale,drive.motorcycleRetained,drive.motorcycleDisruptScale,drive.motorcycleCoastDragScale=1,1,1,1
+        drive.motorcyclePhase="suppressed"
+    end
+    local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)*(drive.motorcycleDriveScale or 1)
     local efficiency = clamp(r.acceleration / spec.acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
-    local traction = onRoad and 1 or spec.offroad
-    local drag = 0.20 + r.speed * r.speed * 0.00115
-        + (onRoad and 0 or 4.6 * (1 - spec.offroad * 0.55))
-    local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
+    local offroad = min(1,spec.offroad*(drive.motorcycleOffroadScale or 1))
+    local traction = onRoad and 1 or offroad
+    local coast = throttle < 0.05 and (drive.motorcycleCoastDragScale or 1) or 1
+    local drag = (0.20 + r.speed * r.speed * 0.00115
+        + (onRoad and 0 or 4.6 * (1 - offroad * 0.55)))*coast
+    local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12)*coast or 0
     local slope = sample.slope or 0
     local acceleration = power * efficiency * traction - drag - engineBrake
         - 9.81 * slope / sqrt(1 + slope * slope)
     local braking = spec.braking * (0.65 + r.skill * 0.12)
     if slowing then acceleration = min(acceleration, -min(braking, (r.speed - target) * 2 + 1)) end
     local cap = spec.maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
-        * (onRoad and 1 or 0.44 + spec.offroad * 0.52)*(drive.oddSpeedScale or 1)
+        * (onRoad and 1 or 0.44 + offroad * 0.52)*(drive.oddSpeedScale or 1)*(drive.motorcycleSpeedScale or 1)
     if r.speed > cap then acceleration = min(acceleration, -3.5 - (r.speed - cap) * 0.45) end
     r.speed = clamp(r.speed + acceleration * dt, 0, max(r.speed, min(target, cap)))
     r.driveAcceleration = acceleration
@@ -227,12 +246,17 @@ local function eachObstacle(race, r, visit, sensed)
     -- 可选坡是静态可见路障；不模拟AI飞跃，不准免费穿过或领取玩家加速带。
     for _, ramp in ipairs(race.map.Ramps or {}) do
         if ramp.optional and ramp.s then
+            local own=MixedData.Get(r.vehicleId)
+            local entry=gap(ramp.s,r.s,race.length)
+            local buggyEntry=r.vehicleId=="buggy" and own and ramp.width>=own.size[1]+.3
+                and entry>-((ramp.length or 12)+5) and entry<math.max(75,r.speed*2.8)
+                and math.abs(angle(r.yaw or 0,ramp.yaw or 0))<35 and r.speed>=8
             local reserved=max(ramp.length or 12,(ramp.landingEndS or (ramp.s+(ramp.length or 12)))-ramp.s)
             -- 整段坡/落地车道保留；只取当前附近的局部截面，避免174m长障碍的
             -- 中点离车太远而晚避让，或越过中点后误以为已可回线。
             local start=gap(ramp.s,r.s,race.length)
             local first,last=max(start,-8),min(start+reserved,max(75,r.speed*2.8))
-            if last>=first then
+            if last>=first and not buggyEntry then
                 visit({source=ramp,s=r.s+(first+last)*0.5,lane=ramp.lateral or 0,
                     speed=0,halfWidth=(ramp.width or 2.8)*0.5,halfLength=(last-first)*0.5,
                     y=ramp.y or r.y,bike=false,ramp=true})
@@ -314,6 +338,14 @@ function AI.NitroSafe(race, r)
     drive.vehicle, drive.raceMode = vehicleFor(race,r), true
     drive.gear, drive.rpm = live.gear, live.rpm
     drive.shiftTimer, drive.clutchEngagement = live.shiftTimer, live.clutchEngagement
+    -- 只复制倍率到独立传动状态，不推进实际技能计时或消费资源。
+    drive.oddSpeedScale, drive.oddDriveScale, drive.oddGripScale = live.oddSpeedScale, live.oddDriveScale, live.oddGripScale
+    drive.motorcycleSpeedScale, drive.motorcycleDriveScale = live.motorcycleSpeedScale, live.motorcycleDriveScale
+    drive.motorcycleGripScale, drive.motorcycleOffroadScale = live.motorcycleGripScale, live.motorcycleOffroadScale
+    drive.motorcycleCoastDragScale = live.motorcycleCoastDragScale
+    drive.motorcycleActive,drive.motorcyclePhase=live.motorcycleActive,live.motorcyclePhase
+    drive.motorcycleDamageScale,drive.motorcycleRetained=live.motorcycleDamageScale,live.motorcycleRetained
+    drive.motorcycleDisruptScale=live.motorcycleDisruptScale
     preview.speed, preview.s, preview.lane = r.speed, r.s, r.lane
     preview.speedFactor, preview.acceleration = r.speedFactor, r.acceleration
     preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
@@ -325,8 +357,10 @@ function AI.NitroSafe(race, r)
     local budget = (12 + (r.aiLevel or 0.72) * 6 + r.skill * 2)
         * (race.options.mixed and spec.steering or 1)
         * (r.driveSim and r.driveSim.oddGripScale or 1)
+        * (r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     local brakingForCurve = spec.braking * (0.65 + r.skill * 0.12)
     local previewCap = spec.maxSpeed * (r.speedFactor + 0.25)
+        * (drive.oddSpeedScale or 1) * (drive.motorcycleSpeedScale or 1)
     -- 至少1.2秒有效加速，之后允许提前收油/有限刹车；资源计时仍消耗完整2.5秒。
     -- 后半段不要求“永远满喷”，但任何弯点都必须有实际制动距离，不允许突然锁速。
     for frame = 1, 25 do
@@ -525,12 +559,15 @@ function AI.TrafficContacts(race, r)
             if hit and vertical then
                 active[car] = true
                 if not r.trafficContacts[car] then
-                    r.speed = r.speed * 0.66
+                    local retained,damage=MotorcycleSkills.Contact(r.driveSim,.66)
+                    r.speed = r.speed * retained
                     r.trafficHits, r.laneHold = r.trafficHits + 1, 0
                     local p=assert(r.perception)
-                    p.recovery,p.recoveries=1.2+(1-r.skill)*1.2,p.recoveries+1
+                    if damage>0 then
+                        p.recovery,p.recoveries=1.2+(1-r.skill)*1.2,p.recoveries+1
+                        race:Collision(r)
+                    end
                     p.timer,r.decisionTimer,r.paceTimer=0,0,0
-                    race:Collision(r)
                     race:Emit("traffic-contact", r.id)
                 end
             end
@@ -539,14 +576,46 @@ function AI.TrafficContacts(race, r)
     r.nextTrafficContacts, r.trafficContacts = r.trafficContacts, active
 end
 
+-- Buggy alone may deliberately take an optional ramp. The authored entry/lip
+-- geometry is shared with the player; height, flight and landing remain physical.
+function AI.BuggyFlight(race,r,dt,wasAirborne,oldY)
+    if r.vehicleId~="buggy" then return end
+    local drive=assert(r.driveSim)
+    local ground=race.map.Height(r.x,r.z)
+    if wasAirborne then
+        drive.y=oldY+(drive.vY or 0)*dt-9.81*dt*dt*.5
+        drive.vY=(drive.vY or 0)-9.81*dt
+        drive.airTime=(drive.airTime or 0)+dt
+        if drive.y<=ground+.002 and drive.vY<=0 then drive:Land(ground) end
+    else
+        local ramp,t=Features.CrossLip(race.map.Ramps or {},r.lastX,r.lastZ,r.x,r.z,r.yaw,r.speed)
+        if ramp and (drive.rampCooldown or 0)<=0 then
+            local grade=ramp.exitGrade or (ramp.height or 2)/(ramp.length or 10)
+            drive:TakeOff(r.speed*grade/sqrt(1+grade*grade))
+            local x,z=r.lastX+(r.x-r.lastX)*t,r.lastZ+(r.z-r.lastZ)*t
+            local lip=Features.RampHeight(ramp,x,z) or (ramp.y or ground)+(ramp.height or 2)
+            local left=dt*(1-t)
+            drive.y=lip+drive.vY*left-9.81*left*left*.5
+            drive.vY=drive.vY-9.81*left
+            drive.airTime=left
+        end
+    end
+    drive.rampCooldown=max(0,(drive.rampCooldown or 0)-dt)
+    r.airborne=drive.airborne==true
+    if drive.airborne then r.y=drive.y end
+end
+
 function AI.Update(race, r, dt)
     if r.isPlayer or r.finished or r.eliminated then return end
     r.lastX, r.lastY, r.lastZ = r.x, r.y, r.z
     local previousSpeed = r.speed
+    local wasAirborne = r.driveSim and r.driveSim.airborne == true or false
+    local oldY=r.y
     do
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
         drive.roadS,drive.lateral,drive.speed,drive.steer=r.s,r.lane,r.speed,r.steer or 0
+        drive.onRoad=abs(r.lane)<=race.roadHalfWidth
         drive.elapsed=race.elapsed;drive.groundSlope=(race.aiProfile[math.floor((r.s%race.length)/race.aiProfileStep)+1] or {}).slope or 0
         r.skillDecisionTimer=max(0,(r.skillDecisionTimer or 0)-dt)
         local useSkill=false
@@ -557,6 +626,8 @@ function AI.Update(race, r, dt)
         local skillControls=r.skillControls
         if not skillControls then skillControls={}; r.skillControls=skillControls end
         skillControls.skill, skillControls.steer = useSkill, r.steer or 0
+        if useSkill and drive.oddAIJetSide then skillControls.steer=drive.oddAIJetSide end
+        skillControls.brake,skillControls.burnout,skillControls.throttle=drive.braking,drive.burnout,drive.throttle
         local oldCooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
         Mixed.Before(drive,dt,skillControls,race.map)
         local cooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
@@ -571,11 +642,12 @@ function AI.Update(race, r, dt)
     local target = AI.Plan(race, r, dt)
     AI.Drive(race, r, target, dt)
     local oldLane, oldS = r.lane, r.s
+    local motorcycleGrip=(r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     if not race.options.mixed then
-        r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
+        r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)*motorcycleGrip))
     else
         local own=MixedData.Get(r.vehicleId)
-        local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)
+        local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)*motorcycleGrip
         r.lane=approach(r.lane,r.wantedLane,min(r.speed*dt*.45,dt*(2.5+r.skill)*agility))
     end
     -- 走宽、换线和上坡都消耗实际行程，不把更长的外线仍当中心线免费前进。
@@ -595,9 +667,11 @@ function AI.Update(race, r, dt)
     if race.options.mixed then
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading,drive.speed=r.x,r.y,r.z,r.yaw,r.speed
+        AI.BuggyFlight(race,r,dt,wasAirborne,oldY)
         local afterControls=r.afterControls
         if not afterControls then afterControls={}; r.afterControls=afterControls end
-        Mixed.After(drive,dt,afterControls,race.options.world,r.lastX,r.lastY,r.lastZ,false)
+        Mixed.After(drive,dt,afterControls,race.options.world,r.lastX,r.lastY,r.lastZ,wasAirborne)
+        r.airborne=drive.airborne == true
         local _,lane=race:Project(drive.x,drive.z)
         r.lane=clamp(lane,-race.corridor+1,race.corridor-1)
         r.x,r.y,r.z=drive.x,drive.y,drive.z
