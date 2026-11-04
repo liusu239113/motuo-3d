@@ -142,12 +142,13 @@ local function garageChecks(id)
     preview:Dispose();preview:Dispose();preview:Destroy()
 end
 local function run()
-    local selected,view,age,measureOnly="hovercraft","iso",0,false
+    local selected,view,age,measureOnly,shot="hovercraft","iso",0,false,false
     for _,arg in ipairs(GetArguments()) do
         selected=arg:match("^%-new%-vehicle=(.+)$") or selected
         view=arg:match("^%-new%-view=(.+)$") or view
         age=tonumber(arg:match("^%-new%-age=(.+)$")) or age
         if arg=="-measure-only" then measureOnly=true end
+        if arg=="-new-shot" then shot=true end
     end
     for _,id in ipairs(Assets.NewIds) do
         if Assets.Vehicles[id] then
@@ -194,7 +195,7 @@ local function run()
     end
     renderer:SetViewport(0,Viewport:new(scene_,camera))
     print("[五车集成] PASS "..count_.." / 玩家+AI+真实车库 / 实际眼位+双视角 / 360+冻结+清理")
-    engine:Exit()
+    if not shot then engine:Exit() end
 end
 function Start()
     local ok,err=xpcall(run,function(message)
