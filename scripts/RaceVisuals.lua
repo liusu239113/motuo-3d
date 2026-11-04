@@ -34,7 +34,6 @@ local V = Vector3
 ---@field models StaticModel[]
 ---@field rider Rider|table
 ---@field fullRider? Rider
----@field stubRider table
 ---@field data? table
 ---@field poseClock number
 ---@field lean number
@@ -190,17 +189,10 @@ function RaceVisuals:CreateRunner(data)
     local runner = {id = id, vehicleId = vehicleId, colorId = colorId, node = node,
         visual = visual, body = body, rider = rider, models = models, poseClock = 0, lean = 0,
         effects = effects, active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
-    -- 完整骑手保留引用；远处时换成空壳，切回近处再恢复，绝不重复创建骨骼。
-    -- 封闭座舱车型本来就是空壳，没有可切换的完整骑手。
+    -- 只登记真实模型；封闭座舱车型没有独立骑手。
     if rider ~= nil and rider.model ~= nil and rider.node ~= nil then
         runner.fullRider = rider --[[@as Rider]]
     end
-    runner.stubRider = {poseFailures = 0, disposed = false, colorId = colorId,
-        model = {updateInvisible = true, animationLodBias = 0, drawDistance = 260,
-            shadowDistance = 0, inView = false},
-        SetColor = function(self, color) self.colorId = color or self.colorId; return true end,
-        SetVisible = function() end, Update = function() end,
-        Dispose = function() end}
     self:RefreshPose(runner, data, true)
     return runner
 end
@@ -364,8 +356,6 @@ function RaceVisuals:Reset(race)
             end
             runner.poseClock, runner.lean, runner.active, runner.wasInView = 0, 0, false, false
             runner.colorId = data.colorId or "red"
-            -- 颜色只作用于当前生效的骑手，避免恢复远景时丢掉配色。
-            if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
             runner.rider:SetColor(runner.colorId)
             runner.node:SetEnabledRecursive(true)
             runner.effects:Reset()
@@ -374,11 +364,7 @@ function RaceVisuals:Reset(race)
             runner.visual.rotation = Quaternion(data.pitch or 0, 0, 0)
             runner.visual.position = V.ZERO
             runner.data = data
-            -- 重赛时先恢复真实fullRider再验收；远景stub没有ReadPose契约。
-            if runner.fullRider and runner.rider ~= runner.fullRider then
-                runner.rider = runner.fullRider
-                runner.fullRider:SetVisible(true)
-            end
+            if runner.fullRider then runner.fullRider:SetVisible(true) end
             self:RefreshPose(runner, data, true)
         end
     end
@@ -497,25 +483,7 @@ function RaceVisuals:UpdateVehicleDetail(px, pz)
             runner.detailTier = tier
         end
     end
-    -- 骑手是8个41骨蒙皮模型，是赛事模式最大的固定开销。
-    -- 只有近处少数对手重建骑手，远处只留车体；按0.25秒节拍切换，不逐帧增删。
-    local riderLimit = self.highQuality and 3 or 2
-    local riderSelected = {}
-    for index = 1, math.min(#candidates, riderLimit) do
-        riderSelected[candidates[index].runner.id] = true
-    end
-    for id, runner in pairs(self.runners) do
-        local needRider = riderSelected[id] == true
-        if not needRider and runner.rider == runner.fullRider then
-            -- 交出骑手：隐藏完整骨骼骑手，用同名空壳占位，避免逐帧判断nil。
-            runner.fullRider.node:SetEnabledRecursive(false)
-            runner.rider = runner.stubRider
-        elseif needRider and runner.fullRider and runner.rider ~= runner.fullRider then
-            runner.rider = runner.fullRider
-            runner.fullRider:SetVisible(true)
-            self:RefreshPose(runner, runner.data or {}, true)
-        end
-    end
+    -- 细节名额只控制车体材质；骑手随整车显示，远处通过模型LOD和骑姿降频节省开销。
 end
 
 ---@param dt number
@@ -571,12 +539,11 @@ function RaceVisuals:Update(dt, sim, camera)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.colorId = data.colorId
-                    if runner.fullRider then runner.fullRider:SetColor(runner.colorId) end
                     runner.rider:SetColor(runner.colorId)
                 end
                 runner.poseClock = runner.poseClock + frameTime
-                -- 只有当前持完整骑手的对手才解算骨骼；远景车体仍照常移动。
-                if runner.rider == runner.fullRider then
+                -- 仅有独立骑手的车型解算骨骼；封闭座舱不创建占位人物。
+                if runner.fullRider then
                     local inView = runner.rider.model.inView
                     local enteredView = inView and not runner.wasInView
                     -- 近距30Hz/中距10Hz/远距4Hz只影响手动IK成本，不依赖inView启动。
@@ -644,14 +611,19 @@ end
 
 ---@return table
 function RaceVisuals:GetStats()
-    local rivals, rigs = 0, 0
+    local rivals, rigs, activeRigs = 0, 0, 0
     for _, runner in pairs(self.runners) do
-        rivals, rigs = rivals + 1, rigs + 1
+        rivals = rivals + 1
+        if runner.fullRider then
+            rigs = rigs + 1
+            if runner.fullRider.model.enabledEffective then activeRigs = activeRigs + 1 end
+        end
         assert(not runner.node.name:match("^Bike_"), "Lightweight rival cannot be named Bike_")
         assert(not runner.node:GetChild("HelmetCockpit", true), "Rival cannot allocate cockpit")
         assert(not runner.node:GetChild("BurnoutSmokePool", true), "Rival cannot allocate smoke")
     end
-    return {rivals = rivals, riders = rigs, police = self.policeNode ~= nil, routeMarkers = #self.markers}
+    return {rivals = rivals, riders = rigs, activeRiders = activeRigs,
+        police = self.policeNode ~= nil, routeMarkers = #self.markers}
 end
 
 function RaceVisuals:Destroy()
@@ -659,8 +631,6 @@ function RaceVisuals:Destroy()
     self.disposed = true
     for _, runner in pairs(self.runners) do
         runner.effects:Dispose()
-        -- 远景时 runner.rider 是空壳，完整骑手必须单独释放，否则换图会泄漏骨骼模型。
-        if runner.fullRider then runner.fullRider:Dispose() end
         runner.rider:Dispose()
     end
     self.runners = {}

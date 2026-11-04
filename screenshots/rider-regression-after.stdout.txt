@@ -1,0 +1,327 @@
+[2026-11-04 20_12_30_414][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_414][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_414][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_414][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_770][21] ERROR: Failed to compile vertex shader NanoVGFill():
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_770][21] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_770][21] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+shader compile skipped (graphics headless)
+[2026-11-04 20_12_30_035][0] INFO: DownloadManager initialized
+[2026-11-04 20_12_30_036][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 20_12_30_037][0] INFO: Engine construct finish.
+[2026-11-04 20_12_30_330][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-11-04 20_12_30_348][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 20_12_30_351][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 20_12_30_748][21] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_12_31_407][39]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 20_12_31_423][39]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 20_12_31_423][39]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 20_12_31_436][39] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_12_33_088][65] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 20_12_33_092][65][Script] IsNetworkMode:    false
+[2026-11-04 20_12_33_111][65][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 20_12_33_111][65][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 20_12_33_111][65][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 20_12_33_111][65][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 20_12_33_114][65][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 20_12_33_599][65][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 20_12_34_161][65][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_12_34_164][65][Script] [赛道排版] 2040x1080 / 3列 / 固定按钮分页
+[2026-11-04 20_12_34_174][65][Script] [竞速界面] 钢黑琥珀 / 27款载具 / 独立3D车库 / 混合技能竞速
+[2026-11-04 20_12_34_174][65][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_12_34_174][65][Script] [公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留
+[2026-11-04 20_12_34_174][65][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_12_34_175][65][Script] [车库预览] 按需准备 ebike，不构建驾驶世界
+[2026-11-04 20_12_37_154][65][Script] [正式模型拆件] ebike/RearWheel：1961原始三角面
+[2026-11-04 20_12_37_154][65][Script] [正式模型拆件] ebike/FrontWheel：1572原始三角面
+[2026-11-04 20_12_37_154][65][Script] [正式模型拆件] ebike/Body：15156原始三角面
+[2026-11-04 20_12_37_640][65][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_12_37_641][65][Script] [车库预览] ebike 透明实车 bbox=2.092/1.609/2.180，盘面俯角=6.61°，接地=0m
+[2026-11-04 20_12_37_641][65][Script] [流程] garage
+[2026-11-04 20_12_37_641][65][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_12_37_642][65][Script] [流程] loading
+[2026-11-04 20_12_37_848][68][Script] [加载] 首场景资源清单 0 项，优先复用本地缓存
+[2026-11-04 20_12_38_387][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: hint_normal on 'ground_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_38_387][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: hint_normal on 'rock_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_38_387][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_38_387][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_38_387][99] WARNING: SurfaceShader assets/GGkqwdKxPuibS70ISbjYertT-b37a07ad.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_38_412][100] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: hint_normal on 'wave_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_38_412][100] WARNING: SurfaceShader assets/D5AESe8h9kSp3SbRI9q3on65-370167bc.shader: Warning: opaque material has no deferred pass because of: RADIANCE. Use a forward render path or remove these features. Deferred rendering has no automatic forward fallback; depth-only coverage may remain.
+[2026-11-04 20_12_38_433][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_38_433][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_38_433][101] WARNING: SurfaceShader assets/G-NDwRJnIRB9ISGAH-x8iqYW-848ff66d.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_38_453][102] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-f41337ca.shader: Warning: hint_normal on 'surface_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_38_453][102] WARNING: SurfaceShader assets/CqCF6Vah_-GfNxlbycYLz3tD-f41337ca.shader: Warning: anisotropic sampler filtering is unverified on this renderer; validated combinations are linear anisotropic on DX11/OpenGL and nearest anisotropic on OpenGL.
+[2026-11-04 20_12_39_679][126] WARNING: SurfaceShader assets/BoqZqTZCAJ9j-C95906ouRdn-1b9279e9.shader: Warning: hint_normal on 'arrow_normal' records texture usage/default only; normal/roughness import processing is not implemented.
+[2026-11-04 20_12_47_731][250][Script] [Tracks] circuit selected: 9705.3m / 18.0m full width / 1 roads
+[2026-11-04 20_12_47_732][250][Script] [地图] 重建世界 circuit；路线、交通、仿真和比赛采样一并更新
+[2026-11-04 20_12_47_732][250][Script] [场景] 照片天空与匹配IBL，移动前向渲染／默认流畅档
+[2026-11-04 20_12_47_735][251][Script] [风景材质] grass_color = uuid://BrFQwbgBrsfzRT44uHqY_2-s，1024x1024
+[2026-11-04 20_12_47_735][251][Script] [风景材质] soil_color = uuid://EITZcYq6XI_t42F8OUM_5NeD，1024x1024
+[2026-11-04 20_12_47_735][251][Script] [风景材质] rock_color = uuid://HG26mdZNvHrq9kHABE1prSoE，1024x1024
+[2026-11-04 20_12_47_735][251][Script] [风景材质] ground_normal = uuid://FLXXASqCXFcnKzsPyetFfgyZ，1024x1024
+[2026-11-04 20_12_47_735][251][Script] [风景材质] rock_normal = uuid://HqDIkSwCEm8wdlIPoTdTdkpN，1024x1024
+[2026-11-04 20_12_47_735][251][Script] [风景材质] 地形生成Technique = Shaders/BLGL/Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_b37a07ad_0A70821E.glsl
+[2026-11-04 20_12_47_735][251][Script] [风景] 主线9705.3米，主支路1条，近地形8米采样
+[2026-11-04 20_12_57_311][822][Script] [风景性能] indexed地形191块，127199顶点／704256索引；原非索引需704256顶点，减少81.9%，单一连续混合材质
+[2026-11-04 20_12_59_695][965][Script] [正式森林] circuit near=28/28 middle=80 far=120 instances=200/480 canopyLOD0<=3775600 canopyLOD3=1699000 chunks=155；逐实例剔除，共享MDL材质，0程序树冠
+[2026-11-04 20_12_59_767][966][Script] [轻量机关] 共享网格4种 / 材质5种 / 外部模型与贴图0 / 投影阴影关闭
+[2026-11-04 20_12_59_977][9[2026-11-04 20_13_00_767][992] ERROR: Failed to compile vertex shader Shadow(INSTANCED RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader Shadow(RENDER_QUALITY=2):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile vertex shader LitSolid(DIRLIGHT FLOAT_TEXTURE INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SKIN_MATRIX_TEXTURE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader LitSolid(AMBIENT DIFFMAP DIRLIGHT ENVCUBE NORMALMAP PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW SPECULAR):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT INSTANCED NORMALMAP PACKEDNORMAL PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL NORMALMAP PACKEDNORMAL PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader PBRLitSolid(ALPHAMASK AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL METALLIC NORMALMAP PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z ROUGHNESS SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_b37a07ad_0A70821E(AO DIRLIGHT INSTANCED PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_767][992] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_GGkqwdKxPuibS70ISbjYertT_b37a07ad_0A70821E(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIFFMAP DIRLIGHT ENVCUBE IBL METALLIC NORMALMAP PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z ROUGHNESS SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_f41337ca_47CF271A(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_CqCF6Vah__GfNxlbycYLz3tD_f41337ca_47CF271A(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AO DIRLIGHT PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_G_NDwRJnIRB9ISGAH_x8iqYW_848ff66d_B1DF5654(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile vertex shader PBRLitSolid(AO DIRLIGHT NOUV PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile pixel shader PBRLitSolid(AMBIENT AO DIRLIGHT ENVCUBE IBL PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile vertex shader Skybox(INSTANCED RENDER_QUALITY=2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_768][992] ERROR: Failed to compile pixel shader Skybox(ENVCUBE RENDER_QUALITY=2 REVERSED_Z):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_774][992] ERROR: Failed to compile vertex shader BloomHDR(BRIGHT REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_774][992] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT2 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT4 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(BRIGHT32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile vertex shader BloomHDR(COMBINE32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(COMBINE32 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile vertex shader BloomHDR(COMBINE16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(COMBINE16 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile vertex shader BloomHDR(COMBINE8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(COMBINE8 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile vertex shader BloomHDR(COMBINE2 REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_00_775][992] ERROR: Failed to compile pixel shader BloomHDR(COMBINE2 GAMMA_IN_SHADERING REVERSED_Z VIGNETTE):
+shader compile skipped (graphics headless)
+71][Script] [轻量护栏] 已关闭（性能对照）：无护栏/反光锥标
+[2026-11-04 20_12_59_980][971][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://Fba9ASA3ZLeE2_Fb_Md4QJfF -> Techniques/PBR/PBRDiffNormal.xml / packedNormal
+[2026-11-04 20_13_00_138][972][Script] [ScenicAssetProps] 原贴图兼容克隆 uuid://BbhFaY-oq5NxPUutxC9s5YOQ -> Techniques/PBR/PBRDiffNormal.xml / packedNormal
+[2026-11-04 20_13_00_447][990][Script] [正式沿线] circuit 6设施/0避让/194实例/100草蕨/64岩石/24赛事锥标；0程序装饰网格，0新增阴影，0逐帧
+[2026-11-04 20_13_00_470][991][Script] [混合赛道] 机关系统已关闭（性能对照）：无障碍/金币/预警
+[2026-11-04 20_13_00_477][991][Script] [场景] 静态主线9705米，6个导航目标，2个跳台，0辆交通车
+[2026-11-04 20_13_00_484][991][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_13_00_498][991][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_00_498][991][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_00_503][992][Script] [ThirdPersonCamera] Created with 4 modes, initial mode: normal
+[2026-11-04 20_13_00_777][993][Script] [音频] 管理器已创建，等待逐项加载与用户解锁
+[2026-11-04 20_13_00_777][993][Script] [音频] 已加载 1/12：audio/radio_01.ogg
+[2026-11-04 20_13_00_794][994][Script] [音频] 已加载 2/12：audio/sfx/motorcycle_engine_loop.mp3
+[2026-11-04 20_13_00_812][995][Script] [车型音频] sport -> sport / audio/sfx/race_engine_sport_inline4.mp3
+[2026-11-04 20_13_00_812][995][Script] [音频] 已加载 3/12：audio/sfx/highway_wind_loop.mp3
+[2026-11-04 20_13_00_830][996][Script] [音频] 已加载 4/12：audio/sfx/motorcycle_brake_loop.mp3
+[2026-11-04 20_13_00_846][997][Script] [音频] 已加载 5/12：audio/sfx/motorcycle_impact.mp3
+[2026-11-04 20_13_00_864][998][Script] [音频] 已加载 6/12：audio/sfx/motorcycle_pass.mp3
+[2026-11-04 20_13_00_880][999][Script] [音频] 已准备循环资源：audio/radio_02.ogg
+[2026-11-04 20_13_00_897][1000][Script] [音频] 已准备循环资源：audio/night_ride.ogg
+[2026-11-04 20_13_00_914][1001][Script] [音频] 已准备循环资源：audio/sfx/race_engine_sport_inline4.mp3
+[2026-11-04 20_13_00_930][1002][Script] [音频] 已准备循环资源：audio/sfx/race_engine_cruiser_vtwin.mp3
+[2026-11-04 20_13_00_947][1003][Script] [音频] 已准备循环资源：audio/sfx/race_engine_rally_twin.mp3
+[2026-11-04 20_13_00_964][1004][Script] [音频] 已准备循环资源：audio/sfx/career_ebike_motor.mp3
+[2026-11-04 20_13_00_982][1005][Script] [竞速音频] 六效果、单语音及两个独立武器通道准备完成，等待用户输入解锁
+[2026-11-04 20_13_01_158][1005][Script] [VehicleFinish] sport LOD0 disconnected rubber rejected=131
+[2026-11-04 20_13_01_158][1005][Script] [VehicleFinish] sport LOD0 source=5029 split=5029 (body=4139,metal=238,rubber=593,leather=52,glass=7), lodDistance=0.0000
+[2026-11-04 20_13_01_281][1005][Script] [VehicleFinish] sport LOD1 disconnected rubber rejected=123
+[2026-11-04 20_13_01_282][1005][Script] [VehicleFinish] sport LOD1 source=4274 split=4274 (body=3511,metal=210,rubber=495,leather=51,glass=7), lodDistance=9.5354
+[2026-11-04 20_13_01_379][1005][Script] [VehicleFinish] sport LOD2 disconnected rubber rejected=109
+[2026-11-04 20_13_01_379][1005][Script] [VehicleFinish] sport LOD2 source=3268 split=3268 (body=2723,metal=130,rubber=363,leather=45,glass=7), lodDistance=26.0390
+[2026-11-04 20_13_01_449][1005][Script] [VehicleFinish] sport LOD3 disconnected rubber rejected=87
+[2026-11-04 20_13_01_449][1005][Script] [VehicleFinish] sport LOD3 source=2263 split=2263 (body=1887,metal=80,rubber=262,leather=27,glass=7), lodDistance=71.8823
+[2026-11-04 20_13_01_468][1005][Script] [VehicleFinish] sport ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=5029 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_01_606][1006][Script] [VehicleFinish] sport_2 LOD0 disconnected rubber rejected=116
+[2026-11-04 20_13_01_606][1006][Script] [VehicleFinish] sport_2 LOD0 source=4771 split=4771 (body=3821,metal=112,rubber=706,leather=28,glass=104), lodDistance=0.0000
+[2026-11-04 20_13_01_712][1006][Script] [VehicleFinish] sport_2 LOD1 disconnected rubber rejected=112
+[2026-11-04 20_13_01_712][1006][Script] [VehicleFinish] sport_2 LOD1 source=4055 split=4055 (body=3288,metal=89,rubber=561,leather=28,glass=89), lodDistance=8.5975
+[2026-11-04 20_13_01_791][1006][Script] [VehicleFinish] sport_2 LOD2 disconnected rubber rejected=93
+[2026-11-04 20_13_01_791][1006][Script] [VehicleFinish] sport_2 LOD2 source=3101 split=3101 (body=2503,metal=75,rubber=429,leather=28,glass=66), lodDistance=23.4778
+[2026-11-04 20_13_01_847][1006][Script] [VehicleFinish] sport_2 LOD3 disconnected rubber rejected=60
+[2026-11-04 20_13_01_847][1006][Script] [VehicleFinish] sport_2 LOD3 source=2145 split=2145 (body=1744,metal=31,rubber=309,leather=22,glass=39), lodDistance=64.8119
+[2026-11-04 20_13_01_865][1006][Script] [VehicleFinish] sport_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4771 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_01_994][1007][Script] [VehicleFinish] sport_3 LOD0 disconnected rubber rejected=164
+[2026-11-04 20_13_01_994][1007][Script] [VehicleFinish] sport_3 LOD0 source=4857 split=4857 (body=3929,metal=100,rubber=778,leather=24,glass=26), lodDistance=0.0000
+[2026-11-04 20_13_02_215][1007][Script] [VehicleFinish] sport_3 LOD1 disconnected rubber rejected=155
+[2026-11-04 20_13_02_216][1007][Script] [VehicleFinish] sport_3 LOD1 source=4127 split=4127 (body=3492,metal=88,rubber=499,leather=22,glass=26), lodDistance=8.6573
+[2026-11-04 20_13_02_300][1007][Script] [VehicleFinish] sport_3 LOD2 disconnected rubber rejected=149
+[2026-11-04 20_13_02_301][1007][Script] [VehicleFinish] sport_3 LOD2 source=3157 split=3157 (body=2759,metal=50,rubber=309,leather=16,glass=23), lodDistance=23.6410
+[2026-11-04 20_13_02_358][1007][Script] [VehicleFinish] sport_3 LOD3 disconnected rubber rejected=103
+[2026-11-04 20_13_02_358][1007][Script] [VehicleFinish] sport_3 LOD3 source=2184 split=2184 (body=1918,metal=28,rubber=207,leather=12,glass=19), lodDistance=65.2624
+[2026-11-04 20_13_02_377][1007][Script] [VehicleFinish] sport_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4857 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_02_921][1008][Script] [VehicleFinish] cruiser LOD0 disconnected rubber rejected=766
+[2026-11-04 20_13_02_922][1008][Script] [VehicleFinish] cruiser LOD0 source=19004 split=19004 (body=14016,metal=3359,rubber=1299,leather=99,glass=231), lodDistance=0.0000
+[2026-11-04 20_13_03_394][1008][Script] [VehicleFinish] cruiser LOD1 disconnected rubber rejected=706
+[2026-11-04 20_13_03_394][1008][Script] [VehicleFinish] cruiser LOD1 source=16152 split=16152 (body=11728,metal=2938,rubber=1191,leather=91,glass=204), lodDistance=6.6652
+[2026-11-04 20_13_03_855][1008][Script] [VehicleFinish] cruiser LOD2 disconnected rubber rejected=596
+[2026-11-04 20_13_03_856][1008][Script] [VehicleFinish] cruiser LOD2 source=12350 split=12350 (body=8850,metal=2286,rubber=1010,leather=82,glass=122), lodDistance=18.2012
+[2026-11-04 20_13_04_106][1008][Script] [VehicleFinish] cruiser LOD3 disconnected rubber rejected=404
+[2026-11-04 20_13_04_106][1008][Script] [VehicleFinish] cruiser LOD3 source=8551 split=8551 (body=6078,metal=1553,rubber=789,leather=66,glass=65), lodDistance=50.2455
+[2026-11-04 20_13_04_176][1008][Script] [VehicleFinish] cruiser ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=19004 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_04_331][1009][Script] [VehicleFinish] cruiser_2 LOD0 disconnected rubber rejected=40
+[2026-11-04 20_13_04_331][1009][Script] [VehicleFinish] cruiser_2 LOD0 source=4523 split=4523 (body=3870,metal=112,rubber=430,leather=81,glass=30), lodDistance=0.0000
+[2026-11-04 20_13_04_441][1009][Script] [VehicleFinish] cruiser_2 LOD1 disconnected rubber rejected=39
+[2026-11-04 20_13_04_441][1009][Script] [VehicleFinish] cruiser_2 LOD1 source=3843 split=3843 (body=3282,metal=102,rubber=364,leather=75,glass=20), lodDistance=8.4949
+[2026-11-04 20_13_04_525][1009][Script] [VehicleFinish] cruiser_2 LOD2 disconnected rubber rejected=31
+[2026-11-04 20_13_04_525][1009][Script] [VehicleFinish] cruiser_2 LOD2 source=2938 split=2938 (body=2495,metal=91,rubber=274,leather=62,glass=16), lodDistance=23.1976
+[2026-11-04 20_13_04_611][1009][Script] [VehicleFinish] cruiser_2 LOD3 disconnected rubber rejected=24
+[2026-11-04 20_13_04_611][1009][Script] [VehicleFinish] cruiser_2 LOD3 source=2035 split=2035 (body=1788,metal=60,rubber=162,leather=25,glass=0), lodDistance=64.0384
+[2026-11-04 20_13_04_628][1009][Script] [VehicleFinish] cruiser_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4523 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_04_769][1010][Script] [VehicleFinish] cruiser_3 LOD0 disconnected rubber rejected=155
+[2026-11-04 20_13_04_769][1010][Script] [VehicleFinish] cruiser_3 LOD0 source=4906 split=4906 (body=4167,metal=160,rubber=465,leather=110,glass=4), lodDistance=0.0000
+[2026-11-04 20_13_04_898][1010][Script] [VehicleFinish] cruiser_3 LOD1 disconnected rubber rejected=116
+[2026-11-04 20_13_04_898][1010][Script] [VehicleFinish] cruiser_3 LOD1 source=4170 split=4170 (body=3543,metal=137,rubber=390,leather=96,glass=4), lodDistance=9.2349
+[2026-11-04 20_13_05_013][1010][Script] [VehicleFinish] cruiser_3 LOD2 disconnected rubber rejected=78
+[2026-11-04 20_13_05_013][1010][Script] [VehicleFinish] cruiser_3 LOD2 source=3188 split=3188 (body=2704,metal=91,rubber=308,leather=84,glass=1), lodDistance=25.2185
+[2026-11-04 20_13_05_073][1010][Script] [VehicleFinish] cruiser_3 LOD3 disconnected rubber rejected=54
+[2026-11-04 20_13_05_073][1010][Script] [VehicleFinish] cruiser_3 LOD3 source=2207 split=2207 (body=1878,metal=62,rubber=204,leather=63,glass=0), lodDistance=69.6172
+[2026-11-04 20_13_05_091][1010][Script] [VehicleFinish] cruiser_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4906 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_05_236][1011][Script] [VehicleFinish] rally LOD0 disconnected rubber rejected=32
+[2026-11-04 20_13_05_236][1011][Script] [VehicleFinish] rally LOD0 source=4956 split=4956 (body=4223,metal=435,rubber=254,leather=44,glass=0), lodDistance=0.0000
+[2026-11-04 20_13_05_381][1011][Script] [VehicleFinish] rally LOD1 disconnected rubber rejected=16
+[2026-11-04 20_13_05_381][1011][Script] [VehicleFinish] rally LOD1 source=4211 split=4211 (body=3519,metal=394,rubber=254,leather=44,glass=0), lodDistance=9.3739
+[2026-11-04 20_13_05_472][1011][Script] [VehicleFinish] rally LOD2 disconnected rubber rejected=10
+[2026-11-04 20_13_05_472][1011][Script] [VehicleFinish] rally LOD2 source=3221 split=3221 (body=2675,metal=272,rubber=232,leather=42,glass=0), lodDistance=25.5981
+[2026-11-04 20_13_05_535][1011][Script] [VehicleFinish] rally LOD3 disconnected rubber rejected=6
+[2026-11-04 20_13_05_535][1011][Script] [VehicleFinish] rally LOD3 source=2230 split=2230 (body=1839,metal=160,rubber=199,leather=32,glass=0), lodDistance=70.6651
+[2026-11-04 20_13_05_554][1011][Script] [VehicleFinish] rally ready: 4 parts [body,metal,rubber,leather], 4 LODs, LOD0=4956 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_05_676][1012][Script] [轮胎局部细化] 雪脊 · 轻越野 LOD0 1503→2579三角，角向边538，跳过边界20，距离0.000不变
+[2026-11-04 20_13_05_810][1012][Script] [轮胎局部细化] 雪脊 · 轻越野 LOD1 1276→2350三角，角向边537，跳过边界16，距离9.067不变
+[2026-11-04 20_13_05_876][1012][Script] [VehicleFinish] rally_2 LOD0 disconnected rubber rejected=6
+[2026-11-04 20_13_05_876][1012][Script] [VehicleFinish] rally_2 LOD0 source=2579 split=2579 (body=1220,metal=81,rubber=1254,leather=24,glass=0), lodDistance=0.0000
+[2026-11-04 20_13_05_936][1012][Script] [VehicleFinish] rally_2 LOD1 disconnected rubber rejected=1
+[2026-11-04 20_13_05_936][1012][Script] [VehicleFinish] rally_2 LOD1 source=2350 split=2350 (body=994,metal=80,rubber=1254,leather=22,glass=0), lodDistance=9.0669
+[2026-11-04 20_13_05_988][1012][Script] [VehicleFinish] rally_2 LOD2 disconnected rubber rejected=1
+[2026-11-04 20_13_05_989][1012][Script] [VehicleFinish] rally_2 LOD2 source=976 split=976 (body=710,metal=68,rubber=190,leather=8,glass=0), lodDistance=24.7596
+[2026-11-04 20_13_06_007][1012][Script] [VehicleFinish] rally_2 LOD3 disconnected rubber rejected=0
+[2026-11-04 20_13_06_007][1012][Script] [VehicleFinish] rally_2 LOD3 source=676 split=676 (body=455,metal=32,rubber=184,leather=5,glass=0), lodDistance=68.3503
+[2026-11-04 20_13_06_015][1012][Script] [VehicleFinish] rally_2 ready: 4 parts [body,metal,rubber,leather], 4 LODs, LOD0=2579 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_06_152][1013][Script] [VehicleFinish] rally_3 LOD0 disconnected rubber rejected=153
+[2026-11-04 20_13_06_152][1013][Script] [VehicleFinish] rally_3 LOD0 source=4675 split=4675 (body=3486,metal=249,rubber=847,leather=64,glass=29), lodDistance=0.0000
+[2026-11-04 20_13_06_264][1013][Script] [VehicleFinish] rally_3 LOD1 disconnected rubber rejected=122
+[2026-11-04 20_13_06_264][1013][Script] [VehicleFinish] rally_3 LOD1 source=3972 split=3972 (body=2880,metal=198,rubber=831,leather=50,glass=13), lodDistance=8.3665
+[2026-11-04 20_13_06_376][1013][Script] [VehicleFinish] rally_3 LOD2 disconnected rubber rejected=59
+[2026-11-04 20_13_06_377][1013][Script] [VehicleFinish] rally_3 LOD2 source=3038 split=3038 (body=2221,metal=122,rubber=646,leather=36,glass=13), lodDistance=22.8470
+[2026-11-04 20_13_06_438][1013][Script] [VehicleFinish] rally_3 LOD3 disconnected rubber rejected=41
+[2026-11-04 20_13_06_438][1013][Script] [VehicleFinish] rally_3 LOD3 source=2103 split=2103 (body=1564,metal=84,rubber=421,leather=24,glass=10), lodDistance=63.0705
+[2026-11-04 20_13_06_455][1013][Script] [VehicleFinish] rally_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4675 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 20_13_06_525][1018][Script] [加载] 赛道与所选车型全部就绪：circuit / ebike
+[2026-11-04 20_13_06_550][1019][Script] [赛道界面] 选择 circuit / 同步
+[2026-11-04 20_13_09_797][1019][Script] [竞速] 9车 / 2圈 / 9705m主线 / 115检查点
+[2026-11-04 20_13_09_798][1019][Script] [竞速指引] World无门架；以正式锥标和箭头标识起终点，不创建占位门架
+[2026-11-04 20_13_09_798][1019][Script] [ScenicAssetProps] 正式箭头原D/N、RG重建、diffuse-alpha裁剪 / SurfaceShader
+[2026-11-04 20_13_09_880][1019][Script] [车型] rally bbox 0.479/0.600/0.998 -> 2.22m, yaw 180
+[2026-11-04 20_13_09_886][1019][Script] [骑姿] rally Hip=Vector3(7.46058104e-10, 1.02999997, -0.25000003) Head=Vector3(0.00733239856, 1.47042263, 0.0554971769) LHand=Vector3(-0.420000046, 1.21200013, 0.314999789) RHand=Vector3(0.420000046, 1.21200013, 0.314999759) LFoot=Vector3(-0.289999485, 0.430000186, -0.159999728) RFoot=Vector3(0.289999485, 0.42999959, -0.159999967) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_09_886][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_10_701][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegP2：1153原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegN3：935原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegP1：1162原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/JawP：1499原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegN2：112[2026-11-04 20_13_13_330][1019] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9(INSTANCED RENDER_QUALITY=2 REVERSED_Z SCE_DISABLE_FASTMATH SURFACE_DEPTH_ONLY):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_13_330][1019] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9(ALPHAMASK ALPHAMASK_DIFF_A ENVCUBE HAS_Z_PREPASS RENDER_QUALITY=2 REVERSED_Z SURFACE_DEPTH_ONLY):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_13_331][1019] ERROR: Failed to compile vertex shader Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9(AO DIRLIGHT INSTANCED NORMALMAP PERPIXEL RENDER_QUALITY=2 REVERSED_Z SCE_DISABLE_FASTMATH SHADOW):
+shader compile skipped (graphics headless)
+[2026-11-04 20_13_13_331][1019] ERROR: Failed to compile pixel shader Generated/Surface/surface_pbr_BoqZqTZCAJ9j_C95906ouRdn_1b9279e9_7A635DD9(ALPHAMASK ALPHAMASK_DIFF_A AMBIENT AO DIRLIGHT ENVCUBE HAS_Z_PREPASS IBL NORMALMAP PBR PCF4_SHADOW PCF_SHADOW PERPIXEL RENDER_QUALITY=2 REVERSED_Z SHADOW):
+shader compile skipped (graphics headless)
+6原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/Body：10278原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegN1：1106原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/LegP3：937原始三角面
+[2026-11-04 20_13_10_702][1019][Script] [正式模型拆件] beetle_formal_articulation_v1/JawN：1347原始三角面
+[2026-11-04 20_13_11_688][1019][Script] [正式载具] beetle 原MDL+完整D/N，等比尺寸3.200/2.028/3.200m
+[2026-11-04 20_13_11_692][1019][Script] [车型] rally_2 bbox 0.502/0.646/0.998 -> 2.22m, yaw 180
+[2026-11-04 20_13_11_699][1019][Script] [骑姿] rally_2 Hip=Vector3(7.46058104e-10, 1.18499994, -0.219999999) Head=Vector3(0.00733239856, 1.6254226, 0.0854971856) LHand=Vector3(-0.488000035, 1.39800012, 0.237999886) RHand=Vector3(0.488000154, 1.398, 0.237999842) LFoot=Vector3(-0.269999385, 0.520000279, -0.139999658) RFoot=Vector3(0.269999504, 0.519999385, -0.140000001) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_11_699][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_11_707][1019][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_13_11_713][1019][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_11_714][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_11_720][1019][Script] [车型] rally_3 bbox 0.463/0.865/0.998 -> 2.22m, yaw -90
+[2026-11-04 20_13_11_726][1019][Script] [骑姿] rally_3 Hip=Vector3(7.46058104e-10, 1.38999999, -0.26000002) Head=Vector3(0.00733239856, 1.83042264, 0.0454971865) LHand=Vector3(-0.444999963, 1.66499996, 0.301999778) RHand=Vector3(0.445000082, 1.66499984, 0.301999748) LFoot=Vector3(-0.289999366, 0.630000472, -0.159999803) RFoot=Vector3(0.289999545, 0.629999697, -0.160000026) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_11_726][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_12_337][1019][Script] [正式模型拆件] helicopter/WeaponPods：3753原始三角面
+[2026-11-04 20_13_12_337][1019][Script] [正式模型拆件] helicopter/Rotor：3304原始三角面
+[2026-11-04 20_13_12_338][1019][Script] [正式模型拆件] helicopter/Body：10836原始三角面
+[2026-11-04 20_13_13_240][1019][Script] [正式载具] helicopter 原MDL+完整D/N，等比尺寸3.226/2.062/3.500m
+[2026-11-04 20_13_13_241][1019][Script] [车型] cruiser bbox 0.758/0.926/1.363 -> 2.45m, yaw 0
+[2026-11-04 20_13_13_248][1019][Script] [骑姿] cruiser Hip=Vector3(7.46058104e-10, 0.950000048, -0.300000042) Head=Vector3(0.00733237853, 1.43165278, -0.0562867187) LHand=Vector3(-0.499999881, 1.40199995, 0.144999862) RHand=Vector3(0.50000006, 1.40199983, 0.144999817) LFoot=Vector3(-0.309999079, 0.460000038, 0.120000236) RFoot=Vector3(0.309999108, 0.459999412, 0.12000028) chest=37.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_13_248][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_13_255][1019][Script] [车型] sport bbox 0.463/0.580/0.998 -> 2.15m, yaw 180
+[2026-11-04 20_13_13_262][1019][Script] [骑姿] sport Hip=Vector3(7.46058104e-10, 0.950000048, -0.430000037) Head=Vector3(0.00733237201, 1.26314652, -0.00914864615) LHand=Vector3(-0.340000004, 1.02699971, 0.264999747) RHand=Vector3(0.340000033, 1.02699983, 0.264999717) LFoot=Vector3(-0.279999584, 0.389999926, -0.279999644) RFoot=Vector3(0.279999405, 0.389999539, -0.279999763) chest=67.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_13_13_262][1019][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_13_13_268][1019][Script] [车型] police bbox 0.471/0.354/0.998 -> 4.60m, yaw -90
+[2026-11-04 20_13_13_275][1019][Script] [对手预算] 8名AI / 8骑手 / draws=69 triangles=111016 投影部件=0
+[2026-11-04 20_13_13_275][1019][Script] [竞速表现] 轻量对手、真实骨骼车手、起终门架和路线标记已创建
+[2026-11-04 20_13_13_281][1019][Script] [比赛] 2圈 / 9.705km每圈 / 8名AI / 车手green
+[2026-11-04 20_13_13_286][1019][Script] [车型音频] ebike -> electric / audio/sfx/career_ebike_motor.mp3
+[2026-11-04 20_13_13_289][1019][Script] [音频] 输出设备尚未初始化；音源解锁成功不等于扬声器已有声音
+[2026-11-04 20_13_13_289][1019][Script] [音频] 用户已解锁声音
+[2026-11-04 20_13_13_289][1019][Script] [竞速音频] 音源可解锁，但当前音频输出设备未初始化；请检查平台音频状态
+[2026-11-04 20_13_13_290][1019][Script] [流程] ride
+[2026-11-04 20_13_13_413][1024][Script] [载具技能] ebike / 电驱超频
+[2026-11-04 20_13_13_421][1024][Script] [载具技能] helicopter / 空战脉冲
+[2026-11-04 20_13_13_724][1037][Script] [实赛渲染] frames=15 processCPU=607ms elapsed=0.24 batches=0 primitives=0
+[2026-11-04 20_13_14_072][1052][Script] [实赛渲染] frames=30 processCPU=1254ms elapsed=0.48 batches=0 primitives=0
+[2026-11-04 20_13_14_179][1058][Script] [载具武器] ai6 锁定ai7 距离5m 追踪=true
+[2026-11-04 20_13_14_185][1058][Script] [技能表现] 正式导弹生成 · 等比缩放 · 追踪尾迹已启用
+[2026-11-04 20_13_14_361][1067][Script] [实赛渲染] frames=45 processCPU=1799ms elapsed=0.74 batches=0 primitives=0
+[2026-11-04 20_13_14_711][1082][Script] [实赛渲染] frames=60 processCPU=2467ms elapsed=0.98 batches=0 primitives=0
+[2026-11-04 20_13_14_711][1082][Script] [实赛渲染] COMPLETE / 正式九车比赛60帧，本地软件渲染不代表手机FPS
+[2026-11-04 20_13_14_712][1082][Script] [流程] menu
+[2026-11-04 20_13_15_655][1139][Script] [帧剖析] aiUpdate=12.3ms bikeUpdate=5.7ms contacts=0.1ms hud=1.0ms pursuit=0.0ms raceAfter=0.0ms raceAudio=0.1ms raceBefore=0.0ms raceStep=0.0ms raceVisuals=2.0ms rank=0.1ms simStep=4.2ms snapshot=0.0ms sound=0.1ms worldUpdate=0.2ms
+[2026-11-04 20_13_17_769][1259][Script] [帧剖析] bikeUpdate=5.6ms hud=0.2ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.1ms
+[2026-11-04 20_13_19_846][1379][Script] [帧剖析] bikeUpdate=3.7ms hud=0.2ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_21_895][1499][Script] [帧剖析] bikeUpdate=2.1ms hud=0.1ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_23_940][1619][Script] [帧剖析] bikeUpdate=2.0ms hud=0.1ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_26_024][1739][Script] [帧剖析] bikeUpdate=2.0ms hud=0.1ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_28_077][1859][Script] [帧剖析] bikeUpdate=2.5ms hud=0.1ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_30_132][1979][Script] [帧剖析] bikeUpdate=2.7ms hud=0.1ms raceAudio=0.0ms raceVisuals=0.0ms sound=0.0ms
+[2026-11-04 20_13_31_622][2065]INFO__VALIDATE_UPDATE__:false
+[2026-11-04 20_13_31_636][2065][Script] [音频] 已停止并释放所有驾驶音源
