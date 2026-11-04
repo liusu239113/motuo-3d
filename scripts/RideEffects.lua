@@ -21,6 +21,7 @@ local V = Vector3
 ---@field materials Material[]
 ---@field clock number
 ---@field intensity number
+---@field rootEnabled? boolean
 ---@field pitch number
 ---@field bob number
 ---@field disposed boolean
@@ -110,6 +111,8 @@ function Effects:Update(dt, boost, speed, padPower)
     if self.disposed or dt <= 0 then return end
     local step = math.max(0, dt)
     local target = math.max(0, math.min(1, boost))
+    -- 大量空闲对手（8车×每帧）不能为“保持关闭”反复遍历子树：状态未变就整函数退出。
+    if target <= 0 and self.intensity <= 0 and self.padIntensity <= 0 and not self.rootEnabled then return end
     self.clock = self.clock + step
     self.intensity = self.intensity + (target - self.intensity) * (1 - math.exp(-step * (target > self.intensity and 28 or 20)))
     if self.intensity < 0.008 then self.intensity = 0 end
@@ -118,6 +121,7 @@ function Effects:Update(dt, boost, speed, padPower)
     local pad = math.max(0, math.min(1, padPower or 0))
     self.padIntensity = pad
     self.root:SetEnabledRecursive(amount > 0 or pad > 0)
+    self.rootEnabled = amount > 0 or pad > 0
     self.padRoot:SetEnabledRecursive(pad > 0)
     for _, jet in ipairs(self.jets) do jet.anchor:SetEnabledRecursive(amount > 0) end
     -- 只有视觉车架轻微蓄力/震动，整车与骑手共享父变换，保持IK接触点不变。
@@ -166,7 +170,7 @@ end
 function Effects:Reset()
     if self.disposed then return end
     self.clock, self.intensity, self.pitch, self.bob = 0, 0, 0, 0
-    self.padIntensity, self.streakMode = 0, 0
+    self.padIntensity, self.streakMode, self.rootEnabled = 0, 0, false
     for _, node in ipairs(self.streaks) do node:GetComponent("StaticModel").material = self.lineMaterial end
     self.root:SetEnabledRecursive(false)
 end
