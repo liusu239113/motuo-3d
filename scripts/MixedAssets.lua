@@ -65,7 +65,7 @@ end
 ---@return string[]
 function M.RaceIds()
     local ids={"ebike","helicopter","sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}
-    for _,id in ipairs({"tank","beetle"}) do
+    for _,id in ipairs({"tank","beetle","hovercraft","centipede","buggy","loader","cicada"}) do
         if M.IsReady(id) then ids[#ids+1]=id end
     end
     return ids
