@@ -1012,7 +1012,7 @@ function HUD:UpdateFeatureFeedback(sim)
         local skill = MixedRace.GetSkill(sim.vehicleId)
         local title = skill and skill.name or "技能交锋"
         local color = C.cyan
-        if motorcycle and result:find("格挡",1,true) then title,color="赤铜格挡 · 护盾已消耗",AMBER
+        if motorcycle and result:find("护盾已消耗",1,true) then title,color="赤铜格挡 · 护盾已消耗",AMBER
         elseif not motorcycle and result:find("盾", 1, true) then title, color = "攻击被护盾挡住", AMBER
         elseif result:find("无", 1, true) then title, color = "前方无有效目标", RED
         elseif result:find("未命中", 1, true) or result:find("落空", 1, true) then title, color = "攻击未命中", RED
