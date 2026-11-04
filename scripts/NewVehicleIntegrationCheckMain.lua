@@ -69,7 +69,9 @@ local function playerChecks(scene,id)
     camera.fov,camera.aspectRatio,camera.nearClip=bike.Cockpit.fov,16/9,.025
     local state=drive(id,0,"idle");state.oddActive=0
     bike:UpdateState(.02,state,true,0)
-    check(bike.firstPerson and bike.body.enabledEffective,id.."首视角保留正式车体")
+    check(bike.firstPerson and bike.body.enabled and #bike.body:GetComponents("StaticModel",true)>0,
+        id.."首视角保留正式车体 fp="..tostring(bike.firstPerson).." body="..tostring(bike.body.enabled)
+        .." draws="..tostring(#bike.body:GetComponents("StaticModel",true)))
     local dashboard=camera:WorldToScreenPoint(bike:GetDashboardWorldPosition())
     check(dashboard.x>0 and dashboard.x<1 and dashboard.y>0 and dashboard.y<1,id.."实际座舱仪表可投影")
     for _,sample in ipairs(phases(id)) do
