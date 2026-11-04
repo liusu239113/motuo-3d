@@ -17,6 +17,9 @@ local COURSE_TYPES = {[COURSE_ARROW] = "Model", [COURSE_ARROW_MATERIAL] = "Mater
     [COURSE_CONE] = "Model", [COURSE_CONE_MATERIAL] = "Material"}
 local Bike = require("Bike") -- 只取Cockpits配置，不调用Bike.New。
 local MixedVisuals = require("MixedVisuals")
+local MixedData = require("MixedVehicles")
+local MixedAnimate = MixedVisuals.Animate
+local MixedGet = MixedData.Get
 local Landscape = require("Landscape")
 local P = require("Parts")
 local V = Vector3
@@ -208,7 +211,7 @@ end
 ---@param data table
 ---@param verify boolean
 function RaceVisuals:RefreshPose(runner, data, verify)
-    if require("MixedVehicles").Get(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
+    if MixedGet(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
     if runner.vehicleId == "ebike" or runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0
@@ -553,7 +556,7 @@ function RaceVisuals:Update(dt, sim, camera)
                 runner.visual.rotation = Quaternion((data.pitch or 0) + runner.effects.pitch + hit * 4,
                     hitYaw, runner.lean * self.leanSign + hitRoll)
                 runner.visual.position = V(0, runner.effects.bob, 0)
-                if require("MixedVehicles").Get(runner.vehicleId) then
+                if MixedGet(runner.vehicleId) then
                     local drive = data.driveSim or {}
                     runner.visual.position = V(0, drive.oddAltitude or 0, 0)
                     -- 被技能击中时叠加可见翻滚，让"被打中"有明确反馈。
@@ -564,7 +567,7 @@ function RaceVisuals:Update(dt, sim, camera)
                         runner.lean*.22 + hitRoll + tumbleRoll)
                     -- 关节动画必须逐帧：降频会让车轮/履带/钳口一抽一抽。
                     -- 开销改由MixedVisuals内部缓存节点引用解决。
-                    require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
+                    MixedAnimate(runner.body,runner.vehicleId,self.clock,drive)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.colorId = data.colorId

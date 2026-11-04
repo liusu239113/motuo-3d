@@ -287,6 +287,7 @@ local function joint(root, name)
     map[name] = node
     return node
 end
+local ebikeWheelAxis = Quaternion(0, Assets.Vehicles.ebike.rotation, 0):Inverse() * V.RIGHT
 
 function M.Animate(root, id, time, state)
     if id=="tank" or id=="beetle" then
@@ -296,10 +297,9 @@ function M.Animate(root, id, time, state)
     if id=="ebike" then
         local distance=state and state.distance or 0
         local angle=distance/.264*180/math.pi%360
-        local axis=Quaternion(0,Assets.Vehicles.ebike.rotation,0):Inverse()*V.RIGHT
         for _,name in ipairs({"FrontWheel","RearWheel"}) do
             local wheel=joint(root,name)
-            if wheel then wheel.rotation=Quaternion(angle,axis) end
+            if wheel then wheel.rotation=Quaternion(angle,ebikeWheelAxis) end
         end
         return
     end
@@ -454,8 +454,7 @@ function Adapter:UpdateState(dt,sim,firstPerson,clock)
         self.spin=self.rearSpin
         local rear=self.body:GetChild("RearWheel",true)
         if rear then
-            local axis=Quaternion(0,Assets.Vehicles.ebike.rotation,0):Inverse()*V.RIGHT
-            rear.rotation=Quaternion(((sim.distance or 0)/.264*180/math.pi+self.rearSpin)%360,axis)
+                rear.rotation=Quaternion(((sim.distance or 0)/.264*180/math.pi+self.rearSpin)%360,ebikeWheelAxis)
         end
         for _,hand in ipairs(self.hands) do
             local pull=hand.side==1 and (sim.braking==true or sim.brake==true)
