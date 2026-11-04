@@ -88,7 +88,8 @@ function Effects:Init(parent,skill,eyeHeight,length,lightweight)
         local mat=Material:new()
         mat:SetTechnique(0,assert(cache:GetResource("Technique",Effects.Resources[1])))
         mat:SetShaderParameter("MatDiffColor",Variant(Color(c[1],c[2],c[3],alpha)))
-        mat:SetShaderParameter("MatEmissiveColor",Variant(Color(c[1]*2,c[2]*2,c[3]*2)))
+        local emission=alpha<.5 and .12 or 2
+        mat:SetShaderParameter("MatEmissiveColor",Variant(Color(c[1]*emission,c[2]*emission,c[3]*emission)))
         mat:SetShaderParameter("Roughness",Variant(1))
         mat.cullMode=CULL_NONE
         self.materials[#self.materials+1]=mat
