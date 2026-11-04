@@ -64,6 +64,7 @@ local function runCameraChecks()
         controls:ResetLook()
         camera:Reset(0)
         state.right = true
+        UI.IsPointerOverUI = function() return true end
         camera:ApplyLookInput(controls, true)
         check(not camera.mouseDragging, "右键按下时不能在UI状态中误开始")
         state.right = false
@@ -72,6 +73,8 @@ local function runCameraChecks()
         state.left = false
         UI.IsPointerOverUI = function() return false end
         _G.input.mouseMoveX, _G.input.mouseMoveY = 100, -50
+        camera:ApplyLookInput(controls, true)
+        check(camera.mouseDragging and near(camera.yaw, 0), "按下右键先取得拖动归属，不吞首帧跳变")
         camera:ApplyLookInput(controls, true)
         check(camera.mouseDragging and near(camera.yaw, 22) and near(camera.pitch, -11), "鼠标右键拖动按逻辑像素旋转")
         camera:CancelInput()
