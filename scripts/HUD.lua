@@ -1004,7 +1004,7 @@ function HUD:UpdateFeatureFeedback(sim)
     local power = driving and math.max(0, math.min(1, state.feedbackPower or 0)) or 0
     self.featureRush.power, self.featureRush.phase = (state.lastGain or 0) > 0 and power or 0, sim.elapsed or 0
     if not driving then self.featurePanel:SetVisible(false); return end
-    local motorcycle=not require("MixedVehicles").Get(sim.vehicleId)
+    local motorcycle=(sim.motorcycleSkillResultTimer or 0)>0 and (sim.motorcycleSkillResult or "")~=""
     local result = motorcycle and (sim.motorcycleSkillResult or "") or (sim.oddSkillResult or "")
     local resultTimer=motorcycle and (sim.motorcycleSkillResultTimer or 0) or (sim.oddSkillResultTimer or 0)
     if resultTimer > 0 and result ~= "" and not isWeaponFeedback(result) then

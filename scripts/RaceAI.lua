@@ -3,6 +3,7 @@
 local Simulation = require("Simulation")
 local Mixed = require("MixedRace")
 local MixedData = require("MixedVehicles")
+local MotorcycleSkills = require("MotorcycleSkills")
 ---@class MixedRaceSkillRules
 ---@field ShouldUseSkill fun(race:table, source:table):boolean
 local MixedRaceRules = Mixed
@@ -551,12 +552,15 @@ function AI.TrafficContacts(race, r)
             if hit and vertical then
                 active[car] = true
                 if not r.trafficContacts[car] then
-                    r.speed = r.speed * 0.66
+                    local retained,damage=MotorcycleSkills.Contact(r.driveSim,.66)
+                    r.speed = r.speed * retained
                     r.trafficHits, r.laneHold = r.trafficHits + 1, 0
                     local p=assert(r.perception)
-                    p.recovery,p.recoveries=1.2+(1-r.skill)*1.2,p.recoveries+1
+                    if damage>0 then
+                        p.recovery,p.recoveries=1.2+(1-r.skill)*1.2,p.recoveries+1
+                        race:Collision(r)
+                    end
                     p.timer,r.decisionTimer,r.paceTimer=0,0,0
-                    race:Collision(r)
                     race:Emit("traffic-contact", r.id)
                 end
             end

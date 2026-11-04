@@ -108,6 +108,7 @@ function Checks.Run()
     Rules.Hit(arena,source,target,assert(Data.Get("tank")))
     check(targetSim.oddDisrupt==1.5 and target.speed==16,"雪脊缩短真实技能干扰但不免减速")
     local targetGuard,targetGuardSim=racer("cruiser_2",true,.4)
+    sourceSim.skillHitLock=0
     arena.sim=targetGuardSim
     Rules.Hit(arena,source,targetGuard,assert(Data.Get("tank")))
     check(targetGuard.speed==20 and targetGuardSim.motorcycleGuardBlocks==1

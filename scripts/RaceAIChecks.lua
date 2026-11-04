@@ -561,6 +561,28 @@ function Checks.MotorcycleSkills()
             and drive.motorcycleActive==active and drive.motorcycleCooldown==cooldown,
             id.."本步刹车必须抑制收益且不重复消费计时")
     end
+    do
+        local function traffic(id,active)
+            local race,r=fixture(31,id,1,"hard")
+            r.speed=20
+            if active then Skills.Before(r.driveSim,DT,{skill=true}) end
+            local car={x=0,y=0,z=0,yaw=0,speed=0,height=1.8}
+            race.aiObstacles={{source=car,halfWidth=1,halfLength=2}}
+            AI.TrafficContacts(race,r)
+            return race,r
+        end
+        local _,base=traffic("cruiser",false)
+        local _,armor=traffic("cruiser",true)
+        check(armor.speed>base.speed,"AI交通接触必须消费减伤保速技能")
+        local race,guard=traffic("cruiser_2",true)
+        check(guard.speed==20 and guard.perception.recovery==0 and guard.driveSim.motorcycleGuardBlocks==1,
+            "AI交通接触必须消费单次护盾并免失稳")
+        AI.TrafficContacts(race,guard)
+        check(guard.speed==20 and guard.driveSim.motorcycleGuardBlocks==1,"持续接触不能重复扣速或消费护盾")
+        guard.trafficContacts={}
+        AI.TrafficContacts(race,guard)
+        check(guard.speed<20 and guard.perception.recovery>0,"再次交通撞击不能保留已消耗护盾")
+    end
     print(string.format("[摩托AI技能] PASS / %d项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演",count))
     return count
 end
