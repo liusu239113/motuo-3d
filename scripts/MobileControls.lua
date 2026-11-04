@@ -152,10 +152,11 @@ end
 ---@param parent Widget
 function Controls:MountLook(parent)
     local zone = UI.Panel {
-        id = "drivingLook", position = "absolute", left = "52%", top = "38%",
-        width = "20%", height = "22%", maxWidth = 170, maxHeight = 110,
-        minWidth = 72, minHeight = 54, padding = 4, borderRadius = 8,
-        backgroundColor = {9, 17, 24, 75}, borderWidth = 1, borderColor = {149, 174, 189, 100},
+        id = "drivingLook", position = "absolute", left = "62%", top = "42%",
+        width = "18%", height = "16%", maxWidth = 150, maxHeight = 88,
+        minWidth = 72, minHeight = 54, padding = 3, borderRadius = 8,
+        -- 半透明小区域放在车头右侧空档，不能压住中央道路与车辆本体。
+        backgroundColor = {9, 17, 24, 26}, borderWidth = 1, borderColor = {149, 174, 189, 45},
         pointerEvents = "box-only", visible = self.enabled,
         justifyContent = "center", alignItems = "center",
         onPointerDown = function(event)
@@ -167,9 +168,9 @@ function Controls:MountLook(parent)
         onPointerUp = function(event) if event:IsTouch() then self:EndLook(event.pointerId, false) end end,
         onPointerCancel = function(event) if event:IsTouch() then self:EndLook(event.pointerId, true) end end,
         children = {
-            UI.Label {text = "LOOK · 360°", fontSize = 12, fontWeight = "bold", fontColor = AMBER,
+            UI.Label {text = "LOOK · 360°", fontSize = 11, fontWeight = "bold", fontColor = {224, 164, 75, 225},
                 textAlign = "center", pointerEvents = "none"},
-            UI.Label {text = "拖动环视 · 松手保持", fontSize = 8, fontColor = {214, 225, 231, 220},
+            UI.Label {text = "拖动环视 · 松手保持", fontSize = 7, fontColor = {214, 225, 231, 165},
                 textAlign = "center", pointerEvents = "none"},
         },
     }
