@@ -152,9 +152,9 @@ end
 ---@param parent Widget
 function Controls:MountLook(parent)
     local zone = UI.Panel {
-        id = "drivingLook", position = "absolute", left = "62%", top = "42%",
-        width = "18%", height = "16%", maxWidth = 150, maxHeight = 88,
-        minWidth = 72, minHeight = 54, padding = 3, borderRadius = 8,
+        id = "drivingLook", position = "absolute", left = "64%", top = "26%",
+        width = "16%", height = "13%", maxWidth = 138, maxHeight = 74,
+        minWidth = 66, minHeight = 48, padding = 2, borderRadius = 8,
         -- 半透明小区域放在车头右侧空档，不能压住中央道路与车辆本体。
         backgroundColor = {9, 17, 24, 26}, borderWidth = 1, borderColor = {149, 174, 189, 45},
         pointerEvents = "box-only", visible = self.enabled,
