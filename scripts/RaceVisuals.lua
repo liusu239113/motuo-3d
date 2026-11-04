@@ -3,6 +3,7 @@
 local Assets = require("VehicleAssets")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
+local MotorcycleSkillEffects = require("MotorcycleSkillEffects")
 local SkillPresentation = require("SkillPresentation")
 local ExplosionEffects = require("ExplosionEffects")
 local ScenicAssetProps = require("ScenicAssetProps")
@@ -38,6 +39,7 @@ local V = Vector3
 ---@field poseClock number
 ---@field lean number
 ---@field effects RideEffects
+---@field skillEffects? MotorcycleSkillEffects
 ---@field active boolean
 ---@field wasInView boolean
 ---@field poseRefreshes number
@@ -99,6 +101,10 @@ function RaceVisuals.GetResources()
     for _, path in ipairs(COURSE_RESOURCES) do
         paths[#paths + 1] = path
         Assets.ResourceTypes[path] = assert(COURSE_TYPES[path])
+    end
+    for _, path in ipairs(MotorcycleSkillEffects.Resources) do
+        paths[#paths + 1] = path
+        Assets.ResourceTypes[path] = assert(MotorcycleSkillEffects.ResourceTypes[path])
     end
     -- 保留普通氮气已有表现，与载具专属技能没有关系。
     for _, path in ipairs(RideEffects.Resources) do
@@ -188,7 +194,10 @@ function RaceVisuals:CreateRunner(data)
     local effects = RideEffects.New(visual, Assets.Vehicles[vehicleId].targetSize, cockpit.seatHeight, true)
     local runner = {id = id, vehicleId = vehicleId, colorId = colorId, node = node,
         visual = visual, body = body, rider = rider, models = models, poseClock = 0, lean = 0,
-        effects = effects, active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
+        effects = effects, skillEffects = not odd and MotorcycleSkillEffects.New(visual, vehicleId,
+            cockpit.localOffset and cockpit.localOffset.y or cockpit.seatHeight+.6,
+            Assets.Vehicles[vehicleId].targetSize.z, true) or nil,
+        active = false, wasInView = false, poseRefreshes = 0, detailTier = "distant"}
     -- 只登记真实模型；封闭座舱车型没有独立骑手。
     if rider ~= nil and rider.model ~= nil and rider.node ~= nil then
         runner.fullRider = rider --[[@as Rider]]
@@ -346,6 +355,7 @@ function RaceVisuals:Reset(race)
             local runner = self.runners[data.id]
             if runner and runner.vehicleId ~= data.vehicleId then
                 if runner.fullRider then runner.fullRider:Dispose() end
+                if runner.skillEffects then runner.skillEffects:Dispose() end
                 runner.effects:Dispose(); runner.node:Dispose()
                 self.runners[data.id] = nil
                 runner = nil
@@ -359,6 +369,7 @@ function RaceVisuals:Reset(race)
             runner.rider:SetColor(runner.colorId)
             runner.node:SetEnabledRecursive(true)
             runner.effects:Reset()
+            if runner.skillEffects then runner.skillEffects:Reset() end
             runner.node.position = V(data.x, data.y + 0.015, data.z)
             runner.node.rotation = Quaternion(0, data.heading or data.yaw or 0, 0)
             runner.visual.rotation = Quaternion(data.pitch or 0, 0, 0)
@@ -371,6 +382,7 @@ function RaceVisuals:Reset(race)
     for id, runner in pairs(self.runners) do
         if not present[id] then
             if runner.fullRider then runner.fullRider:Dispose() end
+            if runner.skillEffects then runner.skillEffects:Dispose() end
             runner.effects:Dispose(); runner.node:Dispose()
             self.runners[id] = nil
         end
@@ -437,6 +449,7 @@ function RaceVisuals:SetVisible(visible)
         runner.node:SetEnabledRecursive(false)
         runner.active, runner.wasInView = false, false
         runner.effects:Reset()
+        if runner.skillEffects then runner.skillEffects:Reset() end
     end
     if self.policeNode then self.policeNode:SetEnabledRecursive(false) end
     if self.visible then self.visibilityClock = 1; self:Update(0, self.race.sim) end
@@ -517,6 +530,7 @@ function RaceVisuals:Update(dt, sim, camera)
                 runner.lean = runner.lean + (target - runner.lean) * (1 - math.exp(-frameTime * 10))
                 local boostPower = data.driveSim and data.driveSim.raceBoost or 0
                 runner.effects:Update(frameTime, boostPower, data.speed or 0)
+                if runner.skillEffects then runner.skillEffects:Update(frameTime, data.driveSim or {}) end
                 -- AI被撞时车身猛晃并短暂偏航，恢复后由正常线路接管。
                 local hit = (data.hitShake or 0) * (data.hitTimer or 0)
                 local hitYaw = (data.hitYaw or 0) * (data.hitTimer or 0) * 0.12
@@ -559,6 +573,7 @@ function RaceVisuals:Update(dt, sim, camera)
             else
                 runner.wasInView = false
                 runner.effects:Reset()
+                if runner.skillEffects then runner.skillEffects:Reset() end
             end
             runner.active = visible
         end
@@ -631,6 +646,7 @@ function RaceVisuals:Destroy()
     self.disposed = true
     for _, runner in pairs(self.runners) do
         runner.effects:Dispose()
+        if runner.skillEffects then runner.skillEffects:Dispose() end
         runner.rider:Dispose()
     end
     self.runners = {}

@@ -1,0 +1,49 @@
+[2026-11-04 20_15_34_220][0] INFO: DownloadManager initialized
+[2026-11-04 20_15_34_222][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 20_15_34_223][0] INFO: Engine construct finish.
+[2026-11-04 20_15_34_229][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-11-04 20_15_34_997][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 20_15_35_418][18] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_15_36_895][47]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 20_15_36_899][47]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 20_15_36_899][47]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 20_15_36_899][47] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 20_15_37_946][71][Script] IsNetworkMode:    false
+[2026-11-04 20_15_37_967][71][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 20_15_37_967][71][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 20_15_37_967][71][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 20_15_37_967][71][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 20_15_37_972][71][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 20_15_40_156][71][Script] [正式模型拆件] ebike/Body：15156原始三角面
+[2026-11-04 20_15_40_156][71][Script] [正式模型拆件] ebike/FrontWheel：1572原始三角面
+[2026-11-04 20_15_40_156][71][Script] [正式模型拆件] ebike/RearWheel：1961原始三角面
+[2026-11-04 20_15_41_036][71][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] base VS=PBRLitSolid [NORMALMAP AO] PS=PBRLitSolid [DIFFMAP NORMALMAP PBR IBL AMBIENT AO]
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] deferred VS=PBRLitSolid [NORMALMAP AO] PS=PBRLitSolid [DIFFMAP NORMALMAP PBR IBL AMBIENT AO DEFERRED]
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] light VS=PBRLitSolid [NORMALMAP AO] PS=PBRLitSolid [DIFFMAP NORMALMAP PBR IBL AO]
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] litbase VS=PBRLitSolid [NORMALMAP AO] PS=PBRLitSolid [DIFFMAP NORMALMAP PBR IBL AMBIENT AO]
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] shadow VS=Shadow [] PS=Shadow []
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] depth VS=Depth [] PS=Depth []
+[2026-11-04 20_15_41_524][71][Script] [正式材质pass] velocity VS=ScreenSpace/MotionVector/Velocity [] PS=ScreenSpace/MotionVector/Velocity []
+[2026-11-04 20_15_41_542][71][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_15_43_668][71][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_15_43_668][71][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_15_44_338][71][Script] [Tracks] lake selected: 4122.2m / 16.0m full width / 3 roads
+[2026-11-04 20_15_44_338][71][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_15_44_345][71][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_15_44_345][71][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_15_44_362][71][Script] [对手预算] 1名AI / 1骑手 / draws=10 triangles=37405 投影部件=0
+[2026-11-04 20_15_46_185][71][Script] [正式模型拆件] helicopter/Body：10836原始三角面
+[2026-11-04 20_15_46_185][71][Script] [正式模型拆件] helicopter/Rotor：3304原始三角面
+[2026-11-04 20_15_46_185][71][Script] [正式模型拆件] helicopter/WeaponPods：3753原始三角面
+[2026-11-04 20_15_46_697][71][Script] [正式载具] helicopter 原MDL+完整D/N，等比尺寸3.226/2.062/3.500m
+[2026-11-04 20_15_46_698][71][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_15_46_703][71][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_15_46_703][71][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_15_46_712][71][Script] [正式载具] ebike 原MDL+完整D/N，等比尺寸1.060/1.601/2.100m
+[2026-11-04 20_15_46_723][71][Script] [骑姿] ebike Hip=Vector3(7.46058104e-10, 1.08599997, -0.219999999) Head=Vector3(0.00733239856, 1.52642262, 0.0854971856) LHand=Vector3(-0.469999969, 1.24199998, 0.276999891) RHand=Vector3(0.470000058, 1.30199993, 0.339999855) LFoot=Vector3(-0.189998984, 0.440000057, -0.0799995065) RFoot=Vector3(0.189998969, 0.439999253, -0.0799997374) chest=45.1deg gripError=0.0000/0.0000m
+[2026-11-04 20_15_46_723][71][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 20_15_46_728][71][Script] [电动车驾驶员断言] PASS 玩家/AI同正式41骨源模型 / 双手双脚与座面 / 首视角 / 配色 / 隐藏恢复 / 换车释放 / 幂等Dispose / selected=ai / 车库生命周期需-rider-case=garage单独验收
+[2026-11-04 20_15_46_729][71][Script] [正式模型验收] PASS ebike / 18689原始三角面 / D+N / 独立部件动画断言通过 / pose=0.0000

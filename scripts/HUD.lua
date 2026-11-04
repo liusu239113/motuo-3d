@@ -949,7 +949,9 @@ function HUD:UpdateSkillFeedback(sim)
     local status, tint, background = "就绪 · E", AMBER, {49, 38, 23, 240}
     -- 普通技能与混合odd*分别读取自身计时，氮气/加速带不触发技能外观。
     if active > 0 then
-        status, tint, background = string.format("持续 %.1fs", active), C.cyan, {18, 58, 65, 245}
+        local phase=not skill.odd and sim.motorcyclePhase or "active"
+        local prefix=phase=="charge" and "蓄力" or phase=="guard" and "单次格挡" or phase=="suppressed" and "暂时抑制" or "持续"
+        status, tint, background = string.format("%s %.1fs", prefix, active), C.cyan, {18, 58, 65, 245}
     elseif disrupted then
         status, tint, background = string.format("受干扰 %.1fs", sim.oddDisrupt), RED, {65, 28, 25, 245}
     elseif cd > 0 then
@@ -1002,8 +1004,10 @@ function HUD:UpdateFeatureFeedback(sim)
     local power = driving and math.max(0, math.min(1, state.feedbackPower or 0)) or 0
     self.featureRush.power, self.featureRush.phase = (state.lastGain or 0) > 0 and power or 0, sim.elapsed or 0
     if not driving then self.featurePanel:SetVisible(false); return end
-    local result = sim.oddSkillResult or ""
-    if (sim.oddSkillResultTimer or 0) > 0 and result ~= "" and not isWeaponFeedback(result) then
+    local motorcycle=not require("MixedVehicles").Get(sim.vehicleId)
+    local result = motorcycle and (sim.motorcycleSkillResult or "") or (sim.oddSkillResult or "")
+    local resultTimer=motorcycle and (sim.motorcycleSkillResultTimer or 0) or (sim.oddSkillResultTimer or 0)
+    if resultTimer > 0 and result ~= "" and not isWeaponFeedback(result) then
         -- 复用现有反馈框，结果来自权威仿真；不靠技能计时/boost猜测命中。
         local skill = MixedRace.GetSkill(sim.vehicleId)
         local title = skill and skill.name or "技能交锋"

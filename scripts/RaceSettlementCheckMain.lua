@@ -1,11 +1,13 @@
 -- 可终止专项入口：只执行主结算接线隔离验收，不加载main.Start或创建任何Scene。
 function Start()
-    local gateOnly, circuitOnly = false, false
+    local gateOnly, circuitOnly, motorcycleOnly = false, false, false
     for _, argument in ipairs(GetArguments()) do
         if argument == "-racegates" then gateOnly = true end
         if argument == "-racecircuit" then circuitOnly = true end
+        if argument == "-motorcycle-ai" then motorcycleOnly = true end
     end
-    if circuitOnly then assert(require("RaceSettlementChecks").RunCircuitGates().passed)
+    if motorcycleOnly then require("RaceAIChecks").MotorcycleSkills()
+    elseif circuitOnly then assert(require("RaceSettlementChecks").RunCircuitGates().passed)
     elseif gateOnly then assert(require("Race").RunChecks().passed)
     else assert(require("RaceSettlementChecks").Run().passed) end
     print("[RaceSettlementCheckMain] 全部断言通过")

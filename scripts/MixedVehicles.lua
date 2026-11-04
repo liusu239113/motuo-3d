@@ -1,12 +1,13 @@
 -- 混合竞速目录：器械、生物与轻型载具共用米/秒制仿真，各有地形赢法。
 local M = {}
 
--- 普通摩托的专属技能规则由竞速 AI 和玩家共用同一份定义。
--- 技能只改变有限的动力/抓地包络，不能修改位置、检查点或碰撞判定。
+-- 九辆普通摩托按完整车型ID定义；玩家和AI消费相同规则，不改变位置或检查点。
 ---@class MotorcycleSkill
 ---@field id string
 ---@field name string
 ---@field description string
+---@field visual string
+---@field tactic string
 ---@field cooldown number
 ---@field duration number
 ---@field triggerDistance number
@@ -14,44 +15,71 @@ local M = {}
 ---@field driveScale number
 ---@field gripScale number
 ---@field offroadScale number
+---@field damageScale? number
+---@field lossScale? number
+---@field chargeTime? number
+---@field disruptScale? number
+---@field coastDragScale? number
+---@field shieldCharges? integer
+---@type table<string, MotorcycleSkill>
 M.MotorcycleSkills = {
-    sport = {id="sport", name="超车脉冲", description="动力×1.22、极速+8%、抓地+6%，持续2.4秒。",
-        cooldown=14, duration=2.4, triggerDistance=42, speedScale=1.08, driveScale=1.22,
-        gripScale=1.06, offroadScale=1},
-    cruiser = {id="cruiser", name="稳压护航", description="动力×1.14、抓地×1.28，撞击伤害×0.72、保留更多速度，持续2.8秒。",
-        cooldown=16, duration=2.8, triggerDistance=24, speedScale=1.04, driveScale=1.14,
-        gripScale=1.28, offroadScale=1.05},
-    rally = {id="rally", name="地形冲线", description="动力×1.12、抓地×1.18、越野抓地×1.16，极速+7%，持续3.2秒。",
-        cooldown=13, duration=3.2, triggerDistance=30, speedScale=1.07, driveScale=1.12,
-        gripScale=1.18, offroadScale=1.16},
+    sport = {id="sport", name="赤焰脉冲", description="直道动力×1.25、极速+8%，持续2.2秒；不增加抗撞。",
+        visual="pulse", tactic="straight", cooldown=14, duration=2.2, triggerDistance=42,
+        speedScale=1.08, driveScale=1.25, gripScale=1, offroadScale=1},
+    sport_2 = {id="sport_2", name="冰锋压弯", description="抓地×1.28、动力×1.08，持续3秒；专攻连续弯，极速仅+2%。",
+        visual="crescent", tactic="corner", cooldown=15, duration=3, triggerDistance=32,
+        speedScale=1.02, driveScale=1.08, gripScale=1.28, offroadScale=1},
+    sport_3 = {id="sport_3", name="银隼蓄射", description="先蓄力0.65秒（动力×0.78），再爆发2.35秒：动力×1.25、极速+10%。",
+        visual="coil", tactic="charge", cooldown=16, duration=3, triggerDistance=46,
+        speedScale=1.10, driveScale=1.25, gripScale=1.03, offroadScale=1, chargeTime=.65},
+    rally = {id="rally", name="荒野咬地", description="越野通过性×1.20（最高100%）、抓地×1.12、动力×1.10，持续3.6秒。",
+        visual="tread", tactic="rough", cooldown=14, duration=3.6, triggerDistance=30,
+        speedScale=1.03, driveScale=1.10, gripScale=1.12, offroadScale=1.20},
+    rally_2 = {id="rally_2", name="雪脊稳向", description="抓地×1.30、受技能及油污干扰时间减半；动力×1.06，持续3.2秒。",
+        visual="level", tactic="stability", cooldown=15, duration=3.2, triggerDistance=28,
+        speedScale=1, driveScale=1.06, gripScale=1.30, offroadScale=1.08, disruptScale=.5},
+    rally_3 = {id="rally_3", name="沙隼攀升", description="上坡动力×1.25，平路×1.08；极速+6%、越野通过性×1.12，持续3秒。",
+        visual="climb", tactic="hill", cooldown=15, duration=3, triggerDistance=36,
+        speedScale=1.06, driveScale=1.25, gripScale=1.08, offroadScale=1.12},
+    cruiser = {id="cruiser", name="远行护航", description="撞击伤害×0.60、撞击损速×0.88，抓地×1.10、动力×1.08，持续3.2秒。",
+        visual="armor", tactic="armor", cooldown=16, duration=3.2, triggerDistance=24,
+        speedScale=1.02, driveScale=1.08, gripScale=1.10, offroadScale=1, damageScale=.60, lossScale=.88},
+    cruiser_2 = {id="cruiser_2", name="赤铜格挡", description="2.5秒内挡住首次技能、路障或车辆撞击，触发即破盾；抓地×1.05，无极速加成。",
+        visual="guard", tactic="guard", cooldown=18, duration=2.5, triggerDistance=24,
+        speedScale=1, driveScale=1, gripScale=1.05, offroadScale=1, shieldCharges=1},
+    cruiser_3 = {id="cruiser_3", name="暗峰惯行", description="撞击损速×0.55、收油阻力×0.65；动力×1.10、极速+3%，持续3.4秒。",
+        visual="flywheel", tactic="momentum", cooldown=17, duration=3.4, triggerDistance=34,
+        speedScale=1.03, driveScale=1.10, gripScale=1, offroadScale=1, lossScale=.55, coastDragScale=.65},
 }
 
 ---@param id string
 ---@return MotorcycleSkill?
 function M.GetMotorcycleSkill(id)
-    local class = type(id) == "string" and (id:match("^(sport)") or id:match("^(cruiser)") or id:match("^(rally)")) or nil
-    return class and M.MotorcycleSkills[class] or nil
+    return type(id)=="string" and M.MotorcycleSkills[id] or nil
 end
 
--- 纯规则入口：供无场景验收检查定义完整性和公平边界。
+-- 纯规则入口：九个独立技能，限制持续收益与强度，变体不能再回退到同类技能。
 function M.RunSkillRules()
-    local count = 0
-    local function check(ok, message)
-        assert(ok, "[MixedVehicles.SkillRules] " .. message)
-        count = count + 1
+    local count,names,visuals,definitions=0,{},{},{}
+    local function check(ok,message)
+        assert(ok,"[MixedVehicles.SkillRules] "..message);count=count+1
     end
-    for _, class in ipairs({"sport", "cruiser", "rally"}) do
-        local skill = assert(M.MotorcycleSkills[class])
-        check(skill.cooldown > skill.duration, class .. "技能冷却必须覆盖技能持续时间")
-        check(skill.triggerDistance >= 20 and skill.triggerDistance <= 50, class .. "技能触发距离必须有限")
-        check(skill.speedScale <= 1.10 and skill.driveScale <= 1.25, class .. "技能倍率不得造成超速")
-        check(skill.gripScale <= 1.30 and skill.offroadScale <= 1.20, class .. "技能抓地倍率必须有限")
-        check(M.GetMotorcycleSkill(class .. "_2") == skill, class .. "变体必须复用同类技能")
+    for _,id in ipairs({"sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}) do
+        local skill=assert(M.GetMotorcycleSkill(id))
+        check(skill.id==id and not definitions[skill],id.."必须有独立定义")
+        check(not names[skill.name] and not visuals[skill.visual],id.."名字与空间效果必须唯一")
+        check(skill.cooldown>=14 and skill.duration/skill.cooldown<=.26,id.."持续收益必须有限")
+        check(skill.triggerDistance>=20 and skill.triggerDistance<=50,id.."触发距离必须有限")
+        check(skill.speedScale<=1.10 and skill.driveScale<=1.25,id.."动力倍率不得超标")
+        check(skill.gripScale<=1.30 and skill.offroadScale<=1.20,id.."抓地倍率必须有限")
+        check((skill.shieldCharges or 0)<=1 and (skill.damageScale or 1)>=.60,id.."防御不能变成持续无敌")
+        names[skill.name],visuals[skill.visual],definitions[skill]=true,true,true
     end
-    local ebike, helicopter = assert(M.Get("ebike")), assert(M.Get("helicopter"))
-    check(ebike.top <= 225 and helicopter.top <= 215, "电动车与直升机基础极速必须低于混合竞速上限")
-    check(helicopter.armor < 55, "直升机不能用高护甲伪造无敌")
-    return {passed = true, assertions = count}
+    check(M.GetMotorcycleSkill("sport_4")==nil and M.GetMotorcycleSkill("sport_fake")==nil,"未知车型不能继承普通技能")
+    local ebike,helicopter=assert(M.Get("ebike")),assert(M.Get("helicopter"))
+    check(ebike.top<=225 and helicopter.top<=215,"电动车与直升机基础极速必须低于混合竞速上限")
+    check(helicopter.armor<55,"直升机不能用高护甲伪造无敌")
+    return {passed=true,assertions=count}
 end
 
 M.List = {

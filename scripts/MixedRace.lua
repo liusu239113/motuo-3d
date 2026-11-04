@@ -1,5 +1,6 @@
 -- 街机混合竞速：能力改变真实动力/碰撞，不以模型动画代替效果。
 local Data=require("MixedVehicles")
+local Motorcycle=require("MotorcycleSkills")
 local M={}
 local function clamp(x,a,b) return math.max(a,math.min(b,x)) end
 local function gap(a,b,length) return (a-b+length*.5)%length-length*.5 end
@@ -17,7 +18,8 @@ local function skillFor(id)
             cooldown=motorcycle.cooldown,duration=motorcycle.duration,
             triggerDistance=motorcycle.triggerDistance,speedScale=motorcycle.speedScale,
             driveScale=motorcycle.driveScale,gripScale=motorcycle.gripScale,
-            offroadScale=motorcycle.offroadScale,odd=false}
+            offroadScale=motorcycle.offroadScale,visual=motorcycle.visual,tactic=motorcycle.tactic,
+            chargeTime=motorcycle.chargeTime,odd=false}
     end
     return nil
 end
@@ -31,10 +33,7 @@ function M.Reset(sim)
     sim.oddHop,sim.oddHitLock,sim.oddDisrupt,sim.oddShield=0,0,0,0
     sim.oddSkillHeld,sim.oddAttack=false,false
     sim.oddSpeedScale,sim.oddDriveScale,sim.oddGripScale=1,1,1
-    sim.motorcycleActive,sim.motorcycleCooldown,sim.motorcycleSkillHeld=0,0,false
-    sim.motorcycleSpeedScale,sim.motorcycleDriveScale,sim.motorcycleGripScale,sim.motorcycleOffroadScale=1,1,1,1
-    sim.motorcycleSkillName,sim.motorcycleSkillResult,sim.motorcycleSkillResultTimer="","",0
-    sim.motorcycleDamageScale,sim.motorcycleRetained=1,1
+    Motorcycle.Reset(sim)
     sim.skillHitLock=0
     -- Canonical vehicle frame: +Z forward, +X right, y is wheel/base contact.
     -- These are the stable closed-jaw mouth coordinates; presentation may replace
@@ -138,26 +137,7 @@ function M.Before(sim,dt,controls,map)
     sim.skillHitLock=math.max(0,(sim.skillHitLock or 0)-dt)
     sim.oddHitLock=math.max(0,(sim.oddHitLock or 0)-dt)
     if not v then
-        local skill=Data.GetMotorcycleSkill(sim.vehicleId)
-        sim.motorcycleActive=math.max(0,(sim.motorcycleActive or 0)-dt)
-        sim.motorcycleCooldown=math.max(0,(sim.motorcycleCooldown or 0)-dt)
-        sim.motorcycleSkillResultTimer=math.max(0,(sim.motorcycleSkillResultTimer or 0)-dt)
-        local held=controls.skill==true
-        if skill and held and not sim.motorcycleSkillHeld and sim.motorcycleCooldown<=0
-            and sim.motorcycleActive<=0 and (sim.oddDisrupt or 0)<=0 and not sim.airborne
-            and not controls.brake and not controls.burnout and not sim.wrecked then
-            sim.motorcycleActive,sim.motorcycleCooldown=skill.duration,skill.cooldown
-            sim.motorcycleSkillResult,sim.motorcycleSkillResultTimer=skill.name.." · 已发动",2
-        end
-        sim.motorcycleSkillHeld=held
-        sim.motorcycleSkillName=skill and skill.name or ""
-        local active=skill and sim.motorcycleActive>0
-        sim.motorcycleSpeedScale=active and skill.speedScale or 1
-        sim.motorcycleDriveScale=active and skill.driveScale or 1
-        sim.motorcycleGripScale=active and skill.gripScale or 1
-        sim.motorcycleOffroadScale=active and skill.offroadScale or 1
-        sim.motorcycleDamageScale=active and skill.id=="cruiser" and .72 or 1
-        sim.motorcycleRetained=active and skill.id=="cruiser" and .90 or 1
+        Motorcycle.Before(sim,dt,controls)
         sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
         sim.oddAltitude=sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0
         sim.oddDisrupt=math.max(0,(sim.oddDisrupt or 0)-dt)
@@ -312,18 +292,19 @@ function M.Obstacles(sim,world,x0,y0,z0)
                 contacts[o.id]=true
                 if not sim.oddContacts[o.id] and (sim.oddHitLock or 0)<=0 then
                     local id=sim.vehicleId
-                    local immune=sim.oddShield>0 or ((id=="hovercraft" or id=="jellyfish" or id=="helicopter") and o.kind=="oil")
+                    local immune=sim.oddShield>0 or Motorcycle.Absorb(sim,"路障")
+                        or ((id=="hovercraft" or id=="jellyfish" or id=="helicopter") and o.kind=="oil")
                     if immune then sim.message,sim.messageTimer="防护生效 · 穿越障碍",1
                     elseif o.breakable and (id=="tank" or id=="beetle" or id=="loader") then
                         o.active=false;if o.node then o.node:SetEnabledRecursive(false) end
                         sim.message,sim.messageTimer="破障通过 · "..(v and v.name or id),1.5
                         sim.score=(sim.score or 0)+40
                     else
-                        if o.kind=="oil" then sim.speed=sim.speed*.84;sim.oddDisrupt=1.5
+                        if o.kind=="oil" then sim.speed=sim.speed*.84;sim.oddDisrupt=1.5*(sim.motorcycleDisruptScale or 1)
                         else
                             local obstacleName=o.kind=="pendulum" and "悬锤" or o.kind=="airbarrier" and "空中挡板" or "赛道障碍"
                             sim:Impact("撞上"..obstacleName,7)
-                            sim.speed=sim.speed*(id=="tank" and .8 or .72)
+                            sim.speed=sim.speed*(id=="tank" and .8 or (1-.28*(sim.motorcycleRetained or 1)))
                             sim.oddSteam=0
                         end
                         sim.oddHitLock=1.2
@@ -515,11 +496,7 @@ function M.ShouldUseSkill(race,source)
     end
     local sample=race.aiProfile and race.aiProfile[math.floor((source.s%race.length)/race.aiProfileStep)+1]
     local curve=sample and sample.curvature or 0
-    if skill then
-        if skill.id=="sport" then return source.speed>8 and front and not obstacle and curve<.012 end
-        if skill.id=="cruiser" then return source.speed>4 and (front or obstacle) end
-        return source.speed>6 and (obstacle or curve>.008 or (sim.oddTerrain or "asphalt")~="asphalt")
-    end
+    if skill then return Motorcycle.ShouldUse(skill,sim,source.speed,front,obstacle,curve) end
     if v and v.id=="cicada" then return (sim.oddSpring or 0)<5 and not obstacle end
     if v and (v.id=="bathtub" or v.id=="hovercraft" or v.id=="frog" or v.id=="skateboard") then return obstacle end
     return v~=nil and source.speed>8 and front and not obstacle and curve<.012
@@ -598,7 +575,7 @@ function M.Hit(race,source,best,v,areaAttack)
         feedback(sourceSim,"技能命中保护中")
         return false
     end
-    if targetSim and (targetSim.oddShield or 0)>0 then
+    if targetSim and ((targetSim.oddShield or 0)>0 or Motorcycle.Absorb(targetSim,"对手技能")) then
         feedback(sourceSim,"攻击被护盾挡住")
         return false
     end
@@ -620,9 +597,10 @@ function M.Hit(race,source,best,v,areaAttack)
     local spec=Data.Get(best.vehicleId)
     local margin=(spec and spec.size[1]*.5 or .3)+.15
     best.wantedLane=clamp(best.lane+side*1.4,-race.roadHalfWidth+margin,race.roadHalfWidth-margin)
-    best.oddDisrupt=3
+    local disruptDuration=3*(targetSim and targetSim.motorcycleDisruptScale or 1)
+    best.oddDisrupt=disruptDuration
     if targetSim then
-        targetSim.speed=best.speed;targetSim.oddDisrupt=3
+        targetSim.speed=best.speed;targetSim.oddDisrupt=disruptDuration
         if v.id=="loader" then targetSim.oddLaunch=1.2 end
     end
     if best.isPlayer then

@@ -6,6 +6,7 @@
 
 local RaceAI = require("RaceAI")
 local MixedRace = require("MixedRace")
+local MotorcycleSkills = require("MotorcycleSkills")
 
 -- 车型查询在热路径上每帧数百次；缓存到模块级，避免反复走require的package.loaded查找。
 local MixedVehicles = require("MixedVehicles")
@@ -808,7 +809,10 @@ function Race:Contacts(dt)
                     end
                     if hit then
                         local retained = clamp(0.92 - abs(a.speed - b.speed) * 0.006, 0.64, 0.92)
-                        a.speed, b.speed = a.speed * retained, b.speed * retained
+                        local aDrive,bDrive=a.isPlayer and self.sim or a.driveSim,b.isPlayer and self.sim or b.driveSim
+                        local aRetained,aDamage=MotorcycleSkills.Contact(aDrive,retained)
+                        local bRetained,bDamage=MotorcycleSkills.Contact(bDrive,retained)
+                        a.speed, b.speed = a.speed * aRetained, b.speed * bRetained
                         if self.options.mixed then
                             local function response(r,forward,sideDistance)
                                 local drive=r.isPlayer and self.sim or r.driveSim
@@ -842,7 +846,8 @@ function Race:Contacts(dt)
                         if a.isPlayer or b.isPlayer then
                             local player = a.isPlayer and a or b
                             self.sim.speed = player.speed
-                            self.sim.health = max(15, self.sim.health - 6)
+                            local damageScale=player==a and aDamage or bDamage
+                            self.sim.health = max(15, self.sim.health - 6*damageScale)
                             self.sim.crashCooldown = max(self.sim.crashCooldown, 2)
                         end
                         self:Collision(a); self:Collision(b)

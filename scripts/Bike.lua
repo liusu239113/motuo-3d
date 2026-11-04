@@ -4,6 +4,7 @@ local P = require("Parts")
 local RearMirrors = require("RearMirrors")
 local Rider = require("Rider")
 local RideEffects = require("RideEffects")
+local MotorcycleSkillEffects = require("MotorcycleSkillEffects")
 ---@type VehicleAssetLibrary
 local Assets = require("VehicleAssets")
 local V = Vector3
@@ -151,6 +152,8 @@ function Bike:Init(scene, vehicleId)
     self:BuildRider()
     self:BuildSmoke()
     self.effects = RideEffects.New(self.visual, Assets.Vehicles[vehicleId].targetSize, self.Cockpit.seatHeight)
+    self.skillEffects = MotorcycleSkillEffects.New(self.visual, vehicleId, self.Cockpit.localOffset.y,
+        Assets.Vehicles[vehicleId].targetSize.z)
     -- 只把附加近景控制件划入专用mask；真实车身不分层、不全局隐藏。
     for _, drawable in ipairs(self.cockpit:GetComponents("StaticModel", true)) do
         drawable.viewMask = RearMirrors.COCKPIT_MASK
@@ -352,6 +355,7 @@ function Bike:Dispose()
     self.disposed = true
     self.mirrors:Dispose()
     self.effects:Dispose()
+    if self.skillEffects then self.skillEffects:Dispose() end
     self.riderRig:Dispose()
     self.node:Dispose()
 end
@@ -380,6 +384,7 @@ function Bike:UpdateState(dt, sim, firstPerson, clock)
     local featureState = sim.featureState
     local padPower = featureState and featureState.feedbackPower or 0
     self.effects:Update(frameTime, sim.raceBoost or 0, speed, padPower)
+    if self.skillEffects then self.skillEffects:Update(frameTime, sim) end
     self.node.position = V(sim.x or 0, sim.y or 0, sim.z or 0)
     self.node.rotation = Quaternion(0, sim.heading or 0, 0)
     -- 车身倾角随车速逐步建立，外圈输入允许明确压弯，低速不倒车。

@@ -27,6 +27,12 @@ end
 local function vehicleFor(race,r)
     return r.driveSim and r.driveSim.vehicle or race.sim.vehicle
 end
+local function offroadGrip(race,r)
+    if math.abs(r.lane)<=race.roadHalfWidth then return 1 end
+    local spec=vehicleFor(race,r)
+    local scale=r.driveSim and r.driveSim.motorcycleOffroadScale or 1
+    return .50+math.min(1,spec.offroad*scale)*.42
+end
 local AI = {}
 local abs, min, max, sqrt = math.abs, math.min, math.max, math.sqrt
 local RAD, DEG = math.pi / 180, 180 / math.pi
@@ -103,9 +109,11 @@ function AI.CurveSpeed(race, r, boosting)
     -- 预演可请求喷射包络，不需要先扣氮或篡改实际boostTimer。
     local top = vehicleFor(race,r).maxSpeed * (r.speedFactor + ((boosting or r.boostTimer > 0) and 0.25 or 0))
         *(r.driveSim and r.driveSim.oddSpeedScale or 1)
+        *(r.driveSim and r.driveSim.motorcycleSpeedScale or 1)
     local level = r.aiLevel or 0.72
     local budget = (12 + level * 6 + r.skill * 2)*(race.options.mixed and vehicleFor(race,r).steering or 1)
         *(r.driveSim and r.driveSim.oddGripScale or 1)
+        *(r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     local braking = vehicleFor(race,r).braking * (0.65 + r.skill * 0.12)
     -- 反应距离先从可用制动距离扣除；入弯前收油，不等到弯心突然锁速。
     local reaction = r.speed * r.reactionTime + 5
@@ -167,20 +175,22 @@ function AI.Drive(race, r, target, dt)
     local controls = r.driveControls
     if not controls then controls = {}; r.driveControls = controls end
     controls.throttle, controls.boost = throttle, boosted and 1 or 0
-    local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)
+    local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)*(drive.motorcycleDriveScale or 1)
     local efficiency = clamp(r.acceleration / spec.acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
-    local traction = onRoad and 1 or spec.offroad
-    local drag = 0.20 + r.speed * r.speed * 0.00115
-        + (onRoad and 0 or 4.6 * (1 - spec.offroad * 0.55))
-    local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12) or 0
+    local offroad = min(1,spec.offroad*(drive.motorcycleOffroadScale or 1))
+    local traction = onRoad and 1 or offroad
+    local coast = throttle < 0.05 and (drive.motorcycleCoastDragScale or 1) or 1
+    local drag = (0.20 + r.speed * r.speed * 0.00115
+        + (onRoad and 0 or 4.6 * (1 - offroad * 0.55)))*coast
+    local engineBrake = throttle < 0.05 and drive.clutchEngagement * min(1.8, r.speed * 0.12)*coast or 0
     local slope = sample.slope or 0
     local acceleration = power * efficiency * traction - drag - engineBrake
         - 9.81 * slope / sqrt(1 + slope * slope)
     local braking = spec.braking * (0.65 + r.skill * 0.12)
     if slowing then acceleration = min(acceleration, -min(braking, (r.speed - target) * 2 + 1)) end
     local cap = spec.maxSpeed * (r.speedFactor + (boosted and 0.25 or 0))
-        * (onRoad and 1 or 0.44 + spec.offroad * 0.52)*(drive.oddSpeedScale or 1)
+        * (onRoad and 1 or 0.44 + offroad * 0.52)*(drive.oddSpeedScale or 1)*(drive.motorcycleSpeedScale or 1)
     if r.speed > cap then acceleration = min(acceleration, -3.5 - (r.speed - cap) * 0.45) end
     r.speed = clamp(r.speed + acceleration * dt, 0, max(r.speed, min(target, cap)))
     r.driveAcceleration = acceleration
@@ -314,6 +324,11 @@ function AI.NitroSafe(race, r)
     drive.vehicle, drive.raceMode = vehicleFor(race,r), true
     drive.gear, drive.rpm = live.gear, live.rpm
     drive.shiftTimer, drive.clutchEngagement = live.shiftTimer, live.clutchEngagement
+    -- 只复制倍率到独立传动状态，不推进实际技能计时或消费资源。
+    drive.oddSpeedScale, drive.oddDriveScale, drive.oddGripScale = live.oddSpeedScale, live.oddDriveScale, live.oddGripScale
+    drive.motorcycleSpeedScale, drive.motorcycleDriveScale = live.motorcycleSpeedScale, live.motorcycleDriveScale
+    drive.motorcycleGripScale, drive.motorcycleOffroadScale = live.motorcycleGripScale, live.motorcycleOffroadScale
+    drive.motorcycleCoastDragScale = live.motorcycleCoastDragScale
     preview.speed, preview.s, preview.lane = r.speed, r.s, r.lane
     preview.speedFactor, preview.acceleration = r.speedFactor, r.acceleration
     preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
@@ -325,8 +340,10 @@ function AI.NitroSafe(race, r)
     local budget = (12 + (r.aiLevel or 0.72) * 6 + r.skill * 2)
         * (race.options.mixed and spec.steering or 1)
         * (r.driveSim and r.driveSim.oddGripScale or 1)
+        * (r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     local brakingForCurve = spec.braking * (0.65 + r.skill * 0.12)
     local previewCap = spec.maxSpeed * (r.speedFactor + 0.25)
+        * (drive.oddSpeedScale or 1) * (drive.motorcycleSpeedScale or 1)
     -- 至少1.2秒有效加速，之后允许提前收油/有限刹车；资源计时仍消耗完整2.5秒。
     -- 后半段不要求“永远满喷”，但任何弯点都必须有实际制动距离，不允许突然锁速。
     for frame = 1, 25 do
@@ -547,6 +564,7 @@ function AI.Update(race, r, dt)
         local drive=assert(r.driveSim)
         drive.x,drive.y,drive.z,drive.heading=r.x,r.y,r.z,r.yaw
         drive.roadS,drive.lateral,drive.speed,drive.steer=r.s,r.lane,r.speed,r.steer or 0
+        drive.onRoad=abs(r.lane)<=race.roadHalfWidth
         drive.elapsed=race.elapsed;drive.groundSlope=(race.aiProfile[math.floor((r.s%race.length)/race.aiProfileStep)+1] or {}).slope or 0
         r.skillDecisionTimer=max(0,(r.skillDecisionTimer or 0)-dt)
         local useSkill=false
@@ -571,11 +589,12 @@ function AI.Update(race, r, dt)
     local target = AI.Plan(race, r, dt)
     AI.Drive(race, r, target, dt)
     local oldLane, oldS = r.lane, r.s
+    local motorcycleGrip=(r.driveSim and r.driveSim.motorcycleGripScale or 1)*offroadGrip(race,r)
     if not race.options.mixed then
-        r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)))
+        r.lane = approach(r.lane, r.wantedLane, min(r.speed * dt * 0.45, dt * (2.5 + r.skill)*motorcycleGrip))
     else
         local own=MixedData.Get(r.vehicleId)
-        local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)
+        local agility=(own and own.grip or 1)*(r.driveSim and r.driveSim.oddGripScale or 1)*motorcycleGrip
         r.lane=approach(r.lane,r.wantedLane,min(r.speed*dt*.45,dt*(2.5+r.skill)*agility))
     end
     -- 走宽、换线和上坡都消耗实际行程，不把更长的外线仍当中心线免费前进。
