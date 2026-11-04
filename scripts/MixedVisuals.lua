@@ -272,6 +272,22 @@ function M.Build(parent, id)
     return root
 end
 
+-- 关节名到节点的缓存：Animate每帧调用，逐帧GetChild递归是赛事表现最大开销之一。
+-- 缓存以车辆根节点为键，弱表引用，节点销毁后自动失效。
+local jointCache = setmetatable({}, {__mode = "k"})
+---@param root Node
+---@param name string
+---@return Node?
+local function joint(root, name)
+    local map = jointCache[root]
+    if not map then map = {}; jointCache[root] = map end
+    local node = map[name]
+    if node then return node end
+    node = root:GetChild(name, true)
+    map[name] = node
+    return node
+end
+
 function M.Animate(root, id, time, state)
     if id=="tank" or id=="beetle" then
         require("MixedArticulation").Animate(root,id,time,state)
@@ -282,17 +298,17 @@ function M.Animate(root, id, time, state)
         local angle=distance/.264*180/math.pi%360
         local axis=Quaternion(0,Assets.Vehicles.ebike.rotation,0):Inverse()*V.RIGHT
         for _,name in ipairs({"FrontWheel","RearWheel"}) do
-            local wheel=root:GetChild(name,true)
+            local wheel=joint(root,name)
             if wheel then wheel.rotation=Quaternion(angle,axis) end
         end
         return
     end
     if id ~= "helicopter" then return end
-    local rotor = root:GetChild("Rotor",true)
+    local rotor = joint(root,"Rotor")
     if rotor then
         rotor.rotation = Quaternion(0,time*1600%360,0)
     end
-    local pods=root:GetChild("WeaponPods",true)
+    local pods=joint(root,"WeaponPods")
     if pods then
         local active=state and (state.oddActive or 0)>0
         local recoil=active and math.max(0,math.sin(time*32))*.023 or 0

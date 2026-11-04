@@ -39,7 +39,6 @@ local V = Vector3
 ---@field active boolean
 ---@field wasInView boolean
 ---@field poseRefreshes number
----@field animateClock? number
 ---@field detailTier string
 
 ---@class RaceRouteMarker
@@ -563,14 +562,9 @@ function RaceVisuals:Update(dt, sim, camera)
                     local tumbleRoll = tumble > 0 and math.cos(tumble * 20) * 32 * math.min(1, tumble) or 0
                     runner.visual.rotation = Quaternion((data.pitch or 0)*.5 + tumblePitch, data.airSpin or 0,
                         runner.lean*.22 + hitRoll + tumbleRoll)
-                    -- 关节动画每帧都要递归查子节点；远处对手看不出差别，降到10Hz，
-                    -- 省掉8车×每帧的GetChild递归（现场raceVisuals 12ms的主要来源）。
-                    local animateInterval = distance2 < 60 * 60 and 0 or 0.1
-                    runner.animateClock = (runner.animateClock or 0) + frameTime
-                    if animateInterval == 0 or runner.animateClock >= animateInterval then
-                        runner.animateClock = 0
-                        require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
-                    end
+                    -- 关节动画必须逐帧：降频会让车轮/履带/钳口一抽一抽。
+                    -- 开销改由MixedVisuals内部缓存节点引用解决。
+                    require("MixedVisuals").Animate(runner.body,runner.vehicleId,self.clock,drive)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.colorId = data.colorId

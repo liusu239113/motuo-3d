@@ -195,6 +195,22 @@ function M.GetGrabWorldPosition(root)
     return (positive + negative) * .5 + forward
 end
 
+-- 关节节点缓存：本函数每帧对每台车调用，逐帧GetChild递归是赛事表现的大头。
+-- 弱键绑定车辆根节点，节点销毁后自动失效，不会持有已释放节点。
+local jointCache=setmetatable({},{__mode="k"})
+---@param root Node
+---@param name string
+---@return Node
+local function joint(root,name)
+    local map=jointCache[root]
+    if not map then map={};jointCache[root]=map end
+    local node=map[name]
+    if node then return node end
+    node=assert(root:GetChild(name,true),"正式关节丢失："..name)
+    map[name]=node
+    return node
+end
+
 ---@param root Node
 ---@param id string
 ---@param time number
@@ -203,18 +219,18 @@ function M.Animate(root,id,time,state)
     local distance=state and state.distance or 0
     local active=state and (state.oddActive or 0)>0
     if id=="tank" then
-        local scale=root:GetChild("SourceTransform"):GetScale().x
+        local scale=joint(root,"SourceTransform"):GetScale().x
         for _,side in ipairs({"P","N"}) do
             for station=1,8 do
-                local wheel=assert(root:GetChild("Wheel"..side..station,true))
+                local wheel=joint(root,"Wheel"..side..station)
                 local radius=(station==1 or station==8) and .059 or .054
                 wheel.rotation=Quaternion(-distance/(radius*scale)*180/math.pi%360,V.FORWARD)
             end
         end
         local steer=state and state.steer or 0
         local yaw=math.max(-1,math.min(1,steer))*12+(active and math.sin(time*7)*7 or 0)
-        rotate(root,"Turret",Quaternion(yaw,V.UP))
-        local barrel=assert(root:GetChild("Barrel",true))
+        joint(root,"Turret").rotation=Quaternion(yaw,V.UP)
+        local barrel=joint(root,"Barrel")
         local rest=barrel:GetVar("RestPosition"):GetVector3()
         local recoil=active and math.max(0,math.sin(time*18))*.009 or 0
         barrel.position=rest+V(-recoil,0,0)
@@ -222,25 +238,24 @@ function M.Animate(root,id,time,state)
     end
     -- 以实际里程而非墙钟驱动三足交替步态：车库静止、刹停时六腿严格冻结。
     local phase=distance/1.15*math.pi*2
+    local grabOpen,grabExtension,grabHolding=grabPose(state)
     for _,side in ipairs({"P","N"}) do
         local sign=side=="P" and 1 or -1
         for station=1,3 do
             local offset=((station==2)~=(side=="N")) and math.pi or 0
             local stride=math.sin(phase+offset)
             local lift=-math.max(0,stride)*5*sign
-            rotate(root,"Leg"..side..station,Quaternion(stride*9,V.UP)*Quaternion(lift,V.RIGHT))
+            joint(root,"Leg"..side..station).rotation=Quaternion(stride*9,V.UP)*Quaternion(lift,V.RIGHT)
         end
         if id=="beetle" then
             -- 正式JawP/JawN是独立原始连通件：只改根节点TR，Body和源VB保持静止。
             -- 源模型+X为前；.20源米约等于归一化后的.64米前伸，确保夹持动作清晰。
-            local jaw=assert(root:GetChild("Jaw"..side,true))
+            local jaw=joint(root,"Jaw"..side)
             local rest=jaw:GetVar("RestPosition"):GetVector3()
-            local openMagnitude,extension,holding=grabPose(state)
-            local jawAngle=sign*openMagnitude
-            jaw.position=rest+V(extension,0,0)
-            jaw.rotation=Quaternion(jawAngle,V.UP)
-            jaw:SetVar("GrabHolding",Variant(holding))
-            jaw:SetVar("GrabExtension",Variant(extension))
+            jaw.position=rest+V(grabExtension,0,0)
+            jaw.rotation=Quaternion(sign*grabOpen,V.UP)
+            jaw:SetVar("GrabHolding",Variant(grabHolding))
+            jaw:SetVar("GrabExtension",Variant(grabExtension))
         end
     end
 end
