@@ -115,7 +115,9 @@ end
 ---@param dt number
 ---@param sim table
 function Effects:Update(dt,sim)
-    if self.disposed or dt<=0 or sim.paused then return end
+    if self.disposed then return end
+    if sim.finished or sim.wrecked then self:Reset();return end
+    if dt<=0 or sim.paused then return end
     local active=(sim.motorcycleActive or 0)>0 and sim.motorcyclePhase~="suppressed"
     local flash=math.max(0,sim.motorcycleGuardFlash or 0)
     local show=active or flash>0

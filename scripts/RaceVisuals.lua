@@ -533,7 +533,10 @@ function RaceVisuals:Update(dt, sim, camera)
                 runner.lean = runner.lean + (target - runner.lean) * (1 - math.exp(-frameTime * 10))
                 local boostPower = data.driveSim and data.driveSim.raceBoost or 0
                 runner.effects:Update(frameTime, boostPower, data.speed or 0)
-                if runner.skillEffects then runner.skillEffects:Update(frameTime, data.driveSim or {}) end
+                if runner.skillEffects then
+                    if data.finished then runner.skillEffects:Reset()
+                    else runner.skillEffects:Update(frameTime, data.driveSim or {}) end
+                end
                 -- AI被撞时车身猛晃并短暂偏航，恢复后由正常线路接管。
                 local hit = (data.hitShake or 0) * (data.hitTimer or 0)
                 local hitYaw = (data.hitYaw or 0) * (data.hitTimer or 0) * 0.12

@@ -1,8 +1,8 @@
 {
     "version": 2,
     "script": "MotorcycleSkillCheckMain.lua",
-    "result": "FAIL",
-    "duration_ms": 3242,
+    "result": "PASS",
+    "duration_ms": 3065,
     "frames_completed": 4,
     "phases": {
         "load": {
@@ -10,14 +10,8 @@
             "errors": []
         },
         "init": {
-            "result": "FAIL",
-            "errors": [
-                {
-                    "category": "lua",
-                    "message": "[2026-11-04 21_12_56_791][61] ERROR: Execute Lua function failed: [string \"Race\"]:755: attempt to compare number with nil\nstack traceback:\n\t[string \"Race\"]:755: in method 'Collision'\n\t[string \"RaceAI\"]:561: in field 'TrafficContacts'\n\t[string \"RaceAIChecks\"]:571: in local 'traffic'\n\t[string \"RaceAIChecks\"]:574: in field 'MotorcycleSkills'\n\t[string \"MotorcycleSkillCheckMain\"]:17: in function 'Start'",
-                    "frame": 0
-                }
-            ]
+            "result": "PASS",
+            "errors": []
         },
         "run": {
             "result": "PASS",
@@ -38,7 +32,7 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 438.0379943847656
+            "frame_time_ms": 424.02899169921877
         },
         {
             "frame": 2,
@@ -46,7 +40,7 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 16.597999572753908
+            "frame_time_ms": 16.617000579833986
         },
         {
             "frame": 4,
@@ -54,11 +48,11 @@
             "nodes": 0,
             "components": 0,
             "hash": 0,
-            "frame_time_ms": 16.615999221801759
+            "frame_time_ms": 16.621000289916993
         }
     ],
     "scene_stalled": true,
-    "max_frame_time_ms": 16.615999221801759,
+    "max_frame_time_ms": 16.621000289916993,
     "update_defined": false,
     "component_census": {},
     "test_result": "NOT_RUN",
@@ -71,9 +65,9 @@
     "missing_resources": [],
     "missing_engine_resources": [],
     "summary": {
-        "lua_errors": 1,
+        "lua_errors": 0,
         "resource_errors": 0,
         "engine_errors": 0,
-        "total_errors": 1
+        "total_errors": 0
     }
 }

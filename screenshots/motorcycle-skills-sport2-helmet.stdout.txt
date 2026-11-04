@@ -1,0 +1,95 @@
+[2026-11-04 21_16_25_452][0] INFO: DownloadManager initialized
+[2026-11-04 21_16_25_453][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 21_16_25_454][0] INFO: Engine construct finish.
+[2026-11-04 21_16_25_458][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
+/workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
+[2026-11-04 21_16_26_237][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 21_16_26_837][17] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_16_29_189][29]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 21_16_29_193][29]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 21_16_29_193][29]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 21_16_29_193][29] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_16_30_057][55][Script] IsNetworkMode:    false
+[2026-11-04 21_16_30_077][55][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 21_16_30_077][55][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 21_16_30_077][55][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 21_16_30_077][55][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 21_16_30_081][55][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 21_16_30_680][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_680][55][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_30_681][55][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_30_681][55][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_30_682][55][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_30_682][55][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_30_683][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_683][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_684][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_684][55][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_30_685][55][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_30_685][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_700][55][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_30_704][55][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_30_709][55][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_30_720][55][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_30_725][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_740][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_745][55][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_30_763][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_767][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_767][55][Script] [驾驶] test，车况 84
+[2026-11-04 21_16_30_767][55][Script] [驾驶] test，车况 91
+[2026-11-04 21_16_30_767][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_767][55][Script] [驾驶] test，车况 85
+[2026-11-04 21_16_30_768][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_768][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_768][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_768][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_769][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_769][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_769][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_769][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_769][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_770][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_770][55][Script] [载具技能] tank / 助推喷射
+[2026-11-04 21_16_30_770][55][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_30_770][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_770][55][Script] [普通摩托技能验收] PASS 148项 / 九车型独立 / 动力实效 / 蓄力 / 越野 / 爬坡 / 收油 / 减伤保速 / 单次护盾
+[2026-11-04 21_16_30_905][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_907][55][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_30_908][55][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_30_910][55][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_30_912][55][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_30_924][55][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_30_927][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_929][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_943][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_977][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_978][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_978][55][Script] [摩托AI技能] PASS / 50项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演
+[2026-11-04 21_16_30_990][55][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_30_991][55][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_30_992][55][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_30_992][55][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_30_993][55][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_30_993][55][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_30_993][55][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_30_994][55][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_30_994][55][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_30_994][55][Script] [普通摩托表现验收] PASS 72项 / 九种结构 / 第一人称投影 / 暂停 / 不回写 / 结束清理 / Dispose
+[2026-11-04 21_16_31_241][55][Script] [VehicleFinish] sport_2 LOD0 disconnected rubber rejected=116
+[2026-11-04 21_16_31_242][55][Script] [VehicleFinish] sport_2 LOD0 source=4771 split=4771 (body=3821,metal=112,rubber=706,leather=28,glass=104), lodDistance=0.0000
+[2026-11-04 21_16_31_454][55][Script] [VehicleFinish] sport_2 LOD1 disconnected rubber rejected=112
+[2026-11-04 21_16_31_454][55][Script] [VehicleFinish] sport_2 LOD1 source=4055 split=4055 (body=3288,metal=89,rubber=561,leather=28,glass=89), lodDistance=8.5975
+[2026-11-04 21_16_31_558][55][Script] [VehicleFinish] sport_2 LOD2 disconnected rubber rejected=93
+[2026-11-04 21_16_31_558][55][Script] [VehicleFinish] sport_2 LOD2 source=3101 split=3101 (body=2503,metal=75,rubber=429,leather=28,glass=66), lodDistance=23.4778
+[2026-11-04 21_16_31_616][55][Script] [VehicleFinish] sport_2 LOD3 disconnected rubber rejected=60
+[2026-11-04 21_16_31_616][55][Script] [VehicleFinish] sport_2 LOD3 source=2145 split=2145 (body=1744,metal=31,rubber=309,leather=22,glass=39), lodDistance=64.8119
+[2026-11-04 21_16_31_639][55][Script] [VehicleFinish] sport_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4771 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_31_639][55][Script] [车型] sport_2 bbox 0.502/0.764/0.998 -> 2.15m, yaw -90
+[2026-11-04 21_16_35_092][55][Script] [骑姿] sport_2 Hip=Vector3(7.46058104e-10, 1.29299998, -0.330000013) Head=Vector3(0.00733237201, 1.60614657, 0.090851374) LHand=Vector3(-0.469999969, 1.25499976, 0.207999796) RHand=Vector3(0.470000088, 1.255, 0.207999855) LFoot=Vector3(-0.319999337, 0.620000243, -0.319999456) RFoot=Vector3(0.319999367, 0.619999647, -0.320000052) chest=67.1deg gripError=0.0000/0.0000m
+[2026-11-04 21_16_35_092][55][Script] [骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带
+[2026-11-04 21_16_35_096][55][Script] [摩托] 冰锋 · RR：原始车身保留，程序化近景手套/仪表与低频后视摄像头已创建
+[2026-11-04 21_16_35_096][55][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_35_099][55][Script] [普通摩托总验收] PASS 规则 / AI / 九种表现 / 头盔投影 / 冻结 / 清理；截图为受控年龄=1.1
+[2026-11-04 21_17_33_185][185]INFO__VALIDATE_UPDATE__:false

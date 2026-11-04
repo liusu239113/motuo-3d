@@ -1,74 +1,182 @@
-[2026-11-04 21_13_10_430][0] INFO: DownloadManager initialized
-[2026-11-04 21_13_10_431][0] INFO: a couple of Subsystems registered finish.
-[2026-11-04 21_13_10_432][0] INFO: Engine construct finish.
-[2026-11-04 21_13_10_439][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
+[2026-11-04 21_16_09_130][0] INFO: DownloadManager initialized
+[2026-11-04 21_16_09_131][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 21_16_09_132][0] INFO: Engine construct finish.
+[2026-11-04 21_16_09_137][0] WARNING: -graphicsheadless ignored: -graphicssurfaceless takes precedence (real GLES rendering vs Noop); the two are mutually exclusive.
 /workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2722): LOG GLES render pass: supported=1 inputs=1 transient=1 sampleDepth=0 noncoherent=0
 /workspace/engine/Source/ThirdParty/bgfx-all/bgfx/src/renderer_gl.cpp (2731): LOG Support Color buffer fetch.
-[2026-11-04 21_13_15_051][94] ERROR: Execute Lua function failed: [string "Race"]:755: attempt to compare number with nil
-stack traceback:
-	[string "Race"]:755: in method 'Collision'
-	[string "RaceAI"]:561: in field 'TrafficContacts'
-	[string "RaceAIChecks"]:571: in local 'traffic'
-	[string "RaceAIChecks"]:574: in field 'MotorcycleSkills'
-	[string "MotorcycleSkillCheckMain"]:17: in function 'Start'
-[2026-11-04 21_13_11_438][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
-[2026-11-04 21_13_11_882][19] WARNING: DownloadManager: no resources resolved for batch download
-[2026-11-04 21_13_14_262][68]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
-[2026-11-04 21_13_14_268][68]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
-[2026-11-04 21_13_14_268][68]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
-[2026-11-04 21_13_14_268][68] WARNING: DownloadManager: no resources resolved for batch download
-[2026-11-04 21_13_14_807][94][Script] IsNetworkMode:    false
-[2026-11-04 21_13_14_824][94][Script] [InputAdaptor] Loading input event adaptor...
-[2026-11-04 21_13_14_824][94][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
-[2026-11-04 21_13_14_824][94][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
-[2026-11-04 21_13_14_824][94][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
-[2026-11-04 21_13_14_827][94][Script] Check Transition.lua SimpleGrid.lua
-[2026-11-04 21_13_14_971][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_971][94][Script] [摩托独立技能] sport_2 / 冰锋压弯
-[2026-11-04 21_13_14_971][94][Script] [摩托独立技能] sport_3 / 银隼蓄射
-[2026-11-04 21_13_14_971][94][Script] [摩托独立技能] rally / 荒野咬地
-[2026-11-04 21_13_14_972][94][Script] [摩托独立技能] rally_2 / 雪脊稳向
-[2026-11-04 21_13_14_972][94][Script] [摩托独立技能] rally_3 / 沙隼攀升
-[2026-11-04 21_13_14_972][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_14_972][94][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
-[2026-11-04 21_13_14_973][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_14_973][94][Script] [摩托独立技能] sport_3 / 银隼蓄射
-[2026-11-04 21_13_14_973][94][Script] [摩托独立技能] rally_3 / 沙隼攀升
-[2026-11-04 21_13_14_973][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_975][94][Script] [摩托独立技能] sport_2 / 冰锋压弯
-[2026-11-04 21_13_14_977][94][Script] [摩托独立技能] rally / 荒野咬地
-[2026-11-04 21_13_14_980][94][Script] [摩托独立技能] rally_2 / 雪脊稳向
-[2026-11-04 21_13_14_982][94][Script] [摩托独立技能] rally_3 / 沙隼攀升
-[2026-11-04 21_13_14_984][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_14_986][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_14_988][94][Script] [摩托独立技能] rally / 荒野咬地
-[2026-11-04 21_13_14_991][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_14_993][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_14_993][94][Script] [驾驶] test，车况 84
-[2026-11-04 21_13_14_993][94][Script] [驾驶] test，车况 91
-[2026-11-04 21_13_14_993][94][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
-[2026-11-04 21_13_14_993][94][Script] [驾驶] test，车况 85
-[2026-11-04 21_13_14_993][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_14_993][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_993][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
-[2026-11-04 21_13_14_994][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_14_994][94][Script] [载具技能] tank / 助推喷射
-[2026-11-04 21_13_14_995][94][Script] [摩托独立技能] rally_2 / 雪脊稳向
-[2026-11-04 21_13_14_995][94][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
-[2026-11-04 21_13_14_995][94][Script] [普通摩托技能验收] PASS 148项 / 九车型独立 / 动力实效 / 蓄力 / 越野 / 爬坡 / 收油 / 减伤保速 / 单次护盾
-[2026-11-04 21_13_15_043][94][Script] [摩托独立技能] sport / 赤焰脉冲
-[2026-11-04 21_13_15_043][94][Script] [摩托独立技能] sport_2 / 冰锋压弯
-[2026-11-04 21_13_15_044][94][Script] [摩托独立技能] sport_3 / 银隼蓄射
-[2026-11-04 21_13_15_045][94][Script] [摩托独立技能] rally / 荒野咬地
-[2026-11-04 21_13_15_046][94][Script] [摩托独立技能] rally_2 / 雪脊稳向
-[2026-11-04 21_13_15_047][94][Script] [摩托独立技能] rally_3 / 沙隼攀升
-[2026-11-04 21_13_15_048][94][Script] [摩托独立技能] cruiser / 远行护航
-[2026-11-04 21_13_15_049][94][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
-[2026-11-04 21_13_15_050][94][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
-[2026-11-04 21_13_17_513][224]INFO__VALIDATE_UPDATE__:false
+[2026-11-04 21_16_09_735][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 21_16_10_345][30] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_16_13_468][77]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 21_16_13_471][77]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 21_16_13_472][77]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 21_16_13_472][77] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_16_14_020][103][Script] IsNetworkMode:    false
+[2026-11-04 21_16_14_040][103][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 21_16_14_040][103][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 21_16_14_040][103][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 21_16_14_040][103][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 21_16_14_043][103][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 21_16_14_193][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_194][103][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_14_194][103][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_14_194][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_14_194][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_14_195][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_14_195][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_195][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_195][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_196][103][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_14_196][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_14_196][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_198][103][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_14_200][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_14_202][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_14_205][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_14_207][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_209][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_211][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_14_214][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_215][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_215][103][Script] [驾驶] test，车况 84
+[2026-11-04 21_16_14_215][103][Script] [驾驶] test，车况 91
+[2026-11-04 21_16_14_215][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_215][103][Script] [驾驶] test，车况 85
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_216][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_217][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_217][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_217][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_217][103][Script] [载具技能] tank / 助推喷射
+[2026-11-04 21_16_14_217][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_14_217][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_217][103][Script] [普通摩托技能验收] PASS 148项 / 九车型独立 / 动力实效 / 蓄力 / 越野 / 爬坡 / 收油 / 减伤保速 / 单次护盾
+[2026-11-04 21_16_14_263][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_264][103][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_14_265][103][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_14_266][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_14_267][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_14_268][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_14_269][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_270][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_271][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_280][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_280][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_280][103][Script] [摩托AI技能] PASS / 50项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演
+[2026-11-04 21_16_14_299][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_14_303][103][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_14_304][103][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_14_304][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_14_304][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_14_304][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_14_304][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_14_305][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_14_305][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_14_305][103][Script] [普通摩托表现验收] PASS 72项 / 九种结构 / 第一人称投影 / 暂停 / 不回写 / 结束清理 / Dispose
+[2026-11-04 21_16_14_681][103][Script] [VehicleFinish] sport LOD0 disconnected rubber rejected=131
+[2026-11-04 21_16_14_681][103][Script] [VehicleFinish] sport LOD0 source=5029 split=5029 (body=4139,metal=238,rubber=593,leather=52,glass=7), lodDistance=0.0000
+[2026-11-04 21_16_14_749][103][Script] [VehicleFinish] sport LOD1 disconnected rubber rejected=123
+[2026-11-04 21_16_14_749][103][Script] [VehicleFinish] sport LOD1 source=4274 split=4274 (body=3511,metal=210,rubber=495,leather=51,glass=7), lodDistance=9.5354
+[2026-11-04 21_16_14_814][103][Script] [VehicleFinish] sport LOD2 disconnected rubber rejected=109
+[2026-11-04 21_16_14_814][103][Script] [VehicleFinish] sport LOD2 source=3268 split=3268 (body=2723,metal=130,rubber=363,leather=45,glass=7), lodDistance=26.0390
+[2026-11-04 21_16_14_850][103][Script] [VehicleFinish] sport LOD3 disconnected rubber rejected=87
+[2026-11-04 21_16_14_850][103][Script] [VehicleFinish] sport LOD3 source=2263 split=2263 (body=1887,metal=80,rubber=262,leather=27,glass=7), lodDistance=71.8823
+[2026-11-04 21_16_14_860][103][Script] [VehicleFinish] sport ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=5029 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_14_860][103][Script] [车型] sport bbox 0.463/0.580/0.998 -> 2.15m, yaw 180
+[2026-11-04 21_16_14_860][103][Script] [摩托独立技能] sport / 赤焰脉冲
+[2026-11-04 21_16_15_000][103][Script] [VehicleFinish] sport_2 LOD0 disconnected rubber rejected=116
+[2026-11-04 21_16_15_000][103][Script] [VehicleFinish] sport_2 LOD0 source=4771 split=4771 (body=3821,metal=112,rubber=706,leather=28,glass=104), lodDistance=0.0000
+[2026-11-04 21_16_15_059][103][Script] [VehicleFinish] sport_2 LOD1 disconnected rubber rejected=112
+[2026-11-04 21_16_15_059][103][Script] [VehicleFinish] sport_2 LOD1 source=4055 split=4055 (body=3288,metal=89,rubber=561,leather=28,glass=89), lodDistance=8.5975
+[2026-11-04 21_16_15_117][103][Script] [VehicleFinish] sport_2 LOD2 disconnected rubber rejected=93
+[2026-11-04 21_16_15_117][103][Script] [VehicleFinish] sport_2 LOD2 source=3101 split=3101 (body=2503,metal=75,rubber=429,leather=28,glass=66), lodDistance=23.4778
+[2026-11-04 21_16_15_150][103][Script] [VehicleFinish] sport_2 LOD3 disconnected rubber rejected=60
+[2026-11-04 21_16_15_150][103][Script] [VehicleFinish] sport_2 LOD3 source=2145 split=2145 (body=1744,metal=31,rubber=309,leather=22,glass=39), lodDistance=64.8119
+[2026-11-04 21_16_15_159][103][Script] [VehicleFinish] sport_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4771 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_15_159][103][Script] [车型] sport_2 bbox 0.502/0.764/0.998 -> 2.15m, yaw -90
+[2026-11-04 21_16_15_160][103][Script] [摩托独立技能] sport_2 / 冰锋压弯
+[2026-11-04 21_16_15_317][103][Script] [VehicleFinish] sport_3 LOD0 disconnected rubber rejected=164
+[2026-11-04 21_16_15_317][103][Script] [VehicleFinish] sport_3 LOD0 source=4857 split=4857 (body=3929,metal=100,rubber=778,leather=24,glass=26), lodDistance=0.0000
+[2026-11-04 21_16_15_381][103][Script] [VehicleFinish] sport_3 LOD1 disconnected rubber rejected=155
+[2026-11-04 21_16_15_381][103][Script] [VehicleFinish] sport_3 LOD1 source=4127 split=4127 (body=3492,metal=88,rubber=499,leather=22,glass=26), lodDistance=8.6573
+[2026-11-04 21_16_15_427][103][Script] [VehicleFinish] sport_3 LOD2 disconnected rubber rejected=149
+[2026-11-04 21_16_15_427][103][Script] [VehicleFinish] sport_3 LOD2 source=3157 split=3157 (body=2759,metal=50,rubber=309,leather=16,glass=23), lodDistance=23.6410
+[2026-11-04 21_16_15_463][103][Script] [VehicleFinish] sport_3 LOD3 disconnected rubber rejected=103
+[2026-11-04 21_16_15_463][103][Script] [VehicleFinish] sport_3 LOD3 source=2184 split=2184 (body=1918,metal=28,rubber=207,leather=12,glass=19), lodDistance=65.2624
+[2026-11-04 21_16_15_472][103][Script] [VehicleFinish] sport_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4857 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_15_472][103][Script] [车型] sport_3 bbox 0.502/0.748/0.998 -> 2.15m, yaw -90
+[2026-11-04 21_16_15_473][103][Script] [摩托独立技能] sport_3 / 银隼蓄射
+[2026-11-04 21_16_15_736][103][Script] [VehicleFinish] rally LOD0 disconnected rubber rejected=32
+[2026-11-04 21_16_15_737][103][Script] [VehicleFinish] rally LOD0 source=4956 split=4956 (body=4223,metal=435,rubber=254,leather=44,glass=0), lodDistance=0.0000
+[2026-11-04 21_16_15_804][103][Script] [VehicleFinish] rally LOD1 disconnected rubber rejected=16
+[2026-11-04 21_16_15_805][103][Script] [VehicleFinish] rally LOD1 source=4211 split=4211 (body=3519,metal=394,rubber=254,leather=44,glass=0), lodDistance=9.3739
+[2026-11-04 21_16_15_858][103][Script] [VehicleFinish] rally LOD2 disconnected rubber rejected=10
+[2026-11-04 21_16_15_858][103][Script] [VehicleFinish] rally LOD2 source=3221 split=3221 (body=2675,metal=272,rubber=232,leather=42,glass=0), lodDistance=25.5981
+[2026-11-04 21_16_15_893][103][Script] [VehicleFinish] rally LOD3 disconnected rubber rejected=6
+[2026-11-04 21_16_15_893][103][Script] [VehicleFinish] rally LOD3 source=2230 split=2230 (body=1839,metal=160,rubber=199,leather=32,glass=0), lodDistance=70.6651
+[2026-11-04 21_16_15_902][103][Script] [VehicleFinish] rally ready: 4 parts [body,metal,rubber,leather], 4 LODs, LOD0=4956 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_15_902][103][Script] [车型] rally bbox 0.479/0.600/0.998 -> 2.22m, yaw 180
+[2026-11-04 21_16_15_903][103][Script] [摩托独立技能] rally / 荒野咬地
+[2026-11-04 21_16_16_200][103][Script] [轮胎局部细化] 雪脊 · 轻越野 LOD0 1503→2579三角，角向边538，跳过边界20，距离0.000不变
+[2026-11-04 21_16_16_258][103][Script] [轮胎局部细化] 雪脊 · 轻越野 LOD1 1276→2350三角，角向边537，跳过边界16，距离9.067不变
+[2026-11-04 21_16_16_296][103][Script] [VehicleFinish] rally_2 LOD0 disconnected rubber rejected=6
+[2026-11-04 21_16_16_296][103][Script] [VehicleFinish] rally_2 LOD0 source=2579 split=2579 (body=1220,metal=81,rubber=1254,leather=24,glass=0), lodDistance=0.0000
+[2026-11-04 21_16_16_329][103][Script] [VehicleFinish] rally_2 LOD1 disconnected rubber rejected=1
+[2026-11-04 21_16_16_330][103][Script] [VehicleFinish] rally_2 LOD1 source=2350 split=2350 (body=994,metal=80,rubber=1254,leather=22,glass=0), lodDistance=9.0669
+[2026-11-04 21_16_16_343][103][Script] [VehicleFinish] rally_2 LOD2 disconnected rubber rejected=1
+[2026-11-04 21_16_16_343][103][Script] [VehicleFinish] rally_2 LOD2 source=976 split=976 (body=710,metal=68,rubber=190,leather=8,glass=0), lodDistance=24.7596
+[2026-11-04 21_16_16_356][103][Script] [VehicleFinish] rally_2 LOD3 disconnected rubber rejected=0
+[2026-11-04 21_16_16_356][103][Script] [VehicleFinish] rally_2 LOD3 source=676 split=676 (body=455,metal=32,rubber=184,leather=5,glass=0), lodDistance=68.3503
+[2026-11-04 21_16_16_360][103][Script] [VehicleFinish] rally_2 ready: 4 parts [body,metal,rubber,leather], 4 LODs, LOD0=2579 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_16_360][103][Script] [车型] rally_2 bbox 0.502/0.646/0.998 -> 2.22m, yaw 180
+[2026-11-04 21_16_16_361][103][Script] [摩托独立技能] rally_2 / 雪脊稳向
+[2026-11-04 21_16_16_499][103][Script] [VehicleFinish] rally_3 LOD0 disconnected rubber rejected=153
+[2026-11-04 21_16_16_499][103][Script] [VehicleFinish] rally_3 LOD0 source=4675 split=4675 (body=3486,metal=249,rubber=847,leather=64,glass=29), lodDistance=0.0000
+[2026-11-04 21_16_16_561][103][Script] [VehicleFinish] rally_3 LOD1 disconnected rubber rejected=122
+[2026-11-04 21_16_16_561][103][Script] [VehicleFinish] rally_3 LOD1 source=3972 split=3972 (body=2880,metal=198,rubber=831,leather=50,glass=13), lodDistance=8.3665
+[2026-11-04 21_16_16_610][103][Script] [VehicleFinish] rally_3 LOD2 disconnected rubber rejected=59
+[2026-11-04 21_16_16_610][103][Script] [VehicleFinish] rally_3 LOD2 source=3038 split=3038 (body=2221,metal=122,rubber=646,leather=36,glass=13), lodDistance=22.8470
+[2026-11-04 21_16_16_644][103][Script] [VehicleFinish] rally_3 LOD3 disconnected rubber rejected=41
+[2026-11-04 21_16_16_644][103][Script] [VehicleFinish] rally_3 LOD3 source=2103 split=2103 (body=1564,metal=84,rubber=421,leather=24,glass=10), lodDistance=63.0705
+[2026-11-04 21_16_16_653][103][Script] [VehicleFinish] rally_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4675 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_16_654][103][Script] [车型] rally_3 bbox 0.463/0.865/0.998 -> 2.22m, yaw -90
+[2026-11-04 21_16_16_654][103][Script] [摩托独立技能] rally_3 / 沙隼攀升
+[2026-11-04 21_16_18_303][103][Script] [VehicleFinish] cruiser LOD0 disconnected rubber rejected=766
+[2026-11-04 21_16_18_303][103][Script] [VehicleFinish] cruiser LOD0 source=19004 split=19004 (body=14016,metal=3359,rubber=1299,leather=99,glass=231), lodDistance=0.0000
+[2026-11-04 21_16_18_596][103][Script] [VehicleFinish] cruiser LOD1 disconnected rubber rejected=706
+[2026-11-04 21_16_18_596][103][Script] [VehicleFinish] cruiser LOD1 source=16152 split=16152 (body=11728,metal=2938,rubber=1191,leather=91,glass=204), lodDistance=6.6652
+[2026-11-04 21_16_18_783][103][Script] [VehicleFinish] cruiser LOD2 disconnected rubber rejected=596
+[2026-11-04 21_16_18_783][103][Script] [VehicleFinish] cruiser LOD2 source=12350 split=12350 (body=8850,metal=2286,rubber=1010,leather=82,glass=122), lodDistance=18.2012
+[2026-11-04 21_16_18_914][103][Script] [VehicleFinish] cruiser LOD3 disconnected rubber rejected=404
+[2026-11-04 21_16_18_915][103][Script] [VehicleFinish] cruiser LOD3 source=8551 split=8551 (body=6078,metal=1553,rubber=789,leather=66,glass=65), lodDistance=50.2455
+[2026-11-04 21_16_18_952][103][Script] [VehicleFinish] cruiser ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=19004 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_18_952][103][Script] [车型] cruiser bbox 0.758/0.926/1.363 -> 2.45m, yaw 0
+[2026-11-04 21_16_18_952][103][Script] [摩托独立技能] cruiser / 远行护航
+[2026-11-04 21_16_19_160][103][Script] [VehicleFinish] cruiser_2 LOD0 disconnected rubber rejected=40
+[2026-11-04 21_16_19_160][103][Script] [VehicleFinish] cruiser_2 LOD0 source=4523 split=4523 (body=3870,metal=112,rubber=430,leather=81,glass=30), lodDistance=0.0000
+[2026-11-04 21_16_19_222][103][Script] [VehicleFinish] cruiser_2 LOD1 disconnected rubber rejected=39
+[2026-11-04 21_16_19_222][103][Script] [VehicleFinish] cruiser_2 LOD1 source=3843 split=3843 (body=3282,metal=102,rubber=364,leather=75,glass=20), lodDistance=8.4949
+[2026-11-04 21_16_19_271][103][Script] [VehicleFinish] cruiser_2 LOD2 disconnected rubber rejected=31
+[2026-11-04 21_16_19_271][103][Script] [VehicleFinish] cruiser_2 LOD2 source=2938 split=2938 (body=2495,metal=91,rubber=274,leather=62,glass=16), lodDistance=23.1976
+[2026-11-04 21_16_19_303][103][Script] [VehicleFinish] cruiser_2 LOD3 disconnected rubber rejected=24
+[2026-11-04 21_16_19_304][103][Script] [VehicleFinish] cruiser_2 LOD3 source=2035 split=2035 (body=1788,metal=60,rubber=162,leather=25,glass=0), lodDistance=64.0384
+[2026-11-04 21_16_19_312][103][Script] [VehicleFinish] cruiser_2 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4523 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_19_313][103][Script] [车型] cruiser_2 bbox 0.580/0.713/0.998 -> 2.45m, yaw -90
+[2026-11-04 21_16_19_313][103][Script] [摩托独立技能] cruiser_2 / 赤铜格挡
+[2026-11-04 21_16_19_458][103][Script] [VehicleFinish] cruiser_3 LOD0 disconnected rubber rejected=155
+[2026-11-04 21_16_19_458][103][Script] [VehicleFinish] cruiser_3 LOD0 source=4906 split=4906 (body=4167,metal=160,rubber=465,leather=110,glass=4), lodDistance=0.0000
+[2026-11-04 21_16_19_530][103][Script] [VehicleFinish] cruiser_3 LOD1 disconnected rubber rejected=116
+[2026-11-04 21_16_19_530][103][Script] [VehicleFinish] cruiser_3 LOD1 source=4170 split=4170 (body=3543,metal=137,rubber=390,leather=96,glass=4), lodDistance=9.2349
+[2026-11-04 21_16_19_580][103][Script] [VehicleFinish] cruiser_3 LOD2 disconnected rubber rejected=78
+[2026-11-04 21_16_19_580][103][Script] [VehicleFinish] cruiser_3 LOD2 source=3188 split=3188 (body=2704,metal=91,rubber=308,leather=84,glass=1), lodDistance=25.2185
+[2026-11-04 21_16_19_612][103][Script] [VehicleFinish] cruiser_3 LOD3 disconnected rubber rejected=54
+[2026-11-04 21_16_19_612][103][Script] [VehicleFinish] cruiser_3 LOD3 source=2207 split=2207 (body=1878,metal=62,rubber=204,leather=63,glass=0), lodDistance=69.6172
+[2026-11-04 21_16_19_622][103][Script] [VehicleFinish] cruiser_3 ready: 5 parts [body,metal,rubber,leather,glass], 4 LODs, LOD0=4906 tris; source UV/N/T unchanged; opaque glazing
+[2026-11-04 21_16_19_622][103][Script] [车型] cruiser_3 bbox 0.447/0.662/0.998 -> 2.45m, yaw -90
+[2026-11-04 21_16_19_622][103][Script] [摩托独立技能] cruiser_3 / 暗峰惯行
+[2026-11-04 21_16_19_622][103][Script] [普通摩托总验收] PASS 规则 / AI / 九种表现 / 头盔投影 / 冻结 / 清理；截图为受控年龄=1.1
+[2026-11-04 21_17_25_433][198]INFO__VALIDATE_UPDATE__:false

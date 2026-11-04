@@ -1,74 +1,77 @@
 {
     "version": 2,
     "script": "MotorcycleSkillCheckMain.lua",
-    "result": "FAIL",
-    "duration_ms": 5973,
-    "frames_completed": 130,
+    "result": "TIMEOUT",
+    "duration_ms": 75586,
+    "frames_completed": 94,
     "phases": {
         "load": {
             "result": "PASS",
             "errors": []
         },
         "init": {
+            "result": "PASS",
+            "errors": []
+        },
+        "run": {
             "result": "FAIL",
             "errors": [
                 {
-                    "category": "lua",
-                    "message": "[2026-11-04 21_13_15_051][94] ERROR: Execute Lua function failed: [string \"Race\"]:755: attempt to compare number with nil\nstack traceback:\n\t[string \"Race\"]:755: in method 'Collision'\n\t[string \"RaceAI\"]:561: in field 'TrafficContacts'\n\t[string \"RaceAIChecks\"]:571: in local 'traffic'\n\t[string \"RaceAIChecks\"]:574: in field 'MotorcycleSkills'\n\t[string \"MotorcycleSkillCheckMain\"]:17: in function 'Start'",
-                    "frame": 0
+                    "category": "engine",
+                    "message": "Frame time spike: 6594.85ms (threshold: 3000ms)",
+                    "frame": 2
+                },
+                {
+                    "category": "engine",
+                    "message": "Validation timed out",
+                    "frame": 94
                 }
             ]
-        },
-        "run": {
-            "result": "PASS",
-            "errors": []
         },
         "scene": {
             "result": "PASS",
             "errors": [],
-            "node_count": 0,
-            "component_count": 0,
-            "scene_exists": false
+            "node_count": 81,
+            "component_count": 45,
+            "scene_exists": true
         }
     },
     "state_snapshots": [
         {
             "frame": 1,
             "phase": "init",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 345.33599853515627
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 5806.64892578125
         },
         {
             "frame": 10,
             "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.610000610351564
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 453.1940002441406
         },
         {
             "frame": 65,
             "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.615999221801759
-        },
-        {
-            "frame": 130,
-            "phase": "run",
-            "nodes": 0,
-            "components": 0,
-            "hash": 0,
-            "frame_time_ms": 16.645000457763673
+            "nodes": 81,
+            "components": 45,
+            "hash": 1294881687,
+            "frame_time_ms": 582.9500122070313
         }
     ],
     "scene_stalled": true,
-    "max_frame_time_ms": 326.75799560546877,
+    "max_frame_time_ms": 6594.85107421875,
     "update_defined": false,
-    "component_census": {},
+    "component_census": {
+        "Octree": 1,
+        "Zone": 1,
+        "Light": 1,
+        "StaticModel": 41,
+        "Camera": 1
+    },
     "test_result": "NOT_RUN",
     "test_assertions": {
         "total": 0,
@@ -79,9 +82,9 @@
     "missing_resources": [],
     "missing_engine_resources": [],
     "summary": {
-        "lua_errors": 1,
+        "lua_errors": 0,
         "resource_errors": 0,
-        "engine_errors": 0,
-        "total_errors": 1
+        "engine_errors": 2,
+        "total_errors": 2
     }
 }
