@@ -1,12 +1,12 @@
 {
   "$schema": "../schemas/project.schema.json",
-  "project_id": "m_dcaj",
+  "project_id": "m_dttf",
   "author": {
     "id": "293533708",
     "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "taptap_publish": {
     "title": "公路狂飙:我骑小电驴他竟然开坦克",
     "category": "racing",
@@ -14,9 +14,9 @@
     "collection_type": "racing",
     "app_platforms": "1,2",
     "description": "《公路狂飙:我骑小电驴他竟然开坦克》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
-    "app_id": 1029368,
-    "developer_id": 403436,
-    "miniapp_id": "tapmcv5zuqrcmr80sp"
+    "app_id": 1013102,
+    "developer_id": 377480,
+    "miniapp_id": "tapmcakcfxnohtqqmk"
   },
   "assets": {
     "icon": "./assets/image/vehicle_brawl_icon_20261104212809.png",
