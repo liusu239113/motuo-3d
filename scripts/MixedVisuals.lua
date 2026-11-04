@@ -11,6 +11,11 @@ local cockpitSources={
     loader={seat=V(-.08,.16,0),control=V(.01,.27,0),accent=Color(.85,.43,.035)},
     cicada={seat=V(-.03,.12,0),control=V(.16,.04,0),accent=Color(.45,.65,.15)},
 }
+-- 座舱锚点来自原车源坐标；个别车型有原厂防滚架/铲臂横杆，需要额外抬高或后移眼位。
+local cockpitEyeAdjust={
+    -- 铲车原始驾驶位在横杆后方，正对防滚架；后移并抬到杆上方才看得到前铲。
+    loader=V(0,.52,-.34),
+}
 
 -- 混合车的首视角只在这里配置；source模型本身保持一整套正式三角面。
 -- 电动车的前后轮心、轮半径和左右握把来自正式MDL/上传图复核后的归一化测量。
@@ -284,10 +289,12 @@ function M.Build(parent, id)
         local controls=canonical:LocalToWorld(cockpitSource.control)
         local seatLocal=root:WorldToLocal(seat)
         local controlLocal=root:WorldToLocal(controls)
-        M.Cockpits[id]={localOffset=seatLocal+V(0,.62,-.08),pitch=5,fov=76,
-            seatHeight=seatLocal.y,grip=controlLocal,
+        local eyeAdjust=cockpitEyeAdjust[id] or V.ZERO
+        local eye=seatLocal+V(0,.62,-.08)+eyeAdjust
+        M.Cockpits[id]={localOffset=eye,pitch=5,fov=76,
+            seatHeight=eye.y,grip=controlLocal,
             -- 与坦克/锹甲同一观感比例：仪表低于眼位约0.2m、前伸约1m，避免贴近镜头遮满视野。
-            dash=V(0,seatLocal.y+.41,seatLocal.z+math.min(1.02,c.targetLength*.33)),
+            dash=V(0,eye.y-.21,eye.z+math.min(1.02,c.targetLength*.33)),
             dashSize=Vector2(.46,.14),
             dashboardAngle=-12,accent=cockpitSource.accent,cameraCalibrated=true}
     end
