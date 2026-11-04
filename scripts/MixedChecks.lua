@@ -43,7 +43,7 @@ function Checks.RunOddVehicleActions()
     local buggy=sim("buggy");buggy.oddActive=0;buggy.airborne=true;buggy.landingStable=true
     buggy.airborne=false
     Rules.After(buggy,.02,{},nil,0,0,0,true)
-    check(buggy.oddLandingSerial==1 and buggy.oddLandingBoost==8 and buggy.oddPhase=="landing_boost","蹦蹦真实落地被动")
+    check(buggy.oddLandingSerial==1 and buggy.oddLandingBoost==2.2 and buggy.oddPhase=="landing_boost","蹦蹦真实落地被动")
     local cicada=sim("cicada");cicada.oddSpring=0;tick(cicada,.02,{})
     check(cicada.oddPhase=="exhausted" and cicada.oddSpeedScale<1,"木蝉发条耗尽减速")
     tick(cicada,.02,{skill=true});local first=cicada.oddSpring
@@ -53,6 +53,144 @@ function Checks.RunOddVehicleActions()
     for _=1,50 do tick(cicada,.02,{}) end
     check(cicada.oddPhase=="wound" and cicada.oddSpring>0,"木蝉恢复后进入有弦状态")
     check(Data.Get("tank")~=nil and Data.Get("helicopter")~=nil,"坦克与直升机目录仍保留")
+    return {passed=true,assertions=count}
+end
+-- 本轮快检：柏油、主动越障、实效、AI择机与音频序号；不依赖档案/SDK。
+function Checks.RunRemainingRules()
+    local Rules,Data=require("MixedRace"),require("MixedVehicles")
+    local map={RouteLength=2400,Roads={{width=8}},mixedTerrainVisualsReady=false}
+    local count=0
+    local function check(ok,msg) assert(ok,"[本轮技能规则] "..msg);count=count+1 end
+    local function drive(id)
+        local s={vehicleId=id,speed=20,x=0,y=0,z=0,heading=0,lateral=0,roadS=0,health=100,
+            impactSerial=0,raceMode=true,vehicle={maxSpeed=80},airborne=false}
+        Rules.Reset(s)
+        return s
+    end
+    local function tick(s,dt,c) Rules.Before(s,dt,c or {},map) end
+    for _,id in ipairs({"ebike","hovercraft","centipede","buggy","loader","cicada","jetboat","frog","skateboard","sled","cart","bathtub","office","toilet"}) do
+        local s=drive(id);tick(s,.02,{skill=true})
+        check(s.oddSerial==1 and s.oddActive>0 and s.oddAge==0,id.."有效发动递增一次serial")
+        tick(s,.02,{skill=true})
+        check(s.oddSerial==1 and s.oddAge>0,id.."长按不刷新serial且age推进")
+        local bad=drive(id);bad.finished=true;tick(bad,.02,{skill=true})
+        check(bad.oddSerial==0,id.."结束后不能假发动")
+        local spec=assert(Data.Get(id))
+        check(not spec.passive:find("碎石") and not spec.active:find("冰面") and not spec.active:find("水面"),id.."无不存在地面宣传")
+    end
+    local buggy=drive("buggy");tick(buggy,.02,{skill=true})
+    check(buggy.oddPhase=="jump_rise" and buggy.oddHop>0 and buggy.oddAltitude>0,"蹦蹦无跳台主动起跳")
+    tick(buggy,.76)
+    check(buggy.oddAltitude>1.99 and buggy.oddPhase=="jump_rise","蹦蹦2米顶点及上升phase")
+    tick(buggy,.10)
+    check(buggy.oddPhase=="jump_fall","蹦蹦真实下降phase")
+    tick(buggy,.74)
+    check(buggy.oddAltitude==0 and buggy.oddLandingSerial==1 and buggy.oddLandingBoost==2.2
+        and buggy.oddPhase=="landing_boost" and buggy.oddDriveScale==1.35,"蹦蹦落地真实有限加速")
+    tick(buggy,2.3)
+    check(buggy.oddLandingBoost==0 and buggy.oddDriveScale==1,"落地加速有限结束不残留")
+    local unstable=drive("buggy");tick(unstable,.02,{skill=true});tick(unstable,1.6,{steer=1})
+    check(unstable.oddLandingSerial==1 and unstable.oddLandingBoost==0,"大转向落地不奖励")
+    for _,id in ipairs({"rally","buggy","frog","skateboard"}) do
+        -- 俯视运动从z=-4到+4；底盘已在抛物线中段。低障碍[0,1]分离，高障碍[0,5]仍撞。
+        -- 使用真实Obstacles扫掠及Impact入口，不屏蔽碰撞，不靠动画宣称越障。
+        for _,height in ipairs({1,5}) do
+            local s=drive(id)
+            s.Impact=function(self) self.health=self.health-7;self.impactSerial=self.impactSerial+1 end
+            tick(s,.02,{skill=true});tick(s,id=="rally" and .60 or id=="frog" and 1.17 or id=="buggy" and .76 or .72)
+            s.z=4;s.oddPreviousAltitude=s.oddAltitude
+            local world={mixedObstacles={{id=1,x=0,y=0,z=0,yaw=0,kind="barrier",halfWidth=.7,
+                halfLength=.7,height=height,breakable=false,active=true}},mixedCoins={}}
+            Rules.Obstacles(s,world,0,0,-4)
+            check((s.health<100)==(height==5),id.."真实越1米障碍但非穿5米高墙")
+        end
+    end
+    for _,id in ipairs({"ebike","jetboat","sled","cart","toilet"}) do
+        local s=drive(id);tick(s,.02,{skill=true})
+        check(s.oddDriveScale>1 and s.oddSpeedScale>1 and s.oddTerrain=="asphalt",id.."柏油真实动力/极速")
+    end
+    local board=drive("skateboard");tick(board,.02,{skill=true});tick(board,1.5)
+    tick(board,.02)
+    check(board.oddCombo==1 and board.speed>20 and board.oddSpeedScale>1,"滑板连击实际影响速度而非空计数")
+    local bath=drive("bathtub");tick(bath,.02,{skill=true})
+    check(bath.oddShield>0,"澡盆真正得到护盾")
+    local function racer(id,x,z)
+        local s=drive(id)
+        return {id=id,vehicleId=id,x=x,y=0,z=z,yaw=0,lane=x,s=0,speed=20,wantedLane=x,driveSim=s},s
+    end
+    local function arena(source,target)
+        return {phase="racing",sim=source.driveSim,player=source,racers=target and {source,target} or {source},
+            length=2400,roadHalfWidth=8,options={mixed=true},aiProfile={{curvature=0}},aiProfileStep=2400,
+            aiObstacles={},Collision=function() end,Emit=function() end}
+    end
+    for _,targetPresent in ipairs({false,true}) do
+        local source,s=racer("jellyfish",0,0)
+        local target=targetPresent and racer("ebike",0,20) or nil
+        local race=arena(source,target)
+        tick(s,.02,{skill=true})
+        check(s.oddSerial==0,"水球按键不提前广播有效序号")
+        Rules.Attack(race,source,s)
+        check(s.oddSerial==(targetPresent and 1 or 0) and #(race.mixedProjectiles or {})==(targetPresent and 1 or 0),"水球仅实际发射播一次")
+        if not targetPresent then check(s.oddCooldown==0 and s.oddActive==0,"无目标水球退款且无假音效") end
+    end
+    for _,id in ipairs({"loader","jellyfish"}) do
+        local s=drive(id);s.raceMode=false;tick(s,.02,{skill=true})
+        check(s.oddSerial==0 and s.oddCooldown==0,id.."无练习目标不假发动")
+    end
+    local opportunities={sport={speed=20},sport_2={speed=20,curve=.02},sport_3={speed=0},
+        rally={speed=20,obstacle=true},rally_2={speed=20,disrupt=1},rally_3={speed=20},
+        cruiser={speed=20,front=true},cruiser_2={speed=20,obstacle=true},cruiser_3={speed=20,front=true},
+        buggy={speed=20,obstacle=true}}
+    for id,o in pairs(opportunities) do
+        local source,s=racer(id,0,0);source.speed=o.speed;s.speed=o.speed;s.oddDisrupt=o.disrupt or 0
+        local target=o.front and racer("ebike",0,15) or nil
+        local race=arena(source,target)
+        race.aiProfile[1].curvature=o.curve or 0
+        if o.obstacle then race.aiObstacles={{s=20,lane=0,halfWidth=1}} end
+        check(Rules.ShouldUseSkill(race,source),id.."AI在柏油实际机会发动")
+        s.motorcycleCooldown,s.oddCooldown=5,5
+        check(not Rules.ShouldUseSkill(race,source),id.."AI不绕过冷却")
+    end
+    print(string.format("[本轮技能规则] PASS %d项 / 柏油 / 主动跳 / AI / serial / 无目标不播",count))
+    return {passed=true,assertions=count}
+end
+-- 固定池工厂/生命周期，不截图、不推进正式游戏。覆盖全部14车及lightweight。
+function Checks.RunEffectLifecycle()
+    local Effects=require("NewVehicleSkillEffects")
+    local Data=require("MixedVehicles")
+    local count=0
+    local function check(ok,msg) assert(ok,"[技能效果生命周期] "..msg);count=count+1 end
+    local scene=Scene()
+    scene:CreateComponent("Octree")
+    for _,id in ipairs({"hovercraft","centipede","buggy","loader","cicada","jellyfish","jetboat","frog","skateboard","sled","cart","bathtub","office","toilet"}) do
+        for _,lightweight in ipairs({false,true}) do
+            local spec=assert(Data.Get(id))
+            local root=scene:CreateChild("Lifecycle_"..id)
+            local effect=assert(Effects.New(root,id,1.5,spec.size[3],lightweight))
+            effect:SetEyePosition(Vector3(.1,1.6,-.2))
+            local sim={oddActive=1,oddAge=.2,oddSerial=1,oddPhase=id=="buggy" and "jump_rise" or "active",
+                oddShield=1,oddHop=.7,oddHopDuration=1.6,oddAltitude=1,speed=20}
+            effect:Update(.02,sim)
+            check(effect.active and effect.root.enabled and #effect.parts>0,id.."工厂接线含AI池")
+            local age,position=effect.age,effect.parts[1].node.position
+            effect:Update(0,{oddActive=0})
+            check(effect.active and effect.age==age and effect.parts[1].node.position==position,id.."零步冻结")
+            effect:Update(.1,{paused=true,oddActive=0})
+            check(effect.active and effect.age==age,id.."暂停冻结")
+            effect:Update(.02,{oddActive=0,oddPhase="idle"})
+            check(not effect.active and not effect.root.enabled,id.."结束即时隐藏")
+            effect:Update(.02,sim);effect:Update(0,{finished=true})
+            check(not effect.active and not effect.root.enabled,id.."终局清理优先于暂停")
+            effect:Reset();effect:Dispose();effect:Dispose()
+            check(effect.disposed and #effect.materials==0,id.."释放幂等及材质清理")
+            root:Dispose()
+        end
+    end
+    for _,id in ipairs({"tank","helicopter","beetle","unknown"}) do
+        check(Effects.New(scene,id,1.5,3)==nil,id.."工厂不触碰保护车型")
+    end
+    scene:Dispose()
+    print(string.format("[技能效果生命周期] PASS %d项 / 14工厂 / lightweight / 暂停 / 终局 / Dispose",count))
     return {passed=true,assertions=count}
 end
 -- 快速纯规则专项：不创建Scene、不加载Simulation/Profile、不读写玩家存档。

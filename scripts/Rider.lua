@@ -54,6 +54,7 @@ local STEM = "rig-1-c09759e5-dd10-4064-900b-8c28233ef213"
 ---@field initializing boolean
 ---@field boneNames string[]
 ---@field lastLean number
+---@field poseDriver? fun(rider:Rider,steerAngle:number) 独立驾驶姿态；不改旧摩托配置
 local Rider = {}
 Rider.__index = Rider
 
@@ -237,15 +238,31 @@ function Rider.New(parent, vehicleId, grip, gripBinding)
     return self
 end
 
+-- Independent drivers share the exact production model/material/skeleton/IK lifecycle.
+-- The callback only rotates existing bones; the motorcycle constructor/config remains unchanged.
+---@param parent Node
+---@param vehicleId string
+---@param config RiderPoseConfig
+---@param poseDriver fun(rider:Rider,steerAngle:number)
+---@return Rider
+function Rider.NewConfigured(parent, vehicleId, config, poseDriver)
+    local self = setmetatable({}, Rider)
+    self:Init(parent, vehicleId, V.ZERO, nil, config, poseDriver)
+    return self
+end
+
 ---@param parent Node
 ---@param vehicleId string
 ---@param grip Vector3 右握把（兼容旧调用）
 ---@param gripBinding? RiderGripBinding
-function Rider:Init(parent, vehicleId, grip, gripBinding)
+---@param poseConfig? RiderPoseConfig
+---@param poseDriver? fun(rider:Rider,steerAngle:number)
+function Rider:Init(parent, vehicleId, grip, gripBinding, poseConfig, poseDriver)
     self.parent, self.vehicleId = parent, vehicleId
     self.classId = Rider.ClassFor(vehicleId)
     self.colorId, self.disposed = "red", false
-    self.config = assert(Rider.Poses[vehicleId] or Rider.Poses[self.classId], "Unsupported rider pose: " .. vehicleId)
+    self.config = assert(poseConfig or Rider.Poses[vehicleId] or Rider.Poses[self.classId], "Unsupported rider pose: " .. vehicleId)
+    self.poseDriver = poseDriver
     self.grip = grip
     self.rightGrip = gripBinding and gripBinding.right or grip
     self.leftGrip = gripBinding and gripBinding.left or V(-grip.x, grip.y, grip.z)
@@ -299,10 +316,10 @@ function Rider:Init(parent, vehicleId, grip, gripBinding)
         self.arms[#self.arms + 1] = self:CreateChain(prefix .. "Upperarm", prefix .. "Forearm", prefix .. "Hand", side)
         self.legs[#self.legs + 1] = self:CreateChain(prefix .. "Thigh", prefix .. "Calf", prefix .. "Foot", side)
     end
-    self:PoseBody()
+    if not self.poseDriver then self:PoseBody() end
     self:Update(0, true)
     self.model:UpdateBoneBoundingBox()
-    self:ValidatePose()
+    if not self.poseDriver then self:ValidatePose() end
     self.initializing = false
     print("[骑手] 全盔连体赛车服骑手 / 手动骨骼骑姿 / 无骑行clip，头盔为模型自带")
 end
@@ -415,6 +432,10 @@ function Rider:ApplyPose(steerAngle)
     for _, name in ipairs(self.boneNames) do
         local bind = self.bind[name]
         boneNode(self.model, name):SetTransform(bind.position, bind.rotation, bind.scale)
+    end
+    if self.poseDriver then
+        self.poseDriver(self, steerAngle)
+        return
     end
     self:PoseBody()
     -- 仅胸肩轻微追随车把；髋和腿保持原坐垫/脚踏接触点，仿赛原姿不改。

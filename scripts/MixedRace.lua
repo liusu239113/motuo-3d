@@ -29,6 +29,7 @@ function M.GetSkill(id) return skillFor(id) end
 function M.Reset(sim)
     sim.oddActive,sim.oddCooldown,sim.oddAltitude,sim.oddSkillFlash=0,0,0,0
     sim.oddLaunch,sim.oddHopDuration=0,.85
+    sim.oddHopHeight,sim.oddNitroGift=nil,nil
     sim.oddSteam,sim.oddSpring,sim.oddCombo,sim.oddComboTimer=0,22,0,0
     sim.oddHop,sim.oddHitLock,sim.oddDisrupt,sim.oddShield=0,0,0,0
     sim.oddSkillHeld,sim.oddAttack=false,false
@@ -121,14 +122,18 @@ function M.Terrain(map,s,lane)
     if section==7 then return "slime" end
     return "asphalt"
 end
-local ACTIONS={hovercraft=true,centipede=true,loader=true,buggy=true,cicada=true}
+local ACTIONS={hovercraft=true,centipede=true,loader=true,buggy=true,cicada=true,
+    ebike=true,jellyfish=true,jetboat=true,frog=true,skateboard=true,sled=true,cart=true,bathtub=true,office=true,toilet=true}
 local function phase(sim,id)
     local age=(sim.oddAge or 0)+1e-8
     if id=="cicada" then
         if sim.oddActive>0 then return "wound_release" end
         return sim.oddSpring>0 and "wound" or "exhausted"
     end
-    if id=="buggy" and sim.oddActive<=0 and (sim.oddLandingBoost or 0)>0 then return "landing_boost" end
+    if id=="buggy" then
+        if (sim.oddHop or 0)>0 then return sim.oddHop>(sim.oddHopDuration or 1.6)*.5 and "jump_rise" or "jump_fall" end
+        if (sim.oddLandingBoost or 0)>0 then return "landing_boost" end
+    end
     if sim.oddActive<=0 then
         return "idle"
     end
@@ -142,10 +147,21 @@ local function phase(sim,id)
 end
 local function activate(sim,v,controls)
     if sim.oddCooldown>0 or sim.oddDisrupt>0 or sim.oddActive>0 then return false end
+    if ACTIONS[v.id] and (sim.finished or sim.wrecked or sim.eliminated or sim.paused
+        or controls.brake or controls.burnout or controls.clutch
+        or ((v.id=="buggy" or v.id=="frog" or v.id=="skateboard") and sim.airborne)
+        or ((v.id=="buggy" or v.id=="skateboard") and (sim.oddHop or 0)>0)) then return false end
+    if (v.id=="loader" or v.id=="jellyfish") and not sim.raceMode then
+        sim.message,sim.messageTimer="练习中无竞速目标 · 未消耗技能",2
+        sim.oddSkillResult,sim.oddSkillResultTimer=sim.message,2
+        return false
+    end
     sim.oddActive,sim.oddCooldown,sim.oddSkillFlash=v.duration,v.cooldown,.65
     sim.oddAttack=true
     if ACTIONS[v.id] then
-        sim.oddAge,sim.oddSerial=0,(sim.oddSerial or 0)+1
+        -- A waterball is committed only by launch(), after target validation.
+        sim.oddAge=0
+        if v.id~="jellyfish" then sim.oddSerial=(sim.oddSerial or 0)+1 end
         sim.oddAttackSerial=sim.oddSerial
         sim.oddAttackResolved=false
         sim.oddHitTime=v.id=="centipede" and .42 or v.id=="loader" and .36 or 0
@@ -157,8 +173,12 @@ local function activate(sim,v,controls)
         -- No instant refill and no resource gains from rendering or holding the key.
         sim.oddWindupSerial,sim.oddWindupStart=sim.oddSerial,sim.oddSpring
     end
-    if v.id=="frog" or v.id=="skateboard" then
-        sim.oddHopDuration=v.id=="frog" and 2.4 or 1.5;sim.oddHop=sim.oddHopDuration
+    if v.id=="frog" or v.id=="skateboard" or v.id=="buggy" then
+        sim.oddHopDuration=v.id=="frog" and 2.4 or v.id=="buggy" and 1.6 or 1.5
+        sim.oddHopHeight=v.id=="buggy" and 2.0 or 2.2
+        sim.oddHop=sim.oddHopDuration
+        sim.oddLandingBoost=0
+        if v.id=="buggy" then sim.oddPhase="jump_rise" end
     end
     if v.id=="bathtub" or v.id=="office" then sim.oddShield=v.duration end
     if v.id=="ebike" then sim.oddNitroGift=15 end
@@ -174,6 +194,21 @@ local function activate(sim,v,controls)
     print("[载具技能] "..v.id.." / "..v.skill)
     return true
 end
+-- 街机主动跳只改变底盘离地偏移，y/里程仍走原动力；玩家与AI同一轨迹。
+-- 侧视: bottom=2.0*sin(pi*t/1.6)；1m路障只在中段能越过。
+--   0m ____/^^^^2m^^^^\____ 0m  -> 稳定着地2.2s动力，非免撞/非瞬移。
+-- 擦顶相切仍碰撞，起跳太晚/落地压障仍吃原XYZ扫掠；护栏/高障碍不屏蔽。
+local function buggyLanding(sim,stable)
+    sim.oddLandingSerial=(sim.oddLandingSerial or 0)+1
+    if stable then
+        sim.oddCombo=math.min(3,sim.oddCombo+1);sim.oddComboTimer=6
+        sim.oddLandingBoost=2.2
+        sim.message,sim.messageTimer="弹射着陆 · 2.2秒有限加速",1.5
+    else
+        sim.oddLandingBoost=0
+        sim.message,sim.messageTimer="落地侧偏 · 未获得着地加速",1.5
+    end
+end
 function M.Before(sim,dt,controls,map)
     local v=Data.Get(sim.vehicleId)
     sim.oddPreviousAltitude=sim.oddAltitude or 0
@@ -184,7 +219,10 @@ function M.Before(sim,dt,controls,map)
     if not v then
         Motorcycle.Before(sim,dt,controls)
         sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
-        sim.oddAltitude=sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0
+        local hop=sim.oddHop or 0
+        sim.oddHop=math.max(0,hop-dt)
+        local jump=hop>0 and math.sin(clamp(sim.oddHop/(sim.oddHopDuration or 1.25),0,1)*math.pi)*(sim.oddHopHeight or 1.35) or 0
+        sim.oddAltitude=math.max(jump,sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0)
         sim.oddDisrupt=math.max(0,(sim.oddDisrupt or 0)-dt)
         sim.oddTerrain=(map.RouteLength or 0)>=300 and M.Terrain(map,sim.roadS or 0,sim.lateral or 0) or "asphalt"
         local rough=sim.oddTerrain~="asphalt" and sim.oddTerrain~="wind"
@@ -246,13 +284,16 @@ function M.Before(sim,dt,controls,map)
         speed=speed*(slope<-.015 and 1.18 or 1);drive=drive*(slope>.025 and .72 or 1)
         if (sim.speed or 0)<8 then drive=drive*.82 end
     elseif id=="hovercraft" then grip=grip*.92
-    elseif id=="buggy" then speed=speed*(1+.055*sim.oddCombo)
+    elseif id=="buggy" then speed=speed*(1+.035*sim.oddCombo)
     end
-    if id=="frog" and sim.oddHop<=0 and (sim.speed or 0)>8 then sim.oddHop=.85;sim.oddHopDuration=.85 end
+    if id=="frog" and sim.oddHop<=0 and (sim.speed or 0)>8 then
+        sim.oddHop=.85;sim.oddHopDuration=.85;sim.oddHopHeight=.65
+    end
     local wasHopping=sim.oddHop>0
     sim.oddHop=math.max(0,sim.oddHop-dt)
     if wasHopping and sim.oddHop<=0 then
-        if id=="frog" or id=="skateboard" then
+        if id=="buggy" then buggyLanding(sim,math.abs(controls.steer or sim.steer or 0)<=.8 and sim.oddDisrupt<=0 and not sim.airborne)
+        elseif id=="frog" or id=="skateboard" then
             if math.abs(controls.steer or 0)>.8 then
                 sim.speed=sim.speed*.87;sim.oddDisrupt=.6;sim.message,sim.messageTimer="落地侧偏 · 提前回正方向",1.2
             else
@@ -264,12 +305,11 @@ function M.Before(sim,dt,controls,map)
     local altitude=id=="helicopter" and 2.5 or (id=="jellyfish" and 1.65 or (id=="hovercraft" and .2 or 0))
     if sim.oddHop>0 then
         local total=sim.oddHopDuration or .85
-        altitude=math.max(altitude,math.sin(clamp(sim.oddHop/total,0,1)*math.pi)*(total>1 and 2.2 or .65))
+        altitude=math.max(altitude,math.sin(clamp(sim.oddHop/total,0,1)*math.pi)*(sim.oddHopHeight or (total>1 and 2.2 or .65)))
     end
     if sim.oddActive>0 then
         if id=="tank" or id=="ebike" or id=="jetboat" or id=="sled" or id=="toilet" then
             drive=drive*1.7;speed=speed*1.18
-        elseif id=="buggy" then drive=drive*1.4;grip=grip*1.4
         elseif id=="cart" then drive=drive*1.35;speed=speed*1.1 end
         if id=="toilet" then altitude=math.max(altitude,1.8) end
     end
@@ -278,7 +318,11 @@ function M.Before(sim,dt,controls,map)
     end
     if sim.oddDisrupt>0 then speed=speed*.84;grip=grip*.58 end
     if sim.oddHop>0 then grip=grip*.78 end
-    if id=="frog" then speed=speed*(1+sim.oddCombo*.035) end
+    if id=="frog" or id=="skateboard" then speed=speed*(1+sim.oddCombo*.035) end
+    if id=="buggy" and sim.oddLandingBoost>0 and not sim.airborne and sim.oddHop<=0
+        and not controls.brake and not controls.burnout and sim.oddDisrupt<=0 then
+        drive=drive*1.35;speed=speed*1.06;grip=grip*1.15
+    end
     if id=="toilet" and sim.oddActive>0 then grip=grip*.72 end
     if id=="loader" and (sim.crashCooldown or 0)>0 then drive=drive*.75 end
     sim.oddLaunch=math.max(0,(sim.oddLaunch or 0)-dt)
@@ -287,11 +331,6 @@ function M.Before(sim,dt,controls,map)
     sim.oddJetStep,sim.oddDriftStep=0,0
     if id=="hovercraft" and sim.oddActive>0 then
         sim.oddJetStep=(sim.oddJetSide or 1)*2.3*dt
-    elseif id=="buggy" and sim.oddActive>0 and not sim.airborne then
-        -- Initial 0.45s is an actual lateral skid, followed by controlled thrust.
-        local skid=math.max(0,math.min(dt,.45-(sim.oddAge or 0)))
-        sim.oddDriftStep=(sim.oddDashSide or 1)*1.6*skid
-        sim.oddDriftSide=sim.oddDashSide or 1
     end
     sim.oddAltitude=altitude
     if ACTIONS[id] then sim.oddPhase=phase(sim,id) end
@@ -393,12 +432,7 @@ function M.After(sim,dt,controls,world,x0,y0,z0,wasAirborne)
     local v=Data.Get(sim.vehicleId)
     if v then
         if v.id=="buggy" and wasAirborne and not sim.airborne then
-            sim.oddLandingSerial=(sim.oddLandingSerial or 0)+1
-            if sim.landingStable~=false then
-                sim.oddCombo=math.min(3,sim.oddCombo+1);sim.oddComboTimer=8
-                sim.oddLandingBoost=8
-                sim.speed=math.min(sim.vehicle.maxSpeed*1.2,sim.speed+2)
-            end
+            buggyLanding(sim,sim.landingStable~=false and (sim.oddHop or 0)<=0)
             sim.oddPhase=phase(sim,v.id)
         end
         local terrain=sim.oddTerrain
@@ -526,9 +560,11 @@ end
 -- Target identity/rank never changes its cooldown, range or hit test.
 function M.ShouldUseSkill(race,source)
     local sim=driveFor(race,source)
+    local rescueSkill=Data.GetMotorcycleSkill(source.vehicleId)
+    local selfRescue=rescueSkill and rescueSkill.tactic=="stability"
     if not sim or source.finished or source.eliminated or race.phase~="racing"
         or (source.mistakeDuration or 0)>0 or (source.recoveryTimer or 0)>0
-        or (sim.oddDisrupt or 0)>0 or (sim.skillHitLock or 0)>0 then return false end
+        or ((sim.oddDisrupt or 0)>0 and not selfRescue) or (sim.skillHitLock or 0)>0 then return false end
     local v=Data.Get(source.vehicleId)
     local cooldown=v and sim.oddCooldown or sim.motorcycleCooldown
     local active=v and sim.oddActive or sim.motorcycleActive
@@ -586,7 +622,10 @@ function M.ShouldUseSkill(race,source)
     local curve=sample and sample.curvature or 0
     if skill then return Motorcycle.ShouldUse(skill,sim,source.speed,front,obstacle,curve) end
     if v and v.id=="cicada" then return (sim.oddSpring or 0)<5 and not obstacle end
-    if v and v.id=="buggy" then return source.speed>8 and not sim.airborne and not obstacle and curve<.012 end
+    if v and v.id=="buggy" then
+        return source.speed>8 and not sim.airborne and (sim.oddHop or 0)<=0
+            and (obstacle or front) and curve<.018
+    end
     if v and v.id=="hovercraft" then
         if not obstacle then return false end
         local half=race.roadHalfWidth-v.size[1]*.5-.2
@@ -613,6 +652,11 @@ local function launch(race,source,sim,target,v)
         vy=homing and v.id=="helicopter" and speed*.25 or dy/length*speed,vz=dz/length*speed,
         ttl=homing and 8 or .8,age=0,speed=speed,homing=homing,distance=0,
         source=source,target=target}
+    if v.id=="jellyfish" then
+        sim.oddSerial=(sim.oddSerial or 0)+1
+        sim.oddAttackSerial=sim.oddSerial
+        sim.oddAge,sim.oddPhase=0,"bubble_cast"
+    end
     sim.oddLockTimer=0
     sim.oddLockPending=false
     feedback(sim,homing and "锁定完成 · 导弹已发射，持续追踪" or "水球已发射 · 直线弹道",2.5)

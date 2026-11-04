@@ -1,7 +1,9 @@
--- 五款混合车的补充技能效果。基于 MotorcycleSkillEffects 固定节点池模式；不生成/替换机械车体。
+-- 混合车补充技能效果。基于 MotorcycleSkillEffects 固定节点池模式；不生成/替换机械车体。
+-- 原五车保留phase契约，其余九车独立实现于RemainingVehicleSkillEffects。
 -- +Z前、+X右、Y上，单位米。调用方持有本对象并驱动 Update；无事件订阅、无自动粒子时钟。
 -- 只读 MixedRace 的 odd* 契约。frontAnchor/firstPersonAnchors 是真实发光轨迹的低视野锚点。
 local Data = require("MixedVehicles")
+local Remaining = require("RemainingVehicleSkillEffects")
 local V = Vector3
 ---@class NewVehicleSkillEffects
 ---@field id string
@@ -33,11 +35,16 @@ local Effects = {}
 Effects.__index = Effects
 Effects.Resources = {"Techniques/PBR/PBRNoTextureAlpha.xml"}
 Effects.ResourceTypes = {[Effects.Resources[1]] = "Technique"}
+-- Keep one preload manifest for RideLoader and RaceVisuals, including future module assets.
+for _,path in ipairs(Remaining.Resources) do
+    if not Effects.ResourceTypes[path] then Effects.Resources[#Effects.Resources+1]=path end
+    Effects.ResourceTypes[path]=assert(Remaining.ResourceTypes[path])
+end
 
 local DEFINITIONS = {
     hovercraft = {kind="side_jet", color={.12,.78,1}, shape="jet", count=8},
     centipede = {kind="tail_sweep", color={1,.28,.09}, shape="sweep", count=7},
-    buggy = {kind="drift_dash", color={1,.72,.22}, shape="streak", count=10},
+    buggy = {kind="jump_boost", color={1,.72,.22}, shape="streak", count=10},
     loader = {kind="scoop_lift", color={1,.58,.06}, shape="lift", count=8},
     cicada = {kind="windup_ribbon", color={.52,1,.32}, shape="coil", count=6},
 }
@@ -84,12 +91,13 @@ end
 ---@field side number
 
 ---@param parent Node 未缩放的车辆表现父节点，与 MotorcycleSkillEffects 相同
----@param id string 只接受 hovercraft/centipede/buggy/loader/cicada；其它返回nil且不创建对象
+---@param id string 接受五车与Remaining九车；保护车型返回nil且不创建对象
 ---@param eyeHeight number 与相机 localOffset.y 相同
 ---@param length number 归一化真实车长
 ---@param lightweight? boolean 远端缩减节点数，保留技能轮廓及首视角锚点
----@return NewVehicleSkillEffects?
+---@return NewVehicleSkillEffects|RemainingVehicleSkillEffects|nil
 function Effects.New(parent,id,eyeHeight,length,lightweight)
+    if Remaining.Has(id) then return Remaining.New(parent,id,eyeHeight,length,lightweight) end
     if not DEFINITIONS[id] then return nil end
     local self=setmetatable({},Effects)
     self:Init(parent,id,eyeHeight,length,lightweight==true)
@@ -200,6 +208,10 @@ function Effects:ReadPhase(sim)
     if sim.oddPhase then return sim.oddPhase end
     if self.id=="centipede" then return self.age<.42 and "tail_windup" or self.age<.72 and "tail_sweep" or "tail_recover" end
     if self.id=="loader" then return self.age<.36 and "scoop_windup" or self.age<.72 and "scoop_lift" or self.age<1.05 and "scoop_release" or "scoop_recover" end
+    if self.id=="buggy" then
+        if (sim.oddHop or 0)>0 then return sim.oddHop>(sim.oddHopDuration or 1.6)*.5 and "jump_rise" or "jump_fall" end
+        if (sim.oddLandingBoost or 0)>0 then return "landing_boost" end
+    end
     return self.id=="cicada" and "wound_release" or self.id=="hovercraft" and "side_jet" or "dash"
 end
 
@@ -208,7 +220,7 @@ end
 function Effects:Update(dt,sim)
     if self.disposed then return end
     -- Terminal cleanup overrides a paused frame; all other zero-step/paused calls are strict no-ops.
-    if sim.finished or sim.wrecked then self:Reset();return end
+    if sim.finished or sim.wrecked or sim.eliminated then self:Reset();return end
     if dt<=0 or sim.paused then return end
     self.age=math.max(0,sim.oddAge or 0)
     local phase=self:ReadPhase(sim)
@@ -268,9 +280,11 @@ function Effects:PoseFront(part,sim,direction)
         node.rotation=Quaternion(0,side*(sweep and (t-.42)*220 or -30),0)
         node.scale=V(.52,self.phase=="tail_windup" and .55 or 1.05,.40)
     elseif self.id=="buggy" then
-        node.position=V(side*.04,-.06,-(t*2%1)*.18)
-        node.rotation=Quaternion(0,-side*12,0)
-        node.scale=V(1.05,.9,.82*pulse)
+        local rising=self.phase=="jump_rise"
+        local falling=self.phase=="jump_fall"
+        node.position=V(side*.04,rising and .01 or falling and -.12 or -.06,-(t*2%1)*.18)
+        node.rotation=Quaternion(rising and -28 or falling and 24 or 0,-side*12,0)
+        node.scale=V(1.05,.9,(self.phase=="landing_boost" and 1.2 or .70)*pulse)
     elseif self.id=="loader" then
         local lift=unit((t-.36)/.36)
         node.position=V(side*.04,-.20+lift*.13,.02)

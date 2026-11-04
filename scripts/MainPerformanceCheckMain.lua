@@ -1,4 +1,7 @@
 -- 真实main驾驶采样：Profile内存隔离，正式世界/九车/相机/HUD，自动结束，不调用广告。
+assert(cache:AddResourceDir("/workspace/assets", false))
+assert(cache:AddResourceDir("/workspace/scripts", false))
+cache.searchPackagesFirst=false
 local restore_=function() end
 local ready_=false
 local frames_=0

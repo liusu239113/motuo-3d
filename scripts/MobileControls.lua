@@ -2,6 +2,7 @@
 -- clutch/shift 字段只保留给旧入口过渡，不再创建对应可见控件。
 local UI = require("urhox-libs/UI")
 local RacingTheme = require("RacingTheme")
+local SkillNames = require("SkillNames")
 ---@class MobileControls
 ---@field ResetLook fun(self:MobileControls)
 ---@field ConsumeLook fun(self:MobileControls):number,number
@@ -272,7 +273,7 @@ end
 function Controls:SetActionState(key, state)
     -- Display-only contract. Never gate ownership or change the gameplay resource here.
     self.actionStates[key] = state or {}
-    if self.captions[key] and state.label then self.captions[key]:SetText(state.label) end
+    if self.captions[key] and state.label then self.captions[key]:SetText(SkillNames.Label(state.label)) end
     if self.details[key] and state.detail then self.details[key]:SetText(shortDetail(state.detail)) end
     self:Refresh()
 end
@@ -403,7 +404,7 @@ function Controls:CreateHold(key, text, width, height)
     end
     -- 明确给出宽度，禁止 Label 把长状态当作 autoWidth 自动换行并向上顶住标题。
     local caption = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 19, height = 17,
-        paddingHorizontal = 3, text = CAPTIONS[key] or (text ~= "" and text or key),
+        paddingHorizontal = 3, text = SkillNames.Label(CAPTIONS[key] or (text ~= "" and text or key)),
         fontSize = 10, fontWeight = "bold", lineHeight = 1, maxLines = 1, whiteSpace = "nowrap",
         fontColor = {239, 245, 247, 255}, textAlign = "center", pointerEvents = "none"}
     local detail = UI.Label {position = "absolute", left = 0, width = "100%", bottom = 2, height = 15,

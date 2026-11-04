@@ -6,6 +6,7 @@ local RacingTheme = require("RacingTheme")
 local PageText = require("Career.PhoneKit").Text
 local Catalog = require("Catalog")
 local MixedRace = require("MixedRace")
+local SkillNames = require("SkillNames")
 local Profile = require("Profile")
 local ControlSettings = require("ControlSettings")
 local GaragePreview = require("GaragePreview")
@@ -41,8 +42,10 @@ local function isWeaponFeedback(text)
 end
 require("RouteSelect").Install(HUD)
 require("RacingDialogs").Install(HUD)
-local KEYART = "image/pursuit_loading_keyart_20261027183804.png"
-local GARAGE = "image/pursuit_garage_backdrop_20261027183801.png"
+local MENUART = "image/highway_brawl_main_menu_20261104221739.png"
+local LOGO = "image/highway_brawl_title_logo_20261104221559.png"
+local KEYART = "image/vehicle_brawl_keyart_20261104212846.png"
+local GARAGE = "image/vehicle_brawl_garage_20261104213013.png"
 -- 绿色为默认免费配色，其余需用比赛金币购买。
 local RIDERS = {
     {id = "red", color = {168, 46, 37, 255}, price = 900},
@@ -53,8 +56,8 @@ local RIDERS = {
     {id = "violet", color = {111, 75, 137, 255}, price = 2600},
 }
 HUD.Riders = RIDERS
-HUD.Resources, HUD.ResourceTypes = {KEYART, GARAGE, RacingTheme.FontPath, RacingTheme.HeroImage},
-    {[KEYART] = "Texture2D", [GARAGE] = "Texture2D", [RacingTheme.FontPath] = "Font", [RacingTheme.HeroImage] = "Texture2D"}
+HUD.Resources, HUD.ResourceTypes = {MENUART, LOGO, KEYART, GARAGE, RacingTheme.FontPath, RacingTheme.HeroImage},
+    {[MENUART] = "Texture2D", [LOGO] = "Texture2D", [KEYART] = "Texture2D", [GARAGE] = "Texture2D", [RacingTheme.FontPath] = "Font", [RacingTheme.HeroImage] = "Texture2D"}
 for _, path in ipairs(MobileControls.Resources) do
     HUD.Resources[#HUD.Resources + 1], HUD.ResourceTypes[path] = path, MobileControls.ResourceTypes[path]
 end
@@ -62,7 +65,18 @@ for _, path in ipairs(GaragePreview.Resources) do
     HUD.Resources[#HUD.Resources + 1], HUD.ResourceTypes[path] = path, GaragePreview.ResourceTypes[path]
 end
 
-local label, button = RacingTheme.Label, RacingTheme.Button
+local label = RacingTheme.Label
+local function playUI(kind)
+    require("FrontendAudio").PlayUI(kind)
+end
+local function button(text, callback, primary, width, props)
+    local kind = props and props.uiSound or (text:find("返回",1,true) and "back"
+        or ((text:find("出发",1,true) or text:find("进入赛事",1,true) or text:find("再赛",1,true)) and "confirm" or "click"))
+    return RacingTheme.Button(text, function(...)
+        if kind ~= "manual" then playUI(kind) end
+        if callback then return callback(...) end
+    end, primary, width, props)
+end
 local function bar(color, height)
     return UI.ProgressBar {value = 0, width = "100%", height = height or 3, showLabel = false,
         fillColor = color or AMBER, backgroundColor = {123, 133, 143, 60}, borderWidth = 0,
@@ -255,15 +269,16 @@ function HUD:Init(actions, controls)
     self:BuildRide(); self:BuildMenu(); self:BuildSettings(); self:BuildGarage(); self:BuildTracks(); self:BuildPauseAndResult(); self:BuildLoading()
     self.portrait = UI.Panel(fill({visible = false, backgroundColor = {9, 12, 15, 255},
         alignItems = "center", justifyContent = "center", padding = 24, gap = 12, children = {
-            label("请横屏握持手机", 24), label("公路追逐 · 横屏竞速", 12, AMBER),
+            label("请横屏握持手机", 24), label("载具大乱斗 · 横屏竞速", 12, AMBER),
             label("左手转向 · 右手油刹 / 氮气 / 近身对抗", 11, MUTED, {textAlign = "center", whiteSpace = "normal"})}}))
     self.safeContent = UI.Panel {width = "100%", flexGrow = 1, flexShrink = 1, minHeight = 0, padding = 0,
         pointerEvents = "box-none", children = {self.menu, self.garage, self.trackSelection, self.game, self.pause, self.result, self.loading, self.settings}}
+    self.menuBackdrop = UI.Panel(fill({backgroundImage = MENUART, backgroundFit = "cover", pointerEvents = "none"}))
     self.keyartBackdrop = UI.Panel(fill({backgroundImage = KEYART, backgroundFit = "cover", pointerEvents = "none"}))
     self.garageBackdrop = UI.Panel(fill({backgroundImage = GARAGE, backgroundFit = "cover", pointerEvents = "none", visible = false,
         children = {self.preview}}))
     self.pageBackdrop = UI.Panel(fill({pointerEvents = "none", backgroundColor = {9, 12, 15, 255}, children = {
-        self.keyartBackdrop, self.garageBackdrop}}))
+        self.menuBackdrop, self.keyartBackdrop, self.garageBackdrop}}))
     self.root = UI.Panel {width = "100%", height = "100%", padding = 0, pointerEvents = "box-none", children = {
         self.pageBackdrop,
         UI.SafeAreaView {width = "100%", height = "100%", padding = 0, nativeMenuInset = true,
@@ -272,7 +287,7 @@ function HUD:Init(actions, controls)
     self:SelectVehicle(Profile.FREE_VEHICLE, false); self:SelectRider(Profile.FREE_RIDER, false); self:SelectLaps(3, false); self:SelectTrack(Profile.FREE_TRACK, false)
     self:SetScreen("menu"); self:LayoutResponsive(); self:RefreshRace()
     -- Art is optional during initial menu display; never block UI construction on a download.
-    for _, path in ipairs({KEYART, GARAGE}) do
+    for _, path in ipairs({MENUART, LOGO, KEYART, GARAGE}) do
         cache:GetResourceAsync("Texture2D", path, function(resource)
             if not resource then print("[界面] 主视觉暂未就绪：" .. path) end
         end)
@@ -396,13 +411,12 @@ function HUD:BuildMenu()
         children = {self.menuSettingsButton, self.menuReturnHost}}
     self.menuActions = UI.Column {width = "100%", padding = 0, gap = 10,
         children = {self.menuPrimaryRow, self.menuSecondaryRow}}
-    self.menuCard = RacingTheme.Card {width = "100%", padding = 16, gap = 0, children = {self.menuActions}}
-    self.menuTitle = label("公路狂飙", 36, WHITE, {width = "100%", height = 64,
-        minFontSize = 36, fontWeight = "bold", lineHeight = 1, maxLines = 1})
-    self.menuSubtitle = label("我骑小电驴，对手竟开坦克", 16, MUTED, {width = "100%", height = 32,
-        minFontSize = 16, maxLines = 1})
-    self.menuHeading = UI.Column {width = "100%", padding = 0, gap = 4,
-        children = {self.menuTitle, self.menuSubtitle}}
+    -- 入口仅保留按钮，不用Card整块遮住背景。
+    self.menuCard = UI.Column {width = "100%", padding = 0, gap = 0, children = {self.menuActions}}
+    self.menuTitle = UI.Panel {width = "100%", height = 210, flexShrink = 0, padding = 0,
+        backgroundImage = LOGO, backgroundFit = "contain", pointerEvents = "none"}
+    self.menuHeading = UI.Column {width = "100%", padding = 0, gap = 0, flexShrink = 0,
+        children = {self.menuTitle}}
     self.menuNote = label("虚拟竞速，请勿现实模仿", 14, MUTED, {width = "100%", height = 28,
         minFontSize = 14, maxLines = 1})
     self.menuColumn = UI.Column {width = 440, height = "100%", padding = 0, gap = 16,
@@ -431,23 +445,37 @@ function HUD:LayoutMenu(width, height)
         end
         self.menuChildCount = #self.menu:GetChildren()
     end
-    local grid = height < 440
-    local padding = grid and 12 or (height < 600 and 16 or 24)
+    -- 预算取安全区内的实际高度；不能让100%高子容器再叠加父级padding。
+    local grid = height < 480
+    local padding = height < 480 and 12 or (height < 600 and 16 or 24)
+    local contentHeight = math.max(0, height - padding * 2)
+    local gap = grid and 8 or 10
+    local sectionGap = grid and 10 or 16
+    local buttonHeight = contentHeight < 260 and 44 or 56
+    local actionHeight = grid and buttonHeight * 2 + gap or buttonHeight * 4 + gap * 3
+    local noteHeight = height >= 620 and 28 or 0
+    local logoHeight = math.max(0, math.min(220, contentHeight - actionHeight
+        - sectionGap * (noteHeight > 0 and 2 or 1) - noteHeight))
     local columnWidth = math.max(0, math.min(grid and 560 or 440, width - padding * 2))
-    local cardPadding, gap = grid and 12 or 16, 10
-    local actionWidth = math.max(0, columnWidth - cardPadding * 2 - 2)
-    local entryWidth = grid and math.max(0, (actionWidth - gap) * 0.5) or actionWidth
+    local entryWidth = grid and math.max(0, (columnWidth - gap - 2) * 0.5) or math.max(0,columnWidth - 2)
     self.menuGrid = grid
     self.menu:SetStyle({padding = padding})
-    self.menuColumn:SetStyle({width = columnWidth, gap = grid and 12 or 16})
-    self.menuCard:SetStyle({padding = cardPadding})
+    self.menuColumn:SetStyle({width = columnWidth, height = contentHeight, minHeight = 0, gap = sectionGap})
+    self.menuHeading:SetHeight(logoHeight)
+    self.menuTitle:SetHeight(logoHeight)
+    self.menuCard:SetStyle({padding = 0, height = actionHeight, flexShrink = 0})
+    self.menuActions:SetStyle({height = actionHeight, gap = gap, flexShrink = 0})
     for _, row in ipairs({self.menuPrimaryRow, self.menuSecondaryRow}) do
-        row:SetStyle({flexDirection = grid and "row" or "column", gap = gap})
-        for _, child in ipairs(row:GetChildren()) do child:SetWidth(entryWidth) end
+        row:SetStyle({flexDirection = grid and "row" or "column", gap = gap,
+            height = grid and buttonHeight or buttonHeight * 2 + gap, flexShrink = 0})
+        for _, child in ipairs(row:GetChildren()) do
+            child:SetStyle({width = entryWidth, height = buttonHeight, minHeight = buttonHeight})
+        end
     end
-    -- 留白不足时移除次要文案，而不是缩小操作文字或裁剪入口。
-    self.menuSubtitle:SetVisible(height >= 520)
-    self.menuNote:SetVisible(height >= 600)
+    for _, child in ipairs(self.menuReturnHost:GetChildren()) do
+        child:SetStyle({height = buttonHeight, minHeight = buttonHeight})
+    end
+    self.menuNote:SetVisible(noteHeight > 0)
 end
 
 -- 操作编辑器独立成模块，直接复用驾驶按键。
@@ -481,10 +509,22 @@ function HUD:BuildGarage()
         self.vehicleBadges[v.id] = badge
         local card = RacingTheme.Card {width = "100%", minHeight = 79, padding = 10, gap = 2,
             clickable = true, hoverable = true, pointerEvents = "box-only",
-            onClick = function() self:SelectVehicle(v.id, true) end, children = {
+            onClick = function() playUI("select"); self:SelectVehicle(v.id, true) end, children = {
                 label(string.format("%02d  %s", index, v.name), 12, WHITE, {height = 23, fontWeight = "bold", maxLines = 1}),
-                label(v.tag or v.class or "", 9, MUTED, {height = 18, maxLines = 1}), badge}}
+                label(SkillNames.DisplayText(v.id, v.tag or v.class or ""), 9, MUTED, {height = 18, maxLines = 1}), badge}}
         self.vehicleCards[v.id] = card; cards:AddChild(card)
+    end
+    -- 分页必须同步选中新页的车型，而不是只换左侧文字、右侧仍留旧车。
+    local pagesFrame, pages = fixedPages({cards}, 5)
+    self.garageList, self.garagePages = pagesFrame, pages
+    local setPage = pages.SetPage
+    pages.SetPage = function(pager, index)
+        local before = pager:GetPage()
+        setPage(pager, index)
+        if pager:GetPage() ~= before and self.screen == "garage" then
+            playUI("page")
+            self:SyncGaragePage(true)
+        end
     end
     self.selectionMode = label("竞速 / 2 圈", 9, AMBER)
     self.vehicleName = label("", 22, WHITE, {fontWeight = "bold", maxLines = 1})
@@ -497,7 +537,6 @@ function HUD:BuildGarage()
         padding = 6, gap = 2, pointerEvents = "box-none", children = {
             self.vehicleName, self.vehicleDescription,
             UI.Panel {flexGrow = 1, flexBasis = 0, padding = 0, pointerEvents = "none"}, self.vehicleSpecs}}
-    self.garageList, self.garagePages = fixedPages({cards}, 5)
     self.garageList:SetStyle({width = 228, height = "100%", flexGrow = 0, flexBasis = "auto", flexShrink = 0})
     self.garageBody = UI.Row {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
         padding = 0, gap = 12, pointerEvents = "box-none", children = {self.garageList, self.previewColumn}}
@@ -505,7 +544,7 @@ function HUD:BuildGarage()
     for _, rider in ipairs(RIDERS) do
         local r = rider
         local swatch = UI.Panel {width = 32, height = 32, padding = 5, borderWidth = 1, borderColor = BORDER, borderRadius = 3,
-            backgroundColor = {18, 22, 27, 235}, onClick = function() self:SelectRider(r.id, true) end,
+            backgroundColor = {18, 22, 27, 235}, onClick = function() playUI("select"); self:SelectRider(r.id, true) end,
             children = {UI.Panel {width = "100%", height = "100%", padding = 0, borderRadius = 2,
                 backgroundColor = r.color, pointerEvents = "none"}}}
         self.riderButtons[r.id] = swatch; colors:AddChild(swatch)
@@ -522,15 +561,21 @@ function HUD:BuildGarage()
         if not item then return end
         local profile,profileError = Profile.GetForDisplay()
         if profileError and not self.careerRace then
+            playUI("unavailable")
             self:ShowNotice("竞速进度不可用",profileError.."\n原档已保留，未开启购买或比赛。")
             return
         end
         if item.available == false then
+            playUI("unavailable")
             self:ShowNotice("车型尚未开放", "「" .. (item.name or item.id) .. "」的独立驾驶资源尚未交付，请选择其他座驾。")
         elseif not self.careerRace and not Catalog.CanFreeExperience(item.id) and not profile.owned[item.id] and (profile.trials[item.id] or 0)<=0 then
+            playUI("click")
             if self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
-        elseif self.actions.confirmVehicle then self.actions.confirmVehicle(self.selectedVehicle) end
-    end, true, 228)
+        elseif self.actions.confirmVehicle then
+            playUI("confirm")
+            self.actions.confirmVehicle(self.selectedVehicle)
+        end
+    end, true, 228, {uiSound = "manual"})
     self.coinLabel = label("金币 0", 13, AMBER, {fontWeight = "bold"})
     self.buyButton = button("购买 · 0 金币", function()
         local item = Catalog.Get(self.selectedVehicle)
@@ -646,10 +691,33 @@ function HUD:BuildLoading()
     self.retry = button("重试", a.retry, true, 150); self.retry:SetVisible(false)
     self.enterRide = button("资源就绪 · 出发 →", a.enter, true, 240); self.enterRide:SetVisible(false)
     self.loading = UI.Panel(fill({visible = false, padding = 28, justifyContent = "flex-end", children = {
-        UI.Column {width = "53%", maxWidth = 580, padding = 16, gap = 10, borderRadius = 4,
-            backgroundColor = {10, 13, 17, 205}, children = {
-                label("PURSUIT / RACE PREPARATION", 10, AMBER), self.loadTitle, self.loadDetail, self.loadBar, self.loadNumbers,
-                label("握稳车把。氮气突围，甩开追车。", 11, MUTED), self.retry, self.enterRide}}}}))
+        UI.Column {width = "53%", maxWidth = 580, padding = 0, gap = 10, children = {
+                label("VEHICLE BRAWL / RACE PREPARATION", 10, AMBER), self.loadTitle, self.loadDetail, self.loadBar, self.loadNumbers,
+                label("奇葩载具同场，专属技能抢第一。", 11, MUTED), self.retry, self.enterRide}}}}))
+end
+
+-- 预热当前页、下一页和上一页，提交顺序就是后台优先级；不读取人物资源。
+function HUD:SyncGaragePage(selectFirst)
+    if self.screen ~= "garage" or self.portraitActive then return end
+    local pager = self.garagePages
+    local pageIndex = pager:GetPage()
+    local ids, seen = {}, {}
+    local function collect(index)
+        for _, unit in ipairs(pager.pages[index] or {}) do
+            for _, vehicle in ipairs(Catalog.List) do
+                local card = self.vehicleCards[vehicle.id]
+                if not seen[vehicle.id] and (unit.source == card or unit.members[card]) then
+                    seen[vehicle.id] = true
+                    ids[#ids + 1] = vehicle.id
+                end
+            end
+        end
+    end
+    collect(pageIndex)
+    if selectFirst and ids[1] then self:SelectVehicle(ids[1], true) end
+    collect(pageIndex + 1)
+    collect(pageIndex - 1)
+    self.preview:Prewarm(ids)
 end
 
 function HUD:OpenGarage(challenge)
@@ -697,10 +765,11 @@ function HUD:SelectVehicle(id, notify)
     end
     self.vehicleName:SetText(item.name or id)
     local skill = MixedRace.GetSkill(id)
-    local skillText = skill and string.format("\n主动：%s · %s\n持续 %.1fs / 冷却 %.0fs", skill.name,
-        skill.description, skill.duration, skill.cooldown) or ""
-    self.vehicleDescription:SetText(item.odd and ("被动："..(item.passiveDescription or "")..skillText.."\n短板："..(item.weakness or ""))
-        or ((item.description or item.tag or "")..skillText))
+    local skillText = skill and string.format("\n主动：%s · %s\n持续 %.1fs / 冷却 %.0fs", SkillNames.Active(id),
+        SkillNames.DisplayText(id, skill.description), skill.duration, skill.cooldown) or ""
+    local description = item.odd and ("被动："..SkillNames.Passive(id).." · "..(item.passiveDescription or "")..skillText.."\n短板："..(item.weakness or ""))
+        or ((item.description or item.tag or "")..skillText)
+    self.vehicleDescription:SetText(SkillNames.DisplayText(id, description))
     self.vehicleSpecs:SetText(string.format("极速 %s km/h  /  加速 %d  /  操控 %d  /  耐久 %d",
         tostring(item.speedStat or item.speed or "—"), math.floor(item.acceleration or 0),
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
@@ -777,7 +846,10 @@ function HUD:SetScreen(screen)
     if self:IsModalOpen() then self:CloseModal() end
     local oldScreen = self.screen
     self.screen = screen
-    if oldScreen == "garage" and screen ~= "garage" then self.preview:Dispose() end
+    if oldScreen == "garage" and screen ~= "garage" then
+        self.preview:Dispose()
+        self.garageWarmSignature = ""
+    end
     self.menu:SetVisible(screen == "menu"); self.garage:SetVisible(screen == "garage"); self.trackSelection:SetVisible(screen == "tracks")
     local editing = screen == "settings"
     if oldScreen == "settings" and not editing then
@@ -789,7 +861,10 @@ function HUD:SetScreen(screen)
     if self.settings then self.settings:SetVisible(editing) end
     self.pageBackdrop:SetVisible(screen == "menu" or screen == "garage" or screen == "loading" or screen == "tracks"
         or (editing and self.settingsReturn == "menu"))
-    self.keyartBackdrop:SetVisible(screen ~= "garage"); self.garageBackdrop:SetVisible(screen == "garage")
+    local menuArt = screen == "menu" or (editing and self.settingsReturn == "menu")
+    self.menuBackdrop:SetVisible(menuArt)
+    self.keyartBackdrop:SetVisible(not menuArt and screen ~= "garage")
+    self.garageBackdrop:SetVisible(screen == "garage")
     self.cockpit:SetVisible(false); self.enterRide:SetVisible(false)
     local riding = screen == "ride"
     if not riding then
@@ -818,7 +893,10 @@ function HUD:SetPortrait(portrait)
     self.portrait:SetVisible(portrait)
     if self.portraitActive ~= portrait then
         self.portraitActive = portrait; self.controls:SetEnabled(self.screen == "ride" and not portrait)
-        if portrait then self.cockpit:SetVisible(false); self.preview:Dispose()
+        if portrait then
+            self.cockpit:SetVisible(false)
+            self.preview:Dispose()
+            self.garageWarmSignature = ""
         elseif self.screen == "garage" then
             local item = Catalog.Get(self.selectedVehicle); self.preview:Select(self.selectedVehicle, item and item.available)
         end
@@ -828,9 +906,18 @@ end
 function HUD:LayoutResponsive()
     local vw, vh = UI.GetViewportSize()
     local insets = UI.GetSafeAreaInsets()
-    local w, h = vw - insets.left - insets.right, vh - insets.top - insets.bottom
+    local safe = self.safeContent:GetAbsoluteLayout()
+    local w = safe.w > 0 and safe.w or vw - insets.left - insets.right
+    local h = safe.h > 0 and safe.h or vh - insets.top - insets.bottom
     if w ~= self.layoutWidth or h ~= self.layoutHeight or #self.menu:GetChildren() ~= self.menuChildCount then
         self:LayoutMenu(w, h)
+    end
+    if self.screen == "garage" and not self.portraitActive then
+        local signature = tostring(self.garagePages:GetPage()) .. "/" .. tostring(self.garagePages:GetPageCount())
+        if self.garageWarmSignature ~= signature then
+            self.garageWarmSignature = signature
+            self:SyncGaragePage(false)
+        end
     end
     if w == self.layoutWidth and h == self.layoutHeight then
         -- 尺寸没变也可能刚显示驾驶层，仍需要把按键摆到方案位置。
@@ -959,7 +1046,7 @@ function HUD:UpdateSkillFeedback(sim)
     elseif blocked then
         status, tint, background = "暂不可用", RED, {65, 28, 25, 245}
     end
-    local buttonText = skill.name .. " · " .. status
+    local buttonText = SkillNames.Active(sim.vehicleId) .. " · " .. status
     if self.skillStatus ~= buttonText then self.skillButton:SetText(buttonText); self.skillStatus = buttonText end
     self.skillButton:SetDisabled(active > 0 or cd > 0 or disrupted or blocked)
     -- 禁用只阻止再次施放，不能把“正在生效”变成灰色不可读状态。
@@ -1010,9 +1097,9 @@ function HUD:UpdateFeatureFeedback(sim)
     if resultTimer > 0 and result ~= "" and not isWeaponFeedback(result) then
         -- 复用现有反馈框，结果来自权威仿真；不靠技能计时/boost猜测命中。
         local skill = MixedRace.GetSkill(sim.vehicleId)
-        local title = skill and skill.name or "技能交锋"
+        local title = skill and SkillNames.Active(sim.vehicleId) or "技能交锋"
         local color = C.cyan
-        if motorcycle and result:find("护盾已消耗",1,true) then title,color="赤铜格挡 · 护盾已消耗",AMBER
+        if motorcycle and result:find("护盾已消耗",1,true) then title,color=SkillNames.Active(sim.vehicleId).." · 护盾已消耗",AMBER
         elseif not motorcycle and result:find("盾", 1, true) then title, color = "攻击被护盾挡住", AMBER
         elseif result:find("无", 1, true) then title, color = "前方无有效目标", RED
         elseif result:find("未命中", 1, true) or result:find("落空", 1, true) then title, color = "攻击未命中", RED
@@ -1021,7 +1108,7 @@ function HUD:UpdateFeatureFeedback(sim)
         elseif result:find("发动", 1, true) then title = title .. " · 已发动" end
         self.featureTitle:SetText(title)
         self.featureTitle:SetFontColor(color)
-        self.featureHint:SetText(result)
+        self.featureHint:SetText(SkillNames.DisplayText(sim.vehicleId, result))
         self.featurePanel:SetStyle({borderColor = color, backgroundColor = {12, 23, 30, 240}})
         self.featurePanel:SetVisible(true)
         return
@@ -1081,7 +1168,7 @@ function HUD:Update(dt, sim, firstPerson)
     self.score:SetText(string.format("得分 %06d", math.floor(sim.score or 0)))
     self.overtakes:SetText(tostring(sim.overtakes or 0)); self.health:SetText(string.format("车况 %.0f%%", sim.health or 100))
     self.health:SetFontColor((sim.health or 100) < 35 and RED or WHITE)
-    self.message:SetText((sim.messageTimer or 0) > 0 and (not isWeaponFeedback(sim.message)) and (sim.message or "") or "")
+    self.message:SetText((sim.messageTimer or 0) > 0 and (not isWeaponFeedback(sim.message)) and SkillNames.DisplayText(sim.vehicleId, sim.message or "") or "")
     self.camera:SetText(firstPerson and "头盔视角" or "追尾视角")
     self.rpm:SetValue(math.min(1, (sim.rpm or 1200) / ((sim.vehicle and sim.vehicle.redline) or 11000)))
     self.rpmNumber:SetText(string.format("%.0f rpm", sim.rpm or 1200))

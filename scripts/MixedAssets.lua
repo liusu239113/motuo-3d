@@ -57,15 +57,31 @@ for _,entry in ipairs(newModels) do
         measuredSize=entry.size,label=entry.label,class="mixed",resources={},articulated=true,delivered=true,
     }
 end
+-- 补齐的九款同样使用独立生成的正式MDL；配置与实测关节按资产族拆分维护。
+---@type string[]
+M.RemainingIds={"jellyfish","jetboat","frog","skateboard","sled","cart","bathtub","office","toilet"}
+for _,library in ipairs({
+    (require("RemainingOrganicAssets")),
+    (require("RemainingWheeledAssets")),
+    (require("RemainingNoveltyAssets")),
+}) do
+    for id,config in pairs(library) do
+        assert(not M.Vehicles[id],"正式车型重复登记："..id)
+        M.Vehicles[id]=config
+    end
+end
+---@type string[]
+M.MixedIds={"ebike","tank","beetle","hovercraft","centipede","buggy","jellyfish","loader","cicada",
+    "jetboat","frog","skateboard","helicopter","sled","cart","bathtub","office","toilet"}
 function M.IsReady(id)
     local config=M.Vehicles[id]
     return config~=nil and config.delivered~=false
 end
--- 正式混合车型与现有独立摩托组成对手池；未交付车型不再悄悄出现拼装替代物。
+-- 玩家开放、AI选车与预载共用完整名单，不再漏掉后续交付的正式车型。
 ---@return string[]
 function M.RaceIds()
-    local ids={"ebike","helicopter","sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}
-    for _,id in ipairs({"tank","beetle","hovercraft","centipede","buggy","loader","cicada"}) do
+    local ids={"sport","sport_2","sport_3","rally","rally_2","rally_3","cruiser","cruiser_2","cruiser_3"}
+    for _,id in ipairs(M.MixedIds) do
         if M.IsReady(id) then ids[#ids+1]=id end
     end
     return ids

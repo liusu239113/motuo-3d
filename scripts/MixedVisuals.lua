@@ -1,9 +1,21 @@
 -- 正式MDL表现适配器；源模型、贴图和原始三角面共用于玩家、AI和车库。
 local Assets = require("MixedAssets")
 local Rider = require("Rider")
+local MixedDriver = require("MixedDriver")
 local V = Vector3
 local M = {}
 local newVehicleIds={hovercraft=true,centipede=true,buggy=true,loader=true,cicada=true}
+local remainingArticulation={
+    (require("RemainingOrganicArticulation")),
+    (require("RemainingWheeledArticulation")),
+    (require("RemainingNoveltyArticulation")),
+}
+local function articulationFor(id)
+    for _,library in ipairs(remainingArticulation) do
+        if library.Has(id) then return library end
+    end
+    return nil
+end
 local cockpitSources={
     hovercraft={seat=V(-.04,.075,-.01),control=V(.12,.10,-.15),accent=Color(.12,.55,.72)},
     centipede={seat=V(.16,.08,.02),control=V(.22,.10,-.08),accent=Color(.65,.12,.035)},
@@ -92,7 +104,7 @@ local function buildGenericControls(self,id)
         P.Add(knob,"MandibleGrip","Cylinder",self.materials.chrome,V(0,.02,.05),V(.045,.30,.045),Quaternion(0,0,90))
         P.Add(knob,"SteamValve","Sphere",self.materials.gold,V(.20,.12,.10),V(.09,.09,.09))
         P.Add(knob,"ClampButton","Box",self.materials.warning,V(-.20,.10,.12),V(.08,.035,.025),nil,false)
-    elseif not newVehicleIds[id] then
+    elseif id=="helicopter" then
         P.Add(knob,"CyclicStick","Cylinder",self.materials.chrome,V(0,-.03,.06),V(.035,.28,.035))
         P.Add(knob,"CyclicGrip","Sphere",self.materials.rubber,V(0,.13,.06),V(.10,.08,.10))
         P.Add(knob,"CollectiveLever","Box",self.materials.control,V(.23,.03,.08),V(.08,.25,.06))
@@ -107,10 +119,17 @@ local function buildGenericControls(self,id)
     end
 end
 
+---@param id string
+---@return boolean
+function M.HasRider(id)
+    return M.RiderBindings[id] ~= nil or MixedDriver.Has(id)
+end
+
 ---@param parent Node 归一化车辆本地米坐标；不得传SourceTransform
 ---@param id string
----@return Rider?
+---@return Rider|MixedDriver?
 function M.CreateRider(parent,id)
+    if MixedDriver.Has(id) then return MixedDriver.New(parent,id) end
     local binding=M.RiderBindings[id]
     if not binding then return nil end
     return Rider.New(parent,id,binding.right,binding)
@@ -121,6 +140,11 @@ end
 ---@param lean? number
 function M.UpdateRiderBinding(rig,lean)
     if rig and not rig.disposed then rig:Update(0,false,lean or 0) end
+end
+
+---@param rig table?
+function M.SyncRiderJoint(rig)
+    if rig and rig.SyncJoint then rig:SyncJoint() end
 end
 
 ---@param rig Rider?
@@ -215,10 +239,10 @@ end
 ---@param id string
 ---@return Node
 function M.Build(parent, id)
-    local c = assert(Assets.Vehicles[id], "正式模型尚未交付："..tostring(id))
+    local c = assert(Assets.Vehicles[id], "正式模型尚未交付："..tostring(id)) --[[@as VehicleAssetConfig]]
     local source = assert(cache:GetResource("Model", c.model), c.model)
-    local rotation = Quaternion(0, c.rotation, 0)
-    local bounds = sourceBounds(source,id,rotation)
+    local rotation = c.orientation or Quaternion(0, c.rotation, 0)
+    local bounds = c.sourceBounds or sourceBounds(source,id,rotation)
     local scale = c.targetLength / bounds.size.z
     local root = parent:CreateChild("Vehicle_"..id)
     local canonical = root:CreateChild("SourceTransform")
@@ -226,10 +250,13 @@ function M.Build(parent, id)
     canonical:SetScale(scale)
     canonical.position = V(-bounds.center.x,-bounds.min.y,-bounds.center.z)*scale
     local mat = material(c)
+    local remaining=articulationFor(id)
     if id == "tank" or id == "beetle" then
         require("MixedArticulation").Build(canonical,id,source,mat)
     elseif newVehicleIds[id] then
         require("NewVehicleArticulation").Build(canonical,id,source,mat)
+    elseif remaining then
+        remaining.Build(canonical,id,source,mat)
     elseif id == "helicopter" or id == "ebike" then
         local offset=V(-bounds.center.x,-bounds.min.y,-bounds.center.z)
         ---@param p Vector3
@@ -282,9 +309,10 @@ function M.Build(parent, id)
         draw.lodBias = 2
     end
     local size = bounds.size*scale
-    if newVehicleIds[id] then
+    if newVehicleIds[id] or remaining then
         assert((size-c.targetSize):Length()<.005,"新车实测范围与碰撞配置不一致："..id)
     end
+    if c.cockpit then M.Cockpits[id]=c.cockpit end
     local cockpitSource=cockpitSources[id]
     if cockpitSource then
         local seat=canonical:LocalToWorld(cockpitSource.seat)
@@ -299,6 +327,15 @@ function M.Build(parent, id)
             dash=V(0,eye.y-.21,eye.z+math.min(1.02,c.targetLength*.33)),
             dashSize=Vector2(.46,.14),
             dashboardAngle=-12,accent=cockpitSource.accent,cameraCalibrated=true}
+    end
+    local driverProfile=MixedDriver.Profiles[id]
+    if id=="skateboard" and driverProfile and M.Cockpits[id] then
+        local cockpit={}
+        for key,value in pairs(M.Cockpits[id]) do cockpit[key]=value end
+        local eyeDelta=driverProfile.eye-cockpit.localOffset
+        cockpit.dash=cockpit.dash+eyeDelta
+        cockpit.localOffset=driverProfile.eye
+        M.Cockpits[id]=cockpit
     end
     root:SetVar("VehicleId",Variant(id))
     root:SetVar("VehicleSize",Variant(size))
@@ -331,6 +368,11 @@ function M.Animate(root, id, time, state)
     end
     if newVehicleIds[id] then
         require("NewVehicleArticulation").Animate(root,id,time,state)
+        return
+    end
+    local remaining=articulationFor(id)
+    if remaining then
+        remaining.Animate(root,id,time,state)
         return
     end
     if id=="ebike" then

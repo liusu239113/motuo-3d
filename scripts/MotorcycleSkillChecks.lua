@@ -34,7 +34,7 @@ function Checks.Run()
         check(sim.motorcyclePhase=="suppressed" and sim.motorcycleDriveScale==1
             and sim.motorcycleSpeedScale==1,id.."离地抑制真实动力")
         sim.airborne=false;sim.oddDisrupt=1;Rules.Before(sim,.02,{},MAP)
-        check(sim.motorcyclePhase=="suppressed",id.."失衡不绕过限制")
+        check(sim.motorcyclePhase==(id=="rally_2" and "active" or "suppressed"),id.."失衡仅稳向车保留自救")
         Motorcycle.Reset(sim)
         check(sim.motorcycleActive==0 and sim.motorcycleGuard==0 and sim.motorcycleSkillSerial==0,id.."重赛清理")
         local blocked=drive(id,false);blocked.airborne=true
@@ -49,10 +49,26 @@ function Checks.Run()
     Rules.Before(charge,.66,{},MAP)
     check(charge.motorcyclePhase=="active" and charge.motorcycleDriveScale==1.25
         and charge.motorcycleSpeedScale==1.10,"蓄力后真实二段释放")
-    local hill=drive("rally_3",true)
-    check(hill.motorcycleDriveScale==1.08,"沙隼平路收益受限")
-    hill.groundSlope=.1;Rules.Before(hill,.02,{},MAP)
-    check(hill.motorcycleDriveScale==1.25,"沙隼上坡动力真实提高")
+    local delivery=drive("rally_3",false);delivery.raceMode=true
+    Rules.Before(delivery,.02,{skill=true},MAP)
+    check(delivery.motorcycleDriveScale==1.12 and delivery.oddNitroGift==25,"平路配送动力和真实氮气礼物")
+    local recipient={nitro=90}
+    Rules.RaceStep({phase="racing",sim=delivery,player=recipient,racers={}},.02)
+    check(recipient.nitro==100 and delivery.oddNitroGift==nil,"氮气补给封顶100并只消费一次")
+    local hop=drive("rally",true)
+    Rules.Before(hop,.60,{},MAP)
+    check(hop.oddAltitude>1.3 and hop.oddHop>0,"马路牙子主动跳真实达到1.35米不需要跳台")
+    local steady=drive("rally_2",false);steady.oddDisrupt=2
+    Rules.Before(steady,.02,{skill=true},MAP)
+    check(steady.oddDisrupt==0 and steady.motorcyclePhase=="active","稳向发动真实清除技能及油污失衡")
+    local corner=drive("sport_2",true)
+    check(corner.motorcycleDriveScale==1.08 and corner.motorcycleSpeedScale==1.04,"回正后出弯收益")
+    Rules.Before(corner,.02,{steer=.5},MAP)
+    check(corner.motorcycleDriveScale==1.18 and corner.motorcycleGripScale==1.28,"压弯动力和抓地实效")
+    local heat=drive("sport",true)
+    check(heat.motorcycleDriveScale==1,"红温不是瞬间满倍率")
+    Rules.Before(heat,.35,{},MAP)
+    check(heat.motorcycleDriveScale==1.25 and heat.motorcycleSpeedScale==1.08,"红温0.35秒爬升完成")
     for _,id in ipairs({"sport","sport_2","rally","rally_2","rally_3","cruiser","cruiser_3"}) do
         local base,active=drive(id,false),drive(id,true)
         for _=1,50 do
@@ -106,14 +122,14 @@ function Checks.Run()
     local target,targetSim=racer("rally_2",true,.4)
     local arena={sim=targetSim,roadHalfWidth=8,options={mixed=false},Collision=function() end,Emit=function() end}
     Rules.Hit(arena,source,target,assert(Data.Get("tank")))
-    check(targetSim.oddDisrupt==1.5 and target.speed==16,"雪脊缩短真实技能干扰但不免减速")
+    check(math.abs(targetSim.oddDisrupt-1.05)<1e-8 and target.speed==16,"稳向新干扰×0.35但不免减速")
     local targetGuard,targetGuardSim=racer("cruiser_2",true,.4)
     sourceSim.skillHitLock=0
     arena.sim=targetGuardSim
     Rules.Hit(arena,source,targetGuard,assert(Data.Get("tank")))
     check(targetGuard.speed==20 and targetGuardSim.motorcycleGuardBlocks==1
         and targetGuardSim.oddDisrupt==0,"单次护盾挡真实技能且立即消费")
-    print(string.format("[普通摩托技能验收] PASS %d项 / 九车型独立 / 动力实效 / 蓄力 / 越野 / 爬坡 / 收油 / 减伤保速 / 单次护盾",assertions))
+    print(string.format("[普通摩托技能验收] PASS %d项 / 九车型独立 / 动力实效 / 红温 / 弯道 / 蓄力 / 主动跳 / 自救 / 补气 / 收油 / 减伤保速 / 单次护盾",assertions))
     return {passed=true,assertions=assertions}
 end
 

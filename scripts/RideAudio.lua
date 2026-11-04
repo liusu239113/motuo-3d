@@ -1,6 +1,8 @@
 -- 独立驾驶音频管理：只管理自己的音源，不修改全局音量，也不订阅游戏事件。
 -- 加载阶段逐次调用 LoadOne；用户点击开始时调用 Unlock；每帧（含暂停）调用 Update。
 
+local Catalog = require("VehicleAudioCatalog")
+
 ---@class RideAudioState
 ---@field speed number 速度，单位米/秒
 ---@field rpm number 发动机转速
@@ -14,6 +16,10 @@
 ---@field vehicleId? string
 ---@field burnout? boolean 是否烧胎
 ---@field paused? boolean
+---@field oddSerial? number
+---@field motorcycleSkillSerial? number
+---@field oddActive? number
+---@field motorcycleActive? number
 ---@field featureState? table 只读成功加速带反馈：triggers/lastGain/feedbackTimer/feedbackPower
 
 ---@class RideAudio
@@ -50,6 +56,17 @@
 ---@field padState table?
 ---@field padSequence number
 ---@field padElapsed number
+---@field resourceSounds table<string, Sound>
+---@field skillSource SoundSource?
+---@field skillSim RideAudioState?
+---@field skillVehicleId string
+---@field skillOddSerial number
+---@field skillMotorcycleSerial number
+---@field skillElapsed number
+---@field skillTimer number
+---@field skillDuration number
+---@field skillGain number
+---@field selectedVehicleId string
 local RideAudio = {}
 RideAudio.__index = RideAudio
 
@@ -145,6 +162,29 @@ RideAudio.VehicleEngineProfiles = {
     cart = {class = "rally", pitch = 1.10, gain = 0.80, layer = "mechanical", layerGain = 0.12, layerPitch = 0.74},
     office = {class = "sport", pitch = 1.08, gain = 0.78, layer = "mechanical", layerGain = 0.11, layerPitch = 0.84},
 }
+
+-- 保留旧Resources前12项与EngineResources原型键；所有新增音频都进入Sound预载契约。
+RideAudio.ResourceTypes = {}
+RideAudio.Catalog = Catalog
+local resourceSeen = {}
+for _, path in ipairs(RideAudio.Resources) do resourceSeen[path] = true; RideAudio.ResourceTypes[path] = "Sound" end
+for _, path in ipairs(Catalog.Resources) do
+    if not resourceSeen[path] then RideAudio.Resources[#RideAudio.Resources + 1] = path; resourceSeen[path] = true end
+    RideAudio.ResourceTypes[path] = "Sound"
+end
+for _, id in ipairs(Catalog.Ids) do
+    local entry = assert(Catalog.Vehicles[id])
+    RideAudio.EngineResources[id] = entry.drive
+    -- 素材自身已包含履带/旋翼/小轮/生物声，不再叠摩托或合成机械怠速。
+    RideAudio.VehicleEngineProfiles[id] = {class = entry.class, drive = entry.drive, motion = entry.motion,
+        pitch = 1, gain = 1, electric = entry.motion == "electric", layer = nil}
+end
+RideAudio.Count = #RideAudio.Resources
+---@param vehicleId? string
+---@return string[]
+function RideAudio.GetResources(vehicleId)
+    return vehicleId and Catalog.GetResources(vehicleId) or RideAudio.Resources
+end
 
 local MUSIC, ENGINE, WIND, BRAKE, IMPACT, PASS = 1, 2, 3, 4, 5, 6
 local SILENCE = 0.001
@@ -298,8 +338,15 @@ function RideAudio:Init(scene)
     self.scene = scene
     self.node = scene:CreateChild("驾驶音频", LOCAL)
     self.sounds = {}
+    self.resourceSounds = {}
     self.sources = {}
     self.pitches = {}
+    self.selectedVehicleId = ""
+    self.skillVehicleId, self.skillOddSerial, self.skillMotorcycleSerial, self.skillElapsed = "", 0, 0, 0
+    self.skillTimer, self.skillDuration, self.skillGain = 0, 0, 0
+    self.skillSim = nil
+    self.skillSource = self.node:CreateChild("VehicleSkill", LOCAL):CreateComponent("SoundSource", LOCAL)
+    self.skillSource.soundType, self.skillSource.gain, self.skillSource.declickEnabled = SOUND_EFFECT, 0, true
     self.musicEnabled = true
     self.trackIndex = 1
     self.effectsEnabled = true
@@ -342,8 +389,10 @@ function RideAudio:LoadOne(index)
     end
 
     -- 循环标记属于 Sound，而非 SoundSource；撞击和超车必须保持单次播放。
-    sound.looped = index <= BRAKE or index > PASS
+    sound.looped = index <= BRAKE or index == 7 or index == 8 or Catalog.Looped[path] == true
     self.sounds[index] = sound
+    self.resourceSounds = self.resourceSounds or {}
+    self.resourceSounds[path] = sound
     -- 额外歌曲只保留压缩 Sound，切歌复用主音乐通道，不叠加音乐音源。
     if index > PASS then
         for key, enginePath in pairs(RideAudio.EngineResources) do
@@ -460,10 +509,60 @@ function RideAudio:UpdatePadFeedback(dt, sim, audible)
     end
 end
 
+-- 技能仅消费仿真成功激活序号，不监听按键、不从持续active猜测触发。
+-- 武器fire/hit归RaceAudio；保护车型不在此增补/替换技能声。
+function RideAudio:SilenceSkill()
+    self.skillTimer, self.skillGain = 0, 0
+    if self.skillSource then self.skillSource.gain = 0; self.skillSource:StopImmediate() end
+end
+
+---@param dt number
+---@param sim RideAudioState?
+---@param audible boolean
+function RideAudio:UpdateSkillFeedback(dt, sim, audible)
+    local id = sim and sim.vehicleId or ""
+    local odd = sim and sim.oddSerial or 0
+    local motorcycle = sim and sim.motorcycleSkillSerial or 0
+    local elapsed = sim and sim.elapsed or 0
+    local valid = Finite(odd) and Finite(motorcycle) and Finite(elapsed)
+    if not valid then self:SilenceSkill(); self.skillSim = nil; return end
+    local sameRun = self.skillSim == sim and self.skillVehicleId == id
+        and elapsed >= (self.skillElapsed or 0) and odd >= (self.skillOddSerial or 0)
+        and motorcycle >= (self.skillMotorcycleSerial or 0)
+    local motorcycleRising = sameRun and motorcycle > (self.skillMotorcycleSerial or 0)
+    local rising = sameRun and (odd > (self.skillOddSerial or 0) or motorcycleRising)
+    self.skillSim, self.skillVehicleId, self.skillElapsed = sim, id, elapsed
+    self.skillOddSerial, self.skillMotorcycleSerial = odd, motorcycle
+    if not sameRun or not audible or dt <= 0 then self:SilenceSkill(); return end
+    local entry = Catalog.Vehicles[id]
+    if not entry or entry.skillOwner ~= "RideAudio" or not entry.skill then self:SilenceSkill(); return end
+    local source = self.skillSource
+    local clip = self.resourceSounds and self.resourceSounds[entry.skill]
+    if not source or not clip then self:SilenceSkill(); return end
+    if rising then
+        -- active为0说明本帧被规则取消；序号仍消费，不在恢复时补播。
+        local active = motorcycleRising and (sim and sim.motorcycleActive or 0) or (sim and sim.oddActive or 0)
+        if active <= 0 then self:SilenceSkill(); return end
+        self:SilenceSkill()
+        self.skillDuration = math.min(entry.skillDuration, clip:GetLength() / entry.skillPitch)
+        self.skillTimer, self.skillGain = self.skillDuration, entry.skillGain
+        source:Play(clip, clip:GetFrequency() * entry.skillPitch, entry.skillGain)
+    elseif (self.skillTimer or 0) > 0 then
+        self.skillTimer = math.max(0, self.skillTimer - dt)
+        if self.skillTimer <= 0 then self:SilenceSkill(); return end
+        source.gain = self.skillGain * math.min(1, self.skillTimer / .16)
+    end
+end
+
 -- 只清事件基线和短冲刺音，不重建原六通道。无sim时下一次Update仅建基线。
 ---@param sim? RideAudioState
 function RideAudio:Reset(sim)
     if self.stopped then return end
+    for index = ENGINE, PASS do self:SilenceTrack(index) end
+    self:SilenceEngineLayer()
+    self:SilenceSkill()
+    self.skillSim, self.skillVehicleId, self.skillElapsed = sim, sim and sim.vehicleId or "", sim and sim.elapsed or 0
+    self.skillOddSerial, self.skillMotorcycleSerial = sim and sim.oddSerial or 0, sim and sim.motorcycleSkillSerial or 0
     self:SilencePad()
     self.padSim, self.padState = sim, sim and sim.featureState or nil
     self.padSequence = self.padState and self.padState.triggers or 0
@@ -528,42 +627,49 @@ function RideAudio:ToggleEffects()
         for index = ENGINE, PASS do self:SilenceTrack(index) end
         self:SilenceEngineLayer()
         self:SilencePad()
+        self:SilenceSkill()
     end
     print("[音频] 音效" .. (self.effectsEnabled and "开启" or "关闭"))
     return self.effectsEnabled
 end
 
--- 车型切换只替换ENGINE槽的Sound，六个基础source对象保持原身份；失败继续使用旧声音。
+-- 车型切换复用六个基础source，但以真实路径而不是原型class决定是否替换Sound。
+-- 失败立即停旧发动机，绝不让非机动车继续播放上一辆摩托的怠速。
 ---@param vehicleId string
 ---@return boolean
 function RideAudio:SetVehicle(vehicleId)
     if self.stopped or not self.sources[ENGINE] or type(vehicleId) ~= "string" then return false end
-    local profile = RideAudio.VehicleEngineProfiles[vehicleId]
+    local profile = RideAudio.VehicleEngineProfiles[vehicleId] --[[@as table?]]
     local key = profile and profile.class or RideAudio.EngineFor(vehicleId)
     profile = profile or {class = key, pitch = RideAudio.EnginePitch[key] or 1, gain = 1}
-    local path = RideAudio.EngineResources[key]
+    local path = profile.drive or RideAudio.EngineResources[key]
     if not path then return false end
-    local sound = self.engineSounds[key]
-    if not sound then
-        sound = cache:GetResource("Sound", path)
-        if sound and sound:GetFrequency() > 0 and sound:GetLength() > 0 then
-            sound.looped = true
-            self.engineSounds[key] = sound
-        else
-            self.engineSoundFailures[key] = true
-            if self.engineClass == "" then print("[车型音频] 主发动机资源不可用：" .. path) end
-            return false
-        end
+    local changed = self.selectedVehicleId ~= vehicleId
+    if changed then
+        for index = ENGINE, PASS do self:SilenceTrack(index) end
+        self:SilenceEngineLayer()
+        self:SilencePad()
+        self:SilenceSkill()
+        self.selectedVehicleId, self.engineClass, self.engineProfile = vehicleId, "", profile
+        self.sounds[ENGINE] = nil
     end
-    if self.engineClass ~= key then
+    if self.engineClass == path then return true end
+    if self.engineSoundFailures[path] then return false end
+    local sound = self.resourceSounds and self.resourceSounds[path] or self.engineSounds[path]
+    if not sound then sound = cache:GetResource("Sound", path) end
+    if not sound or sound:GetFrequency() <= 0 or sound:GetLength() <= 0 then
+        self.engineSoundFailures[path] = true
         self:SilenceTrack(ENGINE)
-        self.sounds[ENGINE] = sound
-        self.pitches[ENGINE] = 1
-        self.engineClass = key
-        print("[车型音频] " .. tostring(vehicleId) .. " -> " .. key .. " / " .. path)
+        print("[车型音频] 行驶资源不可用，保持静音：" .. path)
+        return false
     end
+    sound.looped = true
+    self.engineSounds[path] = sound
+    self:SilenceTrack(ENGINE)
+    self.sounds[ENGINE], self.pitches[ENGINE], self.engineClass = sound, 1, path
     self.engineProfile = profile
     self:UpdateEngineLayer(profile)
+    print("[车型音频] " .. vehicleId .. " -> " .. path)
     return true
 end
 
@@ -642,6 +748,7 @@ function RideAudio:Update(dt, sim, screen)
     if self.stopped then return end
     -- sim.vehicleId由仿真提供，不把完整车型id改成class。
     local vehicleId = sim and sim.vehicleId
+    local vehicleChanged = vehicleId ~= nil and self.selectedVehicleId ~= vehicleId
     if vehicleId then self:SetVehicle(vehicleId) end
     local frameTime = Finite(dt) and math.max(0, dt) or 0
     local riding = sim ~= nil and screen == "ride" and not sim.finished and sim.paused ~= true
@@ -659,7 +766,8 @@ function RideAudio:Update(dt, sim, screen)
     local windGain = effectsActive and speedRatio ^ 1.5 * 0.30 or 0
     local brakeGain = effectsActive and sim and
         (sim.burnout and 0.24 or (sim.braking and Unit(speed / 18) * 0.25 or 0)) or 0
-    self:UpdatePadFeedback(frameTime, sim, effectsActive)
+    self:UpdatePadFeedback(frameTime, sim, effectsActive and not vehicleChanged)
+    self:UpdateSkillFeedback(frameTime, sim, effectsActive)
 
     local engineProfile = self.engineProfile or {pitch = RideAudio.EnginePitch[self.engineClass] or 1, gain = 1}
     local engineGain = effectsActive and (0.12 + rpmRatio * 0.15 + throttle * 0.13 + speedRatio * 0.035) * (engineProfile.gain or 1) or 0
@@ -668,6 +776,15 @@ function RideAudio:Update(dt, sim, screen)
         -- 电机无燃烧怠速：起步立即可听，速度决定电机音高，松油后随滚行轻声滑降。
         engineGain = effectsActive and (0.025 + throttle * 0.34 + speedRatio * 0.20) * (engineProfile.gain or 1) or 0
         enginePitch = (0.56 + speedRatio * 0.92 + throttle * 0.24) * (engineProfile.pitch or 1)
+    end
+    if engineProfile.motion == "rolling" or engineProfile.motion == "organic" then
+        -- 小轮、滑刃和生物停止就无行驶声；油门/RPM不能制造摩托怠速。
+        engineGain = effectsActive and speed > .15 and Unit(speed / 12) * .33 or 0
+        enginePitch = .82 + speedRatio * .32
+        if speed <= .15 then self:SilenceTrack(ENGINE) end
+    elseif engineProfile.motion == "air" then
+        engineGain = effectsActive and (.09 + throttle * .16 + speedRatio * .10) or 0
+        enginePitch = .88 + throttle * .12 + speedRatio * .16
     end
     self:UpdateLoop(ENGINE, engineGain, enginePitch, frameTime)
     local layerGain = effectsActive and (engineProfile.layerGain or 0) * (0.30 + speedRatio * 0.55 + throttle * 0.25) or 0
@@ -689,9 +806,8 @@ function RideAudio:Update(dt, sim, screen)
             and sim.elapsed >= self.previousElapsed
             and sim.health <= self.previousHealth
             and sim.overtakes >= self.previousOvertakes
-        local eventFrame = frameTime > 0 and sim.paused ~= true
-            and (screen == "ride" or (screen == "result" and self.previousScreen == "ride"))
-        if sameRun and eventFrame then
+        local eventFrame = effectsActive
+        if sameRun and eventFrame and not vehicleChanged then
             if sim.health < self.previousHealth then
                 local damageRatio = Unit((self.previousHealth - sim.health) / 65)
                 self:PlayOnce(IMPACT, 0.40 + damageRatio * 0.22, 1)
@@ -719,6 +835,8 @@ function RideAudio:Stop()
     self.stopped = true
     self.unlocked = false
     self:SilencePad()
+    self:SilenceSkill()
+    self:SilenceEngineLayer()
     for index = 1, RideAudio.Count do self:SilenceTrack(index) end
     self.sources = {}
     self.sounds = {}
@@ -730,6 +848,8 @@ function RideAudio:Stop()
     self.engineLayerSource = nil
     if self.node then self.node:Dispose() end
     self.padSource, self.padSim, self.padState = nil, nil, nil
+    self.skillSource, self.skillSim, self.resourceSounds = nil, nil, {}
+    self.selectedVehicleId, self.skillVehicleId = "", ""
     self.padSequence, self.padElapsed = 0, 0
     self.node = nil
     self.scene = nil

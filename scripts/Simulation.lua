@@ -3,6 +3,7 @@
 -- 主流程先 World:Update(dt, sim, clock)，再 Step；本模块不更新/移动世界。
 ---@class RideSimulation
 ---@field oddAltitude number
+---@field oddHopHeight? number 街机主动跳的最高离地偏移（米），不改世界里程或地面种类。
 ---@field oddActive number
 ---@field oddCooldown number
 ---@field oddSteam number

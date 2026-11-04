@@ -12,6 +12,7 @@ local Sim = require("Simulation")
 local HUD = require("HUD")
 local MobileControls = require("MobileControls")
 local RideAudio = require("RideAudio")
+local FrontendAudio = require("FrontendAudio")
 local RideLoader = require("RideLoader")
 local Catalog = require("Catalog")
 local Profile = require("Profile")
@@ -163,6 +164,7 @@ local function SetScreen(screen)
     drivingCamera_:CancelInput()
     ClearActions()
     hud_:SetScreen(screen)
+    FrontendAudio.SyncRide(0, screen, hud_.settingsReturn, nil, sound_, 1)
     print("[流程] " .. screen)
 end
 local function CockpitActive()
@@ -221,6 +223,7 @@ end
 local function LoadingError(message)
     loadPhase_ = "failed"
     print("[加载失败] " .. message)
+    if FrontendAudio.GetStatus().unlocked then FrontendAudio.PlayUI("unavailable") end
     hud_:SetLoading("资源准备未完成", message, 0, "未进入驾驶 · 可重试", true)
 end
 local function ResetRideState()
@@ -547,17 +550,8 @@ local function ValidateSelectedVehicle(id)
     if not originalFirstPerson then ToggleCamera() end
     print("[骑手验收] " .. id .. "：-22/0/+22度实骨骼ValidatePose与头盔/追尾切换通过")
 end
-local function ToggleRadio()
-    if not sound_ then return false end
-    local enabled = sound_:ToggleMusic()
-    hud_:SyncRadio(sound_:GetTrackTitle(), enabled)
-    return enabled
-end
-local function ChangeRadio(direction)
-    if not sound_ then return end
-    local title = sound_:ChangeTrack(direction)
-    hud_:SyncRadio(title, sound_.musicEnabled)
-end
+local ToggleRadio, ChangeRadio = FrontendAudio.BindRadio(audioPreferences_, function() return sound_ end,
+    function(title, enabled) hud_:SyncRadio(title, enabled) end)
 function CreateScene()
     scene_ = Scene()
     -- 骑手骨骼每帧由脚本在主线程手动改写；关闭场景线程更新，避免
@@ -718,7 +712,7 @@ local function RetryLoading()
     hud_:SetLoading("重新检查资源", "已有下载缓存继续复用，失败项将重新校验。", 0, "正在重试")
 end
 function Start()
-    graphics.windowTitle = "公路狂飙"
+    graphics.windowTitle = "公路狂飙:我骑小电驴他竟然开坦克"
     input.mouseMode = MM_ABSOLUTE;Catalog.SetGMFreeExperience(false)
     ---@type fun()?
     local restoreUnavailableProfile=nil
@@ -810,7 +804,9 @@ function Start()
         restart = RestartRide, music = ToggleRadio, toggleRadio = ToggleRadio,
         previousTrack = function() ChangeRadio(-1) end, nextTrack = function() ChangeRadio(1) end,
         effects = function()
-            local enabled = sound_ and sound_:ToggleEffects() or false
+            local enabled = not audioPreferences_.effects
+            if sound_ then enabled = sound_:ToggleEffects() end
+            audioPreferences_.effects = enabled; FrontendAudio.SetEffectsEnabled(enabled)
             if raceAudio_ then raceAudio_:SetEffectsEnabled(enabled) end
             return enabled
         end,
@@ -836,6 +832,7 @@ function Start()
         error(hudOrError)
     end
     hud_=hudOrError --[[@as HUD]]
+    FrontendAudio.Init(audioPreferences_, hud_.screen, hud_.settingsReturn)
     touch_:MountLook(hud_.controlLayer)
     if restoreUnavailableProfile then
         local ok,message=pcall(function() require("ProfileChecks").RunUnavailableUI(hud_) end)
@@ -930,6 +927,8 @@ function Start()
     SubscribeToEvent("Update", "HandleUpdate")
     SubscribeToEvent("PostUpdate", "HandlePostUpdate")
     SubscribeToEvent("InputFocus", "HandleInputFocus")
+    SubscribeToEvent("MouseButtonDown", "HandleFrontendAudioGesture"); SubscribeToEvent("TouchBegin", "HandleFrontendAudioGesture")
+    SubscribeToEvent("KeyDown", "HandleFrontendAudioGesture")
     if testShot_ ~= "" then SubscribeToEvent("PostRenderUpdate", "CaptureTestFrame") end
     if selfTest_ then
         StartRide(false)
@@ -1065,6 +1064,8 @@ function HandleUpdate(eventType, eventData)
     local rawDt = eventData:GetFloat("TimeStep")
     if careerMode_ then CareerStore.UpdateCloud(rawDt) end
     local dt = math.min(rawDt, 0.1)
+    -- HUD may open tracks/settings directly. Sync even on loading/modal early returns.
+    local frontend = FrontendAudio.SyncRide(dt, careerMode_ and "career" or hud_.screen, hud_.settingsReturn, audioPreferences_, sound_, raceAudio_ and raceAudio_:GetMusicDuck() or 1)
     -- 广告超时兜底由主循环统一驱动；生涯模式暂停竞速逻辑但广告仍需要超时恢复。
     RewardedAds.Update(dt)
     if Profile.HasPendingSave() then
@@ -1323,7 +1324,7 @@ function HandleUpdate(eventType, eventData)
         raceAudio_:Update(dt, sim_, pendingChallenge_ and race_ or nil, screen_ == "ride" or screen_ == "result")
         Profile_.End()
     end
-    sound_.musicDuck=raceAudio_ and raceAudio_:GetMusicDuck() or 1
+    sound_.musicDuck=frontend and 0 or (raceAudio_ and raceAudio_:GetMusicDuck() or 1)
     Profile_.Begin("sound")
     sound_:Update(dt, sim_ --[[@as RideAudioState]], screen_)
     Profile_.End()
@@ -1334,9 +1335,12 @@ function HandleUpdate(eventType, eventData)
     CheckTrackFlow()
     Profile_.Tick(dt)
 end
+-- Real input only unlocks audio; HUD owns event-specific clicks, never driving controls.
+function HandleFrontendAudioGesture() FrontendAudio.Unlock() end
 ---@param eventType string
 ---@param eventData InputFocusEventData
 function HandleInputFocus(eventType, eventData)
+    FrontendAudio.SetSuspended(not eventData:GetBool("Focus") or eventData:GetBool("Minimized"))
     if not eventData:GetBool("Focus") or eventData:GetBool("Minimized") then
         if careerMode_ and career_ then
             career_.view:ResetInput()
@@ -1479,7 +1483,7 @@ function CaptureTestFrame()
     engine:Exit()
 end
 function Stop()
-    RewardedAds.Cancel();Catalog.SetGMFreeExperience(false)
+    FrontendAudio.Dispose(); RewardedAds.Cancel();Catalog.SetGMFreeExperience(false)
     if career_ then career_:Dispose(); career_=nil end
     if loader_ then loader_:Cancel() end
     touch_:SetEnabled(false)

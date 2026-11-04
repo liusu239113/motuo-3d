@@ -215,8 +215,130 @@ function Checks.SessionTransitions(Session,Store,Audio)
     print("[AudioChecks] Session PASS 真实OpenPhone/Update故事早退同帧静音，fake音源/内存档；非声卡验收")
     return true
 end
+-- 27车型全量无声测试，调用真实RideAudio逻辑；fixture不接触cache/音频设备。
+function Checks.Ride(Audio)
+    Audio = Audio or require("RideAudio")
+    local catalog = Audio.Catalog
+    local node = {Dispose = function(self) self.disposed = true end}
+    function node:CreateChild() return self end
+    function node:CreateComponent() return source() end
+    local a = Audio.New(node --[[@as Scene]])
+    for i, path in ipairs(Audio.Resources) do
+        local clip = sound(3, 48000)
+        a.sounds[i], a.resourceSounds[path] = clip, clip
+        if i <= 6 then assert(a:LoadOne(i)) end
+    end
+    local engine = a.sources[2]
+    a.unlocked, a.musicEnabled = true, false
+    local sim = {speed=20,rpm=5000,throttle=.5,braking=false,health=100,overtakes=0,elapsed=1,
+        finished=false,vehicleId="sport",oddSerial=0,motorcycleSkillSerial=0,oddActive=0,motorcycleActive=0}
+    local count, paths, skillCount = 0, {}, 0
+    local function update(dt, screen) a:Update(dt == nil and .02 or dt, sim, screen or "ride") end
+    local function silent()
+        assert(not a.skillSource.playing and a.skillSource.gain == 0 and a.skillTimer == 0,"技能必须立即停音")
+        for i=2,6 do assert(not a.sources[i].playing and a.sources[i].gain == 0,"驾驶source必须立即停音") end
+    end
+    for _, id in ipairs(catalog.Ids) do
+        local entry = catalog.Vehicles[id]
+        count = count + 1
+        assert(not paths[entry.drive],"27车型必须真实不同路径而不是pitch伪造："..id)
+        paths[entry.drive] = true
+        assert(Audio.ResourceTypes[entry.drive] == "Sound" and Audio.EngineResources[id] == entry.drive)
+        sim.vehicleId,sim.oddSerial,sim.motorcycleSkillSerial = id,0,0
+        sim.oddActive,sim.motorcycleActive = 0,0
+        local previous = a.skillSource.plays
+        update()
+        assert(a.sources[2] == engine and a.sounds[2] == a.resourceSounds[entry.drive],"换车须更换真实素材并复用source")
+        assert(a.skillSource.plays == previous,"换车只建基线")
+        sim.oddSerial,sim.motorcycleSkillSerial = count <= 9 and 0 or 1,count <= 9 and 1 or 0
+        sim.oddActive,sim.motorcycleActive = count <= 9 and 0 or 2,count <= 9 and 2 or 0
+        update()
+        local expected = entry.skillOwner == "RideAudio" and 1 or 0
+        assert(a.skillSource.plays == previous + expected,"成功激活应播一次，保护车/武器车不能叠播："..id)
+        if expected == 1 then
+            skillCount = skillCount + 1
+            assert(a.skillSource.sound == a.resourceSounds[entry.skill],"车型技能实际播放路径必须正确")
+            assert(a.skillSource.frequency == 48000 * entry.skillPitch,"技能频率必须是绝对Hz")
+        end
+        for _=1,100 do update(.02) end
+        assert(a.skillSource.plays == previous + expected and a.skillTimer == 0,"连续帧不得重复，循环借用素材必须结束")
+        sim.speed,sim.throttle = 0,0
+        update()
+        if entry.motion == "rolling" or entry.motion == "organic" then
+            assert(not engine.playing and engine.gain == 0,"非机动静止不能有摩托怠速")
+        end
+        sim.speed,sim.throttle = 20,.5
+    end
+    assert(count == 27 and skillCount == 23,"27行驶，23个Ride技能，3保护+1武器归原系统")
+    sim.vehicleId,sim.oddSerial,sim.motorcycleSkillSerial = "sport",0,0
+    update()
+    local function trigger()
+        sim.motorcycleSkillSerial=sim.motorcycleSkillSerial+1;sim.motorcycleActive=2
+    end
+    for _, mode in ipairs({"pause","menu","result","muted","locked","zero","nan","sim-paused","finished"}) do
+        trigger(); update()
+        assert(a.skillSource.playing,"阻断前必须真的在播")
+        local before = a.skillSource.plays
+        trigger()
+        a.effectsEnabled, a.unlocked = mode ~= "muted", mode ~= "locked"
+        sim.paused,sim.finished = mode == "sim-paused",mode == "finished"
+        update(mode == "zero" and 0 or mode == "nan" and 0/0 or .02,
+            (mode=="pause" or mode=="menu" or mode=="result") and mode or "ride")
+        silent()
+        a.effectsEnabled,a.unlocked,sim.paused,sim.finished = true,true,false,false
+        update()
+        assert(a.skillSource.plays == before,mode.."必须消费序号，恢复不得补播")
+    end
+    trigger(); update()
+    a:ToggleEffects(); silent()
+    trigger(); update(); a:ToggleEffects()
+    local before = a.skillSource.plays
+    update(); assert(a.skillSource.plays == before,"ToggleEffects恢复不补播")
+    trigger(); update()
+    a:Reset(sim); silent(); before=a.skillSource.plays
+    update(); assert(a.skillSource.plays==before,"Reset消费基线")
+    trigger(); update(); assert(a.skillSource.plays==before+1)
+    sim.elapsed,sim.motorcycleSkillSerial=0,0;update()
+    trigger(); update(); assert(a.skillSource.plays==before+2,"原地重开后新的序号可播")
+    trigger(); sim.motorcycleActive=0;before=a.skillSource.plays;update()
+    assert(a.skillSource.plays==before,"取消激活不得播音")
+    -- 已停止实例、换仿真、dt无效均不应重播。
+    local skill = a.skillSource
+    trigger();update();a:Stop();a:Stop();before=skill.plays
+    a:Update(.02,sim,"ride")
+    assert(skill.plays==before and not skill.playing and a.skillSource==nil and a.node==nil)
+    print("[AudioChecks] Ride PASS 27独立路径/23技能/保护三车/武器不双播/Hz/暂停菜单结果静音/Reset/Stop；fake音源无实际试听")
+    return {passed=true,vehicles=count,skills=skillCount}
+end
+
+-- 真引擎资源加载检查：只加载和换槽，不解锁、不Play；完整解码另用ffmpeg离线检查。
+function Checks.RideLoaded(a)
+    local Audio=require("RideAudio")
+    local seen={}
+    for i,path in ipairs(Audio.Resources) do
+        assert(not seen[path],"资源清单重复："..path);seen[path]=true
+        assert(Audio.ResourceTypes[path]=="Sound")
+        assert(a:LoadOne(i),"声音不可加载："..path)
+        local clip=assert(a.resourceSounds[path])
+        assert(clip:GetLength()>0 and clip:GetFrequency()>0 and clip:GetDataSize()>0,"无有效音频数据："..path)
+    end
+    local loader=require("RideLoader").New(Audio.Resources,function() end,function() end,function() end,
+        Audio.GetResources() --[[@as string[] ]],Audio.ResourceTypes)
+    local types={}
+    for _,item in ipairs(loader.verify) do types[item[2]]=item[1] end
+    for path in pairs(seen) do assert(types[path]=="Sound","RideLoader验证类型不是Sound："..path) end
+    for _,id in ipairs(Audio.Catalog.Ids) do
+        assert(a:SetVehicle(id))
+        local entry=Audio.Catalog.Vehicles[id]
+        assert(a.sounds[2]==a.resourceSounds[entry.drive] and a.sounds[2]:IsLooped())
+        assert(not a.sources[2].playing,"资源准备绝不能自动发声")
+    end
+    print("[AudioChecks] RideLoaded PASS "..#Audio.Resources.." Sound资源/27车型/Loader类型，未解锁未播放")
+    return {passed=true,resources=#Audio.Resources,vehicles=27}
+end
+
 function Checks.Run()
-    assert(Checks.Race() and Checks.Career())
+    assert(Checks.Race() and Checks.Career() and Checks.Ride().passed)
     return {passed=true}
 end
 return Checks

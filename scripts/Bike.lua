@@ -411,7 +411,7 @@ function Bike:UpdateState(dt, sim, firstPerson, clock)
     self.visual.rotation = Quaternion(pitch + self.effects.pitch + shake * 3.5, spin + shakeYaw, self.lean + shakeRoll)
     -- 世界Y由Simulation给出车轮最低点；抬头时补偿绕后轮触地点的升高。
     local lift = wheelie > 0 and math.sin(math.rad(math.min(85, wheelie))) * 0.72 or 0
-    self.visual.position = V(0, lift + math.sin(self.visualClock * 27)
+    self.visual.position = V(0, lift + (sim.oddAltitude or 0) + math.sin(self.visualClock * 27)
         * math.min(math.abs(speed) / 55, 1) * 0.003 + self.effects.bob, 0)
     self.steering.rotation = Quaternion(0, self.steerAngle, 0)
     local origin = self.steering.position

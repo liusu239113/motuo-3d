@@ -15,6 +15,11 @@ local VehicleFinish = require("VehicleFinish")
 ---@field diffuse string
 ---@field normal string
 ---@field rotation number 偏航校正角（度）
+---@field orientation? Quaternion 资产存在俯仰/横滚时的完整源朝向校正
+---@field sourceBounds? BoundingBox 修复重复源部件时，实际保留网格旋转后的范围
+---@field cockpit? BikeCockpitConfig 正式模型实测驾驶眼位与仪表锚点
+---@field articulated? boolean
+---@field delivered? boolean
 ---@field targetLength number 米
 ---@field targetSize Vector3 归一化后的近似范围，不做非等比缩放
 ---@field measuredSize Vector3 原始MDL包围盒尺寸

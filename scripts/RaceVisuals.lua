@@ -20,37 +20,18 @@ local COURSE_TYPES = {[COURSE_ARROW] = "Model", [COURSE_ARROW_MATERIAL] = "Mater
 local Bike = require("Bike") -- 只取Cockpits配置，不调用Bike.New。
 local MixedVisuals = require("MixedVisuals")
 local MixedData = require("MixedVehicles")
+---@type fun(root:Node,id:string,time:number,state:table)
 local MixedAnimate = MixedVisuals.Animate
 local MixedGet = MixedData.Get
-local newVehicleIds={hovercraft=true,centipede=true,buggy=true,loader=true,cicada=true}
--- LSP不对联合类型的冒号self自动收窄；按实际构造器分派，生命周期接口保持一致。
-local function resetSkill(effect)
-    if getmetatable(effect)==NewVehicleSkillEffects then
-        local mixed=effect --[[@as NewVehicleSkillEffects]]
-        mixed:Reset()
-    else
-        local motorcycle=effect --[[@as MotorcycleSkillEffects]]
-        motorcycle:Reset()
-    end
-end
-local function disposeSkill(effect)
-    if getmetatable(effect)==NewVehicleSkillEffects then
-        local mixed=effect --[[@as NewVehicleSkillEffects]]
-        mixed:Dispose()
-    else
-        local motorcycle=effect --[[@as MotorcycleSkillEffects]]
-        motorcycle:Dispose()
-    end
-end
-local function updateSkill(effect,dt,state)
-    if getmetatable(effect)==NewVehicleSkillEffects then
-        local mixed=effect --[[@as NewVehicleSkillEffects]]
-        mixed:Update(dt,state)
-    else
-        local motorcycle=effect --[[@as MotorcycleSkillEffects]]
-        motorcycle:Update(dt,state)
-    end
-end
+-- 结构化生命周期接口：允许原五车与剩余九车各自的实现，不按类元表误分派。
+---@param effect table
+local function resetSkill(effect) effect:Reset() end
+---@param effect table
+local function disposeSkill(effect) effect:Dispose() end
+---@param effect table
+---@param dt number
+---@param state table
+local function updateSkill(effect,dt,state) effect:Update(dt,state) end
 local Landscape = require("Landscape")
 local P = require("Parts")
 local V = Vector3
@@ -69,7 +50,7 @@ local V = Vector3
 ---@field poseClock number
 ---@field lean number
 ---@field effects RideEffects
----@field skillEffects? MotorcycleSkillEffects|NewVehicleSkillEffects
+---@field skillEffects? MotorcycleSkillEffects|NewVehicleSkillEffects|RemainingVehicleSkillEffects
 ---@field active boolean
 ---@field wasInView boolean
 ---@field poseRefreshes number
@@ -192,21 +173,21 @@ function RaceVisuals:CreateRunner(data)
     local id, vehicleId = data.id, data.vehicleId
     assert(Assets.Vehicles[vehicleId], "Race rival asset unavailable: " .. tostring(vehicleId))
     local odd = require("MixedVehicles").Get(vehicleId) ~= nil
-    local isRiderBoundMixed = vehicleId == "ebike"
-    local cockpit = isRiderBoundMixed and MixedVisuals.Cockpits.ebike
-        or (odd and {grip=V(.3,1,.4),seatHeight=1} or Bike.GetCockpit(vehicleId))
+    local isRiderBoundMixed = odd and MixedVisuals.HasRider(vehicleId)
     local node = self.rosterRoot:CreateChild("RaceRival_" .. id, LOCAL)
     local visual = node:CreateChild("RivalLean", LOCAL)
     local body = Assets.Add(visual, vehicleId, nil, "distant")
-    -- 电动车使用正式整车与同一套41骨Rider；其它混合车保持轻量无驾驶员表现。
+    local cockpit = odd and assert(MixedVisuals.Cockpits[vehicleId], "缺少正式车型眼位："..vehicleId)
+        or Bike.GetCockpit(vehicleId)
+    -- 敞开载具复用正式骨骼人物，各自采用站板/推车/坐姿；封闭及机械生物不造假人物。
     local rider = isRiderBoundMixed and assert(MixedVisuals.CreateRider(visual, vehicleId),
-        "AI ebike formal rider creation failed")
+        "AI formal driver creation failed: "..vehicleId)
         or (odd and {poseFailures=0,model={updateInvisible=true,animationLodBias=0,
         drawDistance=260,shadowDistance=65,inView=true}, SetColor=function() end,
         Update=function() end,Dispose=function() end} or Rider.New(visual, vehicleId, cockpit.grip))
     local colorId = data.colorId or "red"
     rider:SetColor(colorId)
-    -- Formal Rider is the only rider-bound mixed visual; it inherits RivalLean lean/pitch.
+    -- 正式人物统一继承RivalLean的转向、侧倾和腾空。
     if odd and not isRiderBoundMixed then MixedVisuals.SetRiderColor(body,colorId) end
     -- Rider是手动41骨pose，无动画clip；必须保留其updateInvisible=true契约。
     -- inView是上一渲染帧结果，不能作为首次提交/重新启用的前置条件。
@@ -226,17 +207,17 @@ function RaceVisuals:CreateRunner(data)
     end
     Assets.SetDetail(body, "distant")
     local effects = RideEffects.New(visual, Assets.Vehicles[vehicleId].targetSize, cockpit.seatHeight, true)
-    ---@type MotorcycleSkillEffects|NewVehicleSkillEffects?
+    ---@type MotorcycleSkillEffects|NewVehicleSkillEffects|RemainingVehicleSkillEffects?
     local skillEffects = nil
     if not odd then
         skillEffects = MotorcycleSkillEffects.New(visual, vehicleId,
             cockpit.localOffset and cockpit.localOffset.y or cockpit.seatHeight+.6,
             Assets.Vehicles[vehicleId].targetSize.z, true)
-    elseif newVehicleIds[vehicleId] then
+    else
         skillEffects = NewVehicleSkillEffects.New(visual, vehicleId,
-            math.max(1, Assets.Vehicles[vehicleId].targetSize.y*.72),
-            Assets.Vehicles[vehicleId].targetSize.z, true)
+            cockpit.localOffset.y, Assets.Vehicles[vehicleId].targetSize.z, true)
     end
+    if odd and skillEffects then skillEffects:SetEyePosition(cockpit.localOffset) end
     local runner = {id = id, vehicleId = vehicleId, colorId = colorId, node = node,
         visual = visual, body = body, rider = rider, models = models, poseClock = 0, lean = 0,
         effects = effects, skillEffects = skillEffects,
@@ -255,7 +236,14 @@ end
 ---@param data table
 ---@param verify boolean
 function RaceVisuals:RefreshPose(runner, data, verify)
-    if MixedGet(runner.vehicleId) and runner.vehicleId ~= "ebike" then return end
+    if MixedGet(runner.vehicleId) and runner.vehicleId ~= "ebike" then
+        if not runner.fullRider then return end
+        runner.fullRider:Update(0, true, runner.lean)
+        runner.poseClock = 0
+        runner.poseRefreshes = runner.poseRefreshes + 1
+        if verify then runner.fullRider:ValidatePose() end
+        return
+    end
     local steer = (data.steer or 0) * math.max(4, 22 - math.abs(data.speed or 0) * 0.35)
     if runner.vehicleId == "ebike" or runner.vehicleId ~= Rider.ClassFor(runner.vehicleId) then steer = 0 end
     local before = runner.rider.poseFailures or 0
@@ -458,9 +446,9 @@ function RaceVisuals:ReportBudget()
     end
     for _, runner in pairs(self.runners) do
         rivals = rivals + 1
-        if runner.rider and runner.rider.model then
+        if runner.fullRider then
             riders = riders + 1
-            measure(runner.rider.model)
+            measure(runner.fullRider.model)
         end
         for _, draw in ipairs(runner.body:GetComponents("StaticModel", true)) do measure(draw) end
         if runner.effects and runner.effects.root then
@@ -586,7 +574,7 @@ function RaceVisuals:Update(dt, sim, camera)
                 local hitRoll = math.sin(self.clock * 46 + (data.index or 0)) * 9 * hit
                 runner.visual.rotation = Quaternion((data.pitch or 0) + runner.effects.pitch + hit * 4,
                     hitYaw, runner.lean * self.leanSign + hitRoll)
-                runner.visual.position = V(0, runner.effects.bob, 0)
+                runner.visual.position = V(0, runner.effects.bob + (data.driveSim and data.driveSim.oddAltitude or 0), 0)
                 if MixedGet(runner.vehicleId) then
                     local drive = data.driveSim or {}
                     runner.visual.position = V(0, drive.oddAltitude or 0, 0)
@@ -599,6 +587,8 @@ function RaceVisuals:Update(dt, sim, camera)
                     -- 关节动画必须逐帧：降频会让车轮/履带/钳口一抽一抽。
                     -- 开销改由MixedVisuals内部缓存节点引用解决。
                     MixedAnimate(runner.body,runner.vehicleId,self.clock,drive)
+                    -- 座椅技能关节逐帧同步，IK降频不能让驾驶员落后旋转的座垫。
+                    MixedVisuals.SyncRiderJoint(runner.fullRider)
                 end
                 if runner.colorId ~= data.colorId and data.colorId then
                     runner.colorId = data.colorId
