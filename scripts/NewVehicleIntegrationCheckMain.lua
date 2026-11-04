@@ -3,11 +3,6 @@
 assert(cache:AddResourceDir("/workspace/assets"))
 assert(cache:AddResourceDir("/workspace/scripts"))
 local Assets=require("MixedAssets")
--- 只在验收进程内断言未交付状态可被本入口覆盖，不写回仓库配置。
-for _,id in ipairs(Assets.NewIds) do
-    local config=assert(Assets.Vehicles[id],"未登记新车："..tostring(id))
-    config.delivered=true
-end
 local Visual=require("MixedVisuals")
 local Art=require("NewVehicleArticulation")
 local V=Vector3
@@ -70,8 +65,7 @@ local function playerChecks(scene,id)
     local state=drive(id,0,"idle");state.oddActive=0
     bike:UpdateState(.02,state,true,0)
     check(bike.firstPerson and bike.body.enabled and #bike.body:GetComponents("StaticModel",true)>0,
-        id.."首视角保留正式车体 fp="..tostring(bike.firstPerson).." body="..tostring(bike.body.enabled)
-        .." draws="..tostring(#bike.body:GetComponents("StaticModel",true)))
+        id.."首视角保留正式车体")
     local dashboard=camera:WorldToScreenPoint(bike:GetDashboardWorldPosition())
     check(dashboard.x>0 and dashboard.x<1 and dashboard.y>0 and dashboard.y<1,id.."实际座舱仪表可投影")
     for _,sample in ipairs(phases(id)) do

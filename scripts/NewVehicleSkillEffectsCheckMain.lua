@@ -154,10 +154,12 @@ function Start()
     scene_=Scene();scene_:CreateComponent("Octree")
     runChecks(scene_)
     local selected,age,first="",.55,false
+    local show=false
     for _,arg in ipairs(GetArguments()) do
         selected=arg:match("^%-fx%-id=(.+)$") or selected
         age=tonumber(arg:match("^%-fx%-age=(.+)$")) or age
         if arg=="-fx-first" then first=true end
+        if arg=="-fx-show" then show=true end
     end
     local cameraNode=scene_:CreateChild("Camera",LOCAL)
     local camera=cameraNode:CreateComponent("Camera");camera.nearClip=.05;camera.farClip=100;camera.fov=65
@@ -181,7 +183,7 @@ function Start()
     end
     if not first then cameraNode.position=V(0,8,-13);cameraNode:LookAt(V(0,.8,0)) end
     renderer:SetViewport(0,Viewport:new(scene_,camera))
-    if #GetArguments()==0 then engine:Exit() end
+    if not show then engine:Exit() end
 end
 function Stop()
     for _,effect in ipairs(retained_) do effect:Dispose() end
