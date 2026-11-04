@@ -30,22 +30,22 @@
       "title": "公路狂飙",
       "description": "《公路狂飙》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能和地形优势争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
       "category": "racing",
-      "trial_note": "",
+      "trial_note": null,
       "icon_url": "https://img-tc.tapimg.com/market/images/FiVwwXyZtmr7bBe83IzLyVUrfote.png",
-      "banner_url": "",
-      "square_promo_url": "",
-      "cover_horizontal_url": "",
-      "cover_vertical_url": "",
-      "screenshot_urls": []
+      "banner_url": null,
+      "square_promo_url": null,
+      "cover_horizontal_url": null,
+      "cover_vertical_url": null,
+      "screenshot_urls": null
     },
     "pending": {},
     "baseGameplayDemoVideoId": 0
   },
   "metadata": {
-    "updated_at": "2026-11-03T21:52:13.116Z"
+    "updated_at": "2026-11-04T07:32:19.630Z"
   },
   "test_qrcode": {
-    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793742732952.png",
-    "generated_at": "2026-11-03T21:52:13.116Z"
+    "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793777539480.png",
+    "generated_at": "2026-11-04T07:32:19.630Z"
   }
 }
