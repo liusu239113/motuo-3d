@@ -32,6 +32,7 @@ end
 
 local function runCameraChecks()
     local state, oldInput = fakeInput()
+    local oldPointer = UI.IsPointerOverUI
     local ok, message = xpcall(function()
         local camera = DrivingCamera.New()
         check(camera.yaw == 0 and camera.pitch == 0, "初始视角为零")
@@ -83,10 +84,11 @@ local function runCameraChecks()
         local node = {position = nil, rotation = nil}
         local lens = {fov = 0}
         camera:Reset(0)
-        camera:UpdateHelmet(bike, node, lens, 20, 4)
+        camera:UpdateHelmet(bike --[[@as Bike]], node --[[@as Node]], lens --[[@as Camera]], 20, 4)
         check(node.position == bike.Cockpit.localOffset and lens.fov == 77, "第一视角使用当前车型Cockpit眼位和FOV")
     end, debug.traceback)
     _G.input = oldInput
+    UI.IsPointerOverUI = oldPointer
     if not ok then error(message) end
 end
 

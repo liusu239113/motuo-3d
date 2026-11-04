@@ -35,7 +35,7 @@ M.Vehicles = {
         measuredSize=Vector3(.966796875,.998046875,.951171875), label="疾风电动车", class="mixed", resources={}, articulated=true,
     },
 }
--- 五款独立生成整车；交付开关在原网格关节与座舱验收通过后开放。
+-- 五款独立生成整车；原网格四LOD拆件、关节、实际座舱眼位和玩家/AI/车库已验收开放。
 local newModels={
     {id="hovercraft",hash="4fcb25f68ece49be8eea75f0dc346718",mat="c570ae21-28e0-4520-a7c5-9dfa790a94b0",label="旱地气垫艇",length=3.1,size=Vector3(.999512,.644043,.887207),orientedSize=Vector3(.760220,.644043,.980876),rotation=-107.7},
     {id="centipede",hash="a70e6cc64480458486a5635205e3a4ab",mat="d2b35ec5-caa7-495c-98a3-0111372e8f57",label="齿轮蜈蚣",length=4.1,size=Vector3(.999512,.482910,.756348),orientedSize=Vector3(.756348,.482910,.999512),rotation=-90},
@@ -54,7 +54,7 @@ for _,entry in ipairs(newModels) do
         normal=base.."Textures/"..entry.hash.."_00_N.png",
         rotation=entry.rotation,targetLength=entry.length,
         targetSize=entry.orientedSize*(entry.length/entry.orientedSize.z),
-        measuredSize=entry.size,label=entry.label,class="mixed",resources={},articulated=true,delivered=false,
+        measuredSize=entry.size,label=entry.label,class="mixed",resources={},articulated=true,delivered=true,
     }
 end
 function M.IsReady(id)

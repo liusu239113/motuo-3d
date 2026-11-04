@@ -4,4 +4,5 @@ function Start()
     local result=Checks.RunOddVehicleActions()
     assert(result and result.passed,"五车技能规则验收失败")
     print(string.format("[五车技能规则验收] PASS %d项",result.assertions))
+    engine:Exit()
 end

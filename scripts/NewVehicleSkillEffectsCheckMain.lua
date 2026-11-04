@@ -181,6 +181,7 @@ function Start()
     end
     if not first then cameraNode.position=V(0,8,-13);cameraNode:LookAt(V(0,.8,0)) end
     renderer:SetViewport(0,Viewport:new(scene_,camera))
+    if #GetArguments()==0 then engine:Exit() end
 end
 function Stop()
     for _,effect in ipairs(retained_) do effect:Dispose() end

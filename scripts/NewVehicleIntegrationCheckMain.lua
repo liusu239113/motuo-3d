@@ -3,7 +3,7 @@
 assert(cache:AddResourceDir("/workspace/assets"))
 assert(cache:AddResourceDir("/workspace/scripts"))
 local Assets=require("MixedAssets")
--- 只在本次验收进程内开放，未通过前不写回仓库配置。
+-- 只在验收进程内断言未交付状态可被本入口覆盖，不写回仓库配置。
 for _,id in ipairs(Assets.NewIds) do
     local config=assert(Assets.Vehicles[id],"未登记新车："..tostring(id))
     config.delivered=true
@@ -194,6 +194,7 @@ local function run()
     end
     renderer:SetViewport(0,Viewport:new(scene_,camera))
     print("[五车集成] PASS "..count_.." / 玩家+AI+真实车库 / 实际眼位+双视角 / 360+冻结+清理")
+    engine:Exit()
 end
 function Start()
     local ok,err=xpcall(run,function(message)
