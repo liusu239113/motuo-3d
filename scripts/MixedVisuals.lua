@@ -286,7 +286,9 @@ function M.Build(parent, id)
         local controlLocal=root:WorldToLocal(controls)
         M.Cockpits[id]={localOffset=seatLocal+V(0,.62,-.08),pitch=5,fov=76,
             seatHeight=seatLocal.y,grip=controlLocal,
-            dash=V(0,seatLocal.y+.22,seatLocal.z+.48),dashSize=Vector2(.50,.16),
+            -- 与坦克/锹甲同一观感比例：仪表低于眼位约0.2m、前伸约1m，避免贴近镜头遮满视野。
+            dash=V(0,seatLocal.y+.41,seatLocal.z+math.min(1.02,c.targetLength*.33)),
+            dashSize=Vector2(.46,.14),
             dashboardAngle=-12,accent=cockpitSource.accent,cameraCalibrated=true}
     end
     root:SetVar("VehicleId",Variant(id))
