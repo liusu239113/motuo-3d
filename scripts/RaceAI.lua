@@ -174,7 +174,13 @@ function AI.Drive(race, r, target, dt)
     -- 复用每车控制表：预演25帧×8车，每帧新建表会产生大量GC。
     local controls = r.driveControls
     if not controls then controls = {}; r.driveControls = controls end
-    controls.throttle, controls.boost = throttle, boosted and 1 or 0
+    controls.throttle, controls.boost, controls.brake = throttle, boosted and 1 or 0, slowing
+    if slowing and (drive.motorcycleActive or 0)>0 then
+        -- 与玩家相同：刹车期间暂停全部技能收益，计时仍由Before正常消耗。
+        drive.motorcycleSpeedScale,drive.motorcycleDriveScale,drive.motorcycleGripScale,drive.motorcycleOffroadScale=1,1,1,1
+        drive.motorcycleDamageScale,drive.motorcycleRetained,drive.motorcycleDisruptScale,drive.motorcycleCoastDragScale=1,1,1,1
+        drive.motorcyclePhase="suppressed"
+    end
     local power = drive:Powertrain(dt, controls)*(drive.oddDriveScale or 1)*(drive.motorcycleDriveScale or 1)
     local efficiency = clamp(r.acceleration / spec.acceleration, 0, 1)
     local onRoad = abs(r.lane) <= race.roadHalfWidth
@@ -329,6 +335,9 @@ function AI.NitroSafe(race, r)
     drive.motorcycleSpeedScale, drive.motorcycleDriveScale = live.motorcycleSpeedScale, live.motorcycleDriveScale
     drive.motorcycleGripScale, drive.motorcycleOffroadScale = live.motorcycleGripScale, live.motorcycleOffroadScale
     drive.motorcycleCoastDragScale = live.motorcycleCoastDragScale
+    drive.motorcycleActive,drive.motorcyclePhase=live.motorcycleActive,live.motorcyclePhase
+    drive.motorcycleDamageScale,drive.motorcycleRetained=live.motorcycleDamageScale,live.motorcycleRetained
+    drive.motorcycleDisruptScale=live.motorcycleDisruptScale
     preview.speed, preview.s, preview.lane = r.speed, r.s, r.lane
     preview.speedFactor, preview.acceleration = r.speedFactor, r.acceleration
     preview.skill, preview.aiLevel, preview.reactionTime = r.skill, r.aiLevel, r.reactionTime
@@ -575,6 +584,7 @@ function AI.Update(race, r, dt)
         local skillControls=r.skillControls
         if not skillControls then skillControls={}; r.skillControls=skillControls end
         skillControls.skill, skillControls.steer = useSkill, r.steer or 0
+        skillControls.brake,skillControls.burnout,skillControls.throttle=drive.braking,drive.burnout,drive.throttle
         local oldCooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown
         Mixed.Before(drive,dt,skillControls,race.map)
         local cooldown=MixedData.Get(r.vehicleId) and drive.oddCooldown or drive.motorcycleCooldown

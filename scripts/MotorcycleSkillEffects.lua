@@ -53,6 +53,9 @@ end
 ---@field lastSerial number
 ---@field signature string
 ---@field frontAnchor Node
+---@field Reset fun(self:MotorcycleSkillEffects)
+---@field Dispose fun(self:MotorcycleSkillEffects)
+---@field Update fun(self:MotorcycleSkillEffects,dt:number,sim:table)
 
 ---@param parent Node
 ---@param id string
@@ -101,7 +104,8 @@ function Effects:Init(parent,skill,eyeHeight,length,lightweight)
     for i,id in ipairs(shapes) do
         local node=self.root:CreateChild("Energy_"..id.."_"..i,LOCAL)
         local draw=node:CreateComponent("StaticModel")
-        draw:SetModel(shape(id));draw:SetMaterial(self.materials[id=="shell" and 2 or 1])
+        local effectMaterial=id=="shell" and self.materials[2] or self.materials[1]
+        draw:SetModel(shape(id));draw:SetMaterial(effectMaterial)
         draw.castShadows,draw.shadowDistance,draw.drawDistance=false,0,lightweight and 100 or 180
         self.parts[#self.parts+1]={node=node,draw=draw}
     end

@@ -926,6 +926,7 @@ function Sim:Step(dt, controls, world)
     held.throttle, held.steer, held.brake = controls.throttle, controls.steer, controls.brake
     held.clutch, held.wheelie = controls.clutch, controls.wheelie
     held.burnout, held.manual, held.boost = controls.burnout, controls.manual, controls.boost
+    held.skill = controls.skill
     local count = math.max(1, math.ceil(dt / 0.02))
     local step = dt / count
     self.previousX, self.previousY, self.previousZ = self.x, self.y, self.z

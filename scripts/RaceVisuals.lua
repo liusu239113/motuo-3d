@@ -521,7 +521,10 @@ function RaceVisuals:Update(dt, sim, camera)
             local reactivated = visible and not runner.active
             if visible ~= runner.active or reactivated then
                 runner.node:SetEnabledRecursive(visible)
-                if visible then runner.effects:Reset() end
+                if visible then
+                    runner.effects:Reset()
+                    if runner.skillEffects then runner.skillEffects:Reset() end
+                end
             end
             if visible then
                 runner.node.position = position

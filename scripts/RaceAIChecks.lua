@@ -493,6 +493,9 @@ function Checks.MotorcycleSkills()
         r.driveSim.motorcycleSpeedScale=1.10
         check(math.abs(AI.CurveSpeed(race,r)-base*1.10)<1e-8,"直道限速必须读取技能倍率")
         r.speed,b.speed=base+.5,base+.5
+        r.driveSim.gear,b.driveSim.gear=6,6
+        r.driveSim.rpm,b.driveSim.rpm=10000,10000
+        r.driveSim.clutchEngagement,b.driveSim.clutchEngagement=1,1
         AI.Drive(race,r,1000,DT);AI.Drive(other,b,1000,DT)
         check(r.speed>b.speed,"真实动力上限不能仍用技能前速度")
         race.aiProfile[1]={curvature=.06,turn=.06,slope=0}
@@ -550,6 +553,13 @@ function Checks.MotorcycleSkills()
             id.."实际状态必须输出该车型倍率")
         AI.Drive(race,r,1000,DT)
         check(r.speed>0 and drive.motorcycleCooldown>0,id.."技能与真实传动必须共存")
+        local active,cooldown=drive.motorcycleActive,drive.motorcycleCooldown
+        r.speed=20
+        AI.Drive(race,r,8,DT)
+        check(drive.motorcyclePhase=="suppressed" and drive.motorcycleDriveScale==1
+            and drive.motorcycleGripScale==1 and drive.motorcycleDamageScale==1
+            and drive.motorcycleActive==active and drive.motorcycleCooldown==cooldown,
+            id.."本步刹车必须抑制收益且不重复消费计时")
     end
     print(string.format("[摩托AI技能] PASS / %d项 / 九车型状态、动力、极速、弯道、路肩、惯行及独立预演",count))
     return count

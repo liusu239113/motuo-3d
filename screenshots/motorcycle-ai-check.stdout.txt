@@ -1,43 +1,39 @@
-[2026-11-04 20_57_35_669][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
+[2026-11-04 21_01_37_647][1] ERROR: Failed to compile vertex shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR VERTEXCOLOR):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_35_669][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
+[2026-11-04 21_01_37_647][1] ERROR: Failed to compile pixel shader UI(DIFFMAP GAMMA_IN_SHADERING MIXCOLOR OPACITY VERTEXCOLOR):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_35_669][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
+[2026-11-04 21_01_37_647][1] ERROR: Failed to compile vertex shader UI(DIFFMAP):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_35_669][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
+[2026-11-04 21_01_37_647][1] ERROR: Failed to compile pixel shader UI(DIFFMAP OPACITY):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_36_087][24] ERROR: Failed to compile vertex shader NanoVGFill():
+[2026-11-04 21_01_38_022][22] ERROR: Failed to compile vertex shader NanoVGFill():
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_36_087][24] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
+[2026-11-04 21_01_38_022][22] ERROR: Failed to compile pixel shader NanoVGFill(HIGH_PRECISION_OUTPUT=1):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_36_087][24] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
+[2026-11-04 21_01_38_022][22] ERROR: Failed to compile pixel shader NanoVGFill(GAUSSIAN_GLOW HIGH_PRECISION_OUTPUT=1):
 shader compile skipped (graphics headless)
-[2026-11-04 20_57_35_082][0] INFO: DownloadManager initialized
-[2026-11-04 20_57_35_084][0] INFO: a couple of Subsystems registered finish.
-[2026-11-04 20_57_35_085][0] INFO: Engine construct finish.
-[2026-11-04 20_57_35_579][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
-[2026-11-04 20_57_35_602][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
-[2026-11-04 20_57_35_605][0] WARNING: Shader cache package not found: shadercache_glsl.pak
-[2026-11-04 20_57_36_055][24] WARNING: DownloadManager: no resources resolved for batch download
-[2026-11-04 20_57_37_245][71]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
-[2026-11-04 20_57_37_250][71]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
-[2026-11-04 20_57_37_250][71]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
-[2026-11-04 20_57_37_254][71] WARNING: DownloadManager: no resources resolved for batch download
-[2026-11-04 20_57_38_745][97] WARNING: Shader cache package not found: shadercache_glsl.pak
-[2026-11-04 20_57_38_765][97][Script] IsNetworkMode:    false
-[2026-11-04 20_57_38_853][97][Script] [InputAdaptor] Loading input event adaptor...
-[2026-11-04 20_57_38_853][97][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
-[2026-11-04 20_57_38_853][97][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
-[2026-11-04 20_57_38_853][97][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
-[2026-11-04 20_57_38_868][97][Script] Check Transition.lua SimpleGrid.lua
-[2026-11-04 20_57_39_180][97][Script] [Career.Store] new career: 王二狗 / 5000 cents / borrowed ebike / no motorcycle
-[2026-11-04 20_57_39_188][97][Script] [主结算接线] lake夺冠 +408金币（3圈*136）；alpine/coast同时持久化；重复Update仅一次
-[2026-11-04 20_57_39_196][97][Script] [主结算接线] 广告applied=true写失败仅补存；旧pending+上限applied=false不得标记已领
-[2026-11-04 20_57_39_200][97][Script] [主结算接线] 跨场旧pending+本场拒发：即时与5秒补存后均保持未入账
-[2026-11-04 20_57_39_204][97][Script] [主结算接线] 写失败applied=true保留双后继+金币；真实5秒补存仅保存、不双奖
-[2026-11-04 20_57_39_207][97][Script] [主结算接线] 上限永久拒发：零金币/零解锁/零写盘/无待补存/无广告
-[2026-11-04 20_57_39_211][97][Script] [Career.Store] loaded revision=3 day=2 cashCents=1075000 orders=0
-[2026-11-04 20_57_39_211][97][Script] [主结算接线] career真实报名结算仅现金+90000分；旧金币/赛道/广告全部隔离
-[2026-11-04 20_57_39_214][97][Script] [RaceSettlementChecks] PASS 139项；真实main业务接线/局部Profile与Store/局部SDK 4次；未启动实赛或真实UI
-[2026-11-04 20_57_39_214][97][Script] [RaceSettlementCheckMain] 全部断言通过
-[2026-11-04 20_57_39_231][99]INFO__VALIDATE_UPDATE__:false
+[2026-11-04 21_01_40_229][66] ERROR: Execute Lua function failed: [string "RaceAIChecks"]:470: [摩托AI技能] 真实动力上限不能仍用技能前速度
+stack traceback:
+	[C]: in function 'assert'
+	[string "RaceAIChecks"]:470: in local 'check'
+	[string "RaceAIChecks"]:497: in field 'MotorcycleSkills'
+	[string "RaceSettlementCheckMain"]:9: in function 'Start'
+[2026-11-04 21_01_37_181][0] INFO: DownloadManager initialized
+[2026-11-04 21_01_37_183][0] INFO: a couple of Subsystems registered finish.
+[2026-11-04 21_01_37_184][0] INFO: Engine construct finish.
+[2026-11-04 21_01_37_557][0] WARNING: Graphics::SetMode called with zero dimensions: 0x0 (will maximize window)
+[2026-11-04 21_01_37_576][0] WARNING: Directory[/resources/runtime/cli/AgentProject] not exists.
+[2026-11-04 21_01_37_578][0] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_01_37_997][22] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_01_38_621][40]INFO[i18n] loadConfig: uuid='Q4M3GntfTmiNZCdTeiz5Kg' engine='Q4M3GntfTmiNZCdTeiz5Kg' match=true
+[2026-11-04 21_01_38_624][40]INFO[i18n] loadConfig: engine fallback, support_langs='zh_CN'
+[2026-11-04 21_01_38_624][40]INFO[i18n] PreloadI18nStep: resolved='zh_CN'
+[2026-11-04 21_01_38_628][40] WARNING: DownloadManager: no resources resolved for batch download
+[2026-11-04 21_01_40_069][66] WARNING: Shader cache package not found: shadercache_glsl.pak
+[2026-11-04 21_01_40_073][66][Script] IsNetworkMode:    false
+[2026-11-04 21_01_40_093][66][Script] [InputAdaptor] Loading input event adaptor...
+[2026-11-04 21_01_40_093][66][Script] [InputAdaptor] Hooked SubscribeToEvent for event mapping.
+[2026-11-04 21_01_40_093][66][Script] [InputAdaptor] Platform: Linux, isTouchPlatform: false
+[2026-11-04 21_01_40_093][66][Script] [InputAdaptor] Hooked Input methods for touch emulation fallback.
+[2026-11-04 21_01_40_096][66][Script] Check Transition.lua SimpleGrid.lua
+[2026-11-04 21_01_40_246][68]INFO__VALIDATE_UPDATE__:false
