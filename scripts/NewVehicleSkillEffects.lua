@@ -258,28 +258,29 @@ function Effects:PoseFront(part,sim,direction)
     local t=self.age
     local pulse=.85+.15*math.sin(t*26)
     if self.id=="hovercraft" then
+        -- 侧喷是方向性技能：移动侧自然不出喷流，反侧形成明显喷柱。
         node.enabled=side==-direction
-        node.position=V(-direction*.06,-.04,0)
-        node.scale=V(.34*pulse,.075,.16)
+        node.position=V(-direction*.10,-.05,0)
+        node.scale=V(.95*pulse,.22,.30)
     elseif self.id=="centipede" then
         local sweep=self.phase=="tail_sweep"
         node.position=V(side*.02,-.06,0)
         node.rotation=Quaternion(0,side*(sweep and (t-.42)*220 or -30),0)
-        node.scale=V(.30,self.phase=="tail_windup" and .35 or .65,.23)
+        node.scale=V(.52,self.phase=="tail_windup" and .55 or 1.05,.40)
     elseif self.id=="buggy" then
         node.position=V(side*.04,-.06,-(t*2%1)*.18)
         node.rotation=Quaternion(0,-side*12,0)
-        node.scale=V(.7,.6,.55*pulse)
+        node.scale=V(1.05,.9,.82*pulse)
     elseif self.id=="loader" then
         local lift=unit((t-.36)/.36)
-        node.position=V(side*.04,-.14+lift*.09,.02)
+        node.position=V(side*.04,-.20+lift*.13,.02)
         node.rotation=Quaternion(0,side*10,0)
-        node.scale=V(.4,self.phase=="scoop_windup" and .12 or .28,.42)
+        node.scale=V(.72,self.phase=="scoop_windup" and .20 or .48,.70)
     else
         local spring=unit((sim.oddSpring or 0)/math.max(.01,sim.oddSpringMax or 22))
         node.position=V(0,-.05,0)
         node.rotation=Quaternion(0,0,(side*t*1000)%360)
-        node.scale=V(.28,.28,.24+spring*.16)
+        node.scale=V(.46,.46,.40+spring*.26)
     end
 end
 
