@@ -37,13 +37,17 @@ local M={}
 M.Profiles={
     skateboard={hip=V(0,1.04,0),leftFoot=V(0,.28,.32),rightFoot=V(0,.28,-.32),
         leftHand=V(-.04,1.38,.54),rightHand=V(-.03,1.38,-.54),yaw=90,pitch=8,height=1.78,footYaw=90,
-        standing=true,eye=V(-.03,1.63,.12),visualHeight=2.02},
+        standing=true,eye=V(-.03,1.63,.12),visualHeight=2.02,
+        -- 滑板不做跑步循环：双脚锁在板上，改用速度驱动的屈膝压板。
+        crouchSpeed=.42,crouchFullSpeed=18,crouchBobBase=1.2},
     office={hip=V(0,1.14,.04),leftFoot=V(-.22,.50,.59),rightFoot=V(.22,.50,.59),
         leftHand=V(-.56,1.47,.37),rightHand=V(.56,1.47,.37),yaw=0,pitch=3,height=1.90,footYaw=0,
         seat=V(0,1.05,.04),followJoint="ChairSwivel",eye=V(0,1.79,.17),visualHeight=2.69},
     cart={hip=V(0,.94,-1.26),leftFoot=V(-.18,.025,-1.26),rightFoot=V(.18,.025,-1.36),
         leftHand=V(-.39,1.74,-.88),rightHand=V(.39,1.74,-.88),yaw=0,pitch=4,height=1.94,footYaw=0,
-        standing=true,eye=V(0,1.78,-1.20),visualHeight=2.07},
+        standing=true,eye=V(0,1.78,-1.20),visualHeight=2.07,
+        -- 推车跑：蹬踏相位按车速推进，步幅 0.30m、抬脚 0.14m、躯干起伏 1.8°。
+        strideSpeed=.55,strideFullSpeed=20,strideBase=.30,strideLiftBase=.14,strideBobBase=1.8},
     sled={hip=V(0,.796,-.45),leftFoot=V(-.23,.30,.12),rightFoot=V(.23,.30,.12),
         leftHand=V(-.29,1.02,.13),rightHand=V(.29,1.02,.13),yaw=0,pitch=27,height=1.78,footYaw=0,
         seat=V(0,.706,-.45),eye=V(0,1.36,-.26),visualHeight=1.62},
@@ -176,11 +180,15 @@ end
 ---@param p MixedDriverProfile
 local function applyPose(rig,p)
     -- Body sideways on skateboard. The fixed pelvis/feet are in vehicle frame; head faces travel.
+    -- 跑步/压板循环只在这里偏移踝目标，骨骼长度与座位接触点不变。
+    local stride=p.stridePhase or 0
+    local strideAmount=p.strideAmount or 0
+    local bob=p.strideBob or 0
     boneNode(rig,"Hip").rotation=rig.bind.Hip.rotation
     rig:SetBodyRotation("Pelvis",0,p.yaw)
-    rig:SetBodyRotation("Waist",p.pitch,p.yaw)
-    rig:SetBodyRotation("Spine01",p.pitch+2,p.yaw)
-    rig:SetBodyRotation("Spine02",p.pitch+4,p.yaw)
+    rig:SetBodyRotation("Waist",p.pitch+bob,p.yaw)
+    rig:SetBodyRotation("Spine01",p.pitch+2+bob,p.yaw)
+    rig:SetBodyRotation("Spine02",p.pitch+4+bob,p.yaw)
     local headYaw=p.standing and p.yaw*.16 or p.yaw
     rig:SetBodyRotation("NeckTwist01",0,headYaw)
     rig:SetBodyRotation("NeckTwist02",0,headYaw)
@@ -190,6 +198,13 @@ local function applyPose(rig,p)
         local rotation=footRotation(rig,p,chain.side)
         local offset=(chain.side==-1 and p.leftSoleOffset or p.rightSoleOffset) or -.008
         local ankle=V(sole.x,sole.y-offset+.003,sole.z)
+        if strideAmount>0 then
+            -- 左右腿反相：一条前摆时另一条后蹬，抬脚发生在向前摆动的一半。
+            local theta=stride+(chain.side==-1 and 0 or math.pi)
+            local swing=math.sin(theta)
+            local lift=math.max(0,swing)
+            ankle=ankle+V(0,lift*p.strideLift or 0,swing*strideAmount)
+        end
         local hint=Quaternion(p.yaw,V.UP)*V(chain.side*.12,.06,1)
         rig:SolveChain(chain,ankle,hint,true)
         rig:SetLocalBoneRotation(chain.tip,rotation)
@@ -208,6 +223,7 @@ end
 ---@field driverProfile MixedDriverProfile
 ---@field ReadPose fun(self:MixedDriver):table
 ---@field ValidatePose fun(self:MixedDriver)
+---@field state? table 每帧仿真状态（speed/deltaTime），只驱动表现，不改物理
 local Driver={}
 Driver.__index=Driver
 setmetatable(Driver,{__index=Rider})
@@ -228,6 +244,27 @@ end
 function Driver:Update(steerAngle,force,lean)
     if self.disposed then return end
     self.node:SetTransform(V.ZERO,Quaternion.IDENTITY,V.ONE)
+    local p=self.driverProfile
+    if p.strideSpeed then
+        -- 相位由真实里程推进：停下来循环也停，速度越快蹬得越快。
+        local dt=self.state and self.state.deltaTime or 0
+        local speed=math.max(0,self.state and self.state.speed or 0)
+        p.stridePhase=(p.stridePhase or 0)+speed*dt*p.strideSpeed
+        -- 车速决定步幅：低速小步快倒，高速迈开腿。
+        local t=math.min(1,speed/(p.strideFullSpeed or 22))
+        p.strideAmount=p.strideBase*(0.45+0.55*t)
+        p.strideLift=p.strideLiftBase*(0.45+0.55*t)
+        p.strideBob=math.sin((p.stridePhase or 0)*2)*(p.strideBobBase or 0)
+    elseif p.crouchSpeed then
+        -- 滑板不迈步：双脚锁板，用速度驱动的重心起伏表现压板发力。
+        local dt=self.state and self.state.deltaTime or 0
+        local speed=math.max(0,self.state and self.state.speed or 0)
+        p.crouchPhase=(p.crouchPhase or 0)+speed*dt*p.crouchSpeed
+        local t=math.min(1,speed/(p.crouchFullSpeed or 18))
+        p.strideAmount=0
+        p.strideLift=0
+        p.strideBob=math.sin(p.crouchPhase)*(p.crouchBobBase or 1.2)*(0.4+0.6*t)
+    end
     -- Controls are original static meshes. Board balance is independent of fictitious handlebars.
     Rider.Update(self,0,force,lean)
     self:SyncJoint()

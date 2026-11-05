@@ -553,6 +553,10 @@ function Adapter:UpdateState(dt,sim,firstPerson,clock)
         self.steering.rotation=Quaternion(0,(sim.steer or 0)*8,0)
     end
     self.mirrors.cameraNode.position=V(0,self.rearCameraHeight+(sim.oddAltitude or 0),self.rearCameraZ)
+    -- 骑手蹬踏/压板循环需要真实车速与帧时间；只读仿真，不回写。
+    if self.riderRig.state ~= nil or self.riderRig.vehicleId then
+        self.riderRig.state={speed=sim.speed or 0,deltaTime=step}
+    end
     self.riderRig:Update(0,false,lean)
     if firstPerson ~= self.firstPerson then self:SetFirstPerson(firstPerson) end
     for i,bar in ipairs(self.rpmBars or {}) do

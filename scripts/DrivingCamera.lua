@@ -112,6 +112,11 @@ function DrivingCamera:Update(dt, chase, bike, helmet, camera, sim, screen, cloc
         local visualHeight=driver and math.max(size.y,driver.visualHeight) or size.y
         extraDistance=math.max(0,math.sqrt(size.x*size.x+size.z*size.z)*.5-1.45,visualHeight-1.6)
         extraHeight=math.max(0,visualHeight*.55-1.45)+(sim.oddAltitude or 0)
+        if driver and driver.standing then
+            -- 站立驾驶（推车/滑板）的腿在车体下沿，默认眼位只到胸口。
+            -- 抬高到车体上沿以上才能看到蹬踏，不是把整台车推远。
+            extraHeight=math.max(extraHeight,size.y+.42-1.45)
+        end
     end
     if self.framedVehicle~=id or math.abs((self.framedHeight or 0)-extraHeight)>.02 then
         chase:SetModeConfig("normal",{distance=5.4+extraDistance,offset=Vector3(0,1.45+extraHeight,0),fov=66})

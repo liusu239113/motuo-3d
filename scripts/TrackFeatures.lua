@@ -154,12 +154,13 @@ function Features.StepBoost(entity,map,dt,x0,y0,z0,wasAirborne)
                 local ground,onRoad=map.Height(x,z)
                 local y=y0+(entity.y-y0)*t
                 if abs(lateral)<=width+1e-6 and onRoad and abs(y-ground)<=.16 then
-                    local maximum=(entity.vehicle and entity.vehicle.maxSpeed or entity.maxSpeed or 60)*1.08
-                    local gain=math.max(0,math.min(f.gain or 4.5,maximum-entity.speed))
+                    -- 加速带允许突破常规极速上限到 125%，冲量翻倍，给足爆发感。
+                    local maximum=(entity.vehicle and entity.vehicle.maxSpeed or entity.maxSpeed or 60)*1.25
+                    local gain=math.max(0,math.min(f.gain or 8,maximum-entity.speed))
                     -- 已到上限仍消费本次入口，不能滞留带内延迟刷取。
                     entity.speed=entity.speed+gain
-                    state.ready[f.id]=state.clock+(f.cooldown or 8)
-                    state.globalReady=state.clock+2.5
+                    state.ready[f.id]=state.clock+(f.cooldown or 6)
+                    state.globalReady=state.clock+1.2
                     state.triggers=state.triggers+1
                     state.lastId,state.lastGain=f.id,gain
                     if gain>0 then state.feedbackTimer,state.feedbackPower=1.35,1 end
@@ -198,7 +199,7 @@ function Features.Make(map,s,lateral,kind,id,yawOffset)
         x=p.x+cos(a)*lateral,z=p.z-sin(a)*lateral,y=0,yaw=yaw,
         width=kind=="ramp" and 2.6 or 4.0,length=kind=="ramp" and 20 or 9,
         height=kind=="ramp" and (training and 1.7 or 2.15) or 0,
-        landingEndS=s+(kind=="ramp" and 230 or 64),rows={},exitGrade=0,cooldown=8,gain=4.5}
+        landingEndS=s+(kind=="ramp" and 230 or 64),rows={},exitGrade=0,cooldown=6,gain=8}
     f.y=roadBase(map,f.x,f.z) or p.y
     if kind=="ramp" then
         -- 每米横截面贴合既有路面，不改道路或地形。
@@ -272,29 +273,49 @@ function Features.Safe(map,f)
     return true,curvature
 end
 
--- 离线全搜索后的固定站位；每图4带2坡，每次建图只采样300个左右顶点。
+-- 离线全搜索后的固定站位；每图 8 带 4 坡，加密约一倍，保持原有安全走廊约束。
 -- 原搜索实测湖图20.5秒/高山63.3秒，故绝不把候选扫描放入游戏加载帧。
 -- 每项为{kind,s,lateral,yawOffset?}；只调整可选坡朝向，不改变主路控制点。
 -- 湖图首坡-6°把105m/s弹道留在原沥青内，所有站位均经真实Safe/Sim/RaceAI回归。
 local placements={
-    lake={{"boost",517.55654974238,2.2},{"boost",1033.3801897542,2.2},
-        {"ramp",300,-2.8,-6},{"boost",2364.4753938761,2.2},
-        {"boost",3437.2447210658,2.2},{"ramp",3580,-3.0}},
+    lake={{"boost",517.55654974238,2.2},{"boost",760,2.2},
+        {"ramp",300,-2.8,-6},{"boost",1033.3801897542,2.2},
+        {"boost",1400,2.2},{"boost",1900,2.2},
+        {"ramp",2100,-2.8},{"boost",2364.4753938761,2.2},
+        {"boost",2900,2.2},{"boost",3437.2447210658,2.2},
+        {"ramp",3580,-3.0},{"boost",3900,2.2},{"ramp",4200,-2.8}},
     alpine={{"boost",644.97482591366,2.2},{"ramp",580,-2.6},
-        {"boost",3035.1922873742,2.2},{"ramp",2160,-2.6},
-        {"boost",4949.9475099643,2.2},{"boost",7041.4761657774,2.2}},
+        {"boost",1100,2.2},{"boost",1700,2.2},
+        {"ramp",2160,-2.6},{"boost",2600,2.2},
+        {"boost",3035.1922873742,2.2},{"boost",3600,2.2},
+        {"boost",4200,2.2},{"boost",4949.9475099643,2.2},
+        {"ramp",5400,-2.6},{"boost",6100,2.2},
+        {"boost",7041.4761657774,2.2},{"ramp",7600,-2.6}},
     coast={{"boost",536.64952549038,2.2},{"ramp",320,-3.2},
-        {"boost",2205.368075488,2.2},{"boost",2667.5223460745,2.2},
-        {"ramp",2160,3.2},{"boost",5309.5061245024,2.2}},
+        {"boost",900,2.2},{"boost",1500,2.2},
+        {"ramp",2160,3.2},{"boost",2205.368075488,2.2},
+        {"boost",2667.5223460745,2.2},{"boost",3200,2.2},
+        {"ramp",3700,3.2},{"boost",4300,2.2},
+        {"boost",5309.5061245024,2.2},{"boost",5900,2.2},{"ramp",6400,3.2}},
     canyon={{"boost",654.67931613347,2.2},{"ramp",580,-3.4},
-        {"boost",2719.8387192982,2.2},{"boost",3487.724874097,2.2},
-        {"ramp",3420,-3.4},{"boost",7027.4971836945,2.2}},
-    forest={{"boost",548.18435217481,2.2},{"ramp",1200,-2.7},
-        {"boost",2655.0964532467,2.2},{"boost",4417.4372836734,2.2},
-        {"ramp",3180,2.7},{"boost",6058.6720010512,2.2}},
+        {"boost",1300,2.2},{"boost",2000,2.2},
+        {"boost",2719.8387192982,2.2},{"ramp",3420,-3.4},
+        {"boost",3487.724874097,2.2},{"boost",4100,2.2},
+        {"boost",4800,2.2},{"ramp",5400,-3.4},
+        {"boost",6100,2.2},{"boost",7027.4971836945,2.2}},
+    forest={{"boost",548.18435217481,2.2},{"boost",800,2.2},
+        {"ramp",1200,-2.7},{"boost",1800,2.2},
+        {"boost",2655.0964532467,2.2},{"ramp",3180,2.7},
+        {"boost",3700,2.2},{"boost",4417.4372836734,2.2},
+        {"boost",5200,2.2},{"boost",6058.6720010512,2.2},
+        {"ramp",6300,-2.7},{"boost",6700,2.2}},
     circuit={{"boost",704.83980215613,2.2},{"ramp",360,3.6},
-        {"boost",3632.1286780794,2.2},{"boost",5378.0364658613,2.2},
-        {"ramp",4800,3.6},{"boost",8530.6918435813,2.2}},
+        {"boost",1300,2.2},{"boost",2000,2.2},
+        {"boost",2900,2.2},{"boost",3632.1286780794,2.2},
+        {"boost",4300,2.2},{"ramp",4800,3.6},
+        {"boost",5378.0364658613,2.2},{"boost",6100,2.2},
+        {"ramp",6900,3.6},{"boost",7600,2.2},
+        {"boost",8530.6918435813,2.2}},
 }
 Features.Placements=placements
 
