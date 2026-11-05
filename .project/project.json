@@ -6,29 +6,73 @@
     "name": "流苏水寒工作室"
   },
   "entry": "main.lua",
-  "version": "1.0.48",
+  "version": "1.0.49",
   "taptap_publish": {
     "title": "公路狂飙:我骑小电驴他竟然开坦克",
     "category": "racing",
     "screen_orientation": "landscape",
     "collection_type": "racing",
     "app_platforms": "1,2",
-    "description": "《公路狂飙:我骑小电驴他竟然开坦克》是一款混合载具街机竞速游戏。电动车、轻型坦克、滑板、直升机与机械生物同场比赛，利用各自的专属技能争夺名次。金币可永久解锁载具，完整观看一次激励广告可获得所选载具三局体验。剧情模式暂未开放，已有竞速和剧情存档保留。",
+    "description": "《公路狂飙：我骑小电驴他竟然开坦克》是一款 9 人同场的混合载具街机竞速游戏。电动车、轻型坦克、武装直升机、蒸汽锹甲、旱地气垫艇、街头滑板、暴走购物车、火箭马桶、旋风办公椅……27 种完全不同的载具挤在同一条公路上抢名次，每一台都有自己的专属主动技能和被动特性。\n\n■ 27 款载具，靠本事解锁\n首发免费送你一辆疾风电动车，其余载具用比赛赢得的金币逐个解锁。从街头滑板到武装直升机，从泡泡澡盆到火箭马桶，越往后越离谱。\n\n■ 技能真的会改变比赛\n每台载具一个主动技能，冷却好了就能放：小电驴电驱超频拉满爆发、坦克助推喷射、直升机锁定追发导弹、锹甲双钳夹击、水母直射水球、滑板与弹跳蛙主动大跳、购物车冲动采购撞开对手、办公椅原地弹射、澡盆泡泡推进……不是数值皮肤，都会真实改变动力、极速、抓地，或者直接把对手撞飞。\n\n■ 6 条赛道，9 人混战\n封闭赛车场、山湖公路、海岸巡航、高山发卡、森林拉力、沙漠峡谷，每张图的弯道、坡度和 AI 强度都不一样。每场比赛 9 台载具同场发车，AI 会抢线、会绕障碍，也会放技能。\n\n■ 加速带与飞跃坡道\n沿途散布加速带和飞跃坡道，踩中加速带能瞬间突破常规极速，冲上坡道则可以腾空飞跃，落地时机和车身姿态都会影响你的速度。\n\n■ 逐场推进的解锁线\n夺冠可以解锁下一条赛道，也可以直接用金币购买。比赛名次越高，获得的金币越多。\n\n剧情模式正在制作中，目前开放自由练习与竞速赛事，已有存档会完整保留。",
     "app_id": 1013102,
     "developer_id": 377480,
-    "miniapp_id": "tapmcakcfxnohtqqmk"
+    "miniapp_id": "tapmcakcfxnohtqqmk",
+    "trial_note": "欢迎体验3D竞速恶搞载具小游戏，有问题可论坛反馈哈",
+    "gameplay_demo_video_id": 6058485
   },
   "assets": {
-    "icon": "./assets/image/vehicle_brawl_icon_20261104212809.png",
-    "icon_url": "https://img-tc.tapimg.com/market/images/Fmolb5RpumiLIpNCzGY6VFZvKUJK.png",
-    "promotional_image": "./assets/image/vehicle_brawl_promo_1920.png",
-    "promotional_image_url": "https://img-tc.tapimg.com/market/images/Fu3-ctb3_Jb1W0lup6F69KCalFvj.png"
+    "icon": "./assets/image/vehicle_brawl_icon_v2_20261105043029.png",
+    "icon_url": "https://img-tc.tapimg.com/market/images/FtXFMPFBOExRJmzI_DrikRVSQx0Q.png",
+    "promotional_image": "./game_material/PROMO_2026-11-05T04-24-39_01.jpg",
+    "promotional_image_url": "https://img-tc.tapimg.com/market/images/FirKhHBZb0Zx7HNGRG23gDNRaL5Q.jpg",
+    "source_screenshots": [
+      "_uploads/cea2da819a2b53006e7849414965a6aa5568c4fe42f4c206620dbe1bdcb74730.jpg",
+      "_uploads/2549a5be33b529bab3f1b7cd5f9cea4d6831743f79a4dfb345684f41e3778b6c.jpg",
+      "_uploads/0484b44cd07ca3461105231373a96f45a4b2012bad327b266e81e16936a03752.jpg"
+    ],
+    "screenshots": [
+      "./game_material/SCREENSHOT_2026-11-05T04-24-39_01.png",
+      "./game_material/SCREENSHOT_2026-11-05T04-24-39_02.png",
+      "./game_material/SCREENSHOT_2026-11-05T04-24-39_03.png"
+    ],
+    "screenshot_urls": [
+      "https://img-tc.tapimg.com/market/images/FqfbE4KnnG5AtZQdBS8Wbyk45bcr.png",
+      "https://img-tc.tapimg.com/market/images/FrPiBHjxcvg99CRjOIflFi2ErpLi.png",
+      "https://img-tc.tapimg.com/market/images/FsW_CIullDUgBw40IgOiuR13kJ6V.png"
+    ],
+    "cover_horizontal": "./game_material/COVER_HORIZONTAL_2026-11-05T04-25-09_01.png",
+    "cover_horizontal_url": "https://img-tc.tapimg.com/market/images/Fh-imdcA3k-VvPlPhElNPCV5Tesu.png",
+    "cover_vertical": "./game_material/COVER_VERTICAL_2026-11-05T04-25-33_01.png",
+    "cover_vertical_url": "https://img-tc.tapimg.com/market/images/FvfA2wC05Hvg5JI47kVHH10tmTGk.png"
   },
   "metadata": {
-    "updated_at": "2026-11-05T02:18:45.887Z"
+    "updated_at": "2026-11-05T04:34:00.149Z"
   },
   "test_qrcode": {
     "url": "https://tapcode-sce.spark.xd.com/qrcode/m_dttf_1793845125774.png",
     "generated_at": "2026-11-05T02:18:45.887Z"
+  },
+  "dc_publish_sync": {
+    "synced": true,
+    "dcVersion": "V-20261031",
+    "dcStatus": "INIT",
+    "baseFields": {
+      "title": "公路狂飙:我骑小电驴他竟然开坦克",
+      "description": "《公路狂飙：我骑小电驴他竟然开坦克》是一款 9 人同场的混合载具街机竞速游戏。电动车、轻型坦克、武装直升机、蒸汽锹甲、旱地气垫艇、街头滑板、暴走购物车、火箭马桶、旋风办公椅……27 种完全不同的载具挤在同一条公路上抢名次，每一台都有自己的专属主动技能和被动特性。\n\n■ 27 款载具，靠本事解锁\n首发免费送你一辆疾风电动车，其余载具用比赛赢得的金币逐个解锁。从街头滑板到武装直升机，从泡泡澡盆到火箭马桶，越往后越离谱。\n\n■ 技能真的会改变比赛\n每台载具一个主动技能，冷却好了就能放：小电驴电驱超频拉满爆发、坦克助推喷射、直升机锁定追发导弹、锹甲双钳夹击、水母直射水球、滑板与弹跳蛙主动大跳、购物车冲动采购撞开对手、办公椅原地弹射、澡盆泡泡推进……不是数值皮肤，都会真实改变动力、极速、抓地，或者直接把对手撞飞。\n\n■ 6 条赛道，9 人混战\n封闭赛车场、山湖公路、海岸巡航、高山发卡、森林拉力、沙漠峡谷，每张图的弯道、坡度和 AI 强度都不一样。每场比赛 9 台载具同场发车，AI 会抢线、会绕障碍，也会放技能。\n\n■ 加速带与飞跃坡道\n沿途散布加速带和飞跃坡道，踩中加速带能瞬间突破常规极速，冲上坡道则可以腾空飞跃，落地时机和车身姿态都会影响你的速度。\n\n■ 逐场推进的解锁线\n夺冠可以解锁下一条赛道，也可以直接用金币购买。比赛名次越高，获得的金币越多。\n\n剧情模式正在制作中，目前开放自由练习与竞速赛事，已有存档会完整保留。",
+      "category": "racing",
+      "trial_note": "欢迎体验3D竞速恶搞载具小游戏，有问题可论坛反馈哈",
+      "icon_url": "https://img-tc.tapimg.com/market/images/FtXFMPFBOExRJmzI_DrikRVSQx0Q.png",
+      "banner_url": "https://img-tc.tapimg.com/market/images/FirKhHBZb0Zx7HNGRG23gDNRaL5Q.jpg",
+      "square_promo_url": null,
+      "cover_horizontal_url": "https://img-tc.tapimg.com/market/images/Fh-imdcA3k-VvPlPhElNPCV5Tesu.png",
+      "cover_vertical_url": "https://img-tc.tapimg.com/market/images/FvfA2wC05Hvg5JI47kVHH10tmTGk.png",
+      "screenshot_urls": [
+        "https://img-tc.tapimg.com/market/images/FqfbE4KnnG5AtZQdBS8Wbyk45bcr.png",
+        "https://img-tc.tapimg.com/market/images/FrPiBHjxcvg99CRjOIflFi2ErpLi.png",
+        "https://img-tc.tapimg.com/market/images/FsW_CIullDUgBw40IgOiuR13kJ6V.png"
+      ]
+    },
+    "pending": {},
+    "baseGameplayDemoVideoId": 6058485
   }
 }

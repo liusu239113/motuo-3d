@@ -62,7 +62,7 @@ end
 ---@field preview? string
 ---@type MotorcycleEntry[]
 Catalog.List = {
-    {id="sport", class="sport", name="赤焰 R1000", tag="仿赛 / 直四高转", description="全包围整流罩与敏捷压弯，直线极速优先。", speed=274, acceleration=94, handling=88, available=true, price=0, speedStat=274, accelStat=1.00, durability=58, offroadStat=0.58, handlingStat=1.00},
+    {id="sport", class="sport", name="赤焰 R1000", tag="仿赛 / 直四高转", description="全包围整流罩与敏捷压弯，直线极速优先。", speed=274, acceleration=94, handling=88, available=true, price=500, speedStat=274, accelStat=1.00, durability=58, offroadStat=0.58, handlingStat=1.00},
     {id="sport_2", class="sport", name="冰锋 RR", tag="仿赛 / 白蓝旗舰", description="独立白蓝超级仿赛车体，尖锐双灯与流线短尾。", speed=274, acceleration=94, handling=88, available=true, price=4200, speedStat=279, accelStat=1.02, durability=60, offroadStat=0.58, handlingStat=1.01, preview="image/vehicle_reviews/sport_2_left.png"},
     {id="sport_3", class="sport", name="银隼 750", tag="仿赛 / 银黄轻量", description="独立银黄中量仿赛车体，单目车灯与鲨鱼鳃侧罩。", speed=274, acceleration=94, handling=88, available=true, price=5600, speedStat=283, accelStat=1.03, durability=62, offroadStat=0.60, handlingStat=1.02, preview="image/vehicle_reviews/sport_3_left.png"},
     {id="cruiser", class="cruiser", name="远行 V1700", tag="巡航 / 低座宽把", description="长轴距、低坐姿与厚重双缸声浪，稳健出弯。", speed=205, acceleration=76, handling=70, available=true, price=3600, speedStat=205, accelStat=0.80, durability=80, offroadStat=0.64, handlingStat=0.78},
