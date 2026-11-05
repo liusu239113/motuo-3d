@@ -21,7 +21,6 @@ local function trackList()
 end
 
 ---@class HUD : ControlEditor, RouteSelect, RacingDialogs
----@field garageGMButton Button
 ---@field trialButton Button
 ---@field skillButton Button
 ---@field activeModal Modal?
@@ -570,7 +569,7 @@ function HUD:BuildGarage()
         if item.available == false then
             playUI("unavailable")
             self:ShowNotice("车型尚未开放", "「" .. (item.name or item.id) .. "」的独立驾驶资源尚未交付，请选择其他座驾。")
-        elseif not self.careerRace and not Catalog.CanFreeExperience(item.id) and not profile.owned[item.id] and (profile.trials[item.id] or 0)<=0 then
+        elseif not self.careerRace and not profile.owned[item.id] and (profile.trials[item.id] or 0)<=0 then
             playUI("click")
             if self.actions.buyVehicle then self.actions.buyVehicle(item.id) end
         elseif self.actions.confirmVehicle then
@@ -588,14 +587,12 @@ function HUD:BuildGarage()
         if self.actions.watchVehicleAd then self.actions.watchVehicleAd(self.selectedVehicle) end
     end,false,172)
     self.trialButton:SetHeight(34)
-    self.garageGMButton = button("GM体验：关",function() self:ToggleGMExperience() end,false,116)
-    self.garageGMButton:SetHeight(34)
     self.trackButton = button("赛道 · 环湖公路 ›", function() self:OpenTracks() end, false, 185)
     self.trackButton:SetHeight(36)
     self.garageFooter = RacingTheme.Card {width = "100%", padding = 12, gap = 12, flexDirection = "row", alignItems = "flex-end",
         justifyContent = "space-between", children = {self.riderOptions, self.lapOptions,
             UI.Column {padding = 0, gap = 6, alignItems = "flex-end", children = {
-                UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.garageGMButton, self.coinLabel}},
+                UI.Row {padding = 0, gap = 8, alignItems = "center", children = {self.coinLabel}},
                 UI.Row {padding=0,gap=8,children={self.buyButton,self.trialButton}},
                 self.confirmButton}}}}
     self.garage = UI.Panel(fill({visible = false, padding = 18, gap = 12, children = {
@@ -728,26 +725,7 @@ function HUD:OpenGarage(challenge)
     self:SetScreen("garage")
     if self.actions.start then self.actions.start(self.challenge) end
 end
-function HUD:ToggleGMExperience()
-    if self.portraitActive or self:IsModalOpen() or UI.GetTopOverlay() then return end
-    if self.screen=="settings" then
-        if self:SettingsInputBlocked() then return end
-        self:CancelSettingsInput()
-    elseif self.screen~="garage" then return end
-    if self.actions.toggleGMFreeExperience then self.actions.toggleGMFreeExperience() end
-    self:RefreshGMButtons()
-    if self.screen=="settings" then
-        self.settingsHint:SetText(Catalog.IsGMFreeExperience() and "GM免费体验已开 · 正式车型免购买免扣次 · 重启关闭"
-            or "GM免费体验已关 · 原购买与试驾权益不变")
-    end
-end
-function HUD:RefreshGMButtons()
-    local text=Catalog.IsGMFreeExperience() and "GM体验：开" or "GM体验：关"
-    if self.garageGMButton then self.garageGMButton:SetText(text) end
-    if self.gmFreeButton then self.gmFreeButton:SetText(text) end
-end
 function HUD:SelectVehicle(id, notify)
-    self:RefreshGMButtons()
     local item = Catalog.Get(id)
     if not item then return end
     local profile,profileError = Profile.GetForDisplay()
@@ -759,7 +737,6 @@ function HUD:SelectVehicle(id, notify)
             backgroundGradient = RacingTheme.Gradient(selected and {39, 57, 61, 245} or {30, 37, 43, 235},
                 selected and {20, 33, 39, 245} or {17, 21, 26, 235})})
         self.vehicleBadges[v.id]:SetText(v.available == false and "准备中 · 不可驾驶"
-        or (not profileError and Catalog.CanFreeExperience(v.id) and "GM 免费体验 · 不扣次")
         or ((profile.trials[v.id] or 0)>0 and ("试驾剩余 "..profile.trials[v.id].." 局"))
             or (not owned and ("未拥有 · " .. tostring(v.price or 0) .. " 金币"))
             or (selected and "已选中" or "点按选择"))
@@ -777,17 +754,16 @@ function HUD:SelectVehicle(id, notify)
         math.floor(item.handling or 0), math.floor(item.durability or 0)))
     local owned = profile.owned[id] == true
     local trials = profile.trials[id] or 0
-    local free = not profileError and Catalog.CanFreeExperience(id)
-    self.trialButton:SetVisible(not profileError and not free and not owned and item.available~=false)
+    self.trialButton:SetVisible(not profileError and not owned and item.available~=false)
     self.trialButton:SetDisabled(item.available==false or require("RewardedAds").IsBusy())
     local price = item.price or 0
     self.coinLabel:SetText(profileError and "竞速进度不可用 · 原档已保留" or "金币 " .. tostring(profile.coins))
-    self.buyButton:SetVisible(not profileError and not free and not owned and price > 0 and item.available~=false)
+    self.buyButton:SetVisible(not profileError and not owned and price > 0 and item.available~=false)
     self.buyButton:SetText("购买 · " .. tostring(price) .. " 金币")
     self.buyButton:SetDisabled(profileError~=nil or item.available==false)
     self.confirmButton:SetDisabled(item.available==false or (profileError~=nil and not self.careerRace))
     self.confirmButton:SetText(profileError and not self.careerRace and "进度读取失败 · 暂不可出发" or item.available == false and "独立车型准备中"
-        or (free and "GM 免费体验 · 出发 →") or (not owned and trials<=0 and ("未拥有 · " .. tostring(price) .. " 金币")) or (not owned and ("试驾剩余 "..trials.." 局 · 出发 →")) or "确认座驾 · 出发 →")
+        or (not owned and trials<=0 and ("未拥有 · " .. tostring(price) .. " 金币")) or (not owned and ("试驾剩余 "..trials.." 局 · 出发 →")) or "确认座驾 · 出发 →")
     if self.screen == "garage" then self.preview:Select(id, item.available) end
     if notify and self.actions.selectVehicle then self.actions.selectVehicle(id) end
 end

@@ -105,21 +105,9 @@ function M.CreateCourse(map)
     end
     return list
 end
+-- 赛车场全部是柏油路面；曾有的分段地形（碎石/泥地/冰面/水面/强风）没有视觉表现，
+-- 已整段移除，避免出现玩家看不见却暗中生效的减速。离开柏油路的掉速由 Simulation 道路判定负责。
 function M.Terrain(map,s,lane)
-    -- 未交付可见分区时禁用对应效果，不能留下不可辨识的泥地/冰面减速。
-    if map.mixedTerrainVisualsReady==false then return "asphalt" end
-    local half=map.Roads and map.Roads[1] and map.Roads[1].width or 8
-    -- 中央至少7米柏油通路，特殊地形沿两翼形成可选线路；物理与绘制共用采样。
-    if math.abs(lane or 0)<half*.45 then return "asphalt" end
-    local theme=map.Track and map.Track.theme or "circuit"
-    local section=math.floor((s%math.max(1,map.RouteLength or 1))/145)%8
-    if section==0 then return "asphalt" end
-    if theme=="canyon" then return section==2 and "wind" or (section==4 and "gravel" or "dry") end
-    if theme=="alpine" then return section==3 and "ice" or (section==5 and "gravel" or "asphalt") end
-    if section==2 or section==6 then return "gravel" end
-    if section==4 then return (theme=="coast" or theme=="lake") and "water" or "mud" end
-    if section==5 then return "wind" end
-    if section==7 then return "slime" end
     return "asphalt"
 end
 local ACTIONS={hovercraft=true,centipede=true,loader=true,buggy=true,cicada=true,
@@ -224,9 +212,8 @@ function M.Before(sim,dt,controls,map)
         local jump=hop>0 and math.sin(clamp(sim.oddHop/(sim.oddHopDuration or 1.25),0,1)*math.pi)*(sim.oddHopHeight or 1.35) or 0
         sim.oddAltitude=math.max(jump,sim.oddLaunch>0 and math.sin(sim.oddLaunch/1.2*math.pi)*2.4 or 0)
         sim.oddDisrupt=math.max(0,(sim.oddDisrupt or 0)-dt)
-        sim.oddTerrain=(map.RouteLength or 0)>=300 and M.Terrain(map,sim.roadS or 0,sim.lateral or 0) or "asphalt"
-        local rough=sim.oddTerrain~="asphalt" and sim.oddTerrain~="wind"
-        sim.oddSpeedScale=rough and math.min(1,.88*sim.motorcycleOffroadScale) or 1
+        sim.oddTerrain="asphalt"
+        sim.oddSpeedScale=1
         sim.oddDriveScale=1
         sim.oddGripScale=sim.oddDisrupt>0 and .58 or 1
         if sim.oddDisrupt>0 then sim.oddSpeedScale=sim.oddSpeedScale*.84 end
@@ -251,20 +238,6 @@ function M.Before(sim,dt,controls,map)
     local speed,drive,grip=1.0,1.0,1.0
     local id=v.id
     local float=id=="hovercraft" or id=="jellyfish" or id=="helicopter"
-    if terrain=="gravel" then
-        if id=="helicopter" then speed=1
-        elseif id=="tank" or id=="beetle" or id=="centipede" or id=="loader" or id=="buggy" or float then speed=1.035
-        else speed=.87;grip=.88 end
-    elseif terrain=="water" or terrain=="mud" or terrain=="slime" then
-        if id=="helicopter" then speed=1
-        elseif float or id=="bathtub" then speed=id=="jellyfish" and 1.16 or 1.07
-        elseif id=="sled" then speed=1.03
-        else speed=.82;grip=.8 end
-    elseif terrain=="ice" then
-        if id=="sled" then speed=1.17;grip=1.15
-        elseif not float then grip=.68 end
-    elseif terrain=="dry" and id=="jellyfish" then speed=.88
-    end
     if id=="beetle" then
         if (sim.impactSerial or 0)~=sim.oddLastImpact then sim.oddSteam=0 end
         sim.oddSteam=clamp(sim.oddSteam+dt*((sim.speed or 0)>12 and .055 or -.08),0,1)
@@ -314,9 +287,6 @@ function M.Before(sim,dt,controls,map)
         elseif id=="bathtub" then drive=drive*1.65;speed=speed*1.16 end
         if id=="toilet" then altitude=math.max(altitude,1.8) end
         if id=="office" then grip=grip*.9 end
-    end
-    if id=="helicopter" and terrain=="wind" then
-        drive=drive*.85;grip=grip*.72
     end
     if sim.oddDisrupt>0 then speed=speed*.84;grip=grip*.58 end
     if sim.oddHop>0 then grip=grip*.78 end
@@ -437,10 +407,8 @@ function M.After(sim,dt,controls,world,x0,y0,z0,wasAirborne)
             buggyLanding(sim,sim.landingStable~=false and (sim.oddHop or 0)<=0)
             sim.oddPhase=phase(sim,v.id)
         end
-        local terrain=sim.oddTerrain
         local side=0
-        if terrain=="wind" then side=math.sin((sim.elapsed or 0)*1.2)*dt*(v.id=="hovercraft" and 2.7 or v.id=="jellyfish" and 2 or v.id=="helicopter" and 2.4 or .65) end
-        if v.id=="hovercraft" and terrain=="asphalt" then side=side+(sim.steer or 0)*dt*.7 end
+        if v.id=="hovercraft" then side=side+(sim.steer or 0)*dt*.7 end
         if v.id=="hovercraft" then
             local jet=sim.oddJetStep or 0
             side=side+jet

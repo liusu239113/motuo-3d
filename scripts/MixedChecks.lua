@@ -439,12 +439,11 @@ function Checks.Run()
         print(string.format("[动力基线] %s 千米 %.2fs / 尾速 %.1fkm/h",v.id,run.elapsed,run.speed*3.6))
     end
     scene:Dispose()
-    check(Rules.Terrain(map,650,0)=="asphalt" and Rules.Terrain(map,650,6)=="water","中路可绕行，翼侧涉水")
-    local unpainted={RouteLength=map.RouteLength,Roads=map.Roads,Track=map.Track,mixedTerrainVisualsReady=false}
+    -- 分段地形已移除：全赛道恒为柏油，不再存在玩家看不见的隐形减速。
+    check(Rules.Terrain(map,650,0)=="asphalt" and Rules.Terrain(map,650,6)=="asphalt","全赛道统一柏油路面")
     for _,section in ipairs({2,4,5,7}) do
-        check(Rules.Terrain(unpainted,section*145+1,6)=="asphalt","未交付地形贴图时禁用隐形惩罚")
+        check(Rules.Terrain(map,section*145+1,6)=="asphalt","分段地形已移除，不产生隐形惩罚")
     end
-    check(Rules.Terrain(map,650,6)=="water","禁用未交付场景不改默认纯规则夹具平衡")
     local function terrain(id)
         local s=Sim.New(map) --[[@as MixedCheckDrive]]
         s:SetVehicle(id);s:Reset(false);s.roadS=650;s.lateral=6;s.speed=25
@@ -453,20 +452,12 @@ function Checks.Run()
         s.oddPreviousAltitude=s.oddAltitude
         return s
     end
-    check(terrain("jellyfish").oddSpeedScale>terrain("ebike").oddSpeedScale,"水母涉水优势")
-    local windMap={RouteLength=2400,Roads=map.Roads,Track={theme="canyon"}}
-    local wind=terrain("helicopter")
-    wind.roadS,wind.lateral,wind.elapsed=320,6,1
-    Rules.Before(wind,.02,{},windMap)
-    check(wind.oddTerrain=="wind" and math.abs(wind.oddDriveScale-.85)<.0001
-        and math.abs(wind.oddGripScale-.72)<.0001,"飞机风区有真实动力和抓地惩罚")
-    wind.x,wind.z=0,0
-    Rules.After(wind,.02,{},nil,0,0,0,false)
-    check(math.abs(wind.x)>math.sin(1.2)*.02*.65,"飞机风区横漂大于原通用横漂")
+    check(terrain("jellyfish").oddTerrain=="asphalt" and terrain("ebike").oddTerrain=="asphalt",
+        "悬浮车与普通车地形一致，不再有涉水优势")
     for _,section in ipairs({2,4,7}) do
         local air=terrain("helicopter");air.roadS=section*145+1
         Rules.Before(air,.02,{},map)
-        check(air.oddSpeedScale<=1,"飞机免地表减速但不白得地形极速加成："..air.oddTerrain)
+        check(air.oddSpeedScale<=1,"飞机不会因旧地形获得额外加成："..air.oddTerrain)
     end
     local beetle=terrain("beetle")
     for _=1,1000 do Rules.Before(beetle,.02,{},map) end
