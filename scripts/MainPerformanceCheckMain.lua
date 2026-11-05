@@ -19,7 +19,6 @@ local BRIDGE=[[
 return {
     start=Start,
     launch=function()
-        Catalog.SetGMFreeExperience(true)
         local vehicle,raceMode="beetle",true
         for _,arg in ipairs(GetArguments()) do
             vehicle=arg:match("^%-performance%-vehicle=(.+)$") or vehicle

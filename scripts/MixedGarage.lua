@@ -22,12 +22,4 @@ function M.WatchTrial(hud,id,isValid)
             hud:ShowNotice("广告未完成",(message or "广告暂不可用").."，未增加试驾次数。")
         end}
 end
-function M.ToggleGM(hud)
-    Ads.Cancel()
-    local Catalog=require("Catalog")
-    local enabled=Catalog.SetGMFreeExperience(not Catalog.IsGMFreeExperience())
-    hud:SelectVehicle(hud.selectedVehicle,false)
-    print("[GM免费体验] "..(enabled and "开启：正式车型免费，不扣金币或试驾，不改永久所有权" or "关闭：恢复原有购买与试驾权益"))
-    return enabled
-end
 return M

@@ -713,13 +713,10 @@ local function RetryLoading()
 end
 function Start()
     graphics.windowTitle = "公路狂飙:我骑小电驴他竟然开坦克"
-    input.mouseMode = MM_ABSOLUTE;Catalog.SetGMFreeExperience(false)
+    input.mouseMode = MM_ABSOLUTE
     ---@type fun()?
     local restoreUnavailableProfile=nil
-    ---@type fun()?, fun():integer,string
-    local restoreGM,gmStorage=nil,nil
     for _,arg in ipairs(GetArguments()) do
-        if arg=="-gmchecks" then restoreGM,gmStorage=require("GMChecks").Begin() end
         if arg=="-profilebadchecks" then
             restoreUnavailableProfile=require("ProfileChecks").BeginUnavailableProfile()
         end
@@ -727,10 +724,9 @@ function Start()
     local hudCreated,hudOrError=pcall(function()
         return HUD.New({start = StartRide, pause = PauseRide, menu = MainMenu, camera = ToggleCamera,
         watchResultAd = WatchResultAdBonus,
-        toggleGMFreeExperience = function() return require("MixedGarage").ToggleGM(hud_) end,
         skill = function() if screen_=="ride" then pendingActions_.skill=true end end,
         watchVehicleAd = function(id)
-            if screen_~="garage" or not RequireRaceProfile() or Catalog.CanFreeExperience(id) or Profile.Owns(id) then return end
+            if screen_~="garage" or not RequireRaceProfile() or Profile.Owns(id) then return end
             require("MixedGarage").WatchTrial(hud_,id,function()
                 return screen_=="garage" and selectedVehicle_==id
             end)
@@ -758,7 +754,6 @@ function Start()
             if not RequireRaceProfile() then return end
             local item = Catalog.Get(id)
             if not item or item.available==false then return end
-            if Catalog.CanFreeExperience(id) then hud_:SelectVehicle(id,false);return end
             local ok, message = Profile.Buy(id, item.price or 0)
             hud_:RefreshOwnership()
             hud_:SelectVehicle(id, false)
@@ -962,16 +957,6 @@ function Start()
     hud_:SetCareerRace(false)
     hud_.root:SetVisible(true)
     UI.SetRoot(hud_.root)
-    if restoreGM then
-        local ok,message=pcall(function()
-            local checks=require("GMChecks");assert(checks.Run(hud_,gmStorage))
-            for _,arg in ipairs(GetArguments()) do
-                if arg=="-gmdrivechecks" then checks.RunDrive(hud_,gmStorage,restoreGM);return end
-            end
-            restoreGM()
-        end)
-        if not ok then restoreGM();error(message) end
-    end
     print("[公路狂飙] 默认混合赛车；剧情模式暂未开放；旧存档保留")
 end
 -- 仅显式-racetest启用，走真实页面入口验证暂停、缓存重赛和模式切换。
@@ -1483,7 +1468,7 @@ function CaptureTestFrame()
     engine:Exit()
 end
 function Stop()
-    FrontendAudio.Dispose(); RewardedAds.Cancel();Catalog.SetGMFreeExperience(false)
+    FrontendAudio.Dispose(); RewardedAds.Cancel()
     if career_ then career_:Dispose(); career_=nil end
     if loader_ then loader_:Cancel() end
     touch_:SetEnabled(false)
