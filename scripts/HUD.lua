@@ -539,13 +539,14 @@ function HUD:BuildGarage()
     -- Full-backdrop overlay, not a separate right-column viewport. This shares the
     -- photo's dimensions even when SafeAreaView adds asymmetric device insets.
     self.preview = GaragePreview.New(fill())
-    -- 不写 height="100%"：在 Row 里靠默认 alignItems=stretch 撑满，
-    -- ScrollView 才能拿到确定高度而不是 0。
-    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0,
-        alignSelf = "stretch", padding = 6, gap = 2, pointerEvents = "box-none", children = {
+    -- Row 的交叉轴是纵向，alignItems="stretch" 才能给这一列确定高度，
+    -- ScrollView 靠它拿到非零视口，而不是靠已经失效的 height="100%"。
+    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0, minHeight = 0,
+        padding = 6, gap = 2, pointerEvents = "box-none", children = {
             self.vehicleName, self.descriptionScroll, self.vehicleSpecs}}
     self.garageList:SetStyle({width = 228, height = "100%", flexGrow = 0, flexBasis = "auto", flexShrink = 0})
     self.garageBody = UI.Row {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
+        alignItems = "stretch",
         padding = 0, gap = 12, pointerEvents = "box-none", children = {self.garageList, self.previewColumn}}
     local colors = UI.Row {padding = 0, gap = 6}
     for _, rider in ipairs(RIDERS) do
