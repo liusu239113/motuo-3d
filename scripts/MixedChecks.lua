@@ -389,6 +389,9 @@ function Checks.Run()
         local wheelRpm=sim.vehicle.maxSpeed*1.25*sim.vehicle.ratios[6]
         check(wheelRpm<sim.vehicle.redline*.9,v.id.."末挡为技能和氮气预留转速")
         sim:Reset(false);sim.speed=20
+        -- 水母/铲车是有目标才生效的技能，非竞速模式下会主动拒绝发动；
+        -- 这是设计而非缺陷，用竞速模式验证它们的真实发动路径。
+        sim.raceMode=true
         Rules.Before(sim,.02,{skill=true,steer=0},map)
         check(sim.oddActive>0 and sim.oddCooldown==v.cooldown,v.id.."技能真实发动")
         local cooldown=sim.oddCooldown
