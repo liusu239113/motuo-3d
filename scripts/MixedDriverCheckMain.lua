@@ -49,6 +49,29 @@ function Start()
             check(math.abs(rig.node.rotation:YawAngle())>90,"office follows true swivel")
             swivel.rotation=initial;rig:Update(0)
         end
+        -- 蹬踏/压板循环：车速推动相位，脚位要真的在动；停车时不能自己跑。
+        local profile=rig.driverProfile
+        if profile.strideSpeed or profile.crouchSpeed then
+            local function step(speed,dt,times)
+                for _=1,times do
+                    rig.state={speed=speed,deltaTime=dt}
+                    rig:Update(0)
+                end
+                return rig:ReadPose()
+            end
+            local f0=rig:ReadPose().leftFoot
+            local moving=step(18,.05,6)
+            local travelled=(moving.leftFoot-f0):Length()+(moving.rightFoot-f0):Length()
+            check(travelled>.02,id.." running loop actually moves feet")
+            rig.state={speed=0,deltaTime:.05}
+            local phaseBefore=profile.stridePhase or profile.crouchPhase or 0
+            for _=1,10 do rig:Update(0) end
+            local phaseAfter=profile.stridePhase or profile.crouchPhase or 0
+            check(math.abs(phaseAfter-phaseBefore)<1e-9,id.." stopped vehicle freezes the cycle")
+            rig.state=nil
+            rig:Update(0)
+            rig:ValidatePose()
+        end
         -- 5 columns, 2 rows in ONE scene, no repeated per-vehicle renderer launches.
         root.position=V(((i-1)%5)*3.65,0,((i-1)//5)*4.5)
         root.rotation=Quaternion(0,35,0)
@@ -65,4 +88,8 @@ function Start()
     camera.orthographic=true;camera.orthoSize=11.2;camera.farClip=100
     renderer:SetViewport(0,Viewport:new(scene_,camera))
     print(string.format("[MixedDriverCheck] PASS %d assertions / %d real production drivers",count_,#rigs_))
+end
+
+-- 保持渲染循环，供 -screenshot 真实出图；本入口不参与正式玩法。
+function Update()
 end

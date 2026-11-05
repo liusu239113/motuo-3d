@@ -534,6 +534,7 @@ function HUD:BuildGarage()
     self.vehicleSpecs = label("", 9, MUTED, {maxLines = 1})
     self.descriptionScroll = UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, minHeight = 48,
         flexShrink = 1, scrollY = true, showScrollbar = false,
+        backgroundColor = {8, 12, 16, 176}, borderRadius = 2, padding = 6,
         contentContainerStyle = {padding = 0, paddingRight = 6},
         children = {self.vehicleDescription}}
     -- Full-backdrop overlay, not a separate right-column viewport. This shares the
