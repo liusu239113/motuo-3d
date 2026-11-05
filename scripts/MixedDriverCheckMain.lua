@@ -63,7 +63,7 @@ function Start()
             local moving=step(18,.05,6)
             local travelled=(moving.leftFoot-f0):Length()+(moving.rightFoot-f0):Length()
             check(travelled>.02,id.." running loop actually moves feet")
-            rig.state={speed=0,deltaTime:.05}
+            rig.state={speed=0,deltaTime=0.05}
             local phaseBefore=profile.stridePhase or profile.crouchPhase or 0
             for _=1,10 do rig:Update(0) end
             local phaseAfter=profile.stridePhase or profile.crouchPhase or 0
