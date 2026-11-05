@@ -116,6 +116,9 @@ end
 
 local function trim(s) return (s:gsub("^%s+", ""):gsub("%s+$", "")) end
 
+-- 存档迁移标记：解析时回收了旧档里 0 金币白拿的赤焰 R1000，需要立刻回写磁盘。
+local revokedSport = false
+
 ---@param text string
 ---@return PursuitProfile?, string?
 local function parse(text)
@@ -170,6 +173,12 @@ local function parse(text)
             end
         end
     end
+    -- 存档迁移：sport（赤焰 R1000）曾以 0 金币售出，旧档里点过购买就会被记成已拥有。
+    -- 现在它是 500 金币付费车，旧档中这份未付费的权益一律回收。
+    if p.owned.sport then
+        p.owned.sport = nil
+        revokedSport = true
+    end
     return p
 end
 
@@ -220,6 +229,13 @@ function Profile.TryLoad(force)
         return false, loadError
     end
     data, loadError = loaded, nil
+    -- 回收了旧档白拿的赤焰 R1000 后立刻回写，避免每次启动重复迁移。
+    if revokedSport then
+        revokedSport = false
+        pendingSave = true
+        Profile.Save()
+        print("[竞速进度] 已回收旧存档中 0 金币获得的赤焰 R1000，现需 500 金币购买")
+    end
     return true
 end
 
