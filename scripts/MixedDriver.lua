@@ -46,8 +46,9 @@ M.Profiles={
     cart={hip=V(0,.94,-1.26),leftFoot=V(-.18,.025,-1.26),rightFoot=V(.18,.025,-1.36),
         leftHand=V(-.39,1.74,-.88),rightHand=V(.39,1.74,-.88),yaw=0,pitch=4,height=1.94,footYaw=0,
         standing=true,eye=V(0,1.78,-1.20),visualHeight=2.07,
-        -- 推车跑：蹬踏相位按车速推进，步幅 0.30m、抬脚 0.14m、躯干起伏 1.8°。
-        strideSpeed=.55,strideFullSpeed=20,strideBase=.30,strideLiftBase=.14,strideBobBase=1.8},
+        -- 推车跑：相位按车速推进。步幅受腿长限制（髋高0.94m），
+        -- 0.16m 前后摆 + 0.07m 抬脚仍在可达范围，不触发 IK 夹取。
+        strideSpeed=.55,strideFullSpeed=20,strideBase=.16,strideLiftBase=.07,strideBobBase=1.2},
     sled={hip=V(0,.796,-.45),leftFoot=V(-.23,.30,.12),rightFoot=V(.23,.30,.12),
         leftHand=V(-.29,1.02,.13),rightHand=V(.29,1.02,.13),yaw=0,pitch=27,height=1.78,footYaw=0,
         seat=V(0,.706,-.45),eye=V(0,1.36,-.26),visualHeight=1.62},
