@@ -364,14 +364,16 @@ function HUD:BuildRide()
     self.countdownPanel = UI.Panel {position = "absolute", top = "32%", left = "35%", width = "30%",
         padding = 0, pointerEvents = "none", children = {self.countdown}}
     self.featureRush = RoadRush(fill({pointerEvents = "none"}))
-    self.featureTitle = label("", 15, {126, 255, 218, 255}, {width = "100%", height = 26,
-        maxLines = 1, whiteSpace = "nowrap", textAlign = "center", fontWeight = "bold"})
-    self.featureHint = label("", 9, WHITE, {width = "100%", height = 18,
-        maxLines = 1, whiteSpace = "nowrap", textAlign = "center"})
-    self.featurePanel = UI.Panel {position = "absolute", top = "22%", left = "50%", marginLeft = -125,
-        width = 250, padding = 6, gap = 1, visible = false, pointerEvents = "none",
+    -- 技能提示是整句说明（含数值与状态），固定单行 + nowrap 会把后半句裁掉。
+    -- 允许换行、按内容自适应高度，面板也放宽，文案完整可读。
+    self.featureTitle = label("", 15, {126, 255, 218, 255}, {width = "100%",
+        whiteSpace = "normal", textAlign = "center", fontWeight = "bold"})
+    self.featureHint = label("", 10, WHITE, {width = "100%",
+        whiteSpace = "normal", textAlign = "center", lineHeight = 1.35})
+    self.featurePanel = UI.Panel {position = "absolute", top = "18%", left = "50%", marginLeft = -210,
+        width = 420, padding = 8, gap = 3, visible = false, pointerEvents = "none",
         backgroundColor = {7, 26, 27, 210}, borderWidth = 1, borderColor = {83, 231, 196, 165},
-        borderRadius = 3, children = {self.featureTitle, self.featureHint}}
+        borderRadius = 3, alignItems = "center", children = {self.featureTitle, self.featureHint}}
     self.weaponTarget = WeaponReticle {position = "absolute", width = 84, height = 84,
         visible = false, pointerEvents = "none", padding = 0, progress = 0, locked = false}
     self.skillButton = button("E · 专属技能",a.skill,true,154)
@@ -528,26 +530,17 @@ function HUD:BuildGarage()
     end
     self.selectionMode = label("竞速 / 2 圈", 9, AMBER)
     self.vehicleName = label("", 22, WHITE, {fontWeight = "bold", maxLines = 1})
-    -- 技能说明四段（被动/主动/持续冷却/短板）长度随车型变化，固定行数会截断。
-    -- 放进可滚动容器，文本永远完整可达，不再依赖猜一个够用的 maxLines。
-    self.vehicleDescription = label("", 11, MUTED, {width = "100%", whiteSpace = "normal"})
+    self.vehicleDescription = label("", 11, MUTED, {width = "100%", whiteSpace = "normal", maxLines = 7})
     self.vehicleSpecs = label("", 9, MUTED, {maxLines = 1})
-    self.descriptionScroll = UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, minHeight = 48,
-        flexShrink = 1, scrollY = true, showScrollbar = false,
-        backgroundColor = {8, 12, 16, 176}, borderRadius = 2, padding = 6,
-        contentContainerStyle = {padding = 0, paddingRight = 6},
-        children = {self.vehicleDescription}}
     -- Full-backdrop overlay, not a separate right-column viewport. This shares the
     -- photo's dimensions even when SafeAreaView adds asymmetric device insets.
     self.preview = GaragePreview.New(fill())
-    -- Row 的交叉轴是纵向，alignItems="stretch" 才能给这一列确定高度，
-    -- ScrollView 靠它拿到非零视口，而不是靠已经失效的 height="100%"。
-    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0, minHeight = 0,
+    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0, height = "100%",
         padding = 6, gap = 2, pointerEvents = "box-none", children = {
-            self.vehicleName, self.descriptionScroll, self.vehicleSpecs}}
+            self.vehicleName, self.vehicleDescription,
+            UI.Panel {flexGrow = 1, flexBasis = 0, padding = 0, pointerEvents = "none"}, self.vehicleSpecs}}
     self.garageList:SetStyle({width = 228, height = "100%", flexGrow = 0, flexBasis = "auto", flexShrink = 0})
     self.garageBody = UI.Row {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,
-        alignItems = "stretch",
         padding = 0, gap = 12, pointerEvents = "box-none", children = {self.garageList, self.previewColumn}}
     local colors = UI.Row {padding = 0, gap = 6}
     for _, rider in ipairs(RIDERS) do

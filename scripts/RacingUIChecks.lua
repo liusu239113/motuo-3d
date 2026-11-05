@@ -461,6 +461,25 @@ function Checks.Features(hud)
         fixture.featureState.feedbackPower = 0
         hud:UpdateFeatureFeedback(fixture)
         demand(hud.featureRush.power == 0 and hud.featureTitle:GetText():find("飞坡", 1, true), "结束冲刺后显示真实前方飞坡距离")
+        -- 真实技能长句（含数值与状态）必须完整换行显示，不能被单行 nowrap 裁掉。
+        fixture.oddSkillResult = "转椅弹开周围6米同高度对手，减速20%、失衡3秒并断氮气；自身3秒盾挡技能与路障"
+        fixture.oddSkillResultTimer = 2
+        hud:UpdateFeatureFeedback(fixture); UI.Layout()
+        demand(hud.featurePanel:IsVisible(), "技能结果须显示提示面板")
+        for _, widget in ipairs({hud.featureTitle, hud.featureHint}) do
+            widget:Render(UI.GetNVGContext()); UI.Layout()
+            local bounds = widget:GetAbsoluteLayout()
+            local panel = hud.featurePanel:GetAbsoluteLayout()
+            demand(inside(bounds, panel, 2), "长技能说明不能越界：" .. tostring(widget.props.text))
+            local pixels = UI.Theme.FontSize(widget.props.fontSize)
+            local full = UI.MeasureTextWidth(widget:GetText(), pixels,
+                UI.Theme.FontFace(widget.props.fontFamily, widget.props.fontWeight), widget.props.letterSpacing)
+            -- 允许换行后，整段文字占用的高度必须覆盖完整文本所需行数。
+            local contentWidth = bounds.w - (widget.props.paddingLeft or 0) - (widget.props.paddingRight or 0)
+            local lines = math.max(1, math.ceil(full / math.max(1, contentWidth)))
+            demand(bounds.h >= lines * pixels * 1.2, "长技能说明被压扁成单行：" .. tostring(widget.props.text))
+        end
+        fixture.oddSkillResult, fixture.oddSkillResultTimer = "", 0
         fixture.airborne, fixture.airTime = true, 0.3
         hud:UpdateFeatureFeedback(fixture)
         demand(hud.featureTitle:GetText() == "腾空飞跃", "真实空中状态须有飞跃反馈")
