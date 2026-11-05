@@ -532,15 +532,17 @@ function HUD:BuildGarage()
     -- 放进可滚动容器，文本永远完整可达，不再依赖猜一个够用的 maxLines。
     self.vehicleDescription = label("", 11, MUTED, {width = "100%", whiteSpace = "normal"})
     self.vehicleSpecs = label("", 9, MUTED, {maxLines = 1})
-    self.descriptionScroll = UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, minHeight = 0,
+    self.descriptionScroll = UI.ScrollView {width = "100%", flexGrow = 1, flexBasis = 0, minHeight = 48,
         flexShrink = 1, scrollY = true, showScrollbar = false,
         contentContainerStyle = {padding = 0, paddingRight = 6},
         children = {self.vehicleDescription}}
     -- Full-backdrop overlay, not a separate right-column viewport. This shares the
     -- photo's dimensions even when SafeAreaView adds asymmetric device insets.
     self.preview = GaragePreview.New(fill())
-    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0, height = "100%",
-        padding = 6, gap = 2, pointerEvents = "box-none", children = {
+    -- 不写 height="100%"：在 Row 里靠默认 alignItems=stretch 撑满，
+    -- ScrollView 才能拿到确定高度而不是 0。
+    self.previewColumn = UI.Column {flexGrow = 1, flexBasis = 0, flexShrink = 1, minWidth = 0,
+        alignSelf = "stretch", padding = 6, gap = 2, pointerEvents = "box-none", children = {
             self.vehicleName, self.descriptionScroll, self.vehicleSpecs}}
     self.garageList:SetStyle({width = 228, height = "100%", flexGrow = 0, flexBasis = "auto", flexShrink = 0})
     self.garageBody = UI.Row {width = "100%", flexGrow = 1, flexBasis = 0, flexShrink = 1, minHeight = 0,

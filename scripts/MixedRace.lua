@@ -308,10 +308,12 @@ function M.Before(sim,dt,controls,map)
         altitude=math.max(altitude,math.sin(clamp(sim.oddHop/total,0,1)*math.pi)*(sim.oddHopHeight or (total>1 and 2.2 or .65)))
     end
     if sim.oddActive>0 then
-        if id=="tank" or id=="ebike" or id=="jetboat" or id=="sled" or id=="toilet" then
+        if id=="tank" or id=="ebike" or id=="jetboat" or id=="sled" or id=="toilet"
+            or id=="cart" or id=="office" then
             drive=drive*1.7;speed=speed*1.18
-        elseif id=="cart" then drive=drive*1.35;speed=speed*1.1 end
+        elseif id=="bathtub" then drive=drive*1.65;speed=speed*1.16 end
         if id=="toilet" then altitude=math.max(altitude,1.8) end
+        if id=="office" then grip=grip*.9 end
     end
     if id=="helicopter" and terrain=="wind" then
         drive=drive*.85;grip=grip*.72

@@ -30,9 +30,9 @@ local names = {
     skateboard = {active="豚跳",   passive="板控",   original="豚跳这波很秀"},
     helicopter = {active="空袭",   passive="低飞",   original="空战脉冲"},
     sled       = {active="滑冲",   passive="滑刃",   original="柏油也能出溜"},
-    cart       = {active="买单",   passive="拾币",   original="全场我买单"},
-    bathtub    = {active="泡泡盾", passive="厚壁",   original="泡澡别打扰"},
-    office     = {active="旋椅",   passive="灵巧",   original="工位禁止贴贴"},
+    cart       = {active="买单",   passive="轻快",   original="全场我买单"},
+    bathtub    = {active="泡泡冲", passive="厚壁",   original="泡泡加速"},
+    office     = {active="弹射",   passive="灵巧",   original="工位弹射"},
     toilet     = {active="冲天",   passive="火箭",   original="一键冲上热搜"},
 }
 

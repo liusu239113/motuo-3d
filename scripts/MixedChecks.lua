@@ -105,7 +105,7 @@ function Checks.RunRemainingRules()
             check((s.health<100)==(height==5),id.."真实越1米障碍但非穿5米高墙")
         end
     end
-    for _,id in ipairs({"ebike","jetboat","sled","cart","toilet"}) do
+    for _,id in ipairs({"ebike","jetboat","sled","cart","toilet","bathtub","office"}) do
         local s=drive(id);tick(s,.02,{skill=true})
         check(s.oddDriveScale>1 and s.oddSpeedScale>1 and s.oddTerrain=="asphalt",id.."柏油真实动力/极速")
     end
