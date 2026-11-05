@@ -310,14 +310,16 @@ function Features.Plan(map)
         result[#result+1]=f
         if kind=="ramp" then ramps[#ramps+1]=f end
     end
-    -- 按赛道长度加密加速带：目标间隔约 420m，逐个试放并过 Safe 剔除桥梁/路口/弯道禁区。
+    -- 按赛道长度加密加速带：目标间隔约 300m，逐个试放并过 Safe 剔除桥梁/路口/弯道禁区。
+    -- 每处给 9 个候选偏移，命中率不足时继续向两侧找，而不是直接放弃。
     -- 只加 kind=="boost"，飞坡仍用上面校验过的锚点，避免落地走廊被改造。
-    local wanted=math.max(0,math.floor(map.RouteLength/420)-counts.boost)
+    local wanted=math.max(0,math.floor(map.RouteLength/300)-counts.boost)
     if wanted>0 then
         local placed=0
         local step=map.RouteLength/(wanted+1)
+        local offsets={0,20,-20,45,-45,70,-70,95,-95}
         for i=1,wanted do
-            for _,tries in ipairs({0,18,-18,36,-36}) do
+            for _,tries in ipairs(offsets) do
                 local s=step*i+tries
                 local candidate=Features.Make(map,s,2.2,"boost",
                     map.activeId.."_boost_auto_"..(counts.boost+1),nil)

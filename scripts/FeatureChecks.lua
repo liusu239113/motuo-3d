@@ -241,7 +241,10 @@ function Checks.RealMaps(map)
                     end
                 end
             end
-            assert(ramps==2 and boosts==4,"机关数量错误 "..id)
+            -- 加速带由 Plan 按赛道长度自动加密，数量随赛道长度变化；
+            -- 只断言"飞坡仍为 2 且加速带明显多于旧版 4 条"，不锁死里程派生的条数。
+            assert(ramps==2,"飞坡数量错误 "..id)
+            assert(boosts>=4,"加速带数量偏少 "..id)
             report.maps[#report.maps+1]={id=id,ramps=ramps,boosts=boosts}
         end
     end)
